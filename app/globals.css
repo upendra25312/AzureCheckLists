@@ -524,6 +524,82 @@ button.chip:hover {
   align-content: start;
 }
 
+.workspace-brief {
+  margin-bottom: 4px;
+}
+
+.workspace-toolbar,
+.workspace-filter-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.workspace-toolbar-main,
+.workspace-toolbar-side,
+.filter-field {
+  display: grid;
+  gap: 10px;
+}
+
+.workspace-toolbar-main {
+  flex: 1;
+}
+
+.workspace-toolbar-side {
+  align-items: start;
+}
+
+.workspace-filter-strip {
+  flex-wrap: wrap;
+}
+
+.workspace-filter-strip .filter-field {
+  flex: 1;
+  min-width: 260px;
+}
+
+.compact-chip-row {
+  gap: 8px;
+}
+
+.advanced-filters-card {
+  padding: 20px 24px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-strong);
+}
+
+.advanced-filters-card summary {
+  cursor: pointer;
+  font-weight: 700;
+  list-style: none;
+}
+
+.advanced-filters-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.advanced-filters-card[open] summary {
+  margin-bottom: 12px;
+}
+
+.advanced-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.advanced-reset {
+  align-content: end;
+}
+
+.result-summary {
+  align-items: center;
+}
+
 .hero-stat,
 .metric-card,
 .technology-card,
@@ -691,17 +767,10 @@ button.chip:hover {
 .item-row {
   display: grid;
   gap: 12px;
-  padding: 18px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.item-row:first-child {
-  padding-top: 0;
-}
-
-.item-row:last-child {
-  padding-bottom: 0;
-  border-bottom: none;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--bg-subtle);
 }
 
 .item-row button {
@@ -787,6 +856,7 @@ button.chip:hover {
   .future-grid,
   .trust-banner-grid,
   .traceability-grid,
+  .advanced-filters-grid,
   .hero-metrics-row,
   .hero-highlights,
   .metrics-grid,
@@ -811,6 +881,12 @@ button.chip:hover {
 
   .header-nav {
     width: 100%;
+  }
+
+  .workspace-toolbar,
+  .workspace-filter-strip {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 
