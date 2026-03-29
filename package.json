@@ -1,0 +1,26 @@
+{
+  "name": "azure-review-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Static-first Azure review dashboard optimized for Azure Static Web Apps Free.",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "npm run generate:data && next dev",
+    "generate:data": "node tools/generate-data.mjs",
+    "build": "npm run generate:data && next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.0.0"
+  }
+}
