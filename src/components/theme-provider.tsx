@@ -44,7 +44,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           <div>
             <h1 className="page-title">Azure Architecture Review Dashboard</h1>
             <p className="microcopy">
-              Director-grade review support for executives, architects, and operators.
+              Maturity-aware review guidance with source traceability and local working notes.
             </p>
           </div>
         </div>
@@ -79,22 +79,22 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           <article className="site-footer-column">
             <h3>Why this exists</h3>
             <p>
-              Turn distributed Azure checklist guidance into a faster, more credible review
-              conversation for leaders, architects, and operators.
+              Bring Azure review guidance into a clearer, more actionable review conversation
+              for leaders, architects, and operators.
             </p>
           </article>
           <article className="site-footer-column">
             <h3>What this is not</h3>
             <p>
-              Not an approval engine, not a compliance control system, and not a substitute
-              for architecture accountability.
+              Not an approval engine, not a compliance system, and not a substitute for
+              accountable architecture sign-off.
             </p>
           </article>
           <article className="site-footer-column">
             <h3>Source and transparency</h3>
             <p>
-              Compiled from Azure review checklist content with preserved traceability,
-              maturity disclosure, and local-only review state.
+              Built from Azure review checklist content with preserved traceability,
+              maturity disclosure, and local-only working state.
             </p>
           </article>
         </div>

@@ -6,15 +6,15 @@ export function TrustBanner() {
       <div className="trust-banner-grid">
         <div className="trust-banner-item">
           <strong>Source</strong>
-          <span>Compiled from Azure review checklist content with preserved traceability.</span>
+          <span>Built from Azure review checklist content with preserved traceability.</span>
         </div>
         <div className="trust-banner-item">
           <strong>Default posture</strong>
-          <span>GA-ready families first. Preview and deprecated content require explicit judgment.</span>
+          <span>GA-ready families first. Preview and deprecated content require explicit review judgment.</span>
         </div>
         <div className="trust-banner-item">
           <strong>Limitation</strong>
-          <span>This supports architecture review preparation. It does not replace sign-off.</span>
+          <span>This supports review preparation. It does not replace architecture sign-off.</span>
         </div>
         <div className="trust-banner-item trust-banner-action">
           <Link href="/how-to-use" className="muted-link">

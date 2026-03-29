@@ -3,18 +3,19 @@ import Link from "next/link";
 export default function HowToUsePage() {
   return (
     <main className="section-stack">
-      <section className="surface-panel">
+      <section className="surface-panel editorial-section">
         <p className="eyebrow">How this tool should be used</p>
-        <h2 className="section-title">Use it to accelerate architecture reviews, not to replace sign-off.</h2>
+        <h2 className="section-title">Use the dashboard to prepare reviews, not to issue approval.</h2>
         <p className="section-copy">
-          This dashboard compiles Azure review checklist content into a more usable
-          decision-support experience. It helps teams structure discussions, highlight
-          likely risk areas, and preserve source traceability. It does not certify
-          architectures, waive governance, or substitute for accountable review decisions.
+          The dashboard turns Azure review checklist content into a more readable, maturity-aware
+          review experience. It helps teams structure review discussions, preserve source
+          traceability, and identify where deeper architectural judgment is still required.
+          It does not certify architectures, waive governance, or substitute for accountable
+          review decisions.
         </p>
         <div className="button-row">
           <Link href="/" className="primary-button">
-            Return to dashboard
+            Back to overview
           </Link>
           <a
             href="https://github.com/Azure/review-checklists"
@@ -22,21 +23,21 @@ export default function HowToUsePage() {
             rel="noreferrer"
             className="secondary-button"
           >
-            Open source repository
+            Open source content
           </a>
         </div>
       </section>
 
-      <section className="surface-panel">
+      <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
             <p className="eyebrow">Responsible use</p>
-            <h2 className="section-title">What normalized items mean and how severity should be interpreted.</h2>
+            <h2 className="section-title">Interpret normalized items, severity, and confidence carefully.</h2>
           </div>
         </div>
         <div className="future-grid">
           <article className="future-card">
-            <h3>Normalized item</h3>
+            <h3>Normalization</h3>
             <p>
               A normalized item is a checklist recommendation that has been reshaped into a
               common structure for filtering, comparison, and export. Normalization improves
@@ -52,20 +53,20 @@ export default function HowToUsePage() {
             </p>
           </article>
           <article className="future-card">
-            <h3>Confidence</h3>
+            <h3>Confidence level</h3>
             <p>
               GA-ready families can anchor executive and architecture review packs. Preview
-              and mixed-confidence families should enrich expert analysis, not dominate leadership decisions.
+              and mixed-confidence families should enrich expert analysis, not define leadership decisions by default.
             </p>
           </article>
         </div>
       </section>
 
-      <section className="surface-panel">
+      <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Limitations and caveats</p>
-            <h2 className="section-title">Be explicit about what the platform cannot claim.</h2>
+            <p className="eyebrow">Limitations</p>
+            <h2 className="section-title">Be explicit about what the platform can and cannot claim.</h2>
           </div>
         </div>
         <div className="bar-list">

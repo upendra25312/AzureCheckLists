@@ -35,7 +35,7 @@ export function ItemDrawer({ item, review, onClose, onUpdate }: ItemDrawerProps)
       >
         <div className="drawer-header">
           <div>
-            <p className="eyebrow">Item details</p>
+            <p className="eyebrow">Finding detail</p>
             <h2 className="drawer-title">{item.text}</h2>
             <div className="drawer-meta">
               {item.id ? <span className="pill">{item.id}</span> : null}
@@ -52,7 +52,7 @@ export function ItemDrawer({ item, review, onClose, onUpdate }: ItemDrawerProps)
 
         {item.description ? (
           <section className="drawer-section">
-            <h3>Recommendation summary</h3>
+            <h3>Recommendation</h3>
             <p className="note">{item.description}</p>
           </section>
         ) : null}
@@ -80,10 +80,10 @@ export function ItemDrawer({ item, review, onClose, onUpdate }: ItemDrawerProps)
         </section>
 
         <section className="drawer-section">
-          <h3>Review notes</h3>
+          <h3>Working notes</h3>
           <div className="filter-grid">
             <label>
-              <span className="microcopy">Review state</span>
+              <span className="microcopy">Review status</span>
               <select
                 className="field-select"
                 value={review.reviewState}
@@ -105,7 +105,7 @@ export function ItemDrawer({ item, review, onClose, onUpdate }: ItemDrawerProps)
                 className="field-input"
                 value={review.owner}
                 onChange={(event) => onUpdate({ owner: event.target.value })}
-                placeholder="Optional owner"
+                placeholder="Optional owner or reviewer"
               />
             </label>
 
@@ -125,7 +125,7 @@ export function ItemDrawer({ item, review, onClose, onUpdate }: ItemDrawerProps)
                 className="field-textarea"
                 value={review.comments}
                 onChange={(event) => onUpdate({ comments: event.target.value })}
-                placeholder="Capture reasoning, evidence summary, or next steps."
+                placeholder="Capture review reasoning, evidence summary, or next steps."
               />
             </label>
 
@@ -155,14 +155,14 @@ export function ItemDrawer({ item, review, onClose, onUpdate }: ItemDrawerProps)
                 className="field-textarea"
                 value={review.exceptionReason}
                 onChange={(event) => onUpdate({ exceptionReason: event.target.value })}
-                placeholder="Optional rationale when accepting an exception."
+                placeholder="Optional rationale when recording an accepted exception."
               />
             </label>
           </div>
         </section>
 
         <section className="drawer-section">
-          <h3>Queries and references</h3>
+          <h3>References and queries</h3>
           <div className="definition-grid">
             <div>
               <strong>Documentation</strong>
