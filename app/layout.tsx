@@ -3,9 +3,9 @@ import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Azure Review Dashboard",
+  title: "Azure Architecture Review Dashboard",
   description:
-    "Static-first Azure checklist explorer designed for Azure Static Web Apps Free."
+    "Static-first Azure architecture review accelerator with GA-first maturity framing, source traceability, and decision-support views for executives, architects, and operators."
 };
 
 export default function RootLayout({

@@ -117,16 +117,20 @@ function summarizeCounts(values) {
     .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
 }
 
-function summarizeDescription(items, technology, status) {
-  const categories = collectUnique(items, (item) => item.category).slice(0, 3);
-  const services = collectUnique(items, (item) => item.service).slice(0, 4);
-  const highSeverityCount = items.filter((item) => item.severity === "High").length;
-  const categorySummary =
-    categories.length > 0 ? `covers ${categories.join(", ")}` : "contains sparse category metadata";
-  const serviceSummary =
-    services.length > 0 ? `touches services like ${services.join(", ")}` : "uses generalized guidance";
+function presence(value) {
+  if (Array.isArray(value)) {
+    return value.length > 0;
+  }
 
-  return `${technology} is a ${status} checklist family with ${items.length} normalized items, ${highSeverityCount} high-severity findings, ${categorySummary}, and ${serviceSummary}.`;
+  if (typeof value === "string") {
+    return value.trim().length > 0;
+  }
+
+  return value !== null && value !== undefined;
+}
+
+function toPercent(hits, total) {
+  return total === 0 ? 0 : Math.round((hits / total) * 100);
 }
 
 function firstLearnMoreUrl(learnMoreLink) {
@@ -151,10 +155,171 @@ function inferArmService(rawItem) {
   );
 }
 
-function normalizeItem(rawItem, technology, technologySlug, technologyStatus, family, sourceMeta) {
+function summarizeDescription(items, technology, quality) {
+  const categories = collectUnique(items, (item) => item.category).slice(0, 3);
+  const services = collectUnique(items, (item) => item.service).slice(0, 4);
+  const highSeverityCount = items.filter((item) => item.severity === "High").length;
+  const categorySummary =
+    categories.length > 0 ? `covers ${categories.join(", ")}` : "contains sparse category metadata";
+  const serviceSummary =
+    services.length > 0 ? `touches services like ${services.join(", ")}` : "uses generalized guidance";
+
+  return `${technology} is a ${quality.maturityBucket} family with ${items.length} normalized items, ${highSeverityCount} high-severity findings, ${categorySummary}, and ${serviceSummary}.`;
+}
+
+function getStatusConfidence(status) {
+  if (status === "GA") return 100;
+  if (status === "Preview") return 70;
+  if (status === "Deprecated") return 25;
+
+  return 45;
+}
+
+function getRecommendedUsageConfidence(status, qualityScore) {
+  if (status === "Deprecated") {
+    return "Retire";
+  }
+
+  if (status === "GA" && qualityScore >= 82) {
+    return "High";
+  }
+
+  if (qualityScore >= 67) {
+    return "Medium";
+  }
+
+  return "Limited";
+}
+
+function getMaturityBucket(status, qualityScore, metadataCompleteness, severityConfidence) {
+  if (status === "Deprecated") {
+    return "Deprecated";
+  }
+
+  if (status === "Preview") {
+    return "Preview";
+  }
+
+  if (
+    status === "GA" &&
+    qualityScore >= 80 &&
+    metadataCompleteness >= 58 &&
+    severityConfidence >= 60
+  ) {
+    return "GA";
+  }
+
+  return "Mixed";
+}
+
+function getQualitySummary(maturityBucket, qualityScore, metadataCompleteness, severityConfidence) {
+  if (maturityBucket === "GA") {
+    return `Strong review accelerator. Quality score ${qualityScore} with ${metadataCompleteness}% metadata completeness and ${severityConfidence}% severity coverage.`;
+  }
+
+  if (maturityBucket === "Preview") {
+    return `Use with architectural judgment. Preview content is valuable, but it should not be treated as equivalent to mature review baselines.`;
+  }
+
+  if (maturityBucket === "Deprecated") {
+    return "Reference only for historical context or migration planning. Do not use as the primary baseline for new reviews.";
+  }
+
+  return `Mixed confidence. Reviewers should verify source intent and severity interpretation before using this family in executive decision packs.`;
+}
+
+function getQualityLabel(maturityBucket, recommendedUsageConfidence) {
+  return `${maturityBucket} · ${recommendedUsageConfidence} confidence`;
+}
+
+function getWhatThisMeans(maturityBucket) {
+  if (maturityBucket === "GA") {
+    return "Suitable for executive and architecture review packs by default.";
+  }
+
+  if (maturityBucket === "Preview") {
+    return "Use to enrich design reviews, but validate recommendations before treating them as baseline controls.";
+  }
+
+  if (maturityBucket === "Deprecated") {
+    return "Keep visible for traceability, but steer current reviews toward newer guidance.";
+  }
+
+  return "Useful for specialist analysis, but not strong enough to lead with in director-level summaries.";
+}
+
+function computeQuality(items, status) {
+  let metadataChecks = 0;
+  let metadataHits = 0;
+  let severityHits = 0;
+  let traceChecks = 0;
+  let traceHits = 0;
+
+  for (const item of items) {
+    const metadataValues = [
+      item.category,
+      item.subcategory,
+      item.severity,
+      item.waf,
+      item.service,
+      item.description
+    ];
+    const traceValues = [
+      item.sourcePath,
+      item.sourceUrl,
+      item.guid,
+      item.link ?? item.training ?? item.query ?? item.graph
+    ];
+
+    metadataChecks += metadataValues.length;
+    metadataHits += metadataValues.filter(presence).length;
+    traceChecks += traceValues.length;
+    traceHits += traceValues.filter(presence).length;
+
+    if (presence(item.severity)) {
+      severityHits += 1;
+    }
+  }
+
+  const metadataCompleteness = toPercent(metadataHits, metadataChecks);
+  const severityConfidence = toPercent(severityHits, items.length);
+  const sourceCoverageQuality = toPercent(traceHits, traceChecks);
+  const statusConfidence = getStatusConfidence(status);
+  const qualityScore = Math.round(
+    metadataCompleteness * 0.4 +
+      severityConfidence * 0.25 +
+      sourceCoverageQuality * 0.2 +
+      statusConfidence * 0.15
+  );
+  const recommendedUsageConfidence = getRecommendedUsageConfidence(status, qualityScore);
+  const maturityBucket = getMaturityBucket(
+    status,
+    qualityScore,
+    metadataCompleteness,
+    severityConfidence
+  );
+
+  return {
+    label: getQualityLabel(maturityBucket, recommendedUsageConfidence),
+    qualityScore,
+    metadataCompleteness,
+    severityConfidence,
+    sourceCoverageQuality,
+    recommendedUsageConfidence,
+    generatedDate: generatedAt,
+    maturityBucket,
+    summary: getQualitySummary(
+      maturityBucket,
+      qualityScore,
+      metadataCompleteness,
+      severityConfidence
+    )
+  };
+}
+
+function normalizeItem(rawItem, technologySlug, family, sourceMeta) {
   const category = rawItem.category ?? rawItem.recommendationControl ?? rawItem.checklist;
-  const subcategory =
-    rawItem.subcategory ?? rawItem.recommendationResourceType ?? rawItem.type;
+  const subcategory = rawItem.subcategory ?? rawItem.recommendationResourceType ?? rawItem.type;
   const description =
     rawItem.description ?? rawItem.longDescription ?? rawItem.potentialBenefits;
   const service =
@@ -165,9 +330,12 @@ function normalizeItem(rawItem, technology, technologySlug, technologyStatus, fa
 
   return {
     guid: String(rawItem.guid),
-    technology,
+    technology: family,
     technologySlug,
-    technologyStatus,
+    technologyStatus: "Unknown",
+    technologyMaturityBucket: "Mixed",
+    usageConfidence: "Limited",
+    technologyQualityScore: 0,
     family,
     sourceKind: sourceMeta.kind,
     checklist: rawItem.checklist ?? family,
@@ -188,8 +356,8 @@ function normalizeItem(rawItem, technology, technologySlug, technologyStatus, fa
     sourceUrl: sourceMeta.sourceUrl,
     normalizedAt: generatedAt,
     provenance: {
-      technology: technology === family ? "normalized" : "source",
-      technologyStatus: rawItem.state ? "source" : "normalized",
+      technology: "normalized",
+      technologyStatus: "normalized",
       category: category
         ? rawItem.category || rawItem.recommendationControl
           ? "source"
@@ -258,89 +426,143 @@ async function generate() {
     ...(await getEnglishChecklistFiles("checklists-ext"))
   ];
 
-  const allItems = [];
-  const technologies = [];
+  const records = [];
 
   for (const file of files) {
     const raw = JSON.parse(await fs.readFile(file.absolutePath, "utf8"));
     const fileName = path.basename(file.relativePath);
-    const family = raw.metadata?.name ?? deriveTechnologyName(fileName, undefined, raw.items?.[0]?.checklist);
-    const technology = deriveTechnologyName(fileName, raw.metadata?.name, raw.items?.[0]?.checklist);
-    const technologySlug = slugify(`${technology}-${fileName.replace(/\.en\.json$/i, "")}`);
+    const fileStem = fileName.replace(/\.en\.json$/i, "");
+    const baseTechnology = deriveTechnologyName(
+      fileName,
+      raw.metadata?.name,
+      raw.items?.[0]?.checklist
+    );
+    const family = raw.metadata?.name ?? baseTechnology;
+    const technologySlug = slugify(`${baseTechnology}-${fileStem}`);
     const technologyStatus = normalizeStatus(raw.metadata?.state);
     const sourceMeta = {
       relativePath: file.relativePath,
       sourceUrl: `${sourceBaseUrl}/${file.relativePath}`,
       kind: file.kind
     };
-
     const items = (raw.items ?? [])
       .filter((item) => item?.guid && (item?.text || item?.description))
-      .map((item) =>
-        normalizeItem(
-          item,
-          technology,
-          technologySlug,
-          technologyStatus,
-          family,
-          sourceMeta
-        )
-      );
+      .map((item) => normalizeItem(item, technologySlug, family, sourceMeta));
 
-    const technologySummary = {
-      slug: technologySlug,
-      technology,
-      status: technologyStatus,
-      itemCount: items.length,
-      highSeverityCount: items.filter((item) => item.severity === "High").length,
-      categories: collectUnique(items, (item) => item.category),
-      services: collectUnique(items, (item) => item.service),
-      wafPillars: collectUnique(items, (item) => item.waf),
-      sourcePath: file.relativePath,
-      sourceUrl: sourceMeta.sourceUrl,
+    records.push({
+      fileStem,
+      baseTechnology,
+      family,
+      technologySlug,
+      technologyStatus,
+      items,
+      sourceMeta,
       timestamp: raw.metadata?.timestamp,
-      sourceKind: file.kind,
-      description: summarizeDescription(items, technology, technologyStatus)
-    };
-
-    allItems.push(...items);
-    technologies.push(technologySummary);
-
-    await writeJson(path.join(technologyDir, `${technologySlug}.json`), {
-      generatedAt,
-      technology: technologySummary,
-      items
+      sourceKind: file.kind
     });
   }
+
+  const baseNameCounts = new Map();
+
+  for (const record of records) {
+    baseNameCounts.set(
+      record.baseTechnology,
+      (baseNameCounts.get(record.baseTechnology) ?? 0) + 1
+    );
+  }
+
+  const allItems = [];
+  const technologies = [];
+
+  for (const record of records) {
+    const displayTechnology =
+      (baseNameCounts.get(record.baseTechnology) ?? 0) > 1
+        ? `${record.baseTechnology} (${titleCase(record.fileStem)})`
+        : record.baseTechnology;
+    const quality = computeQuality(record.items, record.technologyStatus);
+    const enrichedItems = record.items.map((item) => ({
+      ...item,
+      technology: displayTechnology,
+      technologyStatus: record.technologyStatus,
+      technologyMaturityBucket: quality.maturityBucket,
+      usageConfidence: quality.recommendedUsageConfidence,
+      technologyQualityScore: quality.qualityScore
+    }));
+
+    const technologySummary = {
+      slug: record.technologySlug,
+      technology: displayTechnology,
+      status: record.technologyStatus,
+      maturityBucket: quality.maturityBucket,
+      itemCount: enrichedItems.length,
+      highSeverityCount: enrichedItems.filter((item) => item.severity === "High").length,
+      categories: collectUnique(enrichedItems, (item) => item.category),
+      services: collectUnique(enrichedItems, (item) => item.service),
+      wafPillars: collectUnique(enrichedItems, (item) => item.waf),
+      sourcePath: record.sourceMeta.relativePath,
+      sourceUrl: record.sourceMeta.sourceUrl,
+      timestamp: record.timestamp,
+      sourceKind: record.sourceKind,
+      description: summarizeDescription(enrichedItems, displayTechnology, quality),
+      whatThisMeans: getWhatThisMeans(quality.maturityBucket),
+      quality
+    };
+
+    allItems.push(...enrichedItems);
+    technologies.push(technologySummary);
+
+    await writeJson(path.join(technologyDir, `${record.technologySlug}.json`), {
+      generatedAt,
+      technology: technologySummary,
+      items: enrichedItems
+    });
+  }
+
+  const gaTechnologies = technologies.filter((technology) => technology.maturityBucket === "GA");
+  const previewTechnologies = technologies.filter(
+    (technology) => technology.maturityBucket === "Preview"
+  );
+  const mixedTechnologies = technologies.filter((technology) => technology.maturityBucket === "Mixed");
+  const deprecatedTechnologies = technologies.filter(
+    (technology) => technology.maturityBucket === "Deprecated"
+  );
 
   const summary = {
     generatedAt,
     itemCount: allItems.length,
     technologyCount: technologies.length,
+    gaDefaultTechnologyCount: gaTechnologies.length,
+    gaReadyItemCount: gaTechnologies.reduce((total, technology) => total + technology.itemCount, 0),
+    previewTechnologyCount: previewTechnologies.length,
+    mixedTechnologyCount: mixedTechnologies.length,
+    deprecatedTechnologyCount: deprecatedTechnologies.length,
     metrics: [
       {
-        label: "Normalized items",
-        value: allItems.length,
-        detail: "English source items compiled into a static, source-traceable dataset."
+        label: "GA-ready families",
+        value: gaTechnologies.length,
+        detail: "Default executive view should start here before widening into lower-confidence content."
       },
       {
-        label: "Checklist families",
-        value: technologies.length,
-        detail: "Static routes generated from the source repository without runtime APIs."
+        label: "GA-ready items",
+        value: gaTechnologies.reduce((total, technology) => total + technology.itemCount, 0),
+        detail: "Mature guidance that can anchor architecture reviews and leadership briefings."
       },
       {
-        label: "High-severity items",
+        label: "High-severity findings",
         value: allItems.filter((item) => item.severity === "High").length,
-        detail: "Useful for quickly shaping the first review conversation."
+        detail: "Risk signal across the full catalog, including preview and mixed-confidence families."
       },
       {
-        label: "Preview or deprecated families",
-        value: technologies.filter((technology) => technology.status !== "GA").length,
-        detail: "Highlights maturity gaps and service areas that may need extra scrutiny."
+        label: "Executive watchlist families",
+        value: previewTechnologies.length + mixedTechnologies.length + deprecatedTechnologies.length,
+        detail: "Families that need extra judgment, validation, or retirement planning before heavy reliance."
       }
     ],
     severityDistribution: summarizeCounts(allItems.map((item) => item.severity ?? "Unspecified")),
     statusDistribution: summarizeCounts(technologies.map((technology) => technology.status)),
+    maturityDistribution: summarizeCounts(
+      technologies.map((technology) => technology.maturityBucket)
+    ),
     sourceDistribution: summarizeCounts(technologies.map((technology) => technology.sourceKind)),
     wafDistribution: summarizeCounts(allItems.map((item) => item.waf ?? "Unspecified")),
     topTechnologies: summarizeCounts(allItems.map((item) => item.technology)).slice(0, 10),

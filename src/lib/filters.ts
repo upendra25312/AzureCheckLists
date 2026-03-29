@@ -37,6 +37,10 @@ export function filterItems(items: ChecklistItem[], filters: ExplorerFilters) {
       return false;
     }
 
+    if (!matchesMulti(filters.maturityBuckets, item.technologyMaturityBucket)) {
+      return false;
+    }
+
     if (!matchesMulti(filters.severities, item.severity)) {
       return false;
     }
@@ -53,7 +57,7 @@ export function filterItems(items: ChecklistItem[], filters: ExplorerFilters) {
       return false;
     }
 
-    if (!matchesMulti(filters.technologies, item.technology)) {
+    if (!matchesMulti(filters.technologies, item.technologySlug)) {
       return false;
     }
 

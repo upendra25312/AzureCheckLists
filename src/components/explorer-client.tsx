@@ -6,6 +6,7 @@ import type { CatalogSummary, ChecklistItem, ExplorerFilters, ReviewDraft } from
 import { ItemDrawer } from "@/components/item-drawer";
 import { buildExportRows, downloadCsv, downloadJson } from "@/lib/export";
 import { filterItems } from "@/lib/filters";
+import { QualityBadge } from "@/components/quality-badge";
 import {
   createEmptyReview,
   loadFilters,
@@ -17,6 +18,7 @@ import {
 const EMPTY_FILTERS: ExplorerFilters = {
   search: "",
   statuses: [],
+  maturityBuckets: ["GA"],
   severities: [],
   waf: [],
   services: [],
@@ -36,6 +38,20 @@ function toggleValue(values: string[], value: string) {
     : [...values, value];
 }
 
+function mergeFilters(storedFilters: Partial<ExplorerFilters> | null) {
+  return {
+    ...EMPTY_FILTERS,
+    ...storedFilters,
+    statuses: storedFilters?.statuses ?? EMPTY_FILTERS.statuses,
+    maturityBuckets: storedFilters?.maturityBuckets ?? EMPTY_FILTERS.maturityBuckets,
+    severities: storedFilters?.severities ?? EMPTY_FILTERS.severities,
+    waf: storedFilters?.waf ?? EMPTY_FILTERS.waf,
+    services: storedFilters?.services ?? EMPTY_FILTERS.services,
+    sourceKinds: storedFilters?.sourceKinds ?? EMPTY_FILTERS.sourceKinds,
+    technologies: storedFilters?.technologies ?? EMPTY_FILTERS.technologies
+  };
+}
+
 export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
   const [items, setItems] = useState<ChecklistItem[] | null>(null);
   const [filters, setFilters] = useState<ExplorerFilters>(EMPTY_FILTERS);
@@ -53,14 +69,8 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
         }
       });
 
-    const storedFilters = loadFilters();
-    const storedReviews = loadReviews();
-
-    if (storedFilters) {
-      setFilters(storedFilters);
-    }
-
-    setReviews(storedReviews);
+    setFilters(mergeFilters(loadFilters()));
+    setReviews(loadReviews());
 
     return () => {
       active = false;
@@ -81,16 +91,16 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
         <div className="section-head">
           <div>
             <p className="eyebrow">Checklist explorer</p>
-            <h2 className="section-title">Loading normalized checklist data.</h2>
+            <h2 className="section-title">Preparing the filtered review workspace.</h2>
             <p className="section-copy">
-              The catalog is a static JSON payload generated at build time from the
-              source repository.
+              The detailed explorer is loading the prebuilt catalog so the experience
+              can stay static-first while still supporting client-side filtering and local notes.
             </p>
           </div>
         </div>
         <div className="loading-panel">
           <p className="microcopy">
-            Preparing filters, technology summaries, and source-traceable item rows.
+            Applying the default GA-first posture and loading source-traceable findings.
           </p>
         </div>
       </section>
@@ -115,10 +125,7 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
   }
 
   function exportFilteredJson() {
-    downloadJson(
-      "azure-review-findings.json",
-      buildExportRows(filteredItems, reviews)
-    );
+    downloadJson("azure-review-findings.json", buildExportRows(filteredItems, reviews));
   }
 
   function exportFilteredCsv() {
@@ -146,35 +153,108 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
           <div>
             <p className="eyebrow">Checklist explorer</p>
             <h2 className="section-title">
-              Filter fast, inspect details, and keep lightweight personal review state in the browser.
+              Review mature guidance first, then widen into preview and mixed-confidence content deliberately.
             </h2>
             <p className="section-copy">
-              Notes, review outcomes, and filter preferences stay local to the
-              browser in v1. Export the filtered results when you need to carry work forward.
+              The default filter posture is GA-ready only. Expand into preview, mixed, or deprecated
+              families when the workload or review question requires it.
             </p>
           </div>
           <div className="chip-row">
-            <span className="chip">{filteredItems.length.toLocaleString()} visible items</span>
-            <span className="chip">{reviewedCount.toLocaleString()} reviewed in current view</span>
-            <span className="chip">{summary.generatedAt}</span>
+            <span className="chip">{filteredItems.length.toLocaleString()} visible findings</span>
+            <span className="chip">{reviewedCount.toLocaleString()} locally reviewed</span>
+            <span className="chip">Generated {summary.generatedAt}</span>
           </div>
+        </div>
+
+        <div className="future-grid explorer-highlights">
+          <article className="future-card">
+            <h3>GA-first default</h3>
+            <p>
+              {summary.gaDefaultTechnologyCount.toLocaleString()} families and{" "}
+              {summary.gaReadyItemCount.toLocaleString()} items are currently treated as the default executive baseline.
+            </p>
+          </article>
+          <article className="future-card">
+            <h3>Preview and mixed watchlist</h3>
+            <p>
+              {(
+                summary.previewTechnologyCount +
+                summary.mixedTechnologyCount +
+                summary.deprecatedTechnologyCount
+              ).toLocaleString()} families require explicit review judgment before heavy reliance.
+            </p>
+          </article>
+          <article className="future-card">
+            <h3>Traceability preserved</h3>
+            <p>
+              Every result keeps source file linkage so architects can move from dashboard insight to original checklist intent.
+            </p>
+          </article>
         </div>
 
         <div className="explorer-grid">
           <aside className="filters-panel">
             <section className="filter-card">
+              <h3>Default posture</h3>
+              <p className="microcopy">
+                Start narrow with GA-ready guidance, then broaden when you need deeper or earlier-stage signals.
+              </p>
+              <div className="button-row">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => updateFilter("maturityBuckets", ["GA"])}
+                >
+                  GA-ready only
+                </button>
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() =>
+                    updateFilter("maturityBuckets", ["GA", "Preview", "Mixed", "Deprecated"])
+                  }
+                >
+                  Include all maturity buckets
+                </button>
+              </div>
+            </section>
+
+            <section className="filter-card">
               <h3>Search</h3>
               <input
                 className="search-input"
                 type="search"
-                placeholder="Search text, service, category, or technology"
+                placeholder="Search findings, services, or design areas"
                 value={filters.search}
                 onChange={(event) => updateFilter("search", event.target.value)}
               />
             </section>
 
             <section className="filter-card">
-              <h3>Technology status</h3>
+              <h3>Maturity bucket</h3>
+              <div className="filter-grid">
+                {["GA", "Preview", "Mixed", "Deprecated"].map((bucket) => (
+                  <button
+                    key={bucket}
+                    type="button"
+                    className="chip"
+                    aria-pressed={filters.maturityBuckets.includes(bucket as ChecklistItem["technologyMaturityBucket"])}
+                    onClick={() =>
+                      updateFilter(
+                        "maturityBuckets",
+                        toggleValue(filters.maturityBuckets, bucket) as ExplorerFilters["maturityBuckets"]
+                      )
+                    }
+                  >
+                    {bucket}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="filter-card">
+              <h3>Source status</h3>
               <div className="filter-grid">
                 {["GA", "Preview", "Deprecated", "Unknown"].map((status) => (
                   <button
@@ -251,18 +331,18 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
             </section>
 
             <section className="filter-card">
-              <h3>Technology family</h3>
+              <h3>Checklist family</h3>
               <div className="filter-grid">
                 {summary.technologies.map((technology) => (
                   <button
                     key={technology.slug}
                     type="button"
                     className="chip"
-                    aria-pressed={filters.technologies.includes(technology.technology)}
+                    aria-pressed={filters.technologies.includes(technology.slug)}
                     onClick={() =>
                       updateFilter(
                         "technologies",
-                        toggleValue(filters.technologies, technology.technology)
+                        toggleValue(filters.technologies, technology.slug)
                       )
                     }
                   >
@@ -280,7 +360,7 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
                   className="ghost-button"
                   onClick={() => setFilters(EMPTY_FILTERS)}
                 >
-                  Clear all filters
+                  Restore GA-first defaults
                 </button>
               </div>
             </section>
@@ -293,7 +373,12 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
                 <span className="pill">
                   {filteredItems.filter((item) => item.severity === "High").length.toLocaleString()} high severity
                 </span>
-                <span className="pill">{reviewedCount.toLocaleString()} locally reviewed</span>
+                <span className="pill">
+                  {
+                    new Set(filteredItems.map((item) => item.technologySlug)).size.toLocaleString()
+                  }{" "}
+                  families in view
+                </span>
               </div>
               <div className="button-row">
                 <button type="button" className="secondary-button" onClick={exportFilteredCsv}>
@@ -309,6 +394,9 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
               <div className="item-list">
                 {filteredItems.slice(0, 250).map((item) => {
                   const review = reviews[item.guid];
+                  const technology = summary.technologies.find(
+                    (candidate) => candidate.slug === item.technologySlug
+                  );
 
                   return (
                     <div className="item-row" key={item.guid}>
@@ -317,6 +405,7 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
                           {item.severity ? <span className="pill">{item.severity}</span> : null}
                           {item.waf ? <span className="pill">{item.waf}</span> : null}
                           <span className="pill">{item.technology}</span>
+                          <span className="pill">{item.technologyMaturityBucket}</span>
                           {review ? <span className="pill">{review.reviewState}</span> : null}
                         </div>
                         <p className="item-text">{item.text}</p>
@@ -326,6 +415,7 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
                           {item.subcategory ? <span className="chip">{item.subcategory}</span> : null}
                           {item.service ? <span className="chip">{item.service}</span> : null}
                         </div>
+                        {technology ? <QualityBadge technology={technology} compact /> : null}
                         {item.description ? (
                           <p className="item-description">
                             {item.description.length > 220
@@ -334,11 +424,8 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
                           </p>
                         ) : null}
                       </button>
-                      <Link
-                        href={`/technologies/${item.technologySlug}`}
-                        className="muted-link"
-                      >
-                        Open technology page
+                      <Link href={`/technologies/${item.technologySlug}`} className="muted-link">
+                        Open family detail
                       </Link>
                     </div>
                   );
@@ -348,8 +435,8 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
 
             {filteredItems.length > 250 ? (
               <p className="microcopy">
-                Showing the first 250 filtered items for responsiveness. Export includes the
-                full filtered set.
+                Showing the first 250 filtered findings for readability. Export includes the
+                full filtered result set.
               </p>
             ) : null}
           </section>
@@ -359,38 +446,29 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
       <section id="future" className="surface-panel">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Phase 2 path</p>
+            <p className="eyebrow">Production posture</p>
             <h2 className="section-title">
-              Designed to evolve without forcing a v1 backend.
+              Static-first today, enterprise controls when the operating model is ready.
             </h2>
             <p className="section-copy">
-              The codebase keeps review state local today, but the normalized contract
-              and page structure make it straightforward to add authenticated workflows
-              and shared persistence later.
+              The product stays honest in v1: no fake multi-user persistence, no backend audit claim,
+              and no implied sign-off. The next step up is a controlled move to authenticated workflows,
+              telemetry, and release governance rather than uncontrolled feature sprawl.
             </p>
           </div>
         </div>
         <div className="future-grid">
           <article className="future-card">
-            <h3>Authenticated reviewers</h3>
-            <p>
-              Replace browser-only storage with authenticated APIs and shared review
-              records once identity and tenancy decisions are ready.
-            </p>
+            <h3>Quick win</h3>
+            <p>Keep the explorer static-first, but improve the trust model, maturity scoring, and executive framing.</p>
           </article>
           <article className="future-card">
-            <h3>Evidence and workflows</h3>
-            <p>
-              Add evidence upload, approval paths, and exception workflows behind a
-              minimal service layer without changing the normalized checklist contract.
-            </p>
+            <h3>30-day move</h3>
+            <p>Adopt Static Web Apps Standard or App Service when authenticated review workflows and shared state become necessary.</p>
           </article>
           <article className="future-card">
-            <h3>Auditability</h3>
-            <p>
-              Introduce server persistence and immutable activity trails later, rather
-              than pretending browser storage is sufficient for formal compliance in v1.
-            </p>
+            <h3>90-day hardening</h3>
+            <p>Introduce telemetry, release governance, evidence workflows, and auditable reviewer actions behind a real service boundary.</p>
           </article>
         </div>
       </section>
