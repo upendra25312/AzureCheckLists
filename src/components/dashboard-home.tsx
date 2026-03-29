@@ -17,13 +17,13 @@ export function DashboardHome({ summary }: { summary: CatalogSummary }) {
             </p>
             <div className="hero-actions">
               <a href="#executive" className="primary-button">
-                Open executive view
+                See executive summary
               </a>
               <a href="#explorer" className="secondary-button">
-                Open detailed explorer
+                Browse findings
               </a>
               <Link href="/how-to-use" className="ghost-button">
-                How to use this tool
+                Review guidance
               </Link>
             </div>
           </div>
