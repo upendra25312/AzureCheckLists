@@ -5,8 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 import type { TechnologyPayload, ReviewDraft } from "@/types";
 import { ItemDrawer } from "@/components/item-drawer";
 import { QualityBadge } from "@/components/quality-badge";
+import { ReviewCloudControls } from "@/components/review-cloud-controls";
 import { filterItems } from "@/lib/filters";
-import { createEmptyReview, STORAGE_KEYS } from "@/lib/review-storage";
+import { createEmptyReview, loadReviews, saveReviews } from "@/lib/review-storage";
 
 export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) {
   const [selectedGuid, setSelectedGuid] = useState<string | null>(null);
@@ -14,16 +15,12 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
   const [reviews, setReviews] = useState<Record<string, ReviewDraft>>({});
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEYS.reviews);
-
-      if (raw) {
-        setReviews(JSON.parse(raw) as Record<string, ReviewDraft>);
-      }
-    } catch {
-      setReviews({});
-    }
+    setReviews(loadReviews());
   }, []);
+
+  useEffect(() => {
+    saveReviews(reviews);
+  }, [reviews]);
 
   const filtered = useMemo(
     () =>
@@ -59,16 +56,13 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
 
   function updateReview(guid: string, next: Partial<ReviewDraft>) {
     setReviews((current) => {
-      const nextReviews = {
+      return {
         ...current,
         [guid]: {
           ...(current[guid] ?? createEmptyReview()),
           ...next
         }
       };
-
-      window.localStorage.setItem(STORAGE_KEYS.reviews, JSON.stringify(nextReviews));
-      return nextReviews;
     });
   }
 
@@ -265,11 +259,11 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
           <div>
             <p className="eyebrow">Family workspace</p>
             <h2 className="section-title">
-              Review one checklist family with local notes, source context, and a cleaner working surface.
+              Review one checklist family with saved review records, source context, and a cleaner working surface.
             </h2>
             <p className="section-copy">
-              Search within the family, open any item for detail, and capture local review notes
-              without turning this page into a backend workflow system.
+              Search within the family, open any item for detail, and capture review records
+              that stay local by default and can optionally be saved to Azure Storage.
             </p>
           </div>
           <div className="chip-row family-actions">
@@ -277,6 +271,11 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
             <span className="chip">{reviewedCount.toLocaleString()} locally reviewed</span>
           </div>
         </div>
+        <ReviewCloudControls
+          items={payload.items}
+          reviews={reviews}
+          onReplaceReviews={(nextReviews) => setReviews(nextReviews)}
+        />
         <div className="filter-card workspace-toolbar">
           <div className="workspace-toolbar-main">
             <input

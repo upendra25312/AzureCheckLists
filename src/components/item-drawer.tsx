@@ -86,7 +86,10 @@ export function ItemDrawer({ item, review, onClose, onUpdate }: ItemDrawerProps)
         </section>
 
         <section className="drawer-section">
-          <h3>Working notes</h3>
+          <h3>Review record</h3>
+          <p className="microcopy">
+            Edit your review decision here. It stays in this browser by default and can be saved to Azure from the workspace controls.
+          </p>
           <div className="filter-grid">
             <label>
               <span className="microcopy">Review status</span>

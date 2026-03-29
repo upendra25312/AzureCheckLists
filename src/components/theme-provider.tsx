@@ -44,7 +44,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           <div>
             <h1 className="page-title">Azure Architecture Review Dashboard</h1>
             <p className="microcopy">
-              Maturity-aware review guidance with source traceability and local working notes.
+              Maturity-aware review guidance with source traceability, browser editing, and optional Azure-backed save and export.
             </p>
           </div>
         </div>

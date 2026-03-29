@@ -39,6 +39,14 @@ export function saveReviews(reviews: Record<string, ReviewDraft>) {
   window.localStorage.setItem(STORAGE_KEYS.reviews, JSON.stringify(reviews));
 }
 
+export function clearReviews() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(STORAGE_KEYS.reviews);
+}
+
 export function loadFilters() {
   if (typeof window === "undefined") {
     return null;

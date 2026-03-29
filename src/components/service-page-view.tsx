@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ItemDrawer } from "@/components/item-drawer";
 import { QualityBadge } from "@/components/quality-badge";
+import { ReviewCloudControls } from "@/components/review-cloud-controls";
 import { filterItems } from "@/lib/filters";
-import { createEmptyReview, STORAGE_KEYS } from "@/lib/review-storage";
+import { createEmptyReview, loadReviews, saveReviews } from "@/lib/review-storage";
 import type { ReviewDraft, ServicePayload } from "@/types";
 
 export function ServicePageView({ payload }: { payload: ServicePayload }) {
@@ -21,16 +22,12 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
   );
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEYS.reviews);
-
-      if (raw) {
-        setReviews(JSON.parse(raw) as Record<string, ReviewDraft>);
-      }
-    } catch {
-      setReviews({});
-    }
+    setReviews(loadReviews());
   }, []);
+
+  useEffect(() => {
+    saveReviews(reviews);
+  }, [reviews]);
 
   const filtered = useMemo(
     () =>
@@ -67,16 +64,13 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
 
   function updateReview(guid: string, next: Partial<ReviewDraft>) {
     setReviews((current) => {
-      const nextReviews = {
+      return {
         ...current,
         [guid]: {
           ...(current[guid] ?? createEmptyReview()),
           ...next
         }
       };
-
-      window.localStorage.setItem(STORAGE_KEYS.reviews, JSON.stringify(nextReviews));
-      return nextReviews;
     });
   }
 
@@ -279,6 +273,11 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
             <span className="chip">{reviewedCount.toLocaleString()} locally reviewed</span>
           </div>
         </div>
+        <ReviewCloudControls
+          items={payload.items}
+          reviews={reviews}
+          onReplaceReviews={(nextReviews) => setReviews(nextReviews)}
+        />
         <div className="filter-card workspace-toolbar">
           <div className="workspace-toolbar-main">
             <input

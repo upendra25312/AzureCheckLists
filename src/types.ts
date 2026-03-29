@@ -168,6 +168,39 @@ export type ReviewDraft = {
   exceptionReason: string;
 };
 
+export type StructuredReviewRecord = {
+  guid: string;
+  technology: string;
+  technologySlug: string;
+  technologyStatus: ChecklistTechnologyStatus;
+  technologyMaturityBucket: MaturityBucket;
+  severity?: "High" | "Medium" | "Low";
+  waf?: string;
+  category?: string;
+  subcategory?: string;
+  service?: string;
+  serviceCanonical?: string;
+  sourcePath?: string;
+  sourceUrl?: string;
+  text: string;
+  review: ReviewDraft;
+  updatedAt: string;
+};
+
+export type ReviewRecordDocument = {
+  schemaVersion: 1;
+  updatedAt: string;
+  recordCount: number;
+  records: StructuredReviewRecord[];
+};
+
+export type StaticWebAppClientPrincipal = {
+  identityProvider: string;
+  userId: string;
+  userDetails: string;
+  userRoles: string[];
+};
+
 export type ExplorerFilters = {
   search: string;
   statuses: ChecklistTechnologyStatus[];

@@ -8,6 +8,7 @@
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": [
+      "/api/*",
       "/data/*",
       "/_next/*",
       "/*.css",
@@ -19,6 +20,18 @@
     ]
   },
   "routes": [
+    {
+      "route": "/api/review-records",
+      "allowedRoles": [
+        "authenticated"
+      ]
+    },
+    {
+      "route": "/api/review-records/export",
+      "allowedRoles": [
+        "authenticated"
+      ]
+    },
     {
       "route": "/data/*",
       "headers": {

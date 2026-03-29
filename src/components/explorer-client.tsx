@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { CatalogSummary, ChecklistItem, ExplorerFilters, ReviewDraft } from "@/types";
 import { ItemDrawer } from "@/components/item-drawer";
+import { ReviewCloudControls } from "@/components/review-cloud-controls";
 import { buildExportRows, downloadCsv, downloadJson } from "@/lib/export";
 import { filterItems } from "@/lib/filters";
 import { QualityBadge } from "@/components/quality-badge";
@@ -233,13 +234,18 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
           </div>
           <div className="workspace-toolbar-side">
             <button type="button" className="secondary-button" onClick={exportFilteredCsv}>
-              Export CSV
+              Export local CSV
             </button>
             <button type="button" className="secondary-button" onClick={exportFilteredJson}>
-              Export JSON
+              Export local JSON
             </button>
           </div>
         </div>
+        <ReviewCloudControls
+          items={items}
+          reviews={reviews}
+          onReplaceReviews={(nextReviews) => setReviews(nextReviews)}
+        />
 
         <div className="filter-card workspace-filter-strip">
           <div className="filter-field">
