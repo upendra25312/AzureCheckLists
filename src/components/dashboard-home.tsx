@@ -9,15 +9,11 @@ export function DashboardHome({ summary }: { summary: CatalogSummary }) {
       <section className="hero-panel director-hero">
         <div className="hero-grid">
           <div>
-            <p className="eyebrow">Azure architecture review accelerator</p>
-            <h1 className="hero-title">
-              Give senior leadership a clear view of Azure architecture risk.
-            </h1>
+            <p className="eyebrow">Azure Architecture Review Dashboard</p>
+            <h1 className="hero-title">Azure architecture review, made decision-ready.</h1>
             <p className="hero-copy">
-              Move from checklist sprawl to a decision-ready view of maturity, risk concentration,
-              and next actions across Azure architecture guidance. This dashboard preserves source
-              traceability, leads with GA-ready content, and keeps preview guidance visible without
-              overstating authority.
+              Explore Azure review checklist guidance through a maturity-aware,
+              source-traceable experience designed for executives, architects, and operators.
             </p>
             <div className="hero-actions">
               <a href="#executive" className="primary-button">
