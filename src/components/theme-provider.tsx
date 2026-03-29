@@ -40,7 +40,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     <div className="page-shell">
       <header className="page-header">
         <div className="header-brand">
-          <div className="header-badge">Decision support for Azure reviews</div>
+          <div className="header-badge">Architecture review decision support</div>
           <div>
             <h1 className="page-title">Azure Architecture Review Dashboard</h1>
             <p className="microcopy">
@@ -50,22 +50,22 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         </div>
         <div className="header-actions">
           <nav className="header-nav" aria-label="Primary">
-            <Link href="/" className="secondary-button">
+            <Link href="/" className="header-link">
               Overview
             </Link>
-            <Link href="/#explorer" className="secondary-button">
+            <Link href="/#explorer" className="header-link">
               Explorer
             </Link>
-            <Link href="/how-to-use" className="secondary-button">
+            <Link href="/how-to-use" className="header-link">
               How to use
             </Link>
-            <Link href="/#roadmap" className="secondary-button">
+            <Link href="/#roadmap" className="header-link">
               Roadmap
             </Link>
           </nav>
           <button
             type="button"
-            className="theme-toggle"
+            className="theme-toggle header-link"
             onClick={() => setTheme((current) => (current === "light" ? "dark" : "light"))}
           >
             {theme === "light" ? "Dark mode" : "Light mode"}

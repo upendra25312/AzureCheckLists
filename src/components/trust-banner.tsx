@@ -1,18 +1,25 @@
+import Link from "next/link";
+
 export function TrustBanner() {
   return (
     <section className="trust-banner" aria-label="Trust guidance">
       <div className="trust-banner-grid">
-        <div>
+        <div className="trust-banner-item">
           <strong>Source</strong>
-          <span>Compiled from Azure/review-checklists with preserved source traceability.</span>
+          <span>Compiled from Azure review checklist content with preserved traceability.</span>
         </div>
-        <div>
+        <div className="trust-banner-item">
           <strong>Default posture</strong>
-          <span>GA-ready families first. Preview, mixed, and deprecated content require extra judgment.</span>
+          <span>GA-ready families first. Preview and deprecated content require explicit judgment.</span>
         </div>
-        <div>
-          <strong>Use responsibly</strong>
-          <span>This is a review accelerator and decision-support tool, not architecture sign-off.</span>
+        <div className="trust-banner-item">
+          <strong>Limitation</strong>
+          <span>This supports architecture review preparation. It does not replace sign-off.</span>
+        </div>
+        <div className="trust-banner-item trust-banner-action">
+          <Link href="/how-to-use" className="muted-link">
+            Review responsible use
+          </Link>
         </div>
       </div>
     </section>

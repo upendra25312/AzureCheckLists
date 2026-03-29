@@ -99,8 +99,9 @@ pre {
 }
 
 .page-header {
-  margin-bottom: 18px;
-  padding: 8px 0;
+  margin-bottom: 12px;
+  padding: 6px 0 18px;
+  border-bottom: 1px solid var(--border);
 }
 
 .header-brand,
@@ -121,15 +122,18 @@ pre {
 
 .header-brand {
   align-items: flex-start;
+  gap: 14px;
 }
 
 .header-actions {
   align-items: center;
   justify-content: flex-end;
+  gap: 18px;
 }
 
 .header-nav {
   align-items: center;
+  gap: 20px;
 }
 
 .page-title,
@@ -231,9 +235,33 @@ pre {
 }
 
 .header-badge {
-  background: var(--brand-soft);
+  min-height: auto;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
   color: var(--brand);
   font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.header-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.header-link:hover {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 button.chip {
@@ -352,7 +380,19 @@ button.chip:hover {
   margin-bottom: 20px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
-  background: linear-gradient(135deg, rgba(15, 95, 126, 0.1), rgba(198, 107, 46, 0.08));
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: none;
+  backdrop-filter: blur(12px);
+  position: relative;
+}
+
+.trust-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  border-radius: 18px 18px 0 0;
+  background: linear-gradient(90deg, var(--brand), rgba(198, 107, 46, 0.45));
 }
 
 .trust-banner-grid,
@@ -368,17 +408,32 @@ button.chip:hover {
 }
 
 .trust-banner-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+}
+
+.trust-banner-item {
+  display: grid;
+  gap: 6px;
 }
 
 .trust-banner-grid strong {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 0;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--brand);
 }
 
 .trust-banner-grid span {
   color: var(--text-muted);
   line-height: 1.55;
+}
+
+.trust-banner-action {
+  align-content: center;
+  justify-items: end;
 }
 
 .hero-grid,
@@ -449,6 +504,10 @@ button.chip:hover {
 [data-theme="dark"] .hero-metric-card,
 [data-theme="dark"] .leadership-brief {
   background: rgba(12, 24, 36, 0.62);
+}
+
+[data-theme="dark"] .trust-banner {
+  background: rgba(12, 24, 36, 0.72);
 }
 
 .editorial-hero-copy {
@@ -881,6 +940,7 @@ button.chip:hover {
 
   .header-nav {
     width: 100%;
+    gap: 14px;
   }
 
   .workspace-toolbar,
@@ -922,5 +982,9 @@ button.chip:hover {
   .section-title,
   .technology-title {
     max-width: none;
+  }
+
+  .trust-banner-action {
+    justify-items: start;
   }
 }
