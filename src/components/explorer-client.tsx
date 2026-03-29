@@ -474,36 +474,6 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
         ) : null}
       </section>
 
-      <section id="future" className="surface-panel">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Operating model</p>
-            <h2 className="section-title">
-              Static-first today, stronger controls when the product operating model is ready.
-            </h2>
-            <p className="section-copy">
-              The product stays honest in v1: no fake multi-user persistence, no backend audit
-              claim, and no implied sign-off. The next step up is a controlled move to
-              authentication, telemetry, and governed release workflows.
-            </p>
-          </div>
-        </div>
-        <div className="future-grid">
-          <article className="future-card">
-            <h3>Now</h3>
-            <p>Keep the explorer static-first, fast, traceable, and appropriately scoped for decision support.</p>
-          </article>
-          <article className="future-card">
-            <h3>Next</h3>
-            <p>Adopt a higher hosting tier when authenticated reviewers, shared state, and team workflows become necessary.</p>
-          </article>
-          <article className="future-card">
-            <h3>Later</h3>
-            <p>Introduce telemetry, evidence workflows, reviewer accountability, and auditable release governance behind a real service boundary.</p>
-          </article>
-        </div>
-      </section>
-
       {selectedItem ? (
         <ItemDrawer
           item={selectedItem}
