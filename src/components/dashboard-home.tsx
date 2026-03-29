@@ -91,6 +91,64 @@ export function DashboardHome({ summary }: { summary: CatalogSummary }) {
         </div>
       </section>
 
+      <section className="surface-panel editorial-section executive-brief-section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Executive brief</p>
+            <h2 className="section-title">
+              The current review posture is usable, but leadership should anchor on mature guidance
+              and validate everything else deliberately.
+            </h2>
+            <p className="section-copy">
+              This section is designed to read like a briefing note, not a dashboard widget. It
+              highlights what is stable enough to support leadership conversations, where risk is
+              concentrated, and what should happen next.
+            </p>
+          </div>
+        </div>
+        <div className="executive-brief-layout">
+          <div className="executive-brief-list">
+            <article className="brief-point">
+              <strong>Mature guidance is still the minority of the catalog.</strong>
+              <p>
+                Only {summary.gaDefaultTechnologyCount.toLocaleString()} of{" "}
+                {summary.technologyCount.toLocaleString()} checklist families are currently
+                suitable for the default GA-ready baseline.
+              </p>
+            </article>
+            <article className="brief-point">
+              <strong>Risk remains visible beyond the mature baseline.</strong>
+              <p>
+                {highSeverityMetric?.value.toLocaleString() ?? "0"} high-severity findings appear
+                across the wider catalog, including preview and deprecated families that need extra review judgment.
+              </p>
+            </article>
+            <article className="brief-point">
+              <strong>Preview-heavy coverage is useful, but not leadership-safe by default.</strong>
+              <p>
+                {reviewWatchlistCount.toLocaleString()} families sit outside the default executive
+                baseline and should be treated as advisory until validated in context.
+              </p>
+            </article>
+          </div>
+
+          <aside className="leadership-action-card">
+            <p className="eyebrow">Recommended action</p>
+            <h3>Use the GA-ready baseline for leadership discussions, then escalate exceptions intentionally.</h3>
+            <p>
+              Start every review pack with mature families, isolate high-severity findings that
+              affect strategic services, and require explicit architectural review before relying on
+              preview or deprecated guidance in decision forums.
+            </p>
+            <div className="brief-action-list">
+              <span className="chip">Start with GA-ready families</span>
+              <span className="chip">Escalate high-severity exceptions</span>
+              <span className="chip">Validate preview guidance in context</span>
+            </div>
+          </aside>
+        </div>
+      </section>
+
       <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
