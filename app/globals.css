@@ -928,6 +928,31 @@ button.chip:hover {
   min-width: 0;
 }
 
+.technology-brief-hero {
+  align-items: start;
+}
+
+.technology-hero-summary {
+  display: grid;
+  gap: 16px;
+}
+
+.family-brief-sidecar {
+  height: 100%;
+}
+
+.family-metric-strip {
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
+.review-list-card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
 .technology-summary-panel {
   display: grid;
   gap: 14px;

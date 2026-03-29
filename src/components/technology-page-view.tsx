@@ -51,6 +51,12 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
       ? payload.items.find((item) => item.guid === selectedGuid) ?? null
       : null;
 
+  const generatedDate = new Date(payload.generatedAt).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+
   function updateReview(guid: string, next: Partial<ReviewDraft>) {
     setReviews((current) => {
       const nextReviews = {
@@ -68,18 +74,21 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
 
   return (
     <main className="section-stack">
-      <section className="surface-panel technology-hero">
+      <section className="surface-panel technology-hero technology-brief-hero">
         <div className="technology-hero-summary">
           <p className="eyebrow">Checklist family</p>
           <h1 className="technology-title">{payload.technology.technology}</h1>
           <p className="technology-summary">{payload.technology.description}</p>
-          <p className="section-copy">{payload.technology.whatThisMeans}</p>
+          <p className="hero-note">
+            Generated {generatedDate}. Use this family according to its maturity, completeness,
+            and source confidence rather than treating every checklist family as equally reliable.
+          </p>
           <div className="button-row">
             <Link href="/" className="secondary-button">
               Back to overview
             </Link>
             <Link href="/how-to-use" className="ghost-button">
-              Responsible use guidance
+              Review guidance
             </Link>
             <a
               href={payload.technology.sourceUrl}
@@ -92,65 +101,104 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
           </div>
         </div>
 
-        <aside className="technology-side-panel">
-          <QualityBadge technology={payload.technology} />
-          <div className="technology-grid">
-            <article className="technology-card">
-              <strong>{payload.technology.itemCount.toLocaleString()}</strong>
-              <span>Items in this family</span>
+        <aside className="leadership-brief family-brief-sidecar">
+          <p className="eyebrow">Family brief</p>
+          <h2 className="leadership-title">What this family means for a review.</h2>
+          <div className="leadership-list">
+            <article>
+              <strong>Maturity position</strong>
+              <p>
+                Source status is {payload.technology.status} and this family is classified as{" "}
+                {payload.technology.maturityBucket}.
+              </p>
             </article>
-            <article className="technology-card">
-              <strong>{payload.technology.highSeverityCount.toLocaleString()}</strong>
-              <span>High-severity items</span>
+            <article>
+              <strong>Recommended use</strong>
+              <p>
+                {payload.technology.quality.recommendedUsageConfidence} confidence.{" "}
+                {payload.technology.whatThisMeans}
+              </p>
             </article>
-            <article className="technology-card">
-              <strong>{payload.technology.maturityBucket}</strong>
-              <span>Maturity bucket</span>
-            </article>
-            <article className="technology-card">
-              <strong>{payload.technology.quality.recommendedUsageConfidence}</strong>
-              <span>Recommended usage confidence</span>
+            <article>
+              <strong>Review caution</strong>
+              <p>
+                Keep source traceability intact and validate severity interpretation before using
+                this family in decision packs.
+              </p>
             </article>
           </div>
         </aside>
       </section>
 
-      <section className="surface-panel trust-strip">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Trust model</p>
-            <h2 className="section-title">
-              Treat this family according to its maturity, completeness, and source confidence.
-            </h2>
-          </div>
-        </div>
-        <div className="future-grid">
-          <article className="future-card">
-            <h3>Maturity</h3>
-            <p>
-              Source status is <strong>{payload.technology.status}</strong> and the family is
-              currently grouped into the <strong>{payload.technology.maturityBucket}</strong>{" "}
-              bucket.
-            </p>
+      <section className="surface-panel family-metric-strip">
+        <div className="hero-metrics-row">
+          <article className="hero-metric-card">
+            <span>Family findings</span>
+            <strong>{payload.technology.itemCount.toLocaleString()}</strong>
+            <p>Normalized items available in this checklist family.</p>
           </article>
-          <article className="future-card">
-            <h3>Recommended use</h3>
-            <p>
-              <strong>{payload.technology.quality.recommendedUsageConfidence}</strong> confidence.
-              {` ${payload.technology.quality.summary}`}
-            </p>
+          <article className="hero-metric-card">
+            <span>High-severity findings</span>
+            <strong>{payload.technology.highSeverityCount.toLocaleString()}</strong>
+            <p>Items that should receive faster architectural attention.</p>
           </article>
-          <article className="future-card">
-            <h3>Limitation</h3>
-            <p>
-              This page accelerates architecture review preparation. It does not replace design
-              authority, workload context, or formal sign-off.
-            </p>
+          <article className="hero-metric-card">
+            <span>Usage confidence</span>
+            <strong>{payload.technology.quality.recommendedUsageConfidence}</strong>
+            <p>How much default review weight this family should carry.</p>
           </article>
         </div>
       </section>
 
-      <section className="surface-panel">
+      <section className="surface-panel editorial-section executive-brief-section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Family recommendation</p>
+            <h2 className="section-title">
+              Use this family according to its confidence level, not just its presence in the source repository.
+            </h2>
+            <p className="section-copy">
+              This page is meant to help architects and leaders decide how much weight this family
+              deserves in a review pack and what level of validation is still required.
+            </p>
+          </div>
+        </div>
+        <div className="executive-brief-layout">
+          <div className="executive-brief-list">
+            <article className="brief-point">
+              <strong>Confidence is transparent rather than implied.</strong>
+              <p>{payload.technology.quality.summary}</p>
+            </article>
+            <article className="brief-point">
+              <strong>Source linkage remains visible.</strong>
+              <p>
+                Every item stays connected to the originating source file, source folder, and
+                normalization run so reviewers can verify intent.
+              </p>
+            </article>
+            <article className="brief-point">
+              <strong>This family should support judgment, not replace it.</strong>
+              <p>
+                Use it to deepen review conversations, but retain workload context, design
+                authority, and formal sign-off outside the dashboard.
+              </p>
+            </article>
+          </div>
+
+          <aside className="leadership-action-card">
+            <p className="eyebrow">Recommended handling</p>
+            <h3>{payload.technology.whatThisMeans}</h3>
+            <p>
+              Leadership should use this family only at the confidence level it has earned.
+              Architects should confirm source intent before turning these findings into review
+              commitments or executive conclusions.
+            </p>
+            <QualityBadge technology={payload.technology} />
+          </aside>
+        </div>
+      </section>
+
+      <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
             <p className="eyebrow">Quality profile</p>
@@ -158,8 +206,8 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
               Show why this family should or should not carry weight in a decision pack.
             </h2>
             <p className="section-copy">
-              The badge combines maturity status, metadata completeness, severity coverage, source
-              coverage, and generation freshness into a transparent confidence signal.
+              The quality profile combines maturity status, metadata completeness, severity
+              coverage, source coverage, and freshness into one transparent confidence view.
             </p>
           </div>
         </div>
@@ -183,7 +231,7 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
         </div>
       </section>
 
-      <section className="surface-panel">
+      <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
             <p className="eyebrow">Source traceability</p>
@@ -212,16 +260,16 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
         </div>
       </section>
 
-      <section className="surface-panel">
+      <section className="surface-panel editorial-section">
         <div className="section-head family-list-head">
           <div>
-            <p className="eyebrow">Family explorer</p>
+            <p className="eyebrow">Family workspace</p>
             <h2 className="section-title">
-              Work through one checklist family with local notes, export, and source context intact.
+              Review one checklist family with local notes, source context, and a cleaner working surface.
             </h2>
             <p className="section-copy">
-              Use search to narrow the family, then open any item to capture review state,
-              ownership, evidence, and exception context locally in the browser.
+              Search within the family, open any item for detail, and capture local review notes
+              without turning this page into a backend workflow system.
             </p>
           </div>
           <div className="chip-row family-actions">
@@ -229,16 +277,18 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
             <span className="chip">{reviewedCount.toLocaleString()} locally reviewed</span>
           </div>
         </div>
-        <div className="filter-card">
-          <input
-            className="search-input"
-            type="search"
-            placeholder="Search within this family by finding, service, or category"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
+        <div className="filter-card workspace-toolbar">
+          <div className="workspace-toolbar-main">
+            <input
+              className="search-input"
+              type="search"
+              placeholder="Search within this family by finding, service, or category"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </div>
         </div>
-        <article className="list-card">
+        <article className="list-card review-list-card">
           <div className="item-list">
             {filtered.map((item) => (
               <div className="item-row" key={item.guid}>
@@ -261,38 +311,6 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
             ))}
           </div>
         </article>
-      </section>
-
-      <section className="surface-panel">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Recommended handling</p>
-            <h2 className="section-title">Use the family according to its confidence level, not just its presence in the source repository.</h2>
-          </div>
-        </div>
-        <div className="future-grid family-recommendations">
-          <article className="future-card">
-            <h3>Executive use</h3>
-            <p>
-              Bring this family into leadership packs only when its maturity and quality profile
-              support that level of decision making.
-            </p>
-          </article>
-          <article className="future-card">
-            <h3>Architect use</h3>
-            <p>
-              Use this family to deepen design review, confirm source intent, and identify where
-              additional service-specific validation is required.
-            </p>
-          </article>
-          <article className="future-card">
-            <h3>Operator use</h3>
-            <p>
-              Convert filtered findings into local action lists, then confirm remediation path and
-              evidence with the actual workload team.
-            </p>
-          </article>
-        </div>
       </section>
 
       {selectedItem ? (
