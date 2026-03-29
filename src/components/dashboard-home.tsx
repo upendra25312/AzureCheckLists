@@ -1,9 +1,15 @@
 import Link from "next/link";
-import type { CatalogSummary } from "@/types";
+import type { CatalogSummary, ServiceIndex } from "@/types";
 import { ExplorerClient } from "@/components/explorer-client";
 import { SummaryCards } from "@/components/summary-cards";
 
-export function DashboardHome({ summary }: { summary: CatalogSummary }) {
+export function DashboardHome({
+  summary,
+  serviceIndex
+}: {
+  summary: CatalogSummary;
+  serviceIndex: ServiceIndex;
+}) {
   const generatedDate = new Date(summary.generatedAt).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -16,6 +22,7 @@ export function DashboardHome({ summary }: { summary: CatalogSummary }) {
     summary.previewTechnologyCount +
     summary.mixedTechnologyCount +
     summary.deprecatedTechnologyCount;
+  const featuredServices = serviceIndex.services.slice(0, 6);
 
   return (
     <main className="section-stack">
@@ -36,9 +43,9 @@ export function DashboardHome({ summary }: { summary: CatalogSummary }) {
               <a href="#executive" className="primary-button">
                 See executive summary
               </a>
-              <a href="#explorer" className="secondary-button">
-                Browse findings
-              </a>
+              <Link href="/services" className="secondary-button">
+                Browse services
+              </Link>
               <Link href="/how-to-use" className="ghost-button">
                 Review guidance
               </Link>
@@ -189,6 +196,67 @@ export function DashboardHome({ summary }: { summary: CatalogSummary }) {
       </section>
 
       <SummaryCards summary={summary} />
+
+      <section className="surface-panel editorial-section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Browse by Azure service</p>
+            <h2 className="section-title">
+              Start with the service you are designing or reviewing, then open the right checklist path.
+            </h2>
+            <p className="section-copy">
+              This is the clearest entry point when the question is service-specific: Azure Firewall,
+              Key Vault, AKS, Azure OpenAI, App Service, and the rest now have dedicated service views.
+            </p>
+          </div>
+          <div className="button-row">
+            <Link href="/services" className="primary-button">
+              View all services
+            </Link>
+          </div>
+        </div>
+
+        <div className="service-directory-grid">
+          {featuredServices.map((service) => (
+            <article className="service-directory-card" key={service.slug}>
+              <div className="section-head">
+                <div>
+                  <p className="eyebrow">Azure service</p>
+                  <h3 className="service-card-title">{service.service}</h3>
+                </div>
+                <div className="chip-row">
+                  <span className="chip">{service.familyCount.toLocaleString()} families</span>
+                </div>
+              </div>
+              <p className="service-card-copy">{service.description}</p>
+              <div className="service-card-meta">
+                {service.gaFamilyCount > 0 ? (
+                  <span className="pill">{service.gaFamilyCount.toLocaleString()} GA-ready</span>
+                ) : null}
+                {service.previewFamilyCount > 0 ? (
+                  <span className="pill">{service.previewFamilyCount.toLocaleString()} preview</span>
+                ) : null}
+                <span className="pill">{service.itemCount.toLocaleString()} findings</span>
+              </div>
+              <div className="service-family-preview">
+                <strong>Recommended families</strong>
+                <div className="service-family-links">
+                  {service.families.slice(0, 3).map((family) => (
+                    <Link key={family.slug} href={`/technologies/${family.slug}`} className="muted-link">
+                      {family.technology}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+              <div className="button-row">
+                <Link href={`/services/${service.slug}`} className="secondary-button">
+                  Open service view
+                </Link>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <section className="surface-panel editorial-section" id="roadmap">
         <div className="section-head">

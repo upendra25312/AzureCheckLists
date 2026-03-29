@@ -303,7 +303,9 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
                   <div className="item-meta">
                     {item.id ? <span className="chip">{item.id}</span> : null}
                     {item.subcategory ? <span className="chip">{item.subcategory}</span> : null}
-                    {item.service ? <span className="chip">{item.service}</span> : null}
+                    {item.serviceCanonical ?? item.service ? (
+                      <span className="chip">{item.serviceCanonical ?? item.service}</span>
+                    ) : null}
                   </div>
                   {item.description ? <p className="item-description">{item.description}</p> : null}
                 </button>

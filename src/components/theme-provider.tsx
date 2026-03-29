@@ -53,6 +53,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             <Link href="/" className="header-link">
               Overview
             </Link>
+            <Link href="/services" className="header-link">
+              Services
+            </Link>
             <Link href="/#explorer" className="header-link">
               Explorer
             </Link>

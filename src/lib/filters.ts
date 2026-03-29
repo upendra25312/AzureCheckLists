@@ -21,6 +21,7 @@ export function filterItems(items: ChecklistItem[], filters: ExplorerFilters) {
       item.description,
       item.category,
       item.subcategory,
+      item.serviceCanonical,
       item.service,
       item.technology,
       item.id
@@ -49,7 +50,7 @@ export function filterItems(items: ChecklistItem[], filters: ExplorerFilters) {
       return false;
     }
 
-    if (!matchesMulti(filters.services, item.service)) {
+    if (!matchesMulti(filters.services, item.serviceCanonical ?? item.service)) {
       return false;
     }
 

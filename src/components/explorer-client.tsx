@@ -108,7 +108,7 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
   }
 
   const filteredItems = filterItems(items, filters);
-  const services = uniqueValues(items, (item) => item.service);
+  const services = uniqueValues(items, (item) => item.serviceCanonical ?? item.service);
   const wafPillars = uniqueValues(items, (item) => item.waf);
   const severities = uniqueValues(items, (item) => item.severity);
   const reviewedCount = filteredItems.filter((item) => {
@@ -436,7 +436,9 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
                         {item.id ? <span className="chip">{item.id}</span> : null}
                         {item.category ? <span className="chip">{item.category}</span> : null}
                         {item.subcategory ? <span className="chip">{item.subcategory}</span> : null}
-                        {item.service ? <span className="chip">{item.service}</span> : null}
+                        {item.serviceCanonical ?? item.service ? (
+                          <span className="chip">{item.serviceCanonical ?? item.service}</span>
+                        ) : null}
                       </div>
                       {technology ? <QualityBadge technology={technology} compact /> : null}
                       {item.description ? (
@@ -447,9 +449,16 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
                         </p>
                       ) : null}
                     </button>
-                    <Link href={`/technologies/${item.technologySlug}`} className="muted-link">
-                      Open family detail
-                    </Link>
+                    <div className="button-row">
+                      <Link href={`/technologies/${item.technologySlug}`} className="muted-link">
+                        Open family detail
+                      </Link>
+                      {item.serviceSlug ? (
+                        <Link href={`/services/${item.serviceSlug}`} className="muted-link">
+                          Open service view
+                        </Link>
+                      ) : null}
+                    </div>
                   </div>
                 );
               })}

@@ -1,6 +1,12 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { CatalogSummary, TechnologyIndex, TechnologyPayload } from "@/types";
+import type {
+  CatalogSummary,
+  ServiceIndex,
+  ServicePayload,
+  TechnologyIndex,
+  TechnologyPayload
+} from "@/types";
 
 async function readJsonFile<T>(segments: string[]) {
   const filePath = path.join(process.cwd(), ...segments);
@@ -25,6 +31,18 @@ export async function readTechnologyPayload(slug: string) {
       "technologies",
       `${slug}.json`
     ]);
+  } catch {
+    return null;
+  }
+}
+
+export async function readServiceIndex() {
+  return readJsonFile<ServiceIndex>(["public", "data", "service-index.json"]);
+}
+
+export async function readServicePayload(slug: string) {
+  try {
+    return await readJsonFile<ServicePayload>(["public", "data", "services", `${slug}.json`]);
   } catch {
     return null;
   }

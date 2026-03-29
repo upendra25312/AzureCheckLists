@@ -70,12 +70,18 @@ export function ItemDrawer({ item, review, onClose, onUpdate }: ItemDrawerProps)
             </div>
             <div>
               <strong>Service</strong>
-              <span>{item.service ?? "Unavailable"}</span>
+              <span>{item.serviceCanonical ?? item.service ?? "Unavailable"}</span>
             </div>
             <div>
               <strong>ARM service</strong>
               <span>{item.armService ?? "Unavailable"}</span>
             </div>
+            {item.service && item.serviceCanonical && item.service !== item.serviceCanonical ? (
+              <div>
+                <strong>Source service label</strong>
+                <span>{item.service}</span>
+              </div>
+            ) : null}
           </div>
         </section>
 

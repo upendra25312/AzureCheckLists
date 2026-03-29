@@ -31,6 +31,8 @@ export type ChecklistItem = {
   severity?: "High" | "Medium" | "Low";
   waf?: string;
   service?: string;
+  serviceCanonical?: string;
+  serviceSlug?: string;
   armService?: string;
   link?: string;
   training?: string;
@@ -121,6 +123,40 @@ export type TechnologyPayload = {
 export type TechnologyIndex = {
   generatedAt: string;
   technologies: TechnologySummary[];
+};
+
+export type ServiceSummary = {
+  slug: string;
+  service: string;
+  aliases: string[];
+  itemCount: number;
+  highSeverityCount: number;
+  familyCount: number;
+  gaFamilyCount: number;
+  previewFamilyCount: number;
+  mixedFamilyCount: number;
+  deprecatedFamilyCount: number;
+  categories: string[];
+  wafPillars: string[];
+  description: string;
+  whatThisMeans: string;
+  families: Array<
+    Pick<
+      TechnologySummary,
+      "slug" | "technology" | "status" | "maturityBucket" | "itemCount" | "highSeverityCount" | "quality"
+    >
+  >;
+};
+
+export type ServiceIndex = {
+  generatedAt: string;
+  services: ServiceSummary[];
+};
+
+export type ServicePayload = {
+  generatedAt: string;
+  service: ServiceSummary;
+  items: ChecklistItem[];
 };
 
 export type ReviewDraft = {

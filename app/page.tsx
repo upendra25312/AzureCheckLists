@@ -1,8 +1,8 @@
 import { DashboardHome } from "@/components/dashboard-home";
-import { readSummary } from "@/lib/catalog";
+import { readServiceIndex, readSummary } from "@/lib/catalog";
 
 export default async function HomePage() {
-  const summary = await readSummary();
+  const [summary, serviceIndex] = await Promise.all([readSummary(), readServiceIndex()]);
 
-  return <DashboardHome summary={summary} />;
+  return <DashboardHome summary={summary} serviceIndex={serviceIndex} />;
 }

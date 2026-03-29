@@ -7,6 +7,7 @@ const sourceRepo = process.env.REVIEW_CHECKLISTS_SOURCE_DIR
   : path.join(root, "source-repo");
 const outputDir = path.join(root, "public", "data");
 const technologyDir = path.join(outputDir, "technologies");
+const serviceDir = path.join(outputDir, "services");
 const generatedAt = new Date().toISOString();
 const sourceBaseUrl = "https://github.com/Azure/review-checklists/blob/main";
 const excludedFiles = new Set([
@@ -15,6 +16,81 @@ const excludedFiles = new Set([
   "waf_checklist.en.json",
   "fullwaf_checklist.en.json"
 ]);
+
+const ignoredServiceLabels = new Set([
+  "n/a",
+  "na",
+  "nva",
+  "microsoft cloud security benchmark",
+  "microsoft threat modeling tool"
+]);
+
+const serviceAliasMap = new Map(
+  Object.entries({
+    "aad b2c": "Azure AD B2C",
+    acr: "Azure Container Registry",
+    aks: "Azure Kubernetes Service",
+    apim: "Azure API Management",
+    "app gateway": "Azure Application Gateway",
+    "app service web apps": "Azure App Service",
+    "app services": "Azure App Service",
+    ars: "Azure Route Server",
+    avs: "Azure VMware Solution",
+    bastion: "Azure Bastion",
+    backup: "Azure Backup",
+    "bot service": "Azure Bot Service",
+    "cognitive search": "Azure AI Search",
+    "cognitive services": "Azure AI Services",
+    "container apps": "Azure Container Apps",
+    cosmosdb: "Azure Cosmos DB",
+    "data factory": "Azure Data Factory",
+    databricks: "Azure Databricks",
+    defender: "Microsoft Defender for Cloud",
+    dns: "Azure DNS",
+    entra: "Microsoft Entra ID",
+    "event hubs": "Azure Event Hubs",
+    expressroute: "Azure ExpressRoute",
+    firewall: "Azure Firewall",
+    "front door": "Azure Front Door",
+    functions: "Azure Functions",
+    iot: "Azure IoT",
+    "key vault": "Azure Key Vault",
+    "load balancer": "Azure Load Balancer",
+    monitor: "Azure Monitor",
+    policy: "Azure Policy",
+    postgresql: "Azure Database for PostgreSQL",
+    purview: "Microsoft Purview",
+    redis: "Azure Cache for Redis",
+    "service bus": "Azure Service Bus",
+    "site recovery": "Azure Site Recovery",
+    sql: "Azure SQL",
+    storage: "Azure Storage",
+    synapse: "Azure Synapse Analytics",
+    "traffic manager": "Azure Traffic Manager",
+    "virtual machines": "Azure Virtual Machines",
+    vm: "Azure Virtual Machines",
+    vmss: "Virtual Machine Scale Sets",
+    vnet: "Azure Virtual Network",
+    vpn: "VPN Gateway",
+    vwan: "Azure Virtual WAN",
+    waf: "Web Application Firewall",
+    "windows ad": "Active Directory Domain Services",
+    "azure open ai": "Azure OpenAI",
+    "azure openai": "Azure OpenAI",
+    "azure expressroute": "Azure ExpressRoute",
+    "azure blob storage": "Azure Blob Storage",
+    "azure files": "Azure Files",
+    "azure mysql": "Azure Database for MySQL",
+    "microsoft entra": "Microsoft Entra ID",
+    "microsoft purview": "Microsoft Purview",
+    "microsoft defender for cloud": "Microsoft Defender for Cloud",
+    "network watcher": "Azure Network Watcher",
+    "public ip addresses": "Azure Public IP",
+    "recovery services vault": "Recovery Services vault",
+    "service bus": "Azure Service Bus",
+    "spring apps": "Azure Spring Apps"
+  })
+);
 
 function titleCase(value) {
   if (!value || typeof value !== "string") {
@@ -42,6 +118,96 @@ function slugify(value) {
     .toLowerCase()
     .replaceAll(/[^a-z0-9]+/g, "-")
     .replaceAll(/^-+|-+$/g, "");
+}
+
+function normalizeArmServiceName(resourceType) {
+  const key = String(resourceType ?? "").trim().toLowerCase();
+  const armMap = {
+    "microsoft.aad/domainservices": "Microsoft Entra Domain Services",
+    "microsoft.apimanagement/service": "Azure API Management",
+    "microsoft.app/containerapps": "Azure Container Apps",
+    "microsoft.app/managedenvironments": "Azure Container Apps Environment",
+    "microsoft.appconfiguration/configurationstores": "Azure App Configuration",
+    "microsoft.automation/automationaccounts": "Azure Automation",
+    "microsoft.avs/privateclouds": "Azure VMware Solution",
+    "microsoft.batch/batchaccounts": "Azure Batch",
+    "microsoft.cache/redis": "Azure Cache for Redis",
+    "microsoft.cdn/profiles": "Azure CDN",
+    "microsoft.compute/galleries": "Azure Compute Gallery",
+    "microsoft.compute/virtualmachines": "Azure Virtual Machines",
+    "microsoft.compute/virtualmachinescalesets": "Virtual Machine Scale Sets",
+    "microsoft.containerregistry/registries": "Azure Container Registry",
+    "microsoft.containerservice/managedclusters": "Azure Kubernetes Service",
+    "microsoft.databricks/workspaces": "Azure Databricks",
+    "microsoft.dbformysql/flexibleservers": "Azure Database for MySQL",
+    "microsoft.dbforpostgresql/flexibleservers": "Azure Database for PostgreSQL",
+    "microsoft.desktopvirtualization/hostpools": "Azure Virtual Desktop",
+    "microsoft.desktopvirtualization/scalingplans": "Azure Virtual Desktop",
+    "microsoft.devices/iothubs": "Azure IoT Hub",
+    "microsoft.documentdb/databaseaccounts": "Azure Cosmos DB",
+    "microsoft.eventgrid/topics": "Azure Event Grid",
+    "microsoft.eventhub/namespaces": "Azure Event Hubs",
+    "microsoft.insights/activitylogalerts": "Azure Monitor Alerts",
+    "microsoft.insights/components": "Azure Application Insights",
+    "microsoft.keyvault/vaults": "Azure Key Vault",
+    "microsoft.netapp/netappaccounts": "Azure NetApp Files",
+    "microsoft.network/applicationgateways": "Azure Application Gateway",
+    "microsoft.network/azurefirewalls": "Azure Firewall",
+    "microsoft.network/connections": "VPN and ExpressRoute connections",
+    "microsoft.network/ddosprotectionplans": "Azure DDoS Protection",
+    "microsoft.network/expressroutecircuits": "Azure ExpressRoute",
+    "microsoft.network/expressrouteports": "ExpressRoute Direct",
+    "microsoft.network/frontdoorwebapplicationfirewallpolicies": "Azure Front Door WAF",
+    "microsoft.network/loadbalancers": "Azure Load Balancer",
+    "microsoft.network/natgateways": "Azure NAT Gateway",
+    "microsoft.network/networksecuritygroups": "Network Security Groups",
+    "microsoft.network/networkwatchers": "Azure Network Watcher",
+    "microsoft.network/privatednszones": "Azure Private DNS",
+    "microsoft.network/privateendpoints": "Azure Private Link",
+    "microsoft.network/publicipaddresses": "Azure Public IP",
+    "microsoft.network/routetables": "Route tables",
+    "microsoft.network/trafficmanagerprofiles": "Azure Traffic Manager",
+    "microsoft.network/virtualnetworkgateways": "VPN Gateway",
+    "microsoft.network/virtualnetworks": "Azure Virtual Network",
+    "microsoft.networkfunction/azuretrafficcollectors": "Azure Traffic Collector",
+    "microsoft.operationalinsights/workspaces": "Log Analytics",
+    "microsoft.recoveryservices/vaults": "Recovery Services vault",
+    "microsoft.resources/resourcegroups": "Resource Groups",
+    "microsoft.servicebus/namespaces": "Azure Service Bus",
+    "microsoft.signalrservice/signalr": "Azure SignalR Service",
+    "microsoft.sql/servers": "Azure SQL",
+    "microsoft.storage/storageaccounts": "Azure Storage",
+    "microsoft.subscription/subscriptions": "Azure Subscriptions",
+    "microsoft.virtualmachineimages/imagetemplates": "Azure Image Builder",
+    "microsoft.web/serverfarms": "Azure App Service Plan",
+    "microsoft.web/sites": "Azure App Service"
+  };
+
+  return armMap[key];
+}
+
+function normalizeServiceName(rawService) {
+  const trimmed = String(rawService ?? "").trim();
+
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const normalizedKey = trimmed.toLowerCase();
+
+  if (ignoredServiceLabels.has(normalizedKey)) {
+    return undefined;
+  }
+
+  if (serviceAliasMap.has(normalizedKey)) {
+    return serviceAliasMap.get(normalizedKey);
+  }
+
+  if (trimmed.startsWith("Microsoft.")) {
+    return normalizeArmServiceName(trimmed) ?? trimmed;
+  }
+
+  return titleCase(trimmed) ?? trimmed;
 }
 
 function normalizeStatus(raw) {
@@ -157,7 +323,7 @@ function inferArmService(rawItem) {
 
 function summarizeDescription(items, technology, quality) {
   const categories = collectUnique(items, (item) => item.category).slice(0, 3);
-  const services = collectUnique(items, (item) => item.service).slice(0, 4);
+  const services = collectUnique(items, (item) => item.serviceCanonical ?? item.service).slice(0, 4);
   const highSeverityCount = items.filter((item) => item.severity === "High").length;
   const categorySummary =
     categories.length > 0 ? `covers ${categories.join(", ")}` : "contains sparse category metadata";
@@ -322,8 +488,10 @@ function normalizeItem(rawItem, technologySlug, family, sourceMeta) {
   const subcategory = rawItem.subcategory ?? rawItem.recommendationResourceType ?? rawItem.type;
   const description =
     rawItem.description ?? rawItem.longDescription ?? rawItem.potentialBenefits;
-  const service =
-    typeof rawItem.service === "string" ? rawItem.service : inferArmService(rawItem);
+  const rawService = typeof rawItem.service === "string" ? rawItem.service : undefined;
+  const armService = inferArmService(rawItem);
+  const serviceSource = rawService ?? armService;
+  const serviceCanonical = normalizeServiceName(serviceSource);
   const severity = normalizeSeverity(rawItem.severity ?? rawItem.recommendationImpact);
   const waf = normalizeWaf(rawItem.waf);
   const link = rawItem.link ?? firstLearnMoreUrl(rawItem.learnMoreLink);
@@ -346,8 +514,10 @@ function normalizeItem(rawItem, technologySlug, family, sourceMeta) {
     description,
     severity,
     waf,
-    service,
-    armService: inferArmService(rawItem),
+    service: rawService ?? serviceCanonical ?? armService,
+    serviceCanonical,
+    serviceSlug: serviceCanonical ? slugify(serviceCanonical) : undefined,
+    armService,
     link,
     training: rawItem.training,
     query: rawItem.query,
@@ -370,7 +540,7 @@ function normalizeItem(rawItem, technologySlug, family, sourceMeta) {
           : "inferred"
         : "unavailable",
       waf: waf ? (rawItem.waf ? "normalized" : "unavailable") : "unavailable",
-      service: service ? (rawItem.service ? "source" : "inferred") : "unavailable",
+      service: serviceCanonical || rawService ? (rawItem.service ? "normalized" : "inferred") : "unavailable",
       description: description
         ? rawItem.description || rawItem.longDescription
           ? "source"
@@ -420,6 +590,7 @@ async function generate() {
 
   await ensureDirectory(outputDir);
   await ensureDirectory(technologyDir);
+  await ensureDirectory(serviceDir);
 
   const files = [
     ...(await getEnglishChecklistFiles("checklists")),
@@ -497,7 +668,7 @@ async function generate() {
       itemCount: enrichedItems.length,
       highSeverityCount: enrichedItems.filter((item) => item.severity === "High").length,
       categories: collectUnique(enrichedItems, (item) => item.category),
-      services: collectUnique(enrichedItems, (item) => item.service),
+      services: collectUnique(enrichedItems, (item) => item.serviceCanonical ?? item.service),
       wafPillars: collectUnique(enrichedItems, (item) => item.waf),
       sourcePath: record.sourceMeta.relativePath,
       sourceUrl: record.sourceMeta.sourceUrl,
@@ -526,6 +697,145 @@ async function generate() {
   const deprecatedTechnologies = technologies.filter(
     (technology) => technology.maturityBucket === "Deprecated"
   );
+  const technologyMap = new Map(technologies.map((technology) => [technology.slug, technology]));
+  const serviceGroups = new Map();
+
+  for (const item of allItems) {
+    const serviceName = item.serviceCanonical ?? item.service;
+
+    if (!serviceName) {
+      continue;
+    }
+
+    const existing = serviceGroups.get(serviceName) ?? {
+      items: [],
+      aliases: new Set(),
+      familySlugs: new Set()
+    };
+
+    existing.items.push(item);
+    existing.familySlugs.add(item.technologySlug);
+
+    if (item.service && item.service !== serviceName) {
+      existing.aliases.add(item.service);
+    }
+
+    if (item.armService && item.armService !== serviceName) {
+      existing.aliases.add(item.armService);
+    }
+
+    serviceGroups.set(serviceName, existing);
+  }
+
+  const services = [...serviceGroups.entries()]
+    .map(([service, group]) => {
+      const familySummaries = [...group.familySlugs]
+        .map((slug) => technologyMap.get(slug))
+        .filter(Boolean)
+        .sort((left, right) => {
+          const maturityRank = { GA: 0, Mixed: 1, Preview: 2, Deprecated: 3 };
+
+          return (
+            maturityRank[left.maturityBucket] - maturityRank[right.maturityBucket] ||
+            right.highSeverityCount - left.highSeverityCount ||
+            left.technology.localeCompare(right.technology)
+          );
+        });
+      const gaFamilyCount = familySummaries.filter((family) => family.maturityBucket === "GA").length;
+      const previewFamilyCount = familySummaries.filter(
+        (family) => family.maturityBucket === "Preview"
+      ).length;
+      const mixedFamilyCount = familySummaries.filter((family) => family.maturityBucket === "Mixed").length;
+      const deprecatedFamilyCount = familySummaries.filter(
+        (family) => family.maturityBucket === "Deprecated"
+      ).length;
+      const highSeverityCount = group.items.filter((item) => item.severity === "High").length;
+      const descriptionParts = [];
+
+      if (gaFamilyCount > 0) {
+        descriptionParts.push(`${gaFamilyCount} GA-ready families can anchor the baseline`);
+      }
+
+      if (previewFamilyCount > 0 || mixedFamilyCount > 0) {
+        descriptionParts.push(
+          `${previewFamilyCount + mixedFamilyCount} lower-confidence families broaden design coverage`
+        );
+      }
+
+      if (deprecatedFamilyCount > 0) {
+        descriptionParts.push(`${deprecatedFamilyCount} deprecated family remains for context`);
+      }
+
+      let whatThisMeans = "Use the related checklist families in maturity order and keep source traceability visible.";
+
+      if (gaFamilyCount > 0 && previewFamilyCount > 0) {
+        whatThisMeans =
+          "Start with the GA-ready families for this service, then widen into preview guidance only when the review question requires more depth.";
+      } else if (gaFamilyCount > 0) {
+        whatThisMeans =
+          "This service has a usable GA-ready baseline. Start there before branching into broader cross-service guidance.";
+      } else if (previewFamilyCount > 0 || mixedFamilyCount > 0) {
+        whatThisMeans =
+          "This service is covered mainly by preview or mixed-confidence guidance. Use it for specialist review with explicit validation.";
+      } else if (deprecatedFamilyCount > 0) {
+        whatThisMeans =
+          "This service is represented only by deprecated guidance and should be treated as historical context, not a current baseline.";
+      }
+
+      const descriptionSuffix =
+        descriptionParts.length > 0 ? ` ${descriptionParts.join(". ")}.` : "";
+
+      return {
+        slug: slugify(service),
+        service,
+        aliases: [...group.aliases].sort((left, right) => left.localeCompare(right)).slice(0, 8),
+        itemCount: group.items.length,
+        highSeverityCount,
+        familyCount: familySummaries.length,
+        gaFamilyCount,
+        previewFamilyCount,
+        mixedFamilyCount,
+        deprecatedFamilyCount,
+        categories: collectUnique(group.items, (item) => item.category),
+        wafPillars: collectUnique(group.items, (item) => item.waf),
+        description: `${service} appears across ${group.items.length} normalized findings in ${familySummaries.length} checklist families.${descriptionSuffix}`,
+        whatThisMeans,
+        families: familySummaries.map((family) => ({
+          slug: family.slug,
+          technology: family.technology,
+          status: family.status,
+          maturityBucket: family.maturityBucket,
+          itemCount: family.itemCount,
+          highSeverityCount: family.highSeverityCount,
+          quality: family.quality
+        }))
+      };
+    })
+    .sort((left, right) =>
+      right.gaFamilyCount - left.gaFamilyCount ||
+      right.itemCount - left.itemCount ||
+      left.service.localeCompare(right.service)
+    );
+
+  for (const service of services) {
+    const serviceItems = allItems
+      .filter((item) => (item.serviceCanonical ?? item.service) === service.service)
+      .sort((left, right) => {
+        const severityRank = { High: 0, Medium: 1, Low: 2 };
+
+        return (
+          (severityRank[left.severity] ?? 3) - (severityRank[right.severity] ?? 3) ||
+          left.technology.localeCompare(right.technology) ||
+          left.text.localeCompare(right.text)
+        );
+      });
+
+    await writeJson(path.join(serviceDir, `${service.slug}.json`), {
+      generatedAt,
+      service,
+      items: serviceItems
+    });
+  }
 
   const summary = {
     generatedAt,
@@ -579,6 +889,10 @@ async function generate() {
   await writeJson(path.join(outputDir, "technology-index.json"), {
     generatedAt,
     technologies: summary.technologies
+  });
+  await writeJson(path.join(outputDir, "service-index.json"), {
+    generatedAt,
+    services
   });
 }
 

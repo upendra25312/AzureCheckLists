@@ -425,9 +425,11 @@ button.chip:hover {
 .editorial-hero-layout,
 .overview-grid,
 .explorer-grid,
-.technology-hero,
-.future-grid,
-.traceability-grid {
+ .service-directory-grid,
+ .service-path-grid,
+  .technology-hero,
+  .future-grid,
+  .traceability-grid {
   display: grid;
   gap: 16px;
 }
@@ -479,6 +481,14 @@ button.chip:hover {
 .explorer-grid {
   grid-template-columns: 320px minmax(0, 1fr);
   align-items: start;
+}
+
+.service-directory-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.service-path-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .future-grid {
@@ -830,17 +840,21 @@ button.chip:hover {
 }
 
 .future-card h3,
+.service-card-title,
 .filter-card h3,
 .drawer-section h3 {
   margin-top: 0;
   margin-bottom: 10px;
 }
 
-.future-card h3 {
+.future-card h3,
+.service-card-title {
   font-size: 1.02rem;
 }
 
 .future-card p,
+.service-card-copy,
+.service-card-note,
 .filter-card p,
 .trace-card p,
 .technology-card span,
@@ -855,8 +869,69 @@ button.chip:hover {
   background: rgba(255, 255, 255, 0.68);
 }
 
+[data-theme="dark"] .service-directory-card,
 [data-theme="dark"] .future-card {
   background: rgba(12, 24, 36, 0.58);
+}
+
+.service-directory-card {
+  display: grid;
+  gap: 16px;
+  padding: 28px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.service-card-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.service-card-copy,
+.service-card-note {
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.service-card-note {
+  margin-top: -6px;
+}
+
+.service-card-meta,
+.service-family-links,
+.service-family-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.service-family-preview {
+  display: grid;
+  gap: 10px;
+}
+
+.service-family-preview strong {
+  font-size: 0.95rem;
+}
+
+.service-family-stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.service-family-card {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.service-family-card:first-child {
+  padding-top: 0;
+  border-top: none;
 }
 
 .watchlist-row {
@@ -1087,6 +1162,8 @@ button.chip:hover {
   .technology-hero,
   .overview-grid,
   .explorer-grid,
+  .service-directory-grid,
+  .service-path-grid,
   .future-grid,
   .site-footer-grid,
   .trust-banner-grid,

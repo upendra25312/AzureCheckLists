@@ -23,6 +23,7 @@ export function buildExportRows(
       category: item.category ?? "",
       subcategory: item.subcategory ?? "",
       service: item.service ?? "",
+      serviceCanonical: item.serviceCanonical ?? "",
       text: item.text,
       description: item.description ?? "",
       sourcePath: item.sourcePath ?? "",
