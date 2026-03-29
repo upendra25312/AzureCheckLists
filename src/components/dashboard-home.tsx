@@ -4,16 +4,33 @@ import { ExplorerClient } from "@/components/explorer-client";
 import { SummaryCards } from "@/components/summary-cards";
 
 export function DashboardHome({ summary }: { summary: CatalogSummary }) {
+  const generatedDate = new Date(summary.generatedAt).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+  const highSeverityMetric = summary.metrics.find(
+    (metric) => metric.label === "High-severity findings"
+  );
+  const reviewWatchlistCount =
+    summary.previewTechnologyCount +
+    summary.mixedTechnologyCount +
+    summary.deprecatedTechnologyCount;
+
   return (
     <main className="section-stack">
-      <section className="hero-panel director-hero">
-        <div className="hero-grid">
-          <div>
+      <section className="hero-panel director-hero editorial-hero">
+        <div className="editorial-hero-layout">
+          <div className="editorial-hero-copy">
             <p className="eyebrow">Azure Architecture Review Dashboard</p>
             <h1 className="hero-title">Azure architecture review, made decision-ready.</h1>
             <p className="hero-copy">
-              Explore Azure review checklist guidance through a maturity-aware,
-              source-traceable experience designed for executives, architects, and operators.
+              Review Azure checklist guidance through a maturity-aware, source-traceable
+              experience built for executives, architects, and operators.
+            </p>
+            <p className="hero-note">
+              Generated {generatedDate}. Designed to clarify what is mature, what requires
+              extra judgment, and where leadership attention should go next.
             </p>
             <div className="hero-actions">
               <a href="#executive" className="primary-button">
@@ -27,26 +44,64 @@ export function DashboardHome({ summary }: { summary: CatalogSummary }) {
               </Link>
             </div>
           </div>
-          <div className="hero-highlights">
-            {summary.metrics.slice(0, 4).map((metric) => (
-              <div className="hero-stat" key={metric.label}>
-                <strong>{metric.value.toLocaleString()}</strong>
-                <span>{metric.label}</span>
-              </div>
-            ))}
-          </div>
+          <aside className="leadership-brief">
+            <p className="eyebrow">Leadership brief</p>
+            <h2 className="leadership-title">What matters first.</h2>
+            <div className="leadership-list">
+              <article>
+                <strong>Baseline</strong>
+                <p>
+                  Start with {summary.gaDefaultTechnologyCount.toLocaleString()} GA-ready
+                  families and {summary.gaReadyItemCount.toLocaleString()} mature items.
+                </p>
+              </article>
+              <article>
+                <strong>Risk concentration</strong>
+                <p>
+                  {highSeverityMetric?.value.toLocaleString() ?? "0"} high-severity findings
+                  remain visible across the full catalog.
+                </p>
+              </article>
+              <article>
+                <strong>Leadership action</strong>
+                <p>
+                  Validate {reviewWatchlistCount.toLocaleString()} lower-confidence families
+                  before using them in executive decision packs.
+                </p>
+              </article>
+            </div>
+          </aside>
+        </div>
+        <div className="hero-metrics-row">
+          <article className="hero-metric-card">
+            <span>GA-ready baseline</span>
+            <strong>{summary.gaDefaultTechnologyCount.toLocaleString()}</strong>
+            <p>Mature checklist families suitable for the default executive view.</p>
+          </article>
+          <article className="hero-metric-card">
+            <span>High-severity findings</span>
+            <strong>{highSeverityMetric?.value.toLocaleString() ?? "0"}</strong>
+            <p>Risk signal across the full catalog, including preview and deprecated sources.</p>
+          </article>
+          <article className="hero-metric-card">
+            <span>Review watchlist</span>
+            <strong>{reviewWatchlistCount.toLocaleString()}</strong>
+            <p>Families that require explicit review judgment before heavy reliance.</p>
+          </article>
         </div>
       </section>
 
       <section className="surface-panel">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Why this exists</p>
-            <h2 className="section-title">A review accelerator for leadership decisions, architecture depth, and operational follow-through.</h2>
+            <p className="eyebrow">Who this supports</p>
+            <h2 className="section-title">
+              Built for leadership visibility, architecture depth, and operational follow-through.
+            </h2>
             <p className="section-copy">
-              The platform is intentionally opinionated: lead with GA-ready content,
-              expose confidence clearly, preserve traceability, and keep preview or
-              deprecated guidance visible without treating it as equivalent to mature baselines.
+              The product is intentionally opinionated: lead with GA-ready content, expose
+              confidence clearly, preserve source traceability, and keep lower-confidence guidance
+              visible without presenting it as equivalent to mature baselines.
             </p>
           </div>
         </div>

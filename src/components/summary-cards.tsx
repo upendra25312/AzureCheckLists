@@ -7,20 +7,38 @@ export function SummaryCards({ summary }: { summary: CatalogSummary }) {
     .filter((technology) => technology.maturityBucket !== "GA")
     .sort((left, right) => right.highSeverityCount - left.highSeverityCount)
     .slice(0, 5);
+  const leadershipActions = [
+    {
+      title: "Anchor reviews in GA-ready guidance",
+      copy: `${summary.gaDefaultTechnologyCount.toLocaleString()} mature families should define the default briefing baseline.`
+    },
+    {
+      title: "Escalate lower-confidence families deliberately",
+      copy: `${(
+        summary.previewTechnologyCount +
+        summary.mixedTechnologyCount +
+        summary.deprecatedTechnologyCount
+      ).toLocaleString()} families require explicit architectural validation before leadership reliance.`
+    },
+    {
+      title: "Treat deprecated guidance as context only",
+      copy: `${summary.deprecatedTechnologyCount.toLocaleString()} family is currently deprecated and should remain visible for traceability, not as a new baseline.`
+    }
+  ];
 
   return (
     <>
-      <section className="surface-panel">
+      <section className="surface-panel" id="executive">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Executive view</p>
+            <p className="eyebrow">Executive summary</p>
             <h2 className="section-title">
-              Start with mature content, then widen deliberately into lower-confidence guidance.
+              Read the review posture before you read the findings.
             </h2>
             <p className="section-copy">
-              The default posture is GA-first. Preview, mixed, and deprecated families stay
-              visible because they can still matter, but they should not carry the same weight
-              in executive decision packs.
+              Start with mature guidance, understand where risk is concentrated, and keep
+              preview or deprecated content in its proper place. The goal is faster, better
+              informed leadership review, not false certainty.
             </p>
           </div>
         </div>
@@ -38,7 +56,7 @@ export function SummaryCards({ summary }: { summary: CatalogSummary }) {
       <section className="surface-panel">
         <div className="overview-grid">
           <article className="mini-card">
-            <p className="eyebrow">Maturity distribution</p>
+            <p className="eyebrow">Maturity and quality</p>
             <div className="bar-list">
               {summary.maturityDistribution.map((row) => (
                 <div key={row.label}>
@@ -63,7 +81,7 @@ export function SummaryCards({ summary }: { summary: CatalogSummary }) {
           </article>
 
           <article className="mini-card">
-            <p className="eyebrow">Executive watchlist</p>
+            <p className="eyebrow">Priority review families</p>
             <div className="bar-list">
               {watchlist.map((technology) => (
                 <div key={technology.slug} className="watchlist-row">
@@ -84,36 +102,21 @@ export function SummaryCards({ summary }: { summary: CatalogSummary }) {
       <section className="surface-panel">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Portfolio signal</p>
-            <h2 className="section-title">The product now communicates platform judgment, not just checklist coverage.</h2>
+            <p className="eyebrow">Leadership actions</p>
+            <h2 className="section-title">Use the dashboard to focus attention, not to remove judgment.</h2>
             <p className="section-copy">
-              Strong review products show what is trustworthy, what is unstable, and how to act next.
-              That is the difference between an interesting prototype and a credible enterprise tool.
+              A strong review experience helps leadership decide what to rely on, what to
+              validate, and what to keep out of the default baseline.
             </p>
           </div>
         </div>
         <div className="future-grid">
-          <article className="future-card">
-            <h3>Trust framing</h3>
-            <p>
-              Persistent source, maturity, and limitation messaging keeps the platform honest
-              and lowers the risk of overclaiming.
-            </p>
-          </article>
-          <article className="future-card">
-            <h3>Decision usefulness</h3>
-            <p>
-              GA-first defaults and explicit watchlists help executives and architects know
-              where to spend attention first.
-            </p>
-          </article>
-          <article className="future-card">
-            <h3>Production posture</h3>
-            <p>
-              The design stays static-first for speed and cost control, while still preparing
-              clean seams for auth, telemetry, and workflow hardening later.
-            </p>
-          </article>
+          {leadershipActions.map((action) => (
+            <article className="future-card" key={action.title}>
+              <h3>{action.title}</h3>
+              <p>{action.copy}</p>
+            </article>
+          ))}
         </div>
       </section>
     </>

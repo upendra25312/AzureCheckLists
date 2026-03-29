@@ -18,9 +18,7 @@ function resolveInitialTheme() {
     return stored;
   }
 
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  return "light";
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -42,7 +40,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     <div className="page-shell">
       <header className="page-header">
         <div className="header-brand">
-          <div className="header-badge">Azure review accelerator</div>
+          <div className="header-badge">Decision support for Azure reviews</div>
           <div>
             <h1 className="page-title">Azure Architecture Review Dashboard</h1>
             <p className="microcopy">

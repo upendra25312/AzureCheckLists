@@ -144,12 +144,13 @@ pre {
 }
 
 .page-title {
-  font-size: clamp(1.6rem, 3vw, 2.3rem);
+  font-size: clamp(1.45rem, 2.6vw, 2rem);
 }
 
 .hero-title {
-  font-size: clamp(2.4rem, 5vw, 4rem);
-  max-width: 12ch;
+  font-size: clamp(2.35rem, 4.4vw, 4.2rem);
+  max-width: 13.5ch;
+  line-height: 1.03;
 }
 
 .section-title {
@@ -186,6 +187,13 @@ pre {
 .section-copy,
 .technology-summary {
   max-width: 72ch;
+}
+
+.hero-note {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--text-muted);
+  line-height: 1.6;
 }
 
 .muted-link {
@@ -317,7 +325,7 @@ button.chip:hover {
 .hero-panel {
   overflow: hidden;
   background:
-    linear-gradient(135deg, rgba(15, 95, 126, 0.1), rgba(198, 107, 46, 0.12)),
+    linear-gradient(180deg, rgba(15, 95, 126, 0.06), rgba(198, 107, 46, 0.05)),
     var(--bg-elevated);
 }
 
@@ -328,11 +336,11 @@ button.chip:hover {
 .director-hero::after {
   content: "";
   position: absolute;
-  inset: auto -60px -80px auto;
-  width: 220px;
-  height: 220px;
+  inset: auto -70px -90px auto;
+  width: 260px;
+  height: 260px;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(198, 107, 46, 0.18), transparent 68%);
+  background: radial-gradient(circle, rgba(198, 107, 46, 0.12), transparent 68%);
   pointer-events: none;
 }
 
@@ -349,6 +357,7 @@ button.chip:hover {
 
 .trust-banner-grid,
 .hero-grid,
+.editorial-hero-layout,
 .overview-grid,
 .explorer-grid,
 .technology-hero,
@@ -375,6 +384,12 @@ button.chip:hover {
 .hero-grid,
 .technology-hero {
   grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.95fr);
+}
+
+.editorial-hero-layout {
+  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.9fr);
+  align-items: start;
+  margin-bottom: 18px;
 }
 
 .overview-grid {
@@ -416,6 +431,89 @@ button.chip:hover {
 .metrics-grid,
 .technology-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.hero-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.hero-metric-card,
+.leadership-brief {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+[data-theme="dark"] .hero-metric-card,
+[data-theme="dark"] .leadership-brief {
+  background: rgba(12, 24, 36, 0.62);
+}
+
+.editorial-hero-copy {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.leadership-brief {
+  padding: 22px;
+  display: grid;
+  gap: 14px;
+}
+
+.leadership-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  letter-spacing: -0.02em;
+}
+
+.leadership-list {
+  display: grid;
+  gap: 14px;
+}
+
+.leadership-list article {
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.leadership-list article:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.leadership-list strong,
+.hero-metric-card strong {
+  display: block;
+}
+
+.leadership-list p,
+.hero-metric-card p {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.hero-metric-card {
+  padding: 20px;
+}
+
+.hero-metric-card span {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--brand);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hero-metric-card strong {
+  font-size: 2rem;
+  margin-bottom: 6px;
 }
 
 .filters-panel {
@@ -471,7 +569,8 @@ button.chip:hover {
 .filter-card p,
 .trace-card p,
 .technology-card span,
-.metric-card span {
+.metric-card span,
+.mini-card p {
   margin: 0;
   line-height: 1.6;
 }
@@ -681,12 +780,14 @@ button.chip:hover {
 
 @media (max-width: 1180px) {
   .hero-grid,
+  .editorial-hero-layout,
   .technology-hero,
   .overview-grid,
   .explorer-grid,
   .future-grid,
   .trust-banner-grid,
   .traceability-grid,
+  .hero-metrics-row,
   .hero-highlights,
   .metrics-grid,
   .technology-grid {
