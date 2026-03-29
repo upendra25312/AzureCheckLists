@@ -319,7 +319,7 @@ button.chip:hover {
 .empty-state-card {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow);
+  box-shadow: 0 14px 34px rgba(13, 24, 38, 0.05);
   backdrop-filter: blur(18px);
 }
 
@@ -374,6 +374,27 @@ button.chip:hover {
 
 .site-footer {
   margin-top: 20px;
+}
+
+.site-footer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.site-footer-column {
+  padding-top: 6px;
+}
+
+.site-footer-column h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.site-footer-column p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.7;
 }
 
 .trust-banner {
@@ -479,7 +500,7 @@ button.chip:hover {
 }
 
 .section-stack {
-  gap: 20px;
+  gap: 24px;
 }
 
 .hero-highlights,
@@ -573,6 +594,11 @@ button.chip:hover {
 .hero-metric-card strong {
   font-size: 2rem;
   margin-bottom: 6px;
+}
+
+.editorial-section {
+  padding-top: 30px;
+  padding-bottom: 30px;
 }
 
 .filters-panel {
@@ -693,11 +719,41 @@ button.chip:hover {
   margin-bottom: 6px;
 }
 
+.metric-card,
+.mini-card {
+  padding: 28px;
+}
+
+.metric-card {
+  background: rgba(255, 255, 255, 0.74);
+}
+
+[data-theme="dark"] .metric-card {
+  background: rgba(12, 24, 36, 0.62);
+}
+
+.metric-card span {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.metric-card .microcopy {
+  margin-top: 10px;
+}
+
 .future-card h3,
 .filter-card h3,
 .drawer-section h3 {
   margin-top: 0;
   margin-bottom: 10px;
+}
+
+.future-card h3 {
+  font-size: 1.02rem;
 }
 
 .future-card p,
@@ -710,16 +766,25 @@ button.chip:hover {
   line-height: 1.6;
 }
 
+.future-card {
+  padding: 28px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+[data-theme="dark"] .future-card {
+  background: rgba(12, 24, 36, 0.58);
+}
+
 .watchlist-row {
   display: grid;
   gap: 10px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
 }
 
-.watchlist-row:last-child {
-  padding-bottom: 0;
-  border-bottom: none;
+.watchlist-row:first-child {
+  padding-top: 0;
+  border-top: none;
 }
 
 .quality-badge {
@@ -826,7 +891,7 @@ button.chip:hover {
 .item-row {
   display: grid;
   gap: 12px;
-  padding: 18px;
+  padding: 22px;
   border: 1px solid var(--border);
   border-radius: 18px;
   background: var(--bg-subtle);
@@ -913,6 +978,7 @@ button.chip:hover {
   .overview-grid,
   .explorer-grid,
   .future-grid,
+  .site-footer-grid,
   .trust-banner-grid,
   .traceability-grid,
   .advanced-filters-grid,
@@ -986,5 +1052,12 @@ button.chip:hover {
 
   .trust-banner-action {
     justify-items: start;
+  }
+
+  .metric-card,
+  .mini-card,
+  .future-card,
+  .item-row {
+    padding: 20px;
   }
 }

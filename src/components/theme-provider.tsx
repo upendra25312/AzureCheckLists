@@ -75,22 +75,22 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       <TrustBanner />
       {children}
       <footer className="site-footer surface-panel">
-        <div className="future-grid">
-          <article className="future-card">
+        <div className="site-footer-grid">
+          <article className="site-footer-column">
             <h3>Why this exists</h3>
             <p>
               Turn distributed Azure checklist guidance into a faster, more credible review
               conversation for leaders, architects, and operators.
             </p>
           </article>
-          <article className="future-card">
+          <article className="site-footer-column">
             <h3>What this is not</h3>
             <p>
               Not an approval engine, not a compliance control system, and not a substitute
               for architecture accountability.
             </p>
           </article>
-          <article className="future-card">
+          <article className="site-footer-column">
             <h3>Source and transparency</h3>
             <p>
               Compiled from Azure review checklist content with preserved traceability,

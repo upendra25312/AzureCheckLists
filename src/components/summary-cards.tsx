@@ -28,7 +28,7 @@ export function SummaryCards({ summary }: { summary: CatalogSummary }) {
 
   return (
     <>
-      <section className="surface-panel" id="executive">
+      <section className="surface-panel editorial-section" id="executive">
         <div className="section-head">
           <div>
             <p className="eyebrow">Executive summary</p>
@@ -53,7 +53,7 @@ export function SummaryCards({ summary }: { summary: CatalogSummary }) {
         </div>
       </section>
 
-      <section className="surface-panel">
+      <section className="surface-panel editorial-section">
         <div className="overview-grid">
           <article className="mini-card">
             <p className="eyebrow">Maturity and quality</p>
@@ -99,11 +99,13 @@ export function SummaryCards({ summary }: { summary: CatalogSummary }) {
         </div>
       </section>
 
-      <section className="surface-panel">
+      <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
             <p className="eyebrow">Leadership actions</p>
-            <h2 className="section-title">Use the dashboard to focus attention, not to remove judgment.</h2>
+            <h2 className="section-title">
+              Use the dashboard to focus attention, not to replace judgment.
+            </h2>
             <p className="section-copy">
               A strong review experience helps leadership decide what to rely on, what to
               validate, and what to keep out of the default baseline.

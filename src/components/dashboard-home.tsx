@@ -91,7 +91,7 @@ export function DashboardHome({ summary }: { summary: CatalogSummary }) {
         </div>
       </section>
 
-      <section className="surface-panel">
+      <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
             <p className="eyebrow">Who this supports</p>
@@ -107,21 +107,21 @@ export function DashboardHome({ summary }: { summary: CatalogSummary }) {
         </div>
         <div className="future-grid">
           <article className="future-card" id="executive">
-            <h3>Executive</h3>
+            <h3>Executive review</h3>
             <p>
               Understand risk posture, what needs attention first, and which checklist families
               are stable enough to support leadership decisions.
             </p>
           </article>
           <article className="future-card" id="architect">
-            <h3>Architect</h3>
+            <h3>Architecture review</h3>
             <p>
               See which design areas matter most, which families are high-confidence, and how
               each recommendation traces back to its source.
             </p>
           </article>
           <article className="future-card" id="operator">
-            <h3>Operator</h3>
+            <h3>Operational follow-through</h3>
             <p>
               Filter to actionable items, export findings, and capture local review notes without
               pretending the product already has enterprise workflow persistence.
@@ -132,23 +132,25 @@ export function DashboardHome({ summary }: { summary: CatalogSummary }) {
 
       <SummaryCards summary={summary} />
 
-      <section className="surface-panel" id="roadmap">
+      <section className="surface-panel editorial-section" id="roadmap">
         <div className="section-head">
           <div>
             <p className="eyebrow">Architecture choices</p>
-            <h2 className="section-title">Static-first by design, with a clean path to enterprise controls later.</h2>
+            <h2 className="section-title">
+              Designed to stay lightweight today and grow into stronger controls deliberately.
+            </h2>
           </div>
         </div>
         <div className="future-grid">
           <article className="future-card">
-            <h3>What this is</h3>
+            <h3>Purpose</h3>
             <p>
               A review support product that normalizes Azure checklist guidance into a form that
               is easier to consume, prioritize, and discuss.
             </p>
           </article>
           <article className="future-card">
-            <h3>What this is not</h3>
+            <h3>Boundary</h3>
             <p>
               Not an official Microsoft sign-off engine, not a compliance control system, and
               not a substitute for accountable architecture governance.
