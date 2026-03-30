@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { CatalogSummary, ChecklistItem, ExplorerFilters, ReviewDraft } from "@/types";
 import { ItemDrawer } from "@/components/item-drawer";
-import { ReviewCloudControls } from "@/components/review-cloud-controls";
 import { buildExportRows, downloadCsv, downloadJson } from "@/lib/export";
 import { filterItems } from "@/lib/filters";
 import { QualityBadge } from "@/components/quality-badge";
@@ -241,11 +240,6 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
             </button>
           </div>
         </div>
-        <ReviewCloudControls
-          items={items}
-          reviews={reviews}
-          onReplaceReviews={(nextReviews) => setReviews(nextReviews)}
-        />
 
         <div className="filter-card workspace-filter-strip">
           <div className="filter-field">

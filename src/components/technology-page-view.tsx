@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import type { TechnologyPayload, ReviewDraft } from "@/types";
 import { ItemDrawer } from "@/components/item-drawer";
 import { QualityBadge } from "@/components/quality-badge";
-import { ReviewCloudControls } from "@/components/review-cloud-controls";
 import { filterItems } from "@/lib/filters";
 import { createEmptyReview, loadReviews, saveReviews } from "@/lib/review-storage";
 
@@ -84,14 +83,6 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
             <Link href="/how-to-use" className="ghost-button">
               Review guidance
             </Link>
-            <a
-              href={payload.technology.sourceUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="secondary-button"
-            >
-              Open source file
-            </a>
           </div>
         </div>
 
@@ -166,8 +157,9 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
             <article className="brief-point">
               <strong>Source linkage remains visible.</strong>
               <p>
-                Every item stays connected to the originating source file, source folder, and
-                normalization run so reviewers can verify intent.
+                Every item stays connected to the originating source file path, source folder,
+                and normalization run so reviewers can verify intent without pushing public users
+                into the upstream GitHub repository.
               </p>
             </article>
             <article className="brief-point">
@@ -259,11 +251,11 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
           <div>
             <p className="eyebrow">Family workspace</p>
             <h2 className="section-title">
-              Review one checklist family with saved review records, source context, and a cleaner working surface.
+              Review one checklist family with local notes, source context, and a cleaner working surface.
             </h2>
             <p className="section-copy">
-              Search within the family, open any item for detail, and capture review records
-              that stay local by default and can optionally be saved to Azure Storage.
+              Search within the family, open any item for detail, and capture review notes
+              that stay in this browser unless you export them deliberately.
             </p>
           </div>
           <div className="chip-row family-actions">
@@ -271,11 +263,6 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
             <span className="chip">{reviewedCount.toLocaleString()} locally reviewed</span>
           </div>
         </div>
-        <ReviewCloudControls
-          items={payload.items}
-          reviews={reviews}
-          onReplaceReviews={(nextReviews) => setReviews(nextReviews)}
-        />
         <div className="filter-card workspace-toolbar">
           <div className="workspace-toolbar-main">
             <input

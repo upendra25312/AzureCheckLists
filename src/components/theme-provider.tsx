@@ -44,7 +44,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           <div>
             <h1 className="page-title">Azure Architecture Review Dashboard</h1>
             <p className="microcopy">
-              Maturity-aware review guidance with source traceability, browser editing, and optional Azure-backed save and export.
+              Maturity-aware review guidance with source traceability, browser editing, and local-first export.
             </p>
           </div>
         </div>
@@ -61,9 +61,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             </Link>
             <Link href="/how-to-use" className="header-link">
               How to use
-            </Link>
-            <Link href="/#roadmap" className="header-link">
-              Roadmap
             </Link>
           </nav>
           <button

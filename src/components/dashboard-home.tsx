@@ -258,41 +258,6 @@ export function DashboardHome({
         </div>
       </section>
 
-      <section className="surface-panel editorial-section" id="roadmap">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Architecture choices</p>
-            <h2 className="section-title">
-              Designed to stay lightweight today and grow into stronger controls deliberately.
-            </h2>
-          </div>
-        </div>
-        <div className="future-grid">
-          <article className="future-card">
-            <h3>Purpose</h3>
-            <p>
-              A review support product that normalizes Azure checklist guidance into a form that
-              is easier to consume, prioritize, and discuss.
-            </p>
-          </article>
-          <article className="future-card">
-            <h3>Boundary</h3>
-            <p>
-              Not an official Microsoft sign-off engine, not a compliance control system, and
-              not a substitute for accountable architecture governance.
-            </p>
-          </article>
-          <article className="future-card">
-            <h3>Roadmap</h3>
-            <p>
-              Phase 1 stays static-first and local. Later phases can add authentication,
-              shared review state, evidence workflows, and auditability when the hosting tier
-              and governance model justify them.
-            </p>
-          </article>
-        </div>
-      </section>
-
       <ExplorerClient summary={summary} />
     </main>
   );

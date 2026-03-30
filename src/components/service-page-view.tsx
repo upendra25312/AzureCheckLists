@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ItemDrawer } from "@/components/item-drawer";
 import { QualityBadge } from "@/components/quality-badge";
-import { ReviewCloudControls } from "@/components/review-cloud-controls";
 import { filterItems } from "@/lib/filters";
 import { createEmptyReview, loadReviews, saveReviews } from "@/lib/review-storage";
 import type { ReviewDraft, ServicePayload } from "@/types";
@@ -265,7 +264,8 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
             </h2>
             <p className="section-copy">
               Search within the service, open any finding for detail, and move into the family page
-              when you need the broader checklist context around a recommendation.
+              when you need the broader checklist context around a recommendation. Review notes
+              stay in this browser unless you export them deliberately.
             </p>
           </div>
           <div className="chip-row family-actions">
@@ -273,11 +273,6 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
             <span className="chip">{reviewedCount.toLocaleString()} locally reviewed</span>
           </div>
         </div>
-        <ReviewCloudControls
-          items={payload.items}
-          reviews={reviews}
-          onReplaceReviews={(nextReviews) => setReviews(nextReviews)}
-        />
         <div className="filter-card workspace-toolbar">
           <div className="workspace-toolbar-main">
             <input

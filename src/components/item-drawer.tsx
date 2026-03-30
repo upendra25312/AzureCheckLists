@@ -88,7 +88,7 @@ export function ItemDrawer({ item, review, onClose, onUpdate }: ItemDrawerProps)
         <section className="drawer-section">
           <h3>Review record</h3>
           <p className="microcopy">
-            Edit your review decision here. It stays in this browser by default and can be saved to Azure from the workspace controls.
+            Edit your review decision here. It stays in this browser and can be included in local exports from the review workspace.
           </p>
           <div className="filter-grid">
             <label>
@@ -218,16 +218,6 @@ export function ItemDrawer({ item, review, onClose, onUpdate }: ItemDrawerProps)
             <div className="trace-card">
               <strong>Normalization timestamp</strong>
               <p>{item.normalizedAt ?? "Unavailable"}</p>
-            </div>
-            <div className="trace-card">
-              <strong>Source URL</strong>
-              {item.sourceUrl ? (
-                <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="muted-link">
-                  Open on GitHub
-                </a>
-              ) : (
-                <p>Unavailable</p>
-              )}
             </div>
             <div className="trace-card">
               <strong>Field provenance</strong>

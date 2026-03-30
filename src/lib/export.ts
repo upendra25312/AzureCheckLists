@@ -1,5 +1,15 @@
 import type { ChecklistItem, ReviewDraft } from "@/types";
 
+function visibleSourceUrl(value: string | undefined) {
+  const normalized = value?.trim().toLowerCase() ?? "";
+
+  if (normalized.includes("github.com/azure/review-checklists")) {
+    return "";
+  }
+
+  return value ?? "";
+}
+
 function sanitizeCsv(value: string | undefined) {
   const normalized = value ?? "";
   const escaped = normalized.replaceAll('"', '""');
@@ -27,7 +37,7 @@ export function buildExportRows(
       text: item.text,
       description: item.description ?? "",
       sourcePath: item.sourcePath ?? "",
-      sourceUrl: item.sourceUrl ?? "",
+      sourceUrl: visibleSourceUrl(item.sourceUrl),
       reviewState: review?.reviewState ?? "Not Reviewed",
       comments: review?.comments ?? "",
       owner: review?.owner ?? "",
