@@ -1,4 +1,4 @@
-# Azure Review Dashboard
+# Azure Review  Dashboard
 
 Static-first Azure review dashboard built from the [Azure review-checklists](https://github.com/Azure/review-checklists) repository and designed for Azure Static Web Apps with a lightweight managed API.
 
