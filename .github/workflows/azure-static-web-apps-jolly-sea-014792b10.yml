@@ -16,8 +16,14 @@ jobs:
     name: Build and Deploy
 
     steps:
-      - name: Checkout repo
+      - name: Checkout dashboard repo
         uses: actions/checkout@v4
+
+      - name: Checkout Azure review-checklists source
+        uses: actions/checkout@v4
+        with:
+          repository: Azure/review-checklists
+          path: source-repo
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
