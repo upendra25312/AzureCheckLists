@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { CatalogSummary, ServiceIndex } from "@/types";
-import { ExplorerClient } from "@/components/explorer-client";
 import { SummaryCards } from "@/components/summary-cards";
+import { SITE_NAME } from "@/lib/site";
 
 export function DashboardHome({
   summary,
@@ -29,7 +29,7 @@ export function DashboardHome({
       <section className="hero-panel director-hero editorial-hero">
         <div className="editorial-hero-layout">
           <div className="editorial-hero-copy">
-            <p className="eyebrow">Azure Architecture Review Dashboard</p>
+            <p className="eyebrow">{SITE_NAME}</p>
             <h1 className="hero-title">Azure architecture review, made decision-ready.</h1>
             <p className="hero-copy">
               Review Azure checklist guidance through a maturity-aware, source-traceable
@@ -107,7 +107,7 @@ export function DashboardHome({
               and validate everything else deliberately.
             </h2>
             <p className="section-copy">
-              This section is designed to read like a briefing note, not a dashboard widget. It
+              This section is designed to read like a briefing note, not a generic dashboard widget. It
               highlights what is stable enough to support leadership conversations, where risk is
               concentrated, and what should happen next.
             </p>
@@ -258,7 +258,52 @@ export function DashboardHome({
         </div>
       </section>
 
-      <ExplorerClient summary={summary} />
+      <section className="surface-panel editorial-section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Detailed explorer</p>
+            <h2 className="section-title">
+              Move into filtered findings only when you need working detail.
+            </h2>
+            <p className="section-copy">
+              The homepage stays focused on review posture and service discovery. The explorer is a
+              dedicated route for detailed filtering, local-only notes, and exportable result sets.
+            </p>
+          </div>
+          <div className="button-row">
+            <Link href="/explorer" className="primary-button">
+              Open explorer
+            </Link>
+            <Link href="/how-to-use" className="ghost-button">
+              Review guidance
+            </Link>
+          </div>
+        </div>
+
+        <div className="future-grid">
+          <article className="future-card">
+            <h3>GA-first by default</h3>
+            <p>
+              Start with mature guidance, then widen into preview-led findings only when the
+              review question genuinely requires extra depth.
+            </p>
+          </article>
+          <article className="future-card">
+            <h3>Local-only working notes</h3>
+            <p>
+              Capture review notes in the browser without implying shared workflow, durable
+              records, or enterprise governance that is not present.
+            </p>
+          </article>
+          <article className="future-card">
+            <h3>Export from the filtered view</h3>
+            <p>
+              Export the current result set once the scope is clear, rather than forcing detailed
+              working controls onto the homepage.
+            </p>
+          </article>
+        </div>
+      </section>
     </main>
   );
 }

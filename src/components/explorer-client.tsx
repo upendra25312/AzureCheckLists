@@ -90,11 +90,11 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
       <section id="explorer" className="surface-panel">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Detailed review workspace</p>
-            <h2 className="section-title">Preparing the filtered review workspace.</h2>
+            <p className="eyebrow">Explorer</p>
+            <h2 className="section-title">Loading the filtered findings view.</h2>
             <p className="section-copy">
-              The detailed explorer is loading the prebuilt catalog so the experience
-              stays static-first while still supporting client-side filtering and local notes.
+              The explorer is loading the prebuilt catalog so the experience stays static-first
+              while still supporting client-side filtering and local notes.
             </p>
           </div>
         </div>
@@ -157,12 +157,12 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
       <section id="explorer" className="surface-panel explorer-shell">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Detailed review workspace</p>
+            <p className="eyebrow">Explorer</p>
             <h2 className="section-title">
               Move from executive posture to detailed findings without losing clarity.
             </h2>
             <p className="section-copy">
-              This workspace keeps the high-value controls visible, defaults to GA-ready guidance,
+              This explorer keeps the high-value controls visible, defaults to GA-ready guidance,
               and tucks deeper scoping behind a simpler advanced filter panel.
             </p>
           </div>
@@ -176,7 +176,7 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
           <article className="future-card">
             <h3>Leadership baseline</h3>
             <p>
-              Keep the workspace anchored on GA-ready guidance first, then widen only when the
+              Keep the explorer anchored on GA-ready guidance first, then widen only when the
               review question requires more exploratory depth.
             </p>
           </article>

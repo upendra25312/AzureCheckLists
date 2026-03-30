@@ -1,30 +1,36 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "How To Use",
+  description:
+    "Use the review board to prepare architecture discussions, not to issue approval or replace accountable sign-off."
+};
 
 export default function HowToUsePage() {
   return (
     <main className="section-stack">
       <section className="surface-panel editorial-section">
         <p className="eyebrow">How this tool should be used</p>
-        <h2 className="section-title">Use the dashboard to prepare reviews, not to issue approval.</h2>
+        <h2 className="section-title">Use the review board to prepare reviews, not to issue approval.</h2>
         <p className="section-copy">
-          The dashboard turns Azure review checklist content into a more readable, maturity-aware
+          The review board turns Azure review checklist content into a more readable, maturity-aware
           review experience. It helps teams structure review discussions, preserve source
           traceability, and identify where deeper architectural judgment is still required.
           It does not certify architectures, waive governance, or substitute for accountable
           review decisions.
         </p>
+        <p className="microcopy">
+          Source traceability remains visible within the rendered family and service views. Public
+          users should not need to leave the product and inspect the upstream repository directly.
+        </p>
         <div className="button-row">
           <Link href="/" className="primary-button">
             Back to overview
           </Link>
-          <a
-            href="https://github.com/Azure/review-checklists"
-            target="_blank"
-            rel="noreferrer"
-            className="secondary-button"
-          >
-            Open source content
-          </a>
+          <Link href="/explorer" className="secondary-button">
+            Open explorer
+          </Link>
         </div>
       </section>
 

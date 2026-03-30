@@ -104,7 +104,7 @@ export function SummaryCards({ summary }: { summary: CatalogSummary }) {
           <div>
             <p className="eyebrow">Leadership actions</p>
             <h2 className="section-title">
-              Use the dashboard to focus attention, not to replace judgment.
+              Use the review board to focus attention, not to replace judgment.
             </h2>
             <p className="section-copy">
               A strong review experience helps leadership decide what to rely on, what to

@@ -166,7 +166,7 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
               <strong>This family should support judgment, not replace it.</strong>
               <p>
                 Use it to deepen review conversations, but retain workload context, design
-                authority, and formal sign-off outside the dashboard.
+                authority, and formal sign-off outside the review board.
               </p>
             </article>
           </div>
@@ -249,7 +249,7 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
       <section className="surface-panel editorial-section">
         <div className="section-head family-list-head">
           <div>
-            <p className="eyebrow">Family workspace</p>
+            <p className="eyebrow">Family findings</p>
             <h2 className="section-title">
               Review one checklist family with local notes, source context, and a cleaner working surface.
             </h2>

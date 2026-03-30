@@ -9,7 +9,6 @@ const outputDir = path.join(root, "public", "data");
 const technologyDir = path.join(outputDir, "technologies");
 const serviceDir = path.join(outputDir, "services");
 const generatedAt = new Date().toISOString();
-const sourceBaseUrl = "https://github.com/Azure/review-checklists/blob/main";
 const excludedFiles = new Set([
   "checklist.en.master.json",
   "template.json",
@@ -562,6 +561,19 @@ async function ensureDirectory(directoryPath) {
   await fs.mkdir(directoryPath, { recursive: true });
 }
 
+async function cleanDirectory(directoryPath) {
+  const entries = await fs.readdir(directoryPath, { withFileTypes: true });
+
+  await Promise.all(
+    entries.map((entry) =>
+      fs.rm(path.join(directoryPath, entry.name), {
+        recursive: true,
+        force: true
+      })
+    )
+  );
+}
+
 async function writeJson(filePath, payload) {
   await fs.writeFile(filePath, JSON.stringify(payload, null, 2));
 }
@@ -599,6 +611,8 @@ async function generate() {
   await ensureDirectory(outputDir);
   await ensureDirectory(technologyDir);
   await ensureDirectory(serviceDir);
+  await cleanDirectory(technologyDir);
+  await cleanDirectory(serviceDir);
 
   const files = [
     ...(await getEnglishChecklistFiles("checklists")),

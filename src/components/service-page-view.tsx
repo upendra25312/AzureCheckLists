@@ -258,7 +258,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
       <section className="surface-panel editorial-section">
         <div className="section-head family-list-head">
           <div>
-            <p className="eyebrow">Service workspace</p>
+            <p className="eyebrow">Service findings</p>
             <h2 className="section-title">
               Review the findings for this service without losing the related family context.
             </h2>

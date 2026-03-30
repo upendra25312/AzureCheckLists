@@ -11,7 +11,7 @@ export default function NotFound() {
           source checklist set changed during the last build.
         </p>
         <Link href="/" className="primary-link">
-          Return to dashboard
+          Return to review board
         </Link>
       </div>
     </main>

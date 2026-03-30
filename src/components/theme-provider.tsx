@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { TrustBanner } from "@/components/trust-banner";
 import { STORAGE_KEYS } from "@/lib/review-storage";
+import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 
 type Theme = "light" | "dark";
 
@@ -40,12 +41,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     <div className="page-shell">
       <header className="page-header">
         <div className="header-brand">
-          <div className="header-badge">Architecture review decision support</div>
+          <div className="header-badge">Architecture review</div>
           <div>
-            <h1 className="page-title">Azure Architecture Review Dashboard</h1>
-            <p className="microcopy">
-              Maturity-aware review guidance with source traceability, browser editing, and local-first export.
-            </p>
+            <h1 className="page-title">{SITE_NAME}</h1>
+            <p className="microcopy">{SITE_DESCRIPTION}</p>
           </div>
         </div>
         <div className="header-actions">
@@ -56,7 +55,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             <Link href="/services" className="header-link">
               Services
             </Link>
-            <Link href="/#explorer" className="header-link">
+            <Link href="/explorer" className="header-link">
               Explorer
             </Link>
             <Link href="/how-to-use" className="header-link">

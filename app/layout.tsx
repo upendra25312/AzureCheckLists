@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Azure Architecture Review Dashboard",
-  description:
-    "Static-first Azure architecture review accelerator with GA-first maturity framing, source traceability, and decision-support views for executives, architects, and operators."
+  title: {
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`
+  },
+  description: SITE_DESCRIPTION,
+  icons: {
+    icon: "/icon.svg"
+  }
 };
 
 export default function RootLayout({
