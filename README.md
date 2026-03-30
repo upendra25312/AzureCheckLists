@@ -61,17 +61,19 @@ Recommended Static Web Apps build settings:
 
 ## GitHub Actions deployment
 
-This repo includes [azure-static-web-apps.yml](./.github/workflows/azure-static-web-apps.yml).
+This repo includes [azure-static-web-apps-jolly-sea-014792b10.yml](./.github/workflows/azure-static-web-apps-jolly-sea-014792b10.yml).
 
 Before the workflow can deploy, add this repository secret:
 
-- `AZURE_STATIC_WEB_APPS_API_TOKEN`
+- `AZURE_STATIC_WEB_APPS_API_TOKEN_JOLLY_SEA_014792B10`
+
+If deployment fails with `No matching Static Web App was found or the api key was invalid`, refresh that secret from the target Azure Static Web App deployment token in the Azure portal.
 
 The workflow intentionally checks out the upstream `Azure/review-checklists` repository into `source-repo/` during CI so the dashboard can regenerate normalized data at build time without committing the upstream source into this repo.
 
-## Azure-backed review records
+## Optional Azure-backed review records
 
-To enable sign-in, structured note save, and CSV artifact download from the live UI, configure these application settings in Azure Static Web Apps:
+The public UI is local-first and does not require sign-in. If you later decide to re-enable the managed API path for internal use, configure these application settings in Azure Static Web Apps:
 
 - `AZURE_STORAGE_CONNECTION_STRING`
 - `AZURE_STORAGE_REVIEW_CONTAINER_NAME`
