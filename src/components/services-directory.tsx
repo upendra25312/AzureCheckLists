@@ -71,6 +71,8 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
       }),
     [index.services, normalizedSearch, posture]
   );
+  const postureButtonClass = (value: ServicePosture) =>
+    posture === value ? "secondary-button" : "ghost-button";
 
   return (
     <main className="section-stack">
@@ -164,26 +166,29 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
             <div className="button-row">
               <button
                 type="button"
-                className="secondary-button"
+                className={postureButtonClass("all")}
                 onClick={() => setPosture("all")}
               >
                 All services
               </button>
               <button
                 type="button"
-                className="ghost-button"
+                className={postureButtonClass("ga")}
                 onClick={() => setPosture("ga")}
               >
                 GA baseline available
               </button>
               <button
                 type="button"
-                className="ghost-button"
+                className={postureButtonClass("preview")}
                 onClick={() => setPosture("preview")}
               >
                 Preview-led services
               </button>
             </div>
+            <p className="microcopy">
+              Search by service name, alias, architecture category, or related checklist family.
+            </p>
           </div>
         </div>
 

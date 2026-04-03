@@ -81,8 +81,8 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
           <h1 className="technology-title">{payload.service.service}</h1>
           <p className="technology-summary">{payload.service.description}</p>
           <p className="hero-note">
-            Generated {generatedDate}. This page brings together the most relevant checklist
-            families and findings for designing, deploying, and reviewing this service.
+            Generated {generatedDate}. Use this page to decide what should lead the review for
+            this service, what should broaden the discussion, and what still needs explicit validation.
           </p>
           <div className="button-row">
             <Link href="/services" className="secondary-button">
@@ -99,7 +99,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
 
         <aside className="leadership-brief family-brief-sidecar">
           <p className="eyebrow">Service brief</p>
-          <h2 className="leadership-title">How to use this service view.</h2>
+          <h2 className="leadership-title">What to lead with on this page.</h2>
           <div className="leadership-list">
             <article>
               <strong>Baseline position</strong>
@@ -149,11 +149,11 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
           <div>
             <p className="eyebrow">Recommended review path</p>
             <h2 className="section-title">
-              Start with the strongest service guidance, then widen only when the review question requires it.
+              Lead with the strongest service guidance, then widen only when the question requires it.
             </h2>
             <p className="section-copy">
-              This service view is meant to eliminate guesswork. It shows which families should
-              lead the review, which families add specialist depth, and which ones should be used only for context.
+              This service view is designed to remove guesswork. It shows which families should
+              anchor the conversation, which add specialist depth, and which should stay in the background.
             </p>
           </div>
         </div>
@@ -282,6 +282,10 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
+            <p className="microcopy">
+              Most teams start with the baseline families above, then search within findings only
+              when the discussion turns to a specific recommendation.
+            </p>
           </div>
         </div>
 

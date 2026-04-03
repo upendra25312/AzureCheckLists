@@ -31,14 +31,14 @@ export function SummaryCards({ summary }: { summary: CatalogSummary }) {
       <section className="surface-panel editorial-section" id="executive">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Executive summary</p>
+            <p className="eyebrow">Leadership baseline</p>
             <h2 className="section-title">
-              Read the review posture before you read the findings.
+              See what should anchor the conversation before the meeting turns technical.
             </h2>
             <p className="section-copy">
               Start with mature guidance, understand where risk is concentrated, and keep
-              preview or deprecated content in its proper place. The goal is faster, better
-              informed leadership review, not false certainty.
+              lower-confidence content in its proper place. The objective is clarity with
+              accountability, not false precision.
             </p>
           </div>
         </div>
@@ -56,7 +56,7 @@ export function SummaryCards({ summary }: { summary: CatalogSummary }) {
       <section className="surface-panel editorial-section">
         <div className="overview-grid">
           <article className="mini-card">
-            <p className="eyebrow">Maturity and quality</p>
+            <p className="eyebrow">Confidence mix</p>
             <div className="bar-list">
               {summary.maturityDistribution.map((row) => (
                 <div key={row.label}>
@@ -81,7 +81,7 @@ export function SummaryCards({ summary }: { summary: CatalogSummary }) {
           </article>
 
           <article className="mini-card">
-            <p className="eyebrow">Priority review families</p>
+            <p className="eyebrow">Families needing deliberate judgment</p>
             <div className="bar-list">
               {watchlist.map((technology) => (
                 <div key={technology.slug} className="watchlist-row">
@@ -104,11 +104,11 @@ export function SummaryCards({ summary }: { summary: CatalogSummary }) {
           <div>
             <p className="eyebrow">Leadership actions</p>
             <h2 className="section-title">
-              Use the review board to focus attention, not to replace judgment.
+              Use the review board to focus attention, not to outsource judgment.
             </h2>
             <p className="section-copy">
-              A strong review experience helps leadership decide what to rely on, what to
-              validate, and what to keep out of the default baseline.
+              The strongest leadership use case is simple: know what belongs in the default
+              baseline, what needs escalation, and what should stay out of the board pack.
             </p>
           </div>
         </div>

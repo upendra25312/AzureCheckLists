@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "How To Use",
+  title: "How to Use",
   description:
     "Use the review board to prepare architecture discussions, not to issue approval or replace accountable sign-off."
 };
@@ -12,17 +12,16 @@ export default function HowToUsePage() {
     <main className="section-stack">
       <section className="surface-panel editorial-section">
         <p className="eyebrow">How this tool should be used</p>
-        <h2 className="section-title">Use the review board to prepare reviews, not to issue approval.</h2>
+        <h2 className="section-title">Use the review board to prepare decisions, not to issue approval.</h2>
         <p className="section-copy">
-          The review board turns Azure review checklist content into a more readable, maturity-aware
-          review experience. It helps teams structure review discussions, preserve source
-          traceability, and identify where deeper architectural judgment is still required.
-          It does not certify architectures, waive governance, or substitute for accountable
-          review decisions.
+          The review board turns Azure checklist content into a clearer decision-support surface.
+          It helps teams structure review discussions, preserve source traceability, and show where
+          architectural judgment is still required. It does not certify architectures, waive
+          governance, or substitute for accountable sign-off.
         </p>
         <p className="microcopy">
-          Source traceability remains visible within the rendered family and service views. Public
-          users should not need to leave the product and inspect the upstream repository directly.
+          Source traceability remains visible in the family and service views so reviewers can
+          verify why a recommendation should carry weight.
         </p>
         <div className="button-row">
           <Link href="/" className="primary-button">
@@ -37,17 +36,59 @@ export default function HowToUsePage() {
       <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
+            <p className="eyebrow">Plain-language guide</p>
+            <h2 className="section-title">Understand the core terms in one minute.</h2>
+            <p className="section-copy">
+              These definitions make the rest of the product easier to understand, especially for
+              leadership, pre-sales, and first-time reviewers.
+            </p>
+          </div>
+        </div>
+        <div className="future-grid">
+          <article className="future-card">
+            <h3>GA-ready baseline</h3>
+            <p>
+              Guidance mature enough to lead an executive or architecture review by default. This
+              is the safest starting point for decision packs.
+            </p>
+          </article>
+          <article className="future-card">
+            <h3>Checklist family</h3>
+            <p>
+              A source checklist grouped into one reviewable unit. Family pages show how much
+              confidence that source deserves and how many findings it contributes.
+            </p>
+          </article>
+          <article className="future-card">
+            <h3>Normalized item</h3>
+            <p>
+              A source recommendation reshaped into a common structure for filtering, comparison,
+              and export. Normalization improves usability, but the original source still carries authority.
+            </p>
+          </article>
+          <article className="future-card">
+            <h3>Confidence level</h3>
+            <p>
+              A signal for how much default weight a family should carry. High-confidence guidance
+              can anchor a review pack; lower-confidence guidance should inform judgment, not replace it.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section className="surface-panel editorial-section">
+        <div className="section-head">
+          <div>
             <p className="eyebrow">Responsible use</p>
-            <h2 className="section-title">Interpret normalized items, severity, and confidence carefully.</h2>
+            <h2 className="section-title">Interpret severity, confidence, and normalization carefully.</h2>
           </div>
         </div>
         <div className="future-grid">
           <article className="future-card">
             <h3>Normalization</h3>
             <p>
-              A normalized item is a checklist recommendation that has been reshaped into a
-              common structure for filtering, comparison, and export. Normalization improves
-              usability, but it does not change the authority of the original source.
+              A normalized item is easier to search and compare, but it should still be read with
+              awareness of the original checklist source behind it.
             </p>
           </article>
           <article className="future-card">
@@ -61,8 +102,8 @@ export default function HowToUsePage() {
           <article className="future-card">
             <h3>Confidence level</h3>
             <p>
-              GA-ready families can anchor executive and architecture review packs. Preview
-              and mixed-confidence families should enrich expert analysis, not define leadership decisions by default.
+              GA-ready families can anchor executive and architecture review packs. Preview and
+              mixed-confidence families should enrich expert analysis, not define leadership decisions by default.
             </p>
           </article>
         </div>
@@ -79,8 +120,8 @@ export default function HowToUsePage() {
           <article className="trace-card">
             <strong>What this is</strong>
             <p>
-              A static-first review accelerator for exploring checklist families, separating
-              mature and unstable guidance, and building better-informed review conversations.
+              A static-first review product for exploring checklist families, separating mature
+              and unstable guidance, and improving review preparation.
             </p>
           </article>
           <article className="trace-card">

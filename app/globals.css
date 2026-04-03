@@ -273,6 +273,13 @@ pre {
   text-underline-offset: 4px;
 }
 
+.header-link-active {
+  color: var(--brand);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+
 button.chip {
   justify-content: flex-start;
 }
@@ -425,6 +432,54 @@ button.chip:hover {
   background: linear-gradient(90deg, var(--brand), rgba(198, 107, 46, 0.45));
 }
 
+.trust-banner-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.trust-banner-summary-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.trust-banner-kicker {
+  color: var(--brand);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.trust-banner-headline {
+  margin: 0;
+  color: var(--text);
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.trust-banner-details {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.trust-banner-details summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-weight: 600;
+  list-style: none;
+}
+
+.trust-banner-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.trust-banner-details[open] summary {
+  margin-bottom: 14px;
+}
+
 .trust-banner-grid,
 .hero-grid,
 .editorial-hero-layout,
@@ -434,7 +489,10 @@ button.chip:hover {
  .service-path-grid,
   .technology-hero,
   .future-grid,
-  .traceability-grid {
+  .traceability-grid,
+  .start-here-grid,
+  .proof-grid,
+  .loading-skeleton-grid {
   display: grid;
   gap: 16px;
 }
@@ -497,6 +555,12 @@ button.chip:hover {
 }
 
 .future-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.start-here-grid,
+.proof-grid,
+.loading-skeleton-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -694,6 +758,39 @@ button.chip:hover {
   line-height: 1.7;
 }
 
+.path-card,
+.proof-card {
+  display: grid;
+  gap: 14px;
+  padding: 28px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+[data-theme="dark"] .path-card,
+[data-theme="dark"] .proof-card {
+  background: rgba(12, 24, 36, 0.62);
+}
+
+.path-card h3,
+.proof-card h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.35;
+}
+
+.path-card p,
+.proof-card p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.path-card-meta {
+  font-size: 0.95rem;
+}
+
 .brief-action-list {
   display: flex;
   flex-wrap: wrap;
@@ -802,6 +899,37 @@ button.chip:hover {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--bg-strong);
+}
+
+.loading-skeleton-card {
+  display: grid;
+  gap: 12px;
+  min-height: 132px;
+  padding: 24px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-strong);
+}
+
+.loading-skeleton-line {
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(15, 95, 126, 0.14),
+    rgba(15, 95, 126, 0.3),
+    rgba(15, 95, 126, 0.14)
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shift 1.4s ease-in-out infinite;
+}
+
+.loading-skeleton-line-short {
+  width: 34%;
+}
+
+.loading-skeleton-line-medium {
+  width: 76%;
 }
 
 .hero-stat {
@@ -1165,6 +1293,16 @@ button.chip:hover {
   padding: 24px;
 }
 
+@keyframes skeleton-shift {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 @media (max-width: 1180px) {
   .hero-grid,
   .editorial-hero-layout,
@@ -1175,6 +1313,8 @@ button.chip:hover {
   .service-directory-grid,
   .service-path-grid,
   .future-grid,
+  .start-here-grid,
+  .proof-grid,
   .site-footer-grid,
   .trust-banner-grid,
   .traceability-grid,
@@ -1204,6 +1344,11 @@ button.chip:hover {
   .header-nav {
     width: 100%;
     gap: 14px;
+  }
+
+  .trust-banner-summary {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .workspace-toolbar,

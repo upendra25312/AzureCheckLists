@@ -1,12 +1,28 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { TrustBanner } from "@/components/trust-banner";
 import { STORAGE_KEYS } from "@/lib/review-storage";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 
 type Theme = "light" | "dark";
+
+const NAV_ITEMS = [
+  { href: "/", label: "Overview" },
+  { href: "/services", label: "Services" },
+  { href: "/explorer", label: "Explorer" },
+  { href: "/how-to-use", label: "How to use" }
+] as const;
+
+function isActiveHref(pathname: string, href: string) {
+  if (href === "/") {
+    return pathname === href;
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 function resolveInitialTheme() {
   if (typeof window === "undefined") {
@@ -24,6 +40,7 @@ function resolveInitialTheme() {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("light");
+  const pathname = usePathname();
 
   useEffect(() => {
     const initialTheme = resolveInitialTheme();
@@ -49,18 +66,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         </div>
         <div className="header-actions">
           <nav className="header-nav" aria-label="Primary">
-            <Link href="/" className="header-link">
-              Overview
-            </Link>
-            <Link href="/services" className="header-link">
-              Services
-            </Link>
-            <Link href="/explorer" className="header-link">
-              Explorer
-            </Link>
-            <Link href="/how-to-use" className="header-link">
-              How to use
-            </Link>
+            {NAV_ITEMS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`header-link${
+                  isActiveHref(pathname, item.href) ? " header-link-active" : ""
+                }`}
+                aria-current={isActiveHref(pathname, item.href) ? "page" : undefined}
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
           <button
             type="button"

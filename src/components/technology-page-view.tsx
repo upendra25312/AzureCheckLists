@@ -73,8 +73,8 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
           <h1 className="technology-title">{payload.technology.technology}</h1>
           <p className="technology-summary">{payload.technology.description}</p>
           <p className="hero-note">
-            Generated {generatedDate}. Use this family according to its maturity, completeness,
-            and source confidence rather than treating every checklist family as equally reliable.
+            Generated {generatedDate}. Use this family at the confidence level it has earned,
+            rather than treating every checklist source as equally reliable.
           </p>
           <div className="button-row">
             <Link href="/" className="secondary-button">
@@ -88,7 +88,7 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
 
         <aside className="leadership-brief family-brief-sidecar">
           <p className="eyebrow">Family brief</p>
-          <h2 className="leadership-title">What this family means for a review.</h2>
+          <h2 className="leadership-title">How much weight this family should carry.</h2>
           <div className="leadership-list">
             <article>
               <strong>Maturity position</strong>
@@ -140,11 +140,11 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
           <div>
             <p className="eyebrow">Family recommendation</p>
             <h2 className="section-title">
-              Use this family according to its confidence level, not just its presence in the source repository.
+              Use this family according to its confidence level, not just its presence in the repository.
             </h2>
             <p className="section-copy">
-              This page is meant to help architects and leaders decide how much weight this family
-              deserves in a review pack and what level of validation is still required.
+              This page helps architects and leaders decide how much weight this family deserves
+              in a review pack and what validation is still required.
             </p>
           </div>
         </div>
@@ -189,7 +189,7 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
           <div>
             <p className="eyebrow">Quality profile</p>
             <h2 className="section-title">
-              Show why this family should or should not carry weight in a decision pack.
+              Show why this family should carry more or less weight in a decision pack.
             </h2>
             <p className="section-copy">
               The quality profile combines maturity status, metadata completeness, severity
@@ -272,33 +272,48 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
+            <p className="microcopy">
+              Use the search when you already know the question you are trying to answer. For
+              general review posture, start with the recommendation and quality sections above.
+            </p>
           </div>
         </div>
-        <article className="list-card review-list-card">
-          <div className="item-list">
-            {filtered.map((item) => (
-              <div className="item-row" key={item.guid}>
-                <button type="button" onClick={() => setSelectedGuid(item.guid)}>
-                  <div className="item-topline">
-                    {item.severity ? <span className="pill">{item.severity}</span> : null}
-                    {item.waf ? <span className="pill">{item.waf}</span> : null}
-                    {item.category ? <span className="pill">{item.category}</span> : null}
-                    <span className="pill">{item.technologyMaturityBucket}</span>
-                  </div>
-                  <p className="item-text">{item.text}</p>
-                  <div className="item-meta">
-                    {item.id ? <span className="chip">{item.id}</span> : null}
-                    {item.subcategory ? <span className="chip">{item.subcategory}</span> : null}
-                    {item.serviceCanonical ?? item.service ? (
-                      <span className="chip">{item.serviceCanonical ?? item.service}</span>
-                    ) : null}
-                  </div>
-                  {item.description ? <p className="item-description">{item.description}</p> : null}
-                </button>
-              </div>
-            ))}
-          </div>
-        </article>
+        {filtered.length > 0 ? (
+          <article className="list-card review-list-card">
+            <div className="item-list">
+              {filtered.map((item) => (
+                <div className="item-row" key={item.guid}>
+                  <button type="button" onClick={() => setSelectedGuid(item.guid)}>
+                    <div className="item-topline">
+                      {item.severity ? <span className="pill">{item.severity}</span> : null}
+                      {item.waf ? <span className="pill">{item.waf}</span> : null}
+                      {item.category ? <span className="pill">{item.category}</span> : null}
+                      <span className="pill">{item.technologyMaturityBucket}</span>
+                    </div>
+                    <p className="item-text">{item.text}</p>
+                    <div className="item-meta">
+                      {item.id ? <span className="chip">{item.id}</span> : null}
+                      {item.subcategory ? <span className="chip">{item.subcategory}</span> : null}
+                      {item.serviceCanonical ?? item.service ? (
+                        <span className="chip">{item.serviceCanonical ?? item.service}</span>
+                      ) : null}
+                    </div>
+                    {item.description ? <p className="item-description">{item.description}</p> : null}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </article>
+        ) : (
+          <section className="filter-card">
+            <p className="eyebrow">No matching items</p>
+            <h3>Broaden the search to restore the family view.</h3>
+            <p className="microcopy">
+              Try a shorter term or remove service-specific wording so the broader family guidance
+              becomes visible again.
+            </p>
+          </section>
+        )}
       </section>
 
       {selectedItem ? (

@@ -38,6 +38,14 @@ function toggleValue(values: string[], value: string) {
     : [...values, value];
 }
 
+function matchesValues(current: string[], expected: string[]) {
+  if (current.length !== expected.length) {
+    return false;
+  }
+
+  return expected.every((value) => current.includes(value));
+}
+
 function mergeFilters(storedFilters: Partial<ExplorerFilters> | null) {
   return {
     ...EMPTY_FILTERS,
@@ -91,17 +99,29 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
         <div className="section-head">
           <div>
             <p className="eyebrow">Explorer</p>
-            <h2 className="section-title">Loading the filtered findings view.</h2>
+            <h2 className="section-title">Preparing the findings workspace.</h2>
             <p className="section-copy">
-              The explorer is loading the prebuilt catalog so the experience stays static-first
-              while still supporting client-side filtering and local notes.
+              Defaulting to the GA-ready baseline and loading source-backed filters. The detailed
+              workspace appears in a moment so the first experience feels deliberate instead of empty.
             </p>
           </div>
         </div>
-        <div className="loading-panel">
-          <p className="microcopy">
-            Applying the default GA-first posture and loading source-traceable findings.
-          </p>
+        <div className="loading-panel loading-skeleton-grid" aria-hidden="true">
+          <div className="loading-skeleton-card">
+            <span className="loading-skeleton-line loading-skeleton-line-short" />
+            <span className="loading-skeleton-line" />
+            <span className="loading-skeleton-line loading-skeleton-line-medium" />
+          </div>
+          <div className="loading-skeleton-card">
+            <span className="loading-skeleton-line loading-skeleton-line-short" />
+            <span className="loading-skeleton-line" />
+            <span className="loading-skeleton-line loading-skeleton-line-medium" />
+          </div>
+          <div className="loading-skeleton-card">
+            <span className="loading-skeleton-line loading-skeleton-line-short" />
+            <span className="loading-skeleton-line" />
+            <span className="loading-skeleton-line loading-skeleton-line-medium" />
+          </div>
         </div>
       </section>
     );
@@ -122,6 +142,14 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
   const selectedTechnology = filters.technologies[0] ?? "";
   const selectedStatus = filters.statuses[0] ?? "";
   const selectedSourceKind = filters.sourceKinds[0] ?? "";
+  const isGaOnly = matchesValues(filters.maturityBuckets, ["GA"]);
+  const isIncludingPreview = matchesValues(filters.maturityBuckets, ["GA", "Preview", "Mixed"]);
+  const isShowingAll = matchesValues(filters.maturityBuckets, [
+    "GA",
+    "Preview",
+    "Mixed",
+    "Deprecated"
+  ]);
 
   function updateFilter<K extends keyof ExplorerFilters>(key: K, value: ExplorerFilters[K]) {
     setFilters((current) => ({
@@ -208,21 +236,21 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
             <div className="button-row">
               <button
                 type="button"
-                className="secondary-button"
+                className={isGaOnly ? "secondary-button" : "ghost-button"}
                 onClick={() => updateFilter("maturityBuckets", ["GA"])}
               >
                 GA-ready only
               </button>
               <button
                 type="button"
-                className="ghost-button"
+                className={isIncludingPreview ? "secondary-button" : "ghost-button"}
                 onClick={() => updateFilter("maturityBuckets", ["GA", "Preview", "Mixed"])}
               >
                 Include preview
               </button>
               <button
                 type="button"
-                className="ghost-button"
+                className={isShowingAll ? "secondary-button" : "ghost-button"}
                 onClick={() =>
                   updateFilter("maturityBuckets", ["GA", "Preview", "Mixed", "Deprecated"])
                 }
@@ -230,6 +258,9 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
                 Show all content
               </button>
             </div>
+            <p className="microcopy">
+              Start with service or severity, then open advanced filters only when you need deeper scoping.
+            </p>
           </div>
           <div className="workspace-toolbar-side">
             <button type="button" className="secondary-button" onClick={exportFilteredCsv}>
