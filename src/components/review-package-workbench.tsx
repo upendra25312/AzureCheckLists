@@ -45,6 +45,7 @@ import type {
   ReviewPackage,
   ReviewPackageAudience,
   ServiceRegionalFit,
+  ServiceRegionalFitSummary,
   ServiceIndex,
   ReviewServiceAssumption,
   ServicePricing
@@ -97,10 +98,14 @@ function createMatrixChip(label: string, tone: MatrixChipTone): MatrixChip {
 
 function buildRegionFitMatrix(
   regionalFit: ServiceRegionalFit | undefined,
-  fallbackMapped: boolean | undefined,
+  fallbackSummary: ServiceRegionalFitSummary | undefined,
   targetRegions: string[]
 ) {
-  if (!regionalFit && !fallbackMapped) {
+  const effectiveGlobalService = regionalFit?.isGlobalService || fallbackSummary?.isGlobalService || false;
+  const effectiveMapped = regionalFit?.mapped ?? fallbackSummary?.mapped ?? false;
+  const fallbackNote = fallbackSummary?.notes[0];
+
+  if (!regionalFit && !effectiveMapped) {
     return {
       chips: [createMatrixChip("Mapping pending", "neutral")],
       summary: "Official regional availability is not mapped for this service yet."
@@ -108,6 +113,20 @@ function buildRegionFitMatrix(
   }
 
   if (!regionalFit) {
+    if (effectiveGlobalService) {
+      return {
+        chips:
+          targetRegions.length > 0
+            ? targetRegions.map((targetRegion) =>
+                createMatrixChip(`${targetRegion} · Global service`, "neutral")
+              )
+            : [createMatrixChip("Global service", "neutral")],
+        summary:
+          fallbackNote ??
+          "This service is treated as global or non-regional in the Microsoft availability feed, so target deployment regions do not directly constrain this matrix view."
+      };
+    }
+
     return {
       chips: [createMatrixChip("Loading live availability", "neutral")],
       summary: "The project review is asking the dedicated backend for current regional availability."
@@ -119,17 +138,19 @@ function buildRegionFitMatrix(
       chips: [createMatrixChip("Mapping pending", "neutral")],
       summary:
         regionalFit.notes[0] ??
+        fallbackNote ??
         "Official regional availability could not be mapped cleanly for this service."
     };
   }
 
   if (targetRegions.length > 0) {
-    if (regionalFit.isGlobalService) {
+    if (effectiveGlobalService) {
       return {
         chips: targetRegions.map((targetRegion) =>
           createMatrixChip(`${targetRegion} · Global service`, "neutral")
         ),
         summary:
+          fallbackNote ??
           "This service is treated as global or non-regional in the Microsoft availability feed, so target deployment regions do not directly constrain this matrix view."
       };
     }
@@ -188,15 +209,16 @@ function buildRegionFitMatrix(
 
     return {
       chips,
-      summary: regionalFit.isGlobalService
-        ? "This service is treated as global or non-regional for at least part of its Microsoft offering."
+      summary: effectiveGlobalService
+        ? fallbackNote ??
+          "This service is treated as global or non-regional for at least part of its Microsoft offering."
         : `${accountedForCount.toLocaleString()} of ${targetRegions.length.toLocaleString()} target regions are accounted for in the current availability data.`
     };
   }
 
   const chips: MatrixChip[] = [];
 
-  if (regionalFit.isGlobalService) {
+  if (effectiveGlobalService) {
     chips.push(createMatrixChip("Global service", "neutral"));
   }
 
@@ -733,7 +755,7 @@ export function ReviewPackageWorkbench({
         const liveRegionalFit = serviceRegionalFits[entry.service.slug];
         const regionFit = buildRegionFitMatrix(
           liveRegionalFit,
-          entry.service.regionalFitSummary?.mapped,
+          entry.service.regionalFitSummary,
           activePackage?.targetRegions ?? []
         );
         const serviceAssumption = getServiceAssumption(activePackage, entry.service.slug);
