@@ -27,6 +27,7 @@ import {
   upsertPackage
 } from "@/lib/review-storage";
 import { ProjectReviewCopilot } from "@/components/project-review-copilot";
+import { ReviewCloudControls } from "@/components/review-cloud-controls";
 import type {
   ChecklistItem,
   ProjectReviewCopilotContext,
@@ -441,13 +442,23 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
     },
     {
       step: "04",
+      title: "Ask the project review copilot",
+      copy: "Use the scoped copilot when you want a fast summary of blockers, pricing caveats, review gaps, or leadership-ready wording."
+    },
+    {
+      step: "05",
       title: "Open service pages and write project notes",
       copy: "From each selected service, open findings, mark them as included or not applicable, and capture your comments."
     },
     {
-      step: "05",
+      step: "06",
       title: "Download the design notes and pricing snapshot",
       copy: "Export only the selected services and their project-specific notes in the format that suits the audience."
+    },
+    {
+      step: "07",
+      title: "Sign in only when you want Azure-backed save and reuse",
+      copy: "Browsing and local exports stay open. Sign in later when you want to save this project review to Azure and resume it from another session."
     }
   ];
   const selectedServiceProgress = useMemo(
@@ -969,11 +980,12 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
         <div className="section-head">
           <div>
             <p className="eyebrow">How to use this page</p>
-            <h2 className="section-title">Follow the same five steps every time you build a customer review artifact.</h2>
+            <h2 className="section-title">Follow the same seven steps when you want a reusable customer review artifact.</h2>
             <p className="section-copy">
               The goal of this page is to make the workflow obvious: create the review, add services,
-              check the matrix, write notes on the selected service pages, and then export only what
-              belongs to the design.
+              check the matrix, ask for scoped summaries, write notes on the selected service pages,
+              export only what belongs to the design, and sign in only when you want Azure-backed
+              save and reuse.
             </p>
           </div>
         </div>
@@ -1424,14 +1436,15 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
         )}
       </section>
 
-      <section className="surface-panel editorial-section">
+      <section id="project-review-local-exports" className="surface-panel editorial-section">
         <div className="section-head">
           <div>
             <p className="eyebrow">Step 6</p>
             <h2 className="section-title">Download only the scoped services and their project notes.</h2>
             <p className="section-copy">
               CSV works well for spreadsheets and action tracking. Markdown and text are better for
-              architecture notes, pre-sales handoff, and leadership summaries.
+              architecture notes, pre-sales handoff, and leadership summaries. These downloads work
+              without sign-in because they are generated directly in your browser.
             </p>
           </div>
         </div>
@@ -1503,6 +1516,38 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
             </div>
           </article>
         </div>
+      </section>
+
+      <section className="surface-panel editorial-section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Azure-backed save and reuse</p>
+            <h2 className="section-title">Keep the review open to everyone, then sign in only when you want cloud-backed continuity.</h2>
+            <p className="section-copy">
+              This is the sign-in boundary for normal project-review users. It is separate from the
+              future admin login. Use it to save the current review to Azure Storage, reload it in a
+              later session, and generate an Azure-backed CSV for the current project scope.
+            </p>
+          </div>
+        </div>
+
+        {activePackage ? (
+          <ReviewCloudControls
+            items={packageItems}
+            reviews={reviews}
+            onReplaceReviews={setReviews}
+            continueHref="#project-review-local-exports"
+          />
+        ) : (
+          <section className="filter-card cloud-sync-card">
+            <p className="eyebrow">Step 7</p>
+            <h3>Create a project review first, then sign in when you want to save it to Azure.</h3>
+            <p className="microcopy">
+              The Azure-backed save flow only applies after a project review exists. You can keep
+              exploring the catalog and local exports before that point.
+            </p>
+          </section>
+        )}
       </section>
 
       <section className="surface-panel editorial-section">

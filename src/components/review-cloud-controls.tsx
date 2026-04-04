@@ -15,6 +15,7 @@ type ReviewCloudControlsProps = {
   items: ChecklistItem[];
   reviews: Record<string, ReviewDraft>;
   onReplaceReviews: (reviews: Record<string, ReviewDraft>) => void;
+  continueHref?: string;
 };
 
 type BusyAction = "load" | "save" | "download" | null;
@@ -30,7 +31,8 @@ function getLoginUrl() {
 export function ReviewCloudControls({
   items,
   reviews,
-  onReplaceReviews
+  onReplaceReviews,
+  continueHref
 }: ReviewCloudControlsProps) {
   const [principal, setPrincipal] = useState<StaticWebAppClientPrincipal | null>(null);
   const [authResolved, setAuthResolved] = useState(false);
@@ -116,10 +118,11 @@ export function ReviewCloudControls({
   if (!authResolved) {
     return (
       <section className="filter-card cloud-sync-card">
-        <p className="eyebrow">Azure save and export</p>
-        <h3>Checking sign-in status.</h3>
+        <p className="eyebrow">Azure-backed save and reuse</p>
+        <h3>Checking sign-in status for this project review.</h3>
         <p className="microcopy">
-          Structured review records can be saved to Azure Storage and turned into a CSV only when you ask for a download.
+          Your local notes stay available in this browser either way. Sign-in is only needed when
+          you want Azure-backed save, reload, and cloud-generated CSV export.
         </p>
       </section>
     );
@@ -128,16 +131,22 @@ export function ReviewCloudControls({
   if (!principal) {
     return (
       <section className="filter-card cloud-sync-card">
-        <p className="eyebrow">Azure save and export</p>
-        <h3>Sign in to store review records in Azure Storage.</h3>
+        <p className="eyebrow">Step 7</p>
+        <h3>Sign in to save and reuse this project review.</h3>
         <p className="microcopy">
-          Your notes still work locally without sign-in. Sign in when you want to save structured
-          records to Azure and download a CSV artifact from the live site.
+          You can keep browsing services, writing notes, and downloading local project-review
+          exports without signing in. Use Microsoft Entra ID only when you want Azure-backed save,
+          reload, and a cloud-generated CSV artifact for the current review.
         </p>
         <div className="button-row">
           <a href={getLoginUrl()} className="primary-button">
             Sign in with Microsoft Entra ID
           </a>
+          {continueHref ? (
+            <a href={continueHref} className="ghost-button">
+              Keep working locally
+            </a>
+          ) : null}
         </div>
       </section>
     );
@@ -147,10 +156,12 @@ export function ReviewCloudControls({
     <section className="filter-card cloud-sync-card">
       <div className="section-head">
         <div>
-          <p className="eyebrow">Azure save and export</p>
-          <h3>Save structured review records, then generate CSV only when needed.</h3>
+          <p className="eyebrow">Step 7</p>
+          <h3>Save this project review to Azure, then reload it later when needed.</h3>
           <p className="microcopy">
-            Signed in as {principal.userDetails || principal.userId}. This keeps editable notes in structured form and creates the CSV only when you click download.
+            Signed in as {principal.userDetails || principal.userId}. This keeps the current
+            project-review notes in Azure Storage and lets you generate a cloud-backed CSV artifact
+            only when you ask for it.
           </p>
         </div>
         <div className="chip-row">
@@ -164,7 +175,7 @@ export function ReviewCloudControls({
           onClick={loadFromAzure}
           disabled={busyAction !== null}
         >
-          {busyAction === "load" ? "Loading..." : "Load from Azure"}
+          {busyAction === "load" ? "Loading..." : "Load project review"}
         </button>
         <button
           type="button"
@@ -172,7 +183,7 @@ export function ReviewCloudControls({
           onClick={saveToAzure}
           disabled={busyAction !== null}
         >
-          {busyAction === "save" ? "Saving..." : "Save to Azure"}
+          {busyAction === "save" ? "Saving..." : "Save project review"}
         </button>
         <button
           type="button"
@@ -180,7 +191,7 @@ export function ReviewCloudControls({
           onClick={downloadCsv}
           disabled={busyAction !== null}
         >
-          {busyAction === "download" ? "Preparing CSV..." : "Download CSV"}
+          {busyAction === "download" ? "Preparing CSV..." : "Download Azure CSV"}
         </button>
         <a href="/.auth/logout" className="ghost-button">
           Sign out
