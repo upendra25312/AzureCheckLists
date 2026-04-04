@@ -10,11 +10,11 @@ import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 type Theme = "light" | "dark";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Start review" },
+  { href: "/", label: "Start Project Review" },
   { href: "/services", label: "Services" },
   { href: "/review-package", label: "Project review" },
-  { href: "/data-health", label: "Data health" },
-  { href: "/explorer", label: "Explorer" },
+  { href: "/data-health", label: "Data Health" },
+  { href: "/explorer", label: "Advanced Tools" },
   { href: "/how-to-use", label: "How to use" }
 ] as const;
 
@@ -97,8 +97,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           <article className="site-footer-column">
             <h3>Why this exists</h3>
             <p>
-              Bring Azure review guidance into a clearer, more actionable review conversation
-              for leaders, architects, and operators.
+              Turn Azure solution requirements into a scoped review artifact with service fit,
+              region fit, pricing context, and project-specific notes.
             </p>
           </article>
           <article className="site-footer-column">
@@ -111,8 +111,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           <article className="site-footer-column">
             <h3>Source and transparency</h3>
             <p>
-              Built from Azure review checklist content with preserved traceability,
-              maturity disclosure, and dedicated backend data-health visibility.
+              Built from Azure review checklist content with preserved traceability, Microsoft-backed
+              commercial data, and dedicated backend data-health visibility.
             </p>
           </article>
         </div>

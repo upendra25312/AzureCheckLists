@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { CatalogSummary, ServiceIndex } from "@/types";
 import { SummaryCards } from "@/components/summary-cards";
-import { SITE_NAME } from "@/lib/site";
 
 export function DashboardHome({
   summary,
@@ -18,105 +17,117 @@ export function DashboardHome({
   const highSeverityMetric = summary.metrics.find(
     (metric) => metric.label === "High-severity findings"
   );
-  const reviewWatchlistCount =
-    summary.previewTechnologyCount +
-    summary.mixedTechnologyCount +
-    summary.deprecatedTechnologyCount;
   const featuredServices = serviceIndex.services.slice(0, 6);
   const reviewSteps = [
     {
       step: "01",
-      eyebrow: "Start review",
-      title: "Create one project review for the customer or workload you are designing.",
+      eyebrow: "Create Project Review",
+      title: "Name the project, capture the business scope, and set the target regions.",
       copy:
-        "This becomes the working space for one solution. It keeps your selected services, target regions, pricing snapshot, and checklist notes together.",
-      meta: "Best first click for architects, pre-sales, and solution teams.",
+        "Every note stays tied to one solution, so the team can review the same scope, assumptions, regions, and evidence together.",
+      meta: "Start with the customer solution, not the full Azure catalog.",
       href: "/review-package" as const,
       cta: "Start project review"
     },
     {
       step: "02",
-      eyebrow: "Add services",
-      title: "Add only the Azure services that belong to this solution.",
+      eyebrow: "Add Azure Services",
+      title: "Select only the Azure components that belong in the design.",
       copy:
-        "Use the service directory to bring in API Management, AKS, App Service, Front Door, and any other components that are truly in scope.",
-      meta: "Keeps the review focused on the actual design, not the full catalog.",
+        "Pull in API Management, AKS, App Service, Front Door, Key Vault, or any other services that are truly part of the proposed solution.",
+      meta: "Keep the project review scoped to the real architecture.",
       href: "/services" as const,
       cta: "Browse services"
     },
     {
       step: "03",
-      eyebrow: "Review findings",
-      title: "Open a service page, check region and pricing, then add project notes to findings.",
+      eyebrow: "Review Region and Cost Fit",
+      title: "See where each service is available and what public retail pricing looks like.",
       copy:
-        "When a finding matters to the customer design, mark it as included, not applicable, or excluded, then capture comments, evidence, owner, and due date.",
-      meta: "This is where the project-specific design story gets written.",
+        "Check whether a service is available, restricted, preview, or unavailable in the target regions, then review pricing across published SKUs.",
+      meta: "Carry region fit and cost fit into the same design review.",
       href: "/services" as const,
-      cta: "Review service pages"
+      cta: "Review region and cost fit"
     },
     {
       step: "04",
-      eyebrow: "Export",
-      title: "Download only the services and notes that belong to that project review.",
+      eyebrow: "Export Project Artifact",
+      title: "Download only the services and checklist notes that belong to the current project.",
       copy:
-        "Export scoped checklist notes and scoped pricing snapshots in CSV, Markdown, or text without carrying unrelated services into the customer artifact.",
-      meta: "Best for design documents, action tracking, and pre-sales handoff.",
+        "Export a clean design artifact in CSV, Markdown, or text so architecture, pre-sales, and delivery teams can reuse the same project-specific output.",
+      meta: "The output should be usable, not just visible on screen.",
       href: "/review-package" as const,
       cta: "Download project artifacts"
     }
   ];
   const workflowSignals = [
     {
-      title: "One review at a time",
-      copy: "Keep the notes and exports tied to one project instead of mixing multiple customer decisions together."
+      title: "Live regional availability",
+      copy: "See where services are open, restricted, preview, unavailable, or global for the selected design."
     },
     {
-      title: "Region and cost included",
-      copy: "Check availability restrictions and public retail pricing for the same services you selected for the review."
+      title: "Live retail pricing",
+      copy: "Review public retail pricing for the same services in scope before building a fuller customer estimate."
     },
     {
-      title: "Export only what matters",
-      copy: "Download just the scoped services and project notes instead of the entire checklist repository."
+      title: "Project-specific notes",
+      copy: "Capture why a finding is included, not applicable, excluded, or still pending for the current project."
+    },
+    {
+      title: "Export to CSV, Markdown, and text",
+      copy: "Download only the scoped services and notes instead of exporting the entire checklist repository."
     }
   ];
   const audienceStories = [
     {
       audience: "Sales Architect",
-      title: "Turn service choices into a cleaner customer-facing review pack.",
+      title: "Create a fast first-pass solution view with service fit, regional viability, and public list pricing.",
       copy:
-        "Use the workspace to scope the services, carry project comments, and export a focused artifact that is easier to explain to customers and account teams.",
-      metric: `${serviceIndex.services.length.toLocaleString()} services available for scoped design reviews`
+        "Use this workspace to shape the right Azure solution quickly and create a cleaner commercial and architectural starting point for customer discussions.",
+      metric: "Built for proposal shaping and first-pass solution validation."
     },
     {
       audience: "Solutions Architect",
-      title: "Move from service choice to region fit, cost, and checklist notes in one flow.",
+      title: "Capture design decisions, applicability notes, and service-specific guidance in one scoped review.",
       copy:
-        "Open the service you are designing, verify region availability and restrictions, review public retail pricing, and then record project-specific checklist decisions.",
-      metric: `${summary.itemCount.toLocaleString()} normalized findings available when the design question becomes specific`
+        "Turn business and technical requirements into a solution-specific Azure review with justified checklist decisions, region fit, pricing context, and exportable artifacts.",
+      metric: "Built for design authority, customer fit, and reusable documentation."
     },
     {
       audience: "Cloud Engineer",
-      title: "Keep implementation notes tied to the exact findings that affect the build.",
+      title: "See which services are actually in scope and which checklist findings need implementation attention.",
       copy:
-        "Included, excluded, and not-applicable decisions stay attached to the active project review so handoff and follow-up are easier to track.",
-      metric: `${reviewWatchlistCount.toLocaleString()} non-baseline families still stay visible when extra validation is needed`
+        "Keep implementation-relevant findings, comments, owners, and due dates tied to the project so delivery teams know what was decided and why.",
+      metric: "Built for cleaner handoff from design into implementation."
+    },
+    {
+      audience: "Senior Director",
+      title: "Review the selected solution components, region constraints, and pricing posture without reading the entire catalog.",
+      copy:
+        "Focus on the project boundary, commercial posture, and major technical decisions instead of wading through every checklist family in the repository.",
+      metric: "Built for leadership review without losing traceability."
     }
   ];
   const productProof = [
     {
-      title: "The review follows the project scope, not the repository structure.",
+      title: "Project-scoped",
       copy:
-        "Users start with the services they actually need, then keep only those services in the exported artifact."
+        "Generic AI gives broad answers. This workspace keeps only the services, findings, regions, and notes that belong to the current solution."
     },
     {
-      title: "Regional availability and retail pricing are part of the same service review.",
+      title: "Traceable",
       copy:
-        "A reviewer can check availability, restricted regions like UAE Central, and pricing context without leaving the service workflow."
+        "Regional availability and pricing are tied to Microsoft-backed sources, with visible health, refresh status, and source-aware service context."
     },
     {
-      title: "Every project note stays attached to a real checklist item.",
+      title: "Repeatable",
       copy:
-        "That makes the export useful in design documents, customer handoff, and implementation reviews because the reasoning stays traceable."
+        "The same scoped inputs produce the same structured output, which makes customer reviews and internal design reviews easier to repeat and defend."
+    },
+    {
+      title: "Exportable",
+      copy:
+        "The output is not just an answer on a screen. It becomes a checklist export, design note set, and pricing snapshot your team can reuse."
     }
   ];
 
@@ -126,21 +137,19 @@ export function DashboardHome({
         <div className="editorial-hero-layout">
           <div className="editorial-hero-copy">
             <div className="hero-kicker-row">
-              <span className="hero-kicker">Project-first</span>
-              <span className="hero-kicker">Source-backed</span>
+              <span className="hero-kicker">Live regional availability</span>
+              <span className="hero-kicker">Live retail pricing</span>
               <span className="hero-kicker">Export-ready</span>
             </div>
-            <p className="eyebrow">{SITE_NAME}</p>
+            <p className="eyebrow">Azure Solution Review Workspace</p>
             <h1 className="hero-title">Start a project review and keep only the services that matter.</h1>
             <p className="hero-copy">
-              Create one project review, add the Azure services in scope, check region availability
-              and pricing, capture project-specific checklist notes, and export a customer-ready
-              artifact without dragging the whole catalog into the conversation.
+              Build a solution-specific review pack with selected Azure services, regional
+              availability, retail pricing, checklist decisions, and exportable design notes.
             </p>
             <p className="hero-note">
-              Generated {generatedDate}. This workspace is designed to shorten review preparation,
-              keep notes tied to real findings, and produce a project-specific export that feels more
-              useful than a generic AI-generated summary.
+              Designed for sales architects, solutions architects, cloud architects, and cloud
+              engineers who need a project-ready artifact, not a generic AI answer. Generated {generatedDate}.
             </p>
             <div className="hero-actions">
               <Link href="/review-package" className="primary-button">
@@ -155,20 +164,20 @@ export function DashboardHome({
             </div>
           </div>
           <aside className="leadership-brief boardroom-brief">
-            <p className="eyebrow">Project review in four moves</p>
-            <h2 className="leadership-title">What the user should understand immediately.</h2>
+            <p className="eyebrow">Why this is valuable</p>
+            <h2 className="leadership-title">Start with the customer solution, not the full Azure catalog.</h2>
             <div className="leadership-list">
               <article>
-                <strong>Create the review</strong>
-                <p>Name the project, audience, target regions, and business scope once.</p>
+                <strong>Create project review</strong>
+                <p>Name the project, capture the business scope, and set the target regions so every note stays tied to one solution.</p>
               </article>
               <article>
-                <strong>Add the services</strong>
-                <p>Keep only the Azure components that belong to the design under review.</p>
+                <strong>Add Azure services</strong>
+                <p>Select only the Azure components that belong in the design, such as API Management, AKS, App Service, Front Door, or Key Vault.</p>
               </article>
               <article>
-                <strong>Review and export</strong>
-                <p>Capture project notes on findings and download the scoped checklist and pricing artifact.</p>
+                <strong>Review region and cost fit</strong>
+                <p>See where each service is available, whether a target region is restricted or preview, and what public retail pricing looks like across published SKUs.</p>
               </article>
             </div>
             <div className="boardroom-mini-grid">
@@ -203,13 +212,12 @@ export function DashboardHome({
       <section className="surface-panel editorial-section executive-brief-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">How the workflow works</p>
-            <h2 className="section-title">
-              Make the first click obvious, then keep moving in the same project review flow.
-            </h2>
+            <p className="eyebrow">Start here</p>
+            <h2 className="section-title">Start with the customer solution, not the full Azure catalog.</h2>
             <p className="section-copy">
-              The easiest experience is not to browse the whole product. It is to start a project
-              review, add services, review findings, and export only what belongs to that solution.
+              This workspace helps you create a project-specific Azure review. Add only the services
+              in scope, validate region and pricing fit, capture design notes, and export a clean
+              artifact for documentation or customer review.
             </p>
           </div>
         </div>
@@ -237,13 +245,11 @@ export function DashboardHome({
       <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Who this helps first</p>
-            <h2 className="section-title">
-              Built for the people who need to scope, explain, and hand off Azure designs.
-            </h2>
+            <p className="eyebrow">Built for the people who shape Azure solutions</p>
+            <h2 className="section-title">The same project review supports each role in a different way.</h2>
             <p className="section-copy">
-              The product becomes easier to use when each audience can see how the same project review
-              workspace supports its own job to be done.
+              Sales, solution design, engineering, and leadership all need the same scoped artifact,
+              but each persona uses it for a different job to be done.
             </p>
           </div>
         </div>
@@ -262,13 +268,11 @@ export function DashboardHome({
       <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Why this feels useful</p>
-            <h2 className="section-title">
-              Better than a generic AI-generated site because the review stays scoped and traceable.
-            </h2>
+            <p className="eyebrow">Why this is better than a generic AI tool</p>
+            <h2 className="section-title">Generic AI gives answers. This workspace gives a structured project output.</h2>
             <p className="section-copy">
-              A generic summary tool can paraphrase Azure guidance. This product is more valuable
-              because it stays aligned to project scope, service decisions, and exportable review notes.
+              The value is not just intelligent text. The value is a repeatable Azure review system
+              that stays aligned to project scope, service decisions, pricing, and exportable notes.
             </p>
           </div>
         </div>
@@ -276,8 +280,9 @@ export function DashboardHome({
           <p className="eyebrow">What users actually get</p>
           <h3>One project review that keeps services, notes, regional fit, and pricing connected.</h3>
           <p>
-            That is what makes the output reusable in design documents, customer reviews, and
-            delivery handoff instead of becoming another polished summary that has to be rewritten later.
+            That is what makes the output reusable in design documents, customer reviews, pricing
+            handoff, and delivery planning instead of becoming another polished summary that has to
+            be rewritten later.
           </p>
         </article>
         <div className="proof-grid">
@@ -301,7 +306,8 @@ export function DashboardHome({
             </h2>
             <p className="section-copy">
               Service pages are the clearest working surface when the question is practical: can we
-              use this service, in which regions, at what price range, and which findings belong in the review?
+              use this service, in which regions, at what price range, and which findings belong in
+              the review?
             </p>
           </div>
           <div className="button-row">
@@ -361,7 +367,7 @@ export function DashboardHome({
           <div>
             <p className="eyebrow">Advanced tools</p>
             <h2 className="section-title">
-              Use the explorer only when you already know the question you are asking.
+              Use advanced tools only when you already know the question you are asking.
             </h2>
             <p className="section-copy">
               The homepage should point people into the project review workflow first. The explorer
