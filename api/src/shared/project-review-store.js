@@ -5,6 +5,7 @@ const {
   buildProjectReviewStateBlobName,
   getContainerClient,
   readJsonBlob,
+  sanitizePathSegment,
   uploadJsonBlob
 } = require("./storage");
 const {
@@ -202,6 +203,44 @@ async function writeProjectReviewPayload(userId, reviewId, payload) {
   await uploadJsonBlob(containerClient, buildProjectReviewBlobName(userId, reviewId), payload);
 }
 
+async function rebuildProjectReviewSummariesFromBlobStorage(principal, activeReviewId, client) {
+  const containerClient = await getContainerClient(NOTES_CONTAINER_NAME);
+  const prefix = `${sanitizePathSegment(principal.userId)}/project-reviews/`;
+  const recoveredEntities = [];
+
+  for await (const blob of containerClient.listBlobsFlat({ prefix })) {
+    if (!blob.name.endsWith(".json")) {
+      continue;
+    }
+
+    const payload = await readJsonBlob(containerClient, blob.name);
+
+    if (!payload?.activePackage?.id) {
+      continue;
+    }
+
+    const summary = summarizeProjectReview(
+      payload.activePackage,
+      payload.copilotContext,
+      payload.reviewRecordDocument,
+      principal.userId
+    );
+
+    if (!summary) {
+      continue;
+    }
+
+    await client.upsertEntity(summary, "Merge");
+    recoveredEntities.push(summary);
+  }
+
+  recoveredEntities.sort((left, right) =>
+    String(right.lastSavedAt || "").localeCompare(String(left.lastSavedAt || ""))
+  );
+
+  return recoveredEntities.map((entity) => toProjectReviewSummary(entity, activeReviewId));
+}
+
 async function saveProjectReviewState(principal, body) {
   const activePackage = normalizeReviewPackage(body?.activePackage);
   const copilotContext = normalizeCopilotContext(body?.copilotContext);
@@ -371,6 +410,25 @@ async function listProjectReviews(principal) {
   }
 
   entities.sort((left, right) => String(right.lastSavedAt || "").localeCompare(String(left.lastSavedAt || "")));
+
+  if (entities.length === 0) {
+    const recoveredReviews = await rebuildProjectReviewSummariesFromBlobStorage(
+      principal,
+      profile.activeReviewId,
+      client
+    );
+
+    return {
+      user: {
+        userId: profile.userId,
+        email: profile.email,
+        displayName: profile.displayName,
+        provider: profile.provider,
+        activeReviewId: profile.activeReviewId
+      },
+      reviews: recoveredReviews
+    };
+  }
 
   return {
     user: {
