@@ -6,7 +6,7 @@ import type {
   ServiceSummary
 } from "@/types";
 
-const SERVICE_PRICING_CACHE_PREFIX = "azure-review-dashboard.service-pricing.v1";
+const SERVICE_PRICING_CACHE_PREFIX = "azure-review-dashboard.service-pricing.v2";
 const SERVICE_PRICING_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const SERVICE_PRICING_BATCH_SIZE = 20;
 const SERVICE_PRICING_SOURCE_URL = "https://prices.azure.com/api/retail/prices";
@@ -77,11 +77,20 @@ function purgePersistedServicePricingCache() {
   keysToRemove.forEach((key) => window.localStorage.removeItem(key));
 }
 
+function hasInvalidCachedPricingPayload(payload: ServicePricing) {
+  return payload.notes.some((note) => /quota|exceeded the quota|localstorage/i.test(note));
+}
+
 function readCachedServicePricing(request: ServicePricingRequest) {
   const cacheKey = buildCacheKey(request);
   const inMemory = servicePricingMemoryCache.get(cacheKey);
 
   if (inMemory) {
+    if (hasInvalidCachedPricingPayload(inMemory.payload)) {
+      clearCachedServicePricingByKey(cacheKey);
+      return null;
+    }
+
     if (isExpired(inMemory.savedAt, SERVICE_PRICING_CACHE_TTL_MS)) {
       clearCachedServicePricingByKey(cacheKey);
       return null;
@@ -102,6 +111,11 @@ function readCachedServicePricing(request: ServicePricingRequest) {
 
   try {
     const cached = JSON.parse(raw) as CachedServicePricing;
+
+    if (hasInvalidCachedPricingPayload(cached.payload)) {
+      clearCachedServicePricingByKey(cacheKey);
+      return null;
+    }
 
     if (isExpired(cached.savedAt, SERVICE_PRICING_CACHE_TTL_MS)) {
       clearCachedServicePricingByKey(cacheKey);

@@ -70,8 +70,8 @@ export function ProjectReviewCopilot({
     <section className="surface-panel editorial-section">
       <div className="section-head">
         <div>
-          <p className="eyebrow">Step 4</p>
-          <h2 className="section-title">Ask the project review copilot for a scoped summary or explanation.</h2>
+          <p className="eyebrow">Step 3</p>
+          <h2 className="section-title">Ask CoPilot early for a scoped summary, pricing explanation, or leadership-ready answer.</h2>
           <p className="section-copy">
             This copilot is grounded on the active project review, selected services, target regions,
             pricing summaries, and recorded notes. It is useful for summaries and rationale, but it

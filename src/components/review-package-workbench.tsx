@@ -229,7 +229,9 @@ function buildRegionFitMatrix(
 function buildCostFitMatrix(
   pricing: ServicePricing | undefined,
   loading: boolean,
-  error: string | null
+  error: string | null,
+  assumption: ReviewServiceAssumption,
+  targetRegions: string[]
 ) {
   if (!pricing) {
     return {
@@ -248,12 +250,17 @@ function buildCostFitMatrix(
     };
   }
 
+  const preferredSku = assumption.preferredSku.trim();
+  const sizingNote = assumption.sizingNote.trim();
   const chips = [
     createMatrixChip(
       `Starts at ${formatRetailPrice(pricing.startsAtRetailPrice, pricing.currencyCode)}`,
       "good"
     ),
-    createMatrixChip(`${pricing.skuCount.toLocaleString()} SKUs`, "neutral")
+    createMatrixChip(
+      preferredSku || `${pricing.skuCount.toLocaleString()} published SKUs`,
+      preferredSku ? "good" : "neutral"
+    )
   ];
 
   if (pricing.targetRegionMatchCount > 0) {
@@ -266,7 +273,19 @@ function buildCostFitMatrix(
 
   return {
     chips,
-    summary: `${pricing.billingLocationCount.toLocaleString()} billing locations and ${pricing.meterCount.toLocaleString()} pricing meters are currently published for this service.`
+    summary: [
+      preferredSku
+        ? `Preferred SKU "${preferredSku}" is captured as the design assumption, while the pricing snapshot still keeps all published SKU rows available for comparison.`
+        : "No preferred SKU is set yet, so the pricing snapshot uses all published SKU rows for this service.",
+      targetRegions.length > 0
+        ? pricing.targetRegionMatchCount > 0
+          ? `Published retail rows currently line up with ${pricing.targetRegionMatchCount.toLocaleString()} selected target region${pricing.targetRegionMatchCount === 1 ? "" : "s"}.`
+          : "No direct selected-region retail row is published yet, so this remains the broader Microsoft retail snapshot."
+        : "No target region is captured yet, so the pricing snapshot is not region-filtered.",
+      sizingNote
+        ? "Sizing notes are saved for later estimate refinement."
+        : "A sizing note is not required to fetch list pricing; add one later when you want to turn retail pricing into a usage-based estimate."
+    ].join(" ")
   };
 }
 
@@ -555,13 +574,13 @@ export function ReviewPackageWorkbench({
     },
     {
       step: "03",
-      title: "Review the region, cost, and checklist matrix",
-      copy: "Confirm regional fit, pricing readiness, and checklist progress service by service before jumping into detail."
+      title: "Ask the project review copilot",
+      copy: "Use the scoped copilot early when you want a fast summary of blockers, pricing caveats, review gaps, or leadership-ready wording."
     },
     {
       step: "04",
-      title: "Ask the project review copilot",
-      copy: "Use the scoped copilot when you want a fast summary of blockers, pricing caveats, review gaps, or leadership-ready wording."
+      title: "Review the region, cost, and checklist matrix",
+      copy: "Confirm regional fit, pricing readiness, and checklist progress service by service before jumping into detail."
     },
     {
       step: "05",
@@ -717,10 +736,13 @@ export function ReviewPackageWorkbench({
           entry.service.regionalFitSummary?.mapped,
           activePackage?.targetRegions ?? []
         );
+        const serviceAssumption = getServiceAssumption(activePackage, entry.service.slug);
         const costFit = buildCostFitMatrix(
           servicePricing[entry.service.slug],
           pricingLoading,
-          pricingError
+          pricingError,
+          serviceAssumption,
+          activePackage?.targetRegions ?? []
         );
         const checklistChips: MatrixChip[] = [
           createMatrixChip(`${entry.includedCount.toLocaleString()} included`, "good"),
@@ -1402,10 +1424,12 @@ export function ReviewPackageWorkbench({
         </div>
       </section>
 
+      {copilotContext ? <ProjectReviewCopilot context={copilotContext} /> : null}
+
       <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Step 3</p>
+            <p className="eyebrow">Step 4</p>
             <h2 className="section-title">See region fit, cost fit, and checklist progress in one matrix.</h2>
             <p className="section-copy">
               This is the quickest place to confirm whether each selected service is region-ready,
@@ -1578,8 +1602,6 @@ export function ReviewPackageWorkbench({
         )}
       </section>
 
-      {copilotContext ? <ProjectReviewCopilot context={copilotContext} /> : null}
-
       <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
@@ -1704,7 +1726,7 @@ export function ReviewPackageWorkbench({
               </article>
               <article>
                 <strong>Pricing baseline</strong>
-                <p>Use the commercial snapshot as the list-price baseline before moving into customer-specific usage and discount assumptions.</p>
+                <p>Use the commercial snapshot as the list-price baseline before moving into customer-specific usage and discount assumptions. Preferred SKU and sizing notes refine the estimate later, but they are not required to fetch the first-pass retail snapshot.</p>
               </article>
               <article>
                 <strong>Commercial handoff</strong>
