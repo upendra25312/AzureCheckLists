@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   buildPackageExportRows,
+  buildLeadershipSummaryMarkdown,
   buildPackageMarkdown,
   buildPackagePricingMarkdown,
   buildPackagePricingRows,
   buildPackagePricingText,
+  buildRegionalRiskRows,
   buildPackageText,
   downloadCsv,
   downloadText
@@ -1339,6 +1341,72 @@ export function ReviewPackageWorkbench({
     );
   }
 
+  function exportRegionalRiskCsv() {
+    if (!activePackage) {
+      return;
+    }
+
+    const rows = [
+      ...regionalRiskSummary.blockedServices.map((entry) => ({
+        serviceSlug:
+          selectedServices.find((service) => service.service === entry.serviceName)?.slug ?? "",
+        serviceName: entry.serviceName,
+        classification: "Blocked" as const,
+        signals: entry.signals
+      })),
+      ...regionalRiskSummary.caveatServices.map((entry) => ({
+        serviceSlug:
+          selectedServices.find((service) => service.service === entry.serviceName)?.slug ?? "",
+        serviceName: entry.serviceName,
+        classification: "Caveat" as const,
+        signals: entry.signals
+      })),
+      ...regionalRiskSummary.globalServices.map((serviceName) => ({
+        serviceSlug: selectedServices.find((service) => service.service === serviceName)?.slug ?? "",
+        serviceName,
+        classification: "Global" as const,
+        signals: ["Global service"]
+      })),
+      ...regionalRiskSummary.availableServices.map((serviceName) => ({
+        serviceSlug: selectedServices.find((service) => service.service === serviceName)?.slug ?? "",
+        serviceName,
+        classification: "Available" as const,
+        signals: ["Available without caveat"]
+      }))
+    ];
+
+    downloadCsv(
+      `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}-regional-risk.csv`,
+      buildRegionalRiskRows(activePackage, rows)
+    );
+  }
+
+  function exportLeadershipSummaryMarkdown() {
+    if (!activePackage) {
+      return;
+    }
+
+    downloadText(
+      `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}-leadership-summary.md`,
+      buildLeadershipSummaryMarkdown(activePackage, {
+        selectedServiceCount: selectedServices.length,
+        blockedServices: regionalRiskSummary.blockedServices,
+        caveatServices: regionalRiskSummary.caveatServices,
+        globalServices: regionalRiskSummary.globalServices,
+        availableServices: regionalRiskSummary.availableServices,
+        pricingMappedCount: mappedPricingCount,
+        selectedPricingCount: pricingSnapshots.length,
+        startingRetailPrice: startingRetailPrice.length > 0 ? Math.min(...startingRetailPrice) : undefined,
+        pricingCurrencyCode: pricingSnapshots[0]?.currencyCode,
+        includedCount,
+        notApplicableCount,
+        excludedCount,
+        pendingCount
+      }),
+      "text/markdown;charset=utf-8"
+    );
+  }
+
   return (
     <main className="section-stack">
       <section className="hero-panel director-hero editorial-hero">
@@ -2036,6 +2104,24 @@ export function ReviewPackageWorkbench({
                 onClick={exportPackageText}
               >
                 Download plain text notes
+              </button>
+            </div>
+            <div className="button-row">
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={!activePackage || matrixRows.length === 0}
+                onClick={exportLeadershipSummaryMarkdown}
+              >
+                Download leadership summary
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={!activePackage || matrixRows.length === 0}
+                onClick={exportRegionalRiskCsv}
+              >
+                Download regional risk CSV
               </button>
             </div>
           </article>

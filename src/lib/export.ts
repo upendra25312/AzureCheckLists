@@ -519,6 +519,118 @@ export function buildPackagePricingText(reviewPackage: ReviewPackage, servicePri
   return lines.join("\n");
 }
 
+export function buildRegionalRiskRows(
+  reviewPackage: ReviewPackage,
+  entries: Array<{
+    serviceSlug: string;
+    serviceName: string;
+    classification: "Blocked" | "Caveat" | "Global" | "Available";
+    signals: string[];
+  }>
+) {
+  return entries.map((entry) => ({
+    projectReviewName: reviewPackage.name,
+    audience: reviewPackage.audience,
+    businessScope: reviewPackage.businessScope,
+    targetRegions: reviewPackage.targetRegions.join(" | "),
+    service: entry.serviceName,
+    serviceSlug: entry.serviceSlug,
+    classification: entry.classification,
+    signals: entry.signals.join(" | ")
+  }));
+}
+
+export function buildLeadershipSummaryMarkdown(
+  reviewPackage: ReviewPackage,
+  summary: {
+    selectedServiceCount: number;
+    blockedServices: Array<{ serviceName: string; signals: string[] }>;
+    caveatServices: Array<{ serviceName: string; signals: string[] }>;
+    globalServices: string[];
+    availableServices: string[];
+    pricingMappedCount: number;
+    selectedPricingCount: number;
+    startingRetailPrice?: number;
+    pricingCurrencyCode?: string;
+    includedCount: number;
+    notApplicableCount: number;
+    excludedCount: number;
+    pendingCount: number;
+  }
+) {
+  const lines = [
+    `# ${reviewPackage.name} leadership summary`,
+    "",
+    `- Audience: ${reviewPackage.audience}`,
+    `- Business scope: ${reviewPackage.businessScope || "Not captured"}`,
+    `- Target regions: ${reviewPackage.targetRegions.join(", ") || "Not captured"}`,
+    `- Services in scope: ${summary.selectedServiceCount.toLocaleString()}`,
+    `- Pricing mapped: ${summary.pricingMappedCount.toLocaleString()} of ${summary.selectedPricingCount.toLocaleString()} selected services`,
+    `- Starting published retail row: ${formatPricingLine(summary.startingRetailPrice, summary.pricingCurrencyCode ?? "USD")}`,
+    `- Included findings: ${summary.includedCount.toLocaleString()}`,
+    `- Not applicable findings: ${summary.notApplicableCount.toLocaleString()}`,
+    `- Excluded findings: ${summary.excludedCount.toLocaleString()}`,
+    `- Pending findings: ${summary.pendingCount.toLocaleString()}`,
+    `- Exported at: ${new Date().toISOString()}`,
+    "",
+    "## Regional blockers",
+    ""
+  ];
+
+  if (summary.blockedServices.length > 0) {
+    summary.blockedServices.forEach((entry) => {
+      lines.push(`- ${entry.serviceName}: ${entry.signals.join(", ")}`);
+    });
+  } else {
+    lines.push("- No selected services currently show restricted, unavailable, or not-in-feed target-region signals.");
+  }
+
+  lines.push("", "## Regional caveats", "");
+
+  if (summary.caveatServices.length > 0) {
+    summary.caveatServices.forEach((entry) => {
+      lines.push(`- ${entry.serviceName}: ${entry.signals.join(", ")}`);
+    });
+  } else {
+    lines.push("- No selected services are currently flagged only with preview, retiring, or early-access caveats.");
+  }
+
+  lines.push("", "## Global and fully available services", "");
+  lines.push(
+    `- Global services: ${summary.globalServices.join(", ") || "None"}`,
+    `- Available without caveat: ${summary.availableServices.join(", ") || "None"}`
+  );
+
+  lines.push("", "## Recommended next actions", "");
+
+  if (summary.blockedServices.length > 0) {
+    lines.push("- Review the blocked or restricted services first and confirm whether the target-region design should change.");
+  }
+
+  if (summary.caveatServices.length > 0) {
+    lines.push("- Review preview, retiring, or early-access services and decide whether they remain acceptable for the current project.");
+  }
+
+  if (summary.pendingCount > 0) {
+    lines.push("- Close the remaining pending checklist decisions before final export or leadership sign-off.");
+  }
+
+  if (summary.pricingMappedCount < summary.selectedPricingCount) {
+    lines.push("- Review the pricing exports for services that still lack a clean published retail mapping.");
+  }
+
+  if (
+    summary.blockedServices.length === 0 &&
+    summary.caveatServices.length === 0 &&
+    summary.pendingCount === 0 &&
+    summary.pricingMappedCount === summary.selectedPricingCount
+  ) {
+    lines.push("- The scoped review is ready for final design-note and pricing export.");
+  }
+
+  return lines.join("\n");
+}
+
 export function downloadJson(filename: string, rows: unknown) {
   const blob = new Blob([JSON.stringify(rows, null, 2)], {
     type: "application/json;charset=utf-8"

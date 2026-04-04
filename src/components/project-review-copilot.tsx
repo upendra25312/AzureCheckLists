@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { runProjectReviewCopilot } from "@/lib/copilot";
 import type { CopilotResponse, ProjectReviewCopilotContext } from "@/types";
@@ -78,6 +79,7 @@ export function ProjectReviewCopilot({
         });
 
         return {
+          serviceSlug: service.serviceSlug,
           serviceName: service.serviceName,
           blockerSignals,
           caveatSignals
@@ -236,9 +238,14 @@ export function ProjectReviewCopilot({
                     <strong>Blockers</strong>
                     <div className="copilot-signal-list">
                       {regionalSignalSummary.blockerEntries.map((entry) => (
-                        <p key={`blocker-${entry.serviceName}`}>
-                          <strong>{entry.serviceName}:</strong> {entry.blockerSignals.join(", ")}
-                        </p>
+                        <div className="copilot-signal-entry" key={`blocker-${entry.serviceName}`}>
+                          <p>
+                            <strong>{entry.serviceName}:</strong> {entry.blockerSignals.join(", ")}
+                          </p>
+                          <Link href={`/services/${entry.serviceSlug}`} className="muted-link">
+                            Open service review
+                          </Link>
+                        </div>
                       ))}
                     </div>
                   </article>
@@ -248,9 +255,14 @@ export function ProjectReviewCopilot({
                     <strong>Caveats</strong>
                     <div className="copilot-signal-list">
                       {regionalSignalSummary.caveatEntries.map((entry) => (
-                        <p key={`caveat-${entry.serviceName}`}>
-                          <strong>{entry.serviceName}:</strong> {entry.caveatSignals.join(", ")}
-                        </p>
+                        <div className="copilot-signal-entry" key={`caveat-${entry.serviceName}`}>
+                          <p>
+                            <strong>{entry.serviceName}:</strong> {entry.caveatSignals.join(", ")}
+                          </p>
+                          <Link href={`/services/${entry.serviceSlug}`} className="muted-link">
+                            Open service review
+                          </Link>
+                        </div>
                       ))}
                     </div>
                   </article>

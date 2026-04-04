@@ -1952,6 +1952,11 @@ button.chip:disabled:hover {
   margin: 0;
 }
 
+.copilot-signal-entry {
+  display: grid;
+  gap: 4px;
+}
+
 .copilot-brief {
   align-self: start;
 }
