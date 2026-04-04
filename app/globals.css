@@ -900,6 +900,104 @@ button.chip:hover {
   font-size: 0.95rem;
 }
 
+.workflow-lane-grid,
+.workflow-output-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.workflow-lane-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.workflow-lane-card,
+.workflow-output-card,
+.workflow-output-mini {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+
+.workflow-lane-card {
+  display: grid;
+  gap: 14px;
+  padding: 28px;
+  background:
+    linear-gradient(180deg, rgba(15, 95, 126, 0.06), rgba(255, 255, 255, 0.56)),
+    rgba(255, 255, 255, 0.74);
+}
+
+[data-theme="dark"] .workflow-lane-card {
+  background:
+    linear-gradient(180deg, rgba(103, 185, 212, 0.06), rgba(12, 24, 36, 0.54)),
+    rgba(12, 24, 36, 0.62);
+}
+
+.workflow-lane-card h3,
+.workflow-output-card h3,
+.workflow-output-mini strong {
+  margin: 0;
+}
+
+.workflow-lane-card h3 {
+  font-size: 1.22rem;
+  line-height: 1.35;
+}
+
+.workflow-lane-card p,
+.workflow-output-card p,
+.workflow-output-mini p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.workflow-lane-note {
+  font-size: 0.95rem;
+}
+
+.workflow-output-card {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+  padding: 30px;
+  background:
+    linear-gradient(135deg, rgba(15, 95, 126, 0.11), rgba(198, 107, 46, 0.08)),
+    rgba(255, 255, 255, 0.72);
+}
+
+[data-theme="dark"] .workflow-output-card {
+  background:
+    linear-gradient(135deg, rgba(103, 185, 212, 0.1), rgba(236, 161, 93, 0.05)),
+    rgba(12, 24, 36, 0.62);
+}
+
+.workflow-output-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.72rem;
+  line-height: 1.14;
+  letter-spacing: -0.02em;
+  max-width: 22ch;
+}
+
+.workflow-output-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.workflow-output-mini {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+[data-theme="dark"] .workflow-output-mini {
+  background: rgba(12, 24, 36, 0.5);
+}
+
+.workflow-output-mini strong {
+  font-size: 1rem;
+}
+
 .audience-story-card {
   display: grid;
   gap: 14px;
@@ -1399,7 +1497,10 @@ button.chip:hover {
 .audience-story-card,
 .decision-cue-card,
 .boardroom-mini-card,
-.proof-spotlight {
+.proof-spotlight,
+.workflow-lane-card,
+.workflow-output-card,
+.workflow-output-mini {
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
@@ -1418,7 +1519,10 @@ button.chip:hover {
 .audience-story-card:hover,
 .decision-cue-card:hover,
 .boardroom-mini-card:hover,
-.proof-spotlight:hover {
+.proof-spotlight:hover,
+.workflow-lane-card:hover,
+.workflow-output-card:hover,
+.workflow-output-mini:hover {
   transform: translateY(-2px);
   border-color: var(--border-strong);
   box-shadow: 0 18px 36px rgba(13, 24, 38, 0.08);
@@ -1617,6 +1721,8 @@ button.chip:hover {
   .technology-grid,
   .audience-story-grid,
   .decision-cue-grid,
+  .workflow-lane-grid,
+  .workflow-output-grid,
   .package-header-grid,
   .package-stats-grid,
   .service-selection-grid,

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { CatalogSummary, ServiceIndex } from "@/types";
-import { SummaryCards } from "@/components/summary-cards";
 
 export function DashboardHome({
   summary,
@@ -130,6 +129,51 @@ export function DashboardHome({
         "The output is not just an answer on a screen. It becomes a checklist export, design note set, and pricing snapshot your team can reuse."
     }
   ];
+  const serviceReviewLanes = [
+    {
+      step: "01",
+      eyebrow: "Region Fit",
+      title: "Check where the service can actually run before it gets written into the design.",
+      copy:
+        "Availability, restricted regions, preview status, and global-service handling should be visible on the same page as the service decision.",
+      signals: ["Available", "Restricted", "Preview", "Global"],
+      note:
+        "Example: a target region like UAE Central may be restricted even when the service exists elsewhere."
+    },
+    {
+      step: "02",
+      eyebrow: "Cost Fit",
+      title: "Review public retail pricing for the same service before building the customer estimate.",
+      copy:
+        "The team should see the starting retail rows, published SKUs, and target-region matches without leaving the project review workflow.",
+      signals: ["Starting price", "SKU rows", "Meter detail", "Target-region match"],
+      note:
+        "Example: compare SKU and meter rows for API Management, AKS, or App Service before refining quantities in the pricing calculator."
+    },
+    {
+      step: "03",
+      eyebrow: "Checklist Notes",
+      title: "Capture project judgment on the findings that matter to the current solution.",
+      copy:
+        "Mark findings as included, not applicable, excluded, or still pending, then attach comments, evidence, owner, and due date to the same review.",
+      signals: ["Include", "Not applicable", "Owner and due date", "Evidence links"],
+      note: `${summary.itemCount.toLocaleString()} normalized findings become much more usable once the service scope is narrowed to the real project.`
+    }
+  ];
+  const artifactOutputs = [
+    {
+      title: "Design notes",
+      copy: "Markdown or text that can be reused in architecture documentation and customer review packs."
+    },
+    {
+      title: "Checklist CSV",
+      copy: "An action-friendly export with only the selected services and their project-specific finding decisions."
+    },
+    {
+      title: "Pricing snapshot",
+      copy: "A scoped retail pricing export for the same services, regions, and commercial questions under review."
+    }
+  ];
 
   return (
     <main className="section-stack">
@@ -245,6 +289,65 @@ export function DashboardHome({
       <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
+            <p className="eyebrow">Inside one service review</p>
+            <h2 className="section-title">Region fit, cost fit, and checklist notes should work together.</h2>
+            <p className="section-copy">
+              Once a service is in scope, the reviewer should not have to jump across unrelated tools.
+              The best experience is one clear flow that ends in one reusable project artifact.
+            </p>
+          </div>
+        </div>
+
+        <div className="workflow-lane-grid">
+          {serviceReviewLanes.map((lane) => (
+            <article className="workflow-lane-card" key={lane.title}>
+              <div className="path-card-topline">
+                <span className="path-card-number">{lane.step}</span>
+                <p className="eyebrow">{lane.eyebrow}</p>
+              </div>
+              <h3>{lane.title}</h3>
+              <p>{lane.copy}</p>
+              <div className="chip-row">
+                {lane.signals.map((signal) => (
+                  <span className="chip" key={signal}>
+                    {signal}
+                  </span>
+                ))}
+              </div>
+              <p className="workflow-lane-note">{lane.note}</p>
+            </article>
+          ))}
+        </div>
+
+        <article className="workflow-output-card">
+          <p className="eyebrow">Result</p>
+          <h3>One project-ready artifact instead of a loose set of answers.</h3>
+          <p>
+            The outcome should be usable by architecture, pre-sales, and delivery teams without
+            needing to reassemble the story from multiple tools or generic AI summaries.
+          </p>
+          <div className="workflow-output-grid">
+            {artifactOutputs.map((output) => (
+              <article className="workflow-output-mini" key={output.title}>
+                <strong>{output.title}</strong>
+                <p>{output.copy}</p>
+              </article>
+            ))}
+          </div>
+          <div className="button-row">
+            <Link href="/review-package" className="primary-button">
+              Start project review
+            </Link>
+            <Link href="/services" className="secondary-button">
+              Browse services
+            </Link>
+          </div>
+        </article>
+      </section>
+
+      <section className="surface-panel editorial-section">
+        <div className="section-head">
+          <div>
             <p className="eyebrow">Built for the people who shape Azure solutions</p>
             <h2 className="section-title">The same project review supports each role in a different way.</h2>
             <p className="section-copy">
@@ -294,8 +397,6 @@ export function DashboardHome({
           ))}
         </div>
       </section>
-
-      <SummaryCards summary={summary} />
 
       <section className="surface-panel editorial-section">
         <div className="section-head">
