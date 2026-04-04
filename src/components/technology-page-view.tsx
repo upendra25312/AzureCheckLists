@@ -158,8 +158,8 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
               <strong>Source linkage remains visible.</strong>
               <p>
                 Every item stays connected to the originating source file path, source folder,
-                and normalization run so reviewers can verify intent without pushing public users
-                into the upstream GitHub repository.
+                normalization run, and repository source so reviewers can verify intent before
+                carrying a finding into leadership material.
               </p>
             </article>
             <article className="brief-point">
@@ -222,7 +222,7 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
           <div>
             <p className="eyebrow">Source traceability</p>
             <h2 className="section-title">
-              Every rendered item stays connected to the source family and normalization run.
+              Every rendered item stays connected to the source family, repository file, and normalization run.
             </h2>
           </div>
         </div>
@@ -230,6 +230,21 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
           <article className="trace-card">
             <strong>Source path</strong>
             <p>{payload.technology.sourcePath}</p>
+          </article>
+          <article className="trace-card">
+            <strong>Repository source</strong>
+            {payload.technology.sourceUrl ? (
+              <a
+                href={payload.technology.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="muted-link"
+              >
+                Open source family
+              </a>
+            ) : (
+              <p>Unavailable</p>
+            )}
           </article>
           <article className="trace-card">
             <strong>Source folder</strong>

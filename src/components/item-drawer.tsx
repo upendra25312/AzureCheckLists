@@ -216,6 +216,16 @@ export function ItemDrawer({ item, review, onClose, onUpdate }: ItemDrawerProps)
               <p>{item.sourcePath ?? "Unavailable"}</p>
             </div>
             <div className="trace-card">
+              <strong>Repository source</strong>
+              {item.sourceUrl ? (
+                <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="muted-link">
+                  Open source file
+                </a>
+              ) : (
+                <p>Unavailable</p>
+              )}
+            </div>
+            <div className="trace-card">
               <strong>Normalization timestamp</strong>
               <p>{item.normalizedAt ?? "Unavailable"}</p>
             </div>

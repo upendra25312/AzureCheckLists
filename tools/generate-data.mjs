@@ -9,6 +9,7 @@ const outputDir = path.join(root, "public", "data");
 const technologyDir = path.join(outputDir, "technologies");
 const serviceDir = path.join(outputDir, "services");
 const generatedAt = new Date().toISOString();
+const sourceBlobBase = "https://github.com/Azure/review-checklists/blob/main";
 const excludedFiles = new Set([
   "checklist.en.master.json",
   "template.json",
@@ -99,12 +100,60 @@ const serviceAliasMap = new Map(
   })
 );
 
+function cleanDisplayText(value) {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  return value
+    .replace(/\bAzure Open AI\b/gi, "Azure OpenAI")
+    .replace(/\bAzure Openai\b/g, "Azure OpenAI")
+    .replace(/\bOpen AI\b/gi, "OpenAI")
+    .replace(/\bOpenai\b/g, "OpenAI")
+    .replace(/\bAzure AI search\b/gi, "Azure AI Search")
+    .replace(/\bAPI Managements\b/g, "API Management")
+    .replace(/\bchoosen\b/gi, "chosen")
+    .replace(/\blrarning\b/gi, "learning")
+    .replace(/\bth data stores\b/gi, "the data stores")
+    .replace(/\bpay as you pricing\b/gi, "pay-as-you-go pricing")
+    .replace(/\bSecure DevOps Govenance\b/g, "Secure DevOps Governance")
+    .replace(/\bCloud Adaption Framework\b/g, "Cloud Adoption Framework")
+    .replace(/\blearning & experimentation\b/gi, "learning and experimentation")
+    .replace(/\bnumber of completions to generation\b/gi, "number of completions generated")
+    .replace(/Verify PTU cost savings vs\b/gi, "Verify PTU cost savings versus")
+    .replace(
+      /Adhere to Azure OpenAI or other LLMs terms of use/gi,
+      "Adhere to Azure OpenAI and other LLM terms of use"
+    )
+    .replace(
+      /Azure AI Search service tiers should be chosen to have a SLA/gi,
+      "Azure AI Search service tiers should be chosen to meet an SLA"
+    )
+    .replace(
+      /Verify PTU cost savings vs pay[- ]as[- ]you pricing/gi,
+      "Verify PTU cost savings versus pay-as-you-go pricing"
+    )
+    .replace(/supporting lrarning & experimentation/gi, "supporting learning and experimentation")
+    .replace(/number of completions to generation \('n'\)/gi, "number of completions generated ('n')")
+    .replace(
+      /\bterms of use, policies and guidance and allowed use cases\b/gi,
+      "terms of use, policies, guidance, and allowed use cases"
+    )
+    .replace(/production supporting learning and experimentation/gi, "production, supporting learning and experimentation")
+    .replace(/\s+([,.;:])/g, "$1")
+    .replace(/\(\s+/g, "(")
+    .replace(/\s+\)/g, ")")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 function titleCase(value) {
   if (!value || typeof value !== "string") {
     return undefined;
   }
 
-  return value
+  return cleanDisplayText(
+    value
     .trim()
     .replaceAll(/[_-]+/g, " ")
     .replaceAll(/\s+/g, " ")
@@ -117,7 +166,8 @@ function titleCase(value) {
 
       return `${part.slice(0, 1).toUpperCase()}${part.slice(1).toLowerCase()}`;
     })
-    .join(" ");
+    .join(" ")
+  );
 }
 
 function slugify(value) {
@@ -207,14 +257,14 @@ function normalizeServiceName(rawService) {
   }
 
   if (serviceAliasMap.has(normalizedKey)) {
-    return serviceAliasMap.get(normalizedKey);
+    return cleanDisplayText(serviceAliasMap.get(normalizedKey));
   }
 
   if (trimmed.startsWith("Microsoft.")) {
-    return normalizeArmServiceName(trimmed) ?? trimmed;
+    return cleanDisplayText(normalizeArmServiceName(trimmed) ?? trimmed);
   }
 
-  return titleCase(trimmed) ?? trimmed;
+  return cleanDisplayText(titleCase(trimmed) ?? trimmed);
 }
 
 function normalizeStatus(raw) {
@@ -257,11 +307,11 @@ function normalizeWaf(raw) {
 
 function deriveTechnologyName(fileName, metadataName, sampleChecklist) {
   if (metadataName) {
-    return metadataName.trim();
+    return cleanDisplayText(metadataName.trim());
   }
 
   if (sampleChecklist) {
-    return sampleChecklist.trim();
+    return cleanDisplayText(sampleChecklist.trim());
   }
 
   const withoutSuffix = fileName
@@ -269,7 +319,7 @@ function deriveTechnologyName(fileName, metadataName, sampleChecklist) {
     .replace(/_checklist$/i, "")
     .replace(/_sg$/i, " service guide");
 
-  return titleCase(withoutSuffix) ?? fileName;
+  return cleanDisplayText(titleCase(withoutSuffix) ?? fileName);
 }
 
 function collectUnique(items, selector) {
@@ -337,7 +387,9 @@ function summarizeDescription(items, technology, quality) {
   const serviceSummary =
     services.length > 0 ? `touches services like ${services.join(", ")}` : "uses generalized guidance";
 
-  return `${technology} is a ${quality.maturityBucket} family with ${items.length} normalized items, ${highSeverityCount} high-severity findings, ${categorySummary}, and ${serviceSummary}.`;
+  return cleanDisplayText(
+    `${technology} is a ${quality.maturityBucket} family with ${items.length} normalized items, ${highSeverityCount} high-severity findings, ${categorySummary}, and ${serviceSummary}.`
+  );
 }
 
 function getStatusConfidence(status) {
@@ -491,11 +543,17 @@ function computeQuality(items, status) {
 }
 
 function normalizeItem(rawItem, technologySlug, family, sourceMeta) {
-  const category = rawItem.category ?? rawItem.recommendationControl ?? rawItem.checklist;
-  const subcategory = rawItem.subcategory ?? rawItem.recommendationResourceType ?? rawItem.type;
-  const description =
-    rawItem.description ?? rawItem.longDescription ?? rawItem.potentialBenefits;
-  const rawService = typeof rawItem.service === "string" ? rawItem.service : undefined;
+  const category = cleanDisplayText(
+    rawItem.category ?? rawItem.recommendationControl ?? rawItem.checklist
+  );
+  const subcategory = cleanDisplayText(
+    rawItem.subcategory ?? rawItem.recommendationResourceType ?? rawItem.type
+  );
+  const description = cleanDisplayText(
+    rawItem.description ?? rawItem.longDescription ?? rawItem.potentialBenefits
+  );
+  const rawService =
+    typeof rawItem.service === "string" ? cleanDisplayText(rawItem.service) : undefined;
   const armService = inferArmService(rawItem);
   const serviceSource = rawService ?? armService;
   const serviceCanonical = normalizeServiceName(serviceSource);
@@ -513,11 +571,11 @@ function normalizeItem(rawItem, technologySlug, family, sourceMeta) {
     technologyQualityScore: 0,
     family,
     sourceKind: sourceMeta.kind,
-    checklist: rawItem.checklist ?? family,
+    checklist: cleanDisplayText(rawItem.checklist ?? family),
     category,
     subcategory,
     id: rawItem.id ?? rawItem.recommendationTypeId ?? rawItem.aprlGuid,
-    text: String(rawItem.text ?? rawItem.description ?? rawItem.guid),
+    text: cleanDisplayText(String(rawItem.text ?? rawItem.description ?? rawItem.guid)),
     description,
     severity,
     waf,
@@ -630,12 +688,12 @@ async function generate() {
       raw.metadata?.name,
       raw.items?.[0]?.checklist
     );
-    const family = raw.metadata?.name ?? baseTechnology;
+    const family = cleanDisplayText(raw.metadata?.name ?? baseTechnology);
     const technologySlug = slugify(`${baseTechnology}-${fileStem}`);
     const technologyStatus = normalizeStatus(raw.metadata?.state);
     const sourceMeta = {
       relativePath: file.relativePath,
-      sourceUrl: "",
+      sourceUrl: `${sourceBlobBase}/${file.relativePath}`,
       kind: file.kind
     };
     const items = (raw.items ?? [])
@@ -668,10 +726,11 @@ async function generate() {
   const technologies = [];
 
   for (const record of records) {
-    const displayTechnology =
+    const displayTechnology = cleanDisplayText(
       (baseNameCounts.get(record.baseTechnology) ?? 0) > 1
         ? `${record.baseTechnology} (${titleCase(record.fileStem)})`
-        : record.baseTechnology;
+        : record.baseTechnology
+    );
     const quality = computeQuality(record.items, record.technologyStatus);
     const enrichedItems = record.items.map((item) => ({
       ...item,
@@ -820,7 +879,9 @@ async function generate() {
         deprecatedFamilyCount,
         categories: collectUnique(group.items, (item) => item.category),
         wafPillars: collectUnique(group.items, (item) => item.waf),
-        description: `${service} appears across ${group.items.length} normalized findings in ${familySummaries.length} checklist families.${descriptionSuffix}`,
+        description: cleanDisplayText(
+          `${service} appears across ${group.items.length} normalized findings in ${familySummaries.length} checklist families.${descriptionSuffix}`
+        ),
         whatThisMeans,
         families: familySummaries.map((family) => ({
           slug: family.slug,

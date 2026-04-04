@@ -252,6 +252,13 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
             <strong>Service guidance note</strong>
             <p>{payload.service.whatThisMeans}</p>
           </article>
+          <article className="trace-card">
+            <strong>Proof before promotion</strong>
+            <p>
+              Open any finding to inspect the source file, repository link, and normalization
+              details before turning it into a recommendation or leadership takeaway.
+            </p>
+          </article>
         </div>
       </section>
 
