@@ -500,6 +500,7 @@ export function ReviewPackageWorkbench({
   const [pricingLoading, setPricingLoading] = useState(false);
   const [pricingError, setPricingError] = useState<string | null>(null);
   const [expandedPricingServices, setExpandedPricingServices] = useState<string[]>([]);
+  const [showOnlyScopedServices, setShowOnlyScopedServices] = useState(true);
   const [packageActionMessage, setPackageActionMessage] = useState<string | null>(null);
   const [packageActionTone, setPackageActionTone] = useState<PackageActionTone>("neutral");
   const [cloudRestoreAttempted, setCloudRestoreAttempted] = useState(false);
@@ -660,6 +661,13 @@ export function ReviewPackageWorkbench({
       }),
     [index.services, normalizedServiceSearch]
   );
+  const visibleReviewServices = useMemo(() => {
+    if (!activePackage || !showOnlyScopedServices) {
+      return visibleServices;
+    }
+
+    return visibleServices.filter((service) => selectedServiceSlugSet.has(service.slug));
+  }, [activePackage, selectedServiceSlugSet, showOnlyScopedServices, visibleServices]);
   const selectedServices = useMemo(
     () =>
       index.services.filter((service) => activePackage?.selectedServiceSlugs.includes(service.slug) ?? false),
@@ -1642,7 +1650,10 @@ export function ReviewPackageWorkbench({
             </p>
           </div>
           <div className="chip-row">
-            <span className="chip">{visibleServices.length.toLocaleString()} visible services</span>
+            <span className="chip">{visibleReviewServices.length.toLocaleString()} visible services</span>
+            {activePackage ? (
+              <span className="chip">{selectedServices.length.toLocaleString()} services in this review</span>
+            ) : null}
           </div>
         </div>
 
@@ -1660,41 +1671,90 @@ export function ReviewPackageWorkbench({
               that appears in the source repository.
             </p>
           </div>
+          {activePackage ? (
+            <div className="workspace-toolbar-side">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setShowOnlyScopedServices((current) => !current)}
+              >
+                {showOnlyScopedServices
+                  ? "Browse full catalog"
+                  : "Show only services in this review"}
+              </button>
+              <p className="microcopy">
+                {showOnlyScopedServices
+                  ? "Only the services already selected for this project review are shown below."
+                  : "The full service catalog is visible. Services outside this review stay clearly marked."}
+              </p>
+            </div>
+          ) : null}
         </div>
 
-        <div className="service-selection-grid">
-          {visibleServices.map((service) => {
-            const selected = activePackage?.selectedServiceSlugs.includes(service.slug) ?? false;
+        {visibleReviewServices.length > 0 ? (
+          <div className="service-selection-grid">
+            {visibleReviewServices.map((service) => {
+              const selected = activePackage?.selectedServiceSlugs.includes(service.slug) ?? false;
 
-            return (
-              <article className="future-card service-selection-card" key={service.slug}>
-                <div className="section-head">
-                  <div>
-                    <p className="eyebrow">Azure service</p>
-                    <h3>{service.service}</h3>
+              return (
+                <article className="future-card service-selection-card" key={service.slug}>
+                  <div className="section-head">
+                    <div>
+                      <p className="eyebrow">Azure service</p>
+                      <h3>{service.service}</h3>
+                    </div>
+                    <span className="chip">
+                      {selected ? "In project review" : "Not in project review"}
+                    </span>
                   </div>
-                  <span className="chip">
-                    {selected ? "In project review" : "Not in project review"}
-                  </span>
-                </div>
-                <p className="microcopy">{service.description}</p>
-                <div className="button-row">
-                  <button
-                    type="button"
-                    className={selected ? "secondary-button" : "ghost-button"}
-                    disabled={!activePackage}
-                    onClick={() => toggleServiceSelection(service.slug)}
-                  >
-                    {selected ? "Remove from review" : "Add to review"}
-                  </button>
-                  <Link href={`/services/${service.slug}`} className="muted-link">
-                    Open service review
-                  </Link>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+                  <p className="microcopy">{service.description}</p>
+                  <div className="button-row">
+                    <button
+                      type="button"
+                      className={selected ? "secondary-button" : "ghost-button"}
+                      disabled={!activePackage}
+                      onClick={() => toggleServiceSelection(service.slug)}
+                    >
+                      {selected ? "Remove from review" : "Add to review"}
+                    </button>
+                    <Link href={`/services/${service.slug}`} className="muted-link">
+                      Open service review
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <section className="filter-card">
+            <p className="eyebrow">No visible services</p>
+            <h3>
+              {showOnlyScopedServices
+                ? activePackage?.selectedServiceSlugs.length
+                  ? "No selected services match the current search."
+                  : "No services are in this project review yet."
+                : "No services match the current search."}
+            </h3>
+            <p className="microcopy">
+              {showOnlyScopedServices
+                ? activePackage?.selectedServiceSlugs.length
+                  ? "Clear the search or switch to the full catalog when you want to add more services."
+                  : "Switch to the full catalog to add services, then this view will stay scoped to what is actually in the review."
+                : "Try a different search term to find the service you want to add."}
+            </p>
+            {activePackage && showOnlyScopedServices ? (
+              <div className="button-row">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setShowOnlyScopedServices(false)}
+                >
+                  Browse full catalog
+                </button>
+              </div>
+            ) : null}
+          </section>
+        )}
       </section>
 
       {copilotContext ? <ProjectReviewCopilot context={copilotContext} /> : null}

@@ -12,9 +12,10 @@ const {
 } = require("../shared/storage");
 const { toReviewCsv, toReviewDocument } = require("../shared/review-records");
 
-function buildCsvFileName(userId) {
+function buildCsvFileName(userId, reviewName) {
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  return `review-notes-${sanitizePathSegment(userId)}-${stamp}.csv`;
+  const reviewSegment = sanitizePathSegment(reviewName || "project-review");
+  return `review-notes-${reviewSegment}-${sanitizePathSegment(userId)}-${stamp}.csv`;
 }
 
 app.http("review-records-export", {
@@ -35,7 +36,7 @@ app.http("review-records-export", {
       const notesContainerClient = await getContainerClient(NOTES_CONTAINER_NAME);
       const artifactsContainerClient = await getContainerClient(ARTIFACTS_CONTAINER_NAME);
       const notesBlobName = buildNotesBlobName(principal.userId);
-      const artifactName = buildCsvFileName(principal.userId);
+      const artifactName = buildCsvFileName(principal.userId, body?.reviewName);
       const artifactBlobName = buildArtifactBlobName(principal.userId, artifactName);
 
       await uploadJsonBlob(notesContainerClient, notesBlobName, document);

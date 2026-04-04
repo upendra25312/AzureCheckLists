@@ -194,14 +194,24 @@ function downloadBlob(filename: string, blob: Blob) {
   URL.revokeObjectURL(url);
 }
 
-export async function downloadCloudReviewCsv(records: StructuredReviewRecord[]) {
+export async function downloadCloudReviewCsv(
+  records: StructuredReviewRecord[],
+  options?: {
+    reviewId?: string | null;
+    reviewName?: string | null;
+  }
+) {
   const response = await fetch("/api/review-records/export", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
     credentials: "same-origin",
-    body: JSON.stringify({ records })
+    body: JSON.stringify({
+      records,
+      reviewId: options?.reviewId ?? undefined,
+      reviewName: options?.reviewName ?? undefined
+    })
   });
 
   if (!response.ok) {

@@ -48,6 +48,7 @@ export function ReviewCloudControls({
   const [authResolved, setAuthResolved] = useState(false);
   const [busyAction, setBusyAction] = useState<BusyAction>(null);
   const [statusMessage, setStatusMessage] = useState("Stored in this browser until you save to Azure.");
+  const selectedServiceCount = activePackage?.selectedServiceSlugs.length ?? 0;
   const structuredRecords = useMemo(
     () => buildStructuredReviewRecords(items, reviews),
     [items, reviews]
@@ -90,7 +91,7 @@ export function ReviewCloudControls({
       });
       setStatusMessage(
         stateDocument.activePackage || recordsDocument.recordCount > 0
-          ? `Loaded ${recordsDocument.recordCount.toLocaleString()} saved review records and the active project review context from Azure Storage.`
+          ? `Loaded ${recordsDocument.recordCount.toLocaleString()} scoped review records and the active project review context from Azure Storage.`
           : "No saved Azure review records or active project review context were found for this signed-in user."
       );
     } catch (error) {
@@ -104,13 +105,14 @@ export function ReviewCloudControls({
     try {
       setBusyAction("save");
       const nextActivePackage = onBeforeCloudSave?.() ?? activePackage;
+      const nextSelectedServiceCount = nextActivePackage?.selectedServiceSlugs.length ?? selectedServiceCount;
       const [document] = await Promise.all([
         saveCloudReviewRecords(structuredRecords, nextActivePackage?.id),
         saveCloudProjectReviewState(nextActivePackage, copilotContext)
       ]);
 
       setStatusMessage(
-        `Saved ${document.recordCount.toLocaleString()} structured review records and "${nextActivePackage?.name ?? "this project review"}" to Azure Storage.`
+        `Saved ${document.recordCount.toLocaleString()} scoped review records for "${nextActivePackage?.name ?? "this project review"}" across ${nextSelectedServiceCount.toLocaleString()} service${nextSelectedServiceCount === 1 ? "" : "s"} in scope.`
       );
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "Unable to save review records.");
@@ -122,12 +124,16 @@ export function ReviewCloudControls({
   async function downloadCsv() {
     try {
       setBusyAction("download");
-      const result = await downloadCloudReviewCsv(structuredRecords);
+      const result = await downloadCloudReviewCsv(structuredRecords, {
+        reviewId: activePackage?.id,
+        reviewName: activePackage?.name
+      });
+      const downloadServiceCount = activePackage?.selectedServiceSlugs.length ?? selectedServiceCount;
 
       setStatusMessage(
         result.artifactPath
-          ? `Downloaded ${result.filename} and stored the CSV artifact in Azure Storage.`
-          : `Downloaded ${result.filename}.`
+          ? `Downloaded ${result.filename} for "${activePackage?.name ?? "this project review"}" and stored the scoped CSV artifact in Azure Storage for ${downloadServiceCount.toLocaleString()} service${downloadServiceCount === 1 ? "" : "s"} in scope.`
+          : `Downloaded ${result.filename} for "${activePackage?.name ?? "this project review"}" across ${downloadServiceCount.toLocaleString()} service${downloadServiceCount === 1 ? "" : "s"} in scope.`
       );
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "Unable to generate the CSV artifact.");
@@ -191,7 +197,8 @@ export function ReviewCloudControls({
           </p>
         </div>
         <div className="chip-row">
-          <span className="chip">{structuredRecords.length.toLocaleString()} saved-worthy records</span>
+          <span className="chip">{selectedServiceCount.toLocaleString()} services in scope</span>
+          <span className="chip">{structuredRecords.length.toLocaleString()} scoped review records</span>
         </div>
       </div>
       <div className="button-row">
