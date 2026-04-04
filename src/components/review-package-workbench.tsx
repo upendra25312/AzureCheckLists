@@ -314,24 +314,8 @@ function getServiceAssumption(
   );
 }
 
-function createUniquePackageName(name: string, existingPackages: ReviewPackage[]) {
-  const baseName = name.trim() || "Project review";
-  const normalizedBaseName = baseName.toLowerCase();
-  const existingNames = new Set(
-    existingPackages.map((entry) => entry.name.trim().toLowerCase()).filter(Boolean)
-  );
-
-  if (!existingNames.has(normalizedBaseName)) {
-    return baseName;
-  }
-
-  let suffix = 2;
-
-  while (existingNames.has(`${normalizedBaseName} (${suffix})`)) {
-    suffix += 1;
-  }
-
-  return `${baseName} (${suffix})`;
+function resolvePackageName(name: string) {
+  return name.trim() || "Untitled project review";
 }
 
 export function ReviewPackageWorkbench({
@@ -910,8 +894,7 @@ export function ReviewPackageWorkbench({
   }
 
   function handleCreatePackage() {
-    const requestedName = form.name.trim();
-    const nextName = createUniquePackageName(requestedName, packages);
+    const nextName = resolvePackageName(form.name);
     const nextPackage = upsertPackage(
       createReviewPackage({
         name: nextName,
@@ -924,11 +907,7 @@ export function ReviewPackageWorkbench({
 
     refreshPackages(nextPackages, nextPackage.id);
     setPackageActionTone("success");
-    setPackageActionMessage(
-      requestedName && requestedName.toLowerCase() !== nextName.toLowerCase()
-        ? `Created "${nextName}" and made it the active project review because "${requestedName}" already existed.`
-        : `Created "${nextPackage.name}" and made it the active project review.`
-    );
+    setPackageActionMessage(`Created "${nextPackage.name}" and made it the active project review.`);
   }
 
   function handleSelectPackage(nextPackageId: string) {
@@ -941,22 +920,33 @@ export function ReviewPackageWorkbench({
     );
   }
 
-  function handleSavePackageDetails() {
+  function persistActivePackageFormState() {
     if (!activePackage) {
-      return;
+      return null;
     }
 
-    upsertPackage({
+    const savedPackage = upsertPackage({
       ...activePackage,
-      name: form.name.trim() || activePackage.name,
+      name: resolvePackageName(form.name),
       audience: form.audience,
       businessScope: form.businessScope.trim(),
       targetRegions: normalizeList(form.targetRegions)
     });
 
     refreshPackages(loadPackages(), activePackage.id);
+
+    return savedPackage;
+  }
+
+  function handleSavePackageDetails() {
+    const savedPackage = persistActivePackageFormState();
+
+    if (!savedPackage) {
+      return;
+    }
+
     setPackageActionTone("success");
-    setPackageActionMessage(`Saved the project review details for "${form.name.trim() || activePackage.name}".`);
+    setPackageActionMessage(`Saved the project review details for "${savedPackage.name}".`);
   }
 
   function handleDeletePackage() {
@@ -1735,6 +1725,7 @@ export function ReviewPackageWorkbench({
             reviews={reviews}
             activePackage={activePackage}
             copilotContext={copilotContext}
+            onBeforeCloudSave={persistActivePackageFormState}
             onRestoreCloudState={handleRestoreCloudState}
             continueHref="#project-review-local-exports"
           />

@@ -25,6 +25,7 @@ type ReviewCloudControlsProps = {
   reviews: Record<string, ReviewDraft>;
   activePackage: ReviewPackage | null;
   copilotContext: ProjectReviewCopilotContext | null;
+  onBeforeCloudSave?: () => ReviewPackage | null;
   onRestoreCloudState: (input: {
     activePackage: ReviewPackage | null;
     reviews: Record<string, ReviewDraft>;
@@ -39,6 +40,7 @@ export function ReviewCloudControls({
   reviews,
   activePackage,
   copilotContext,
+  onBeforeCloudSave,
   onRestoreCloudState,
   continueHref
 }: ReviewCloudControlsProps) {
@@ -101,13 +103,14 @@ export function ReviewCloudControls({
   async function saveToAzure() {
     try {
       setBusyAction("save");
+      const nextActivePackage = onBeforeCloudSave?.() ?? activePackage;
       const [document] = await Promise.all([
-        saveCloudReviewRecords(structuredRecords, activePackage?.id),
-        saveCloudProjectReviewState(activePackage, copilotContext)
+        saveCloudReviewRecords(structuredRecords, nextActivePackage?.id),
+        saveCloudProjectReviewState(nextActivePackage, copilotContext)
       ]);
 
       setStatusMessage(
-        `Saved ${document.recordCount.toLocaleString()} structured review records and the current project review context to Azure Storage.`
+        `Saved ${document.recordCount.toLocaleString()} structured review records and "${nextActivePackage?.name ?? "this project review"}" to Azure Storage.`
       );
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "Unable to save review records.");
