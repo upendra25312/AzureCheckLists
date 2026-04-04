@@ -1843,6 +1843,26 @@ button.chip:disabled:hover {
   gap: 12px;
 }
 
+.copilot-signal-card {
+  display: grid;
+  gap: 16px;
+}
+
+.copilot-signal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.copilot-signal-list {
+  display: grid;
+  gap: 10px;
+}
+
+.copilot-signal-list p {
+  margin: 0;
+}
+
 .copilot-brief {
   align-self: start;
 }

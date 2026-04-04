@@ -15,6 +15,28 @@ function formatDate(value: string) {
   return new Date(value).toLocaleString("en-US");
 }
 
+function classifyRegionSignal(signal: string) {
+  const normalized = signal.toLowerCase();
+
+  if (
+    normalized.includes("restricted") ||
+    normalized.includes("unavailable") ||
+    normalized.includes("not in feed")
+  ) {
+    return "blocker" as const;
+  }
+
+  if (
+    normalized.includes("retiring") ||
+    normalized.includes("preview") ||
+    normalized.includes("early access")
+  ) {
+    return "caveat" as const;
+  }
+
+  return null;
+}
+
 export function ProjectReviewCopilot({
   context
 }: {
@@ -38,6 +60,38 @@ export function ProjectReviewCopilot({
       ),
     [context.sources]
   );
+
+  const regionalSignalSummary = useMemo(() => {
+    const entries = context.services
+      .map((service) => {
+        const blockerSignals: string[] = [];
+        const caveatSignals: string[] = [];
+
+        service.regionFitSignals.forEach((signal) => {
+          const classification = classifyRegionSignal(signal);
+
+          if (classification === "blocker") {
+            blockerSignals.push(signal);
+          } else if (classification === "caveat") {
+            caveatSignals.push(signal);
+          }
+        });
+
+        return {
+          serviceName: service.serviceName,
+          blockerSignals,
+          caveatSignals
+        };
+      })
+      .filter((entry) => entry.blockerSignals.length > 0 || entry.caveatSignals.length > 0);
+
+    return {
+      blockerEntries: entries.filter((entry) => entry.blockerSignals.length > 0),
+      caveatEntries: entries.filter(
+        (entry) => entry.blockerSignals.length === 0 && entry.caveatSignals.length > 0
+      )
+    };
+  }, [context.services]);
 
   async function submit(nextQuestion: string) {
     const trimmed = nextQuestion.trim();
@@ -158,44 +212,92 @@ export function ProjectReviewCopilot({
       </div>
 
       {response ? (
-        <article className="filter-card copilot-card">
-          <div className="copilot-card-head">
-            <div>
-              <p className="eyebrow">Latest answer</p>
-              <h3>{question}</h3>
+        <>
+          {regionalSignalSummary.blockerEntries.length > 0 || regionalSignalSummary.caveatEntries.length > 0 ? (
+            <article className="filter-card copilot-signal-card">
+              <div className="copilot-card-head">
+                <div>
+                  <p className="eyebrow">Regional blockers detected</p>
+                  <h3>
+                    {regionalSignalSummary.blockerEntries.length.toLocaleString()} service
+                    {regionalSignalSummary.blockerEntries.length === 1 ? "" : "s"} with blockers
+                    {regionalSignalSummary.caveatEntries.length > 0
+                      ? `, ${regionalSignalSummary.caveatEntries.length.toLocaleString()} with caveats`
+                      : ""}
+                  </h3>
+                </div>
+                <span className="chip">
+                  {context.review.targetRegions.join(", ") || "Target regions not captured yet"}
+                </span>
+              </div>
+              <div className="copilot-signal-grid">
+                {regionalSignalSummary.blockerEntries.length > 0 ? (
+                  <article className="trace-card">
+                    <strong>Blockers</strong>
+                    <div className="copilot-signal-list">
+                      {regionalSignalSummary.blockerEntries.map((entry) => (
+                        <p key={`blocker-${entry.serviceName}`}>
+                          <strong>{entry.serviceName}:</strong> {entry.blockerSignals.join(", ")}
+                        </p>
+                      ))}
+                    </div>
+                  </article>
+                ) : null}
+                {regionalSignalSummary.caveatEntries.length > 0 ? (
+                  <article className="trace-card">
+                    <strong>Caveats</strong>
+                    <div className="copilot-signal-list">
+                      {regionalSignalSummary.caveatEntries.map((entry) => (
+                        <p key={`caveat-${entry.serviceName}`}>
+                          <strong>{entry.serviceName}:</strong> {entry.caveatSignals.join(", ")}
+                        </p>
+                      ))}
+                    </div>
+                  </article>
+                ) : null}
+              </div>
+            </article>
+          ) : null}
+
+          <article className="filter-card copilot-card">
+            <div className="copilot-card-head">
+              <div>
+                <p className="eyebrow">Latest answer</p>
+                <h3>{question}</h3>
+              </div>
+              <span className="chip">
+                {response.modelName} via {response.modelDeployment}
+              </span>
             </div>
-            <span className="chip">
-              {response.modelName} via {response.modelDeployment}
-            </span>
-          </div>
-          <div className="copilot-answer">{response.answer}</div>
-          <div className="traceability-grid">
-            <article className="trace-card">
-              <strong>Generated</strong>
-              <p>{formatDate(response.generatedAt)}</p>
-            </article>
-            <article className="trace-card">
-              <strong>Grounding mode</strong>
-              <p>{response.groundingMode}</p>
-            </article>
-          </div>
-          <div className="copilot-source-list">
-            {(response.sources.length > 0 ? response.sources : sourceList).map((source) => (
-              <article className="trace-card" key={`${source.label}-${source.url ?? source.note ?? ""}`}>
-                <strong>{source.label}</strong>
-                <p>
-                  {source.url ? (
-                    <a href={source.url} target="_blank" rel="noreferrer" className="muted-link">
-                      {source.url}
-                    </a>
-                  ) : (
-                    source.note ?? "Local project review context"
-                  )}
-                </p>
+            <div className="copilot-answer">{response.answer}</div>
+            <div className="traceability-grid">
+              <article className="trace-card">
+                <strong>Generated</strong>
+                <p>{formatDate(response.generatedAt)}</p>
               </article>
-            ))}
-          </div>
-        </article>
+              <article className="trace-card">
+                <strong>Grounding mode</strong>
+                <p>{response.groundingMode}</p>
+              </article>
+            </div>
+            <div className="copilot-source-list">
+              {(response.sources.length > 0 ? response.sources : sourceList).map((source) => (
+                <article className="trace-card" key={`${source.label}-${source.url ?? source.note ?? ""}`}>
+                  <strong>{source.label}</strong>
+                  <p>
+                    {source.url ? (
+                      <a href={source.url} target="_blank" rel="noreferrer" className="muted-link">
+                        {source.url}
+                      </a>
+                    ) : (
+                      source.note ?? "Local project review context"
+                    )}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </article>
+        </>
       ) : null}
 
       {error ? (
