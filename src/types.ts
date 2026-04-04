@@ -410,6 +410,56 @@ export type CopilotResponse = {
   sources: CopilotSource[];
 };
 
+export type AdminCopilotScope = {
+  resourceGroup: string;
+  staticWebAppName?: string;
+  functionAppName?: string;
+  openAiResourceName?: string;
+  openAiDeployment?: string | null;
+  region?: string;
+};
+
+export type AdminCopilotHealthResponse = {
+  status: string;
+  checkedAt: string;
+  scope: AdminCopilotScope;
+  capabilities: {
+    adminRouteProtected: boolean;
+    adminApiReady: boolean;
+    promptExecutionEnabled: boolean;
+    mcpServerConfigured: boolean;
+    copilotConfigured: boolean;
+    applicationInsightsConfigured: boolean;
+    storageConfigured: boolean;
+  };
+  backend: {
+    functionAppName?: string | null;
+    refreshSchedule?: string | null;
+  };
+  notes: string[];
+};
+
+export type AdminCopilotToolCall = {
+  tool: string;
+  status: "success" | "failed" | "skipped";
+  detail?: string;
+};
+
+export type AdminCopilotRequest = {
+  question: string;
+  scope?: Partial<AdminCopilotScope>;
+};
+
+export type AdminCopilotResponse = {
+  answer: string;
+  generatedAt: string;
+  modelName?: string | null;
+  modelDeployment?: string | null;
+  sources: CopilotSource[];
+  toolCalls: AdminCopilotToolCall[];
+  promptExecutionEnabled: boolean;
+};
+
 export type StructuredReviewRecord = {
   guid: string;
   technology: string;
