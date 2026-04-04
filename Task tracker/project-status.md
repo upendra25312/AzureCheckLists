@@ -13,9 +13,9 @@ Last updated: April 4, 2026
 | Service selection tied to a specific project review | Completed | Engineering | High | Add faster selection aids and suggestions |
 | Checklist note-taking per project with comments, owner, due date, evidence | Completed | Engineering | High | Add more guided note templates later |
 | Scoped exports for selected services only (`CSV`, `Markdown`, `Text`) | Completed | Engineering | High | Add richer export formatting if needed |
-| Public login and sign-in UX for save/export and personalized project review | Partially Complete | Engineering / UX | High | Finish the Google sign-in path once the live Static Web App has provider credentials configured |
+| Public login and sign-in UX for save/export and personalized project review | Completed | Engineering / UX | High | Keep the sign-in entry points aligned with save, resume, and copilot actions so users understand when cloud persistence is being used |
 | Automatic active project-review context retrieval for signed-in copilot sessions | Completed | Engineering / AI | High | Keep the Azure-saved active review state in sync so the backend can resolve copilot context automatically for signed-in users |
-| Multi-provider website sign-in with Microsoft and Google | Partially Complete | Platform / Engineering | High | Microsoft sign-in stays live; add Google OAuth provider settings to the Static Web App before enabling Google sign-in in production |
+| Multi-provider website sign-in with Microsoft and Google | Completed | Platform / Engineering | High | Keep both sign-in providers visible and verify the post-login identity mapping remains clear in the UI |
 | Signed-in user identity chip and profile menu in the website UI | Completed | UX / Engineering | High | Keep the profile chip aligned with the signed-in provider and expose future quick actions from the same menu |
 | Low-cost project review persistence using Azure Table Storage | Completed | Cloud / Engineering | High | Keep the Table Storage user/review index in sync with the Azure Blob review payloads |
 | My Project Reviews list and resume experience | Completed | Engineering / UX | High | Refine the review-library filters and sorting after more saved-review usage data is available |
@@ -43,16 +43,16 @@ Last updated: April 4, 2026
 ## Overall Status
 
 - `Completed`: core product workflow, live pricing and region context, exports, public copilot, Azure OpenAI deployment, architecture docs
-- `Partially complete`: trust and health UX, multi-mode copilot design, public sign-in UX, Google sign-in enablement
+- `Partially complete`: trust and health UX, multi-mode copilot design
 - `Pending`: admin copilot, admin login protection, Azure MCP integration, Foundry and MCP evolution, deeper UX simplification
 
 ## Highest-Priority Next 5
 
-1. Finish Google sign-in enablement by adding Google OAuth provider settings to the live Static Web App
-2. Implement mode-based copilot backend for `project-review`, `service-review`, and `leadership-summary`
-3. Add clearer live, cache, and fallback trust indicators in the public UI
-4. Expand `My project reviews` with search, sort, and delete/archive actions
-5. Build `/admin/copilot` into real read-only Azure diagnostics with MCP-backed tools
+1. Implement mode-based copilot backend for `project-review`, `service-review`, and `leadership-summary`
+2. Add clearer live, cache, and fallback trust indicators in the public UI
+3. Expand `My project reviews` with search, sort, and delete/archive actions
+4. Build `/admin/copilot` into real read-only Azure diagnostics with MCP-backed tools
+5. Add delete/archive safeguards and recovery options for saved project reviews
 
 ## RAG Plan
 
@@ -61,9 +61,9 @@ Last updated: April 4, 2026
 | M1 | Core product positioning and UX reset | Completed | Green | Done | Homepage and workflow repositioned around project review |
 | M1 | Project-scoped review workspace | Completed | Green | Done | Core solution/package concept is live |
 | M1 | Scoped exports for selected services only | Completed | Green | Done | `CSV`, `Markdown`, and `Text` flow is in place |
-| M1 | Public login and sign-in UX for save/export and personalized review | Partially Complete | Amber | Short term | Sign-in exists in parts of the app, but the entry experience and guidance are still weak |
+| M1 | Public login and sign-in UX for save/export and personalized review | Completed | Green | Done | Sign-in entry points now support Microsoft and Google while keeping local browsing available |
 | M3 | Automatic active project-review context retrieval for signed-in copilot sessions | Completed | Green | Done | Signed-in users can save the active review state to Azure and let the backend resolve copilot context automatically |
-| M4 | Multi-provider website sign-in with Microsoft and Google | Partially Complete | Amber | Short term | Microsoft sign-in remains live; Google sign-in needs provider credentials added to the live Static Web App before rollout |
+| M4 | Multi-provider website sign-in with Microsoft and Google | Completed | Green | Done | The live Static Web App exposes both built-in sign-in providers and the UI now links to both |
 | M4 | Signed-in identity chip and profile menu | Completed | Green | Done | The website shell now shows the signed-in email identity with quick navigation and sign-out actions |
 | M4 | Azure Table Storage persistence for user profiles and project reviews | Completed | Green | Done | The app now uses Azure Table Storage for the low-cost user/review index and Blob Storage for the larger review payload |
 | M4 | My Project Reviews list and resume flow | Completed | Green | Done | Signed-in users can view saved reviews and reopen one as the active project review |
@@ -95,7 +95,7 @@ Last updated: April 4, 2026
   - Project review, scoped exports, regional fit, pricing, dedicated backend, Azure OpenAI deployment, and public copilot are all done.
 - `Amber`
   - The product is functional and valuable, but still needs refinement to become truly polished and enterprise-ready.
-  - Biggest amber areas are trust visibility, Google sign-in enablement, admin tooling, and multi-mode copilot capability.
+  - Biggest amber areas are trust visibility, admin tooling, and multi-mode copilot capability.
 - `Red`
   - No major red items right now.
   - Nothing appears fundamentally blocked, but the admin and MCP path should not be exposed publicly until protected and properly scoped.
@@ -119,7 +119,6 @@ Last updated: April 4, 2026
 
 The strongest next milestone is `Milestone 4 + 5 combined`:
 
-- finish Google sign-in enablement on the live Static Web App
 - implement multi-mode copilot
 - protect and launch `/admin/copilot`
 - add admin diagnostics and health confidence

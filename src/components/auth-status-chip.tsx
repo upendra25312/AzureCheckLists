@@ -64,14 +64,13 @@ export function AuthStatusChip() {
             <a href={buildLoginUrl("aad")} className="primary-button">
               Continue with Microsoft
             </a>
+            <a href={buildLoginUrl("google")} className="secondary-button">
+              Continue with Google
+            </a>
             <Link href="/review-package" className="ghost-button">
               Keep working locally
             </Link>
           </div>
-          <p className="microcopy">
-            Google sign-in is planned next, once the live Static Web App has Google OAuth provider
-            settings configured.
-          </p>
         </div>
       </details>
     );

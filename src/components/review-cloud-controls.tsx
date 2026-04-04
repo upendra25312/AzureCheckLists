@@ -161,16 +161,15 @@ export function ReviewCloudControls({
           <a href={buildLoginUrl("aad")} className="primary-button">
             Continue with Microsoft
           </a>
+          <a href={buildLoginUrl("google")} className="secondary-button">
+            Continue with Google
+          </a>
           {continueHref ? (
             <a href={continueHref} className="ghost-button">
               Keep working locally
             </a>
           ) : null}
         </div>
-        <p className="microcopy">
-          Google sign-in is queued for the next auth pass once the live Static Web App has Google
-          OAuth provider settings configured.
-        </p>
       </section>
     );
   }

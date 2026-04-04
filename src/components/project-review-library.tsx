@@ -143,11 +143,10 @@ export function ProjectReviewLibrary() {
               <a href={buildLoginUrl("aad")} className="primary-button">
                 Continue with Microsoft
               </a>
+              <a href={buildLoginUrl("google")} className="secondary-button">
+                Continue with Google
+              </a>
             </div>
-            <p className="microcopy">
-              Google sign-in is the next auth setup step once the live Static Web App has Google
-              OAuth provider settings configured.
-            </p>
           </section>
         ) : null}
 
