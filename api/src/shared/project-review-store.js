@@ -92,8 +92,8 @@ function summarizeProjectReview(activePackage, copilotContext, reviewRecordDocum
   ).length;
 
   return {
-    PartitionKey: encodeTableKey(userId),
-    RowKey: encodeTableKey(normalizedPackage.id),
+    partitionKey: encodeTableKey(userId),
+    rowKey: encodeTableKey(normalizedPackage.id),
     userId,
     reviewId: normalizedPackage.id,
     name: normalizedPackage.name,
@@ -167,8 +167,8 @@ async function upsertUserProfile(principal, patch = {}) {
   const normalized = normalizeUserProfileEntity(existing, principal);
   const now = new Date().toISOString();
   const entity = {
-    PartitionKey: "USER",
-    RowKey: encodeTableKey(principal.userId),
+    partitionKey: "USER",
+    rowKey: encodeTableKey(principal.userId),
     ...normalized,
     email: principal.userDetails || normalized.email,
     displayName: principal.userDetails || normalized.displayName,
