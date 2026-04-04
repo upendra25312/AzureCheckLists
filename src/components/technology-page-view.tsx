@@ -2,24 +2,41 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import type { TechnologyPayload, ReviewDraft } from "@/types";
+import type { TechnologyPayload, ReviewDraft, ReviewPackage } from "@/types";
 import { ItemDrawer } from "@/components/item-drawer";
 import { QualityBadge } from "@/components/quality-badge";
 import { filterItems } from "@/lib/filters";
-import { createEmptyReview, loadReviews, saveReviews } from "@/lib/review-storage";
+import {
+  createEmptyReview,
+  loadActivePackageId,
+  loadPackages,
+  loadScopedReviews,
+  saveScopedReviews
+} from "@/lib/review-storage";
 
 export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) {
   const [selectedGuid, setSelectedGuid] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [reviews, setReviews] = useState<Record<string, ReviewDraft>>({});
+  const [activePackage, setActivePackage] = useState<ReviewPackage | null>(null);
+  const [storageReady, setStorageReady] = useState(false);
 
   useEffect(() => {
-    setReviews(loadReviews());
+    const packageId = loadActivePackageId();
+    const nextActivePackage = loadPackages().find((entry) => entry.id === packageId) ?? null;
+
+    setActivePackage(nextActivePackage);
+    setReviews(loadScopedReviews(packageId));
+    setStorageReady(true);
   }, []);
 
   useEffect(() => {
-    saveReviews(reviews);
-  }, [reviews]);
+    if (!storageReady) {
+      return;
+    }
+
+    saveScopedReviews(activePackage?.id ?? null, reviews);
+  }, [activePackage?.id, reviews, storageReady]);
 
   const filtered = useMemo(
     () =>
@@ -134,6 +151,26 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
           </div>
         </aside>
       </section>
+
+      {activePackage ? (
+        <section className="filter-card package-context-card">
+          <div className="package-context-grid">
+            <div>
+              <p className="eyebrow">Active package</p>
+              <h2 className="section-title">{activePackage.name}</h2>
+              <p className="section-copy">
+                Notes in this family view are being captured under the active project package for{" "}
+                {activePackage.audience}. Package decisions remain scoped to that project.
+              </p>
+            </div>
+            <div className="package-context-actions">
+              <Link href="/review-package" className="secondary-button">
+                Open package workspace
+              </Link>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="surface-panel story-ribbon">
         <div className="decision-cue-grid">
@@ -336,6 +373,9 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
                       {item.waf ? <span className="pill">{item.waf}</span> : null}
                       {item.category ? <span className="pill">{item.category}</span> : null}
                       <span className="pill">{item.technologyMaturityBucket}</span>
+                      {reviews[item.guid]?.packageDecision ? (
+                        <span className="pill">{reviews[item.guid]?.packageDecision}</span>
+                      ) : null}
                     </div>
                     <p className="item-text">{item.text}</p>
                     <div className="item-meta">
@@ -369,6 +409,7 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
           review={reviews[selectedItem.guid] ?? createEmptyReview()}
           onClose={() => setSelectedGuid(null)}
           onUpdate={(next) => updateReview(selectedItem.guid, next)}
+          activePackageName={activePackage?.name ?? null}
         />
       ) : null}
     </main>

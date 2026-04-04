@@ -21,6 +21,7 @@ function isMeaningfulReview(review: ReviewDraft | undefined) {
 
   return (
     review.reviewState !== "Not Reviewed" ||
+    review.packageDecision !== "Needs Review" ||
     review.comments.trim().length > 0 ||
     review.owner.trim().length > 0 ||
     review.dueDate.trim().length > 0 ||

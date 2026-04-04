@@ -2,17 +2,19 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { CatalogSummary, ChecklistItem, ExplorerFilters, ReviewDraft } from "@/types";
+import type { CatalogSummary, ChecklistItem, ExplorerFilters, ReviewDraft, ReviewPackage } from "@/types";
 import { ItemDrawer } from "@/components/item-drawer";
 import { buildExportRows, downloadCsv, downloadJson } from "@/lib/export";
 import { filterItems } from "@/lib/filters";
 import { QualityBadge } from "@/components/quality-badge";
 import {
   createEmptyReview,
+  loadActivePackageId,
   loadFilters,
-  loadReviews,
+  loadPackages,
+  loadScopedReviews,
   saveFilters,
-  saveReviews
+  saveScopedReviews
 } from "@/lib/review-storage";
 
 const EMPTY_FILTERS: ExplorerFilters = {
@@ -65,6 +67,8 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
   const [filters, setFilters] = useState<ExplorerFilters>(EMPTY_FILTERS);
   const [selectedItem, setSelectedItem] = useState<ChecklistItem | null>(null);
   const [reviews, setReviews] = useState<Record<string, ReviewDraft>>({});
+  const [activePackage, setActivePackage] = useState<ReviewPackage | null>(null);
+  const [storageReady, setStorageReady] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -77,8 +81,13 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
         }
       });
 
+    const packageId = loadActivePackageId();
+    const nextActivePackage = loadPackages().find((entry) => entry.id === packageId) ?? null;
+
+    setActivePackage(nextActivePackage);
     setFilters(mergeFilters(loadFilters()));
-    setReviews(loadReviews());
+    setReviews(loadScopedReviews(packageId));
+    setStorageReady(true);
 
     return () => {
       active = false;
@@ -90,8 +99,12 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
   }, [filters]);
 
   useEffect(() => {
-    saveReviews(reviews);
-  }, [reviews]);
+    if (!storageReady) {
+      return;
+    }
+
+    saveScopedReviews(activePackage?.id ?? null, reviews);
+  }, [activePackage?.id, reviews, storageReady]);
 
   if (!items) {
     return (
@@ -223,6 +236,27 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
             </p>
           </article>
         </div>
+
+        {activePackage ? (
+          <div className="filter-card package-context-card">
+            <div className="package-context-grid">
+              <div>
+                <p className="eyebrow">Active package</p>
+                <h3>{activePackage.name}</h3>
+                <p className="microcopy">
+                  Explorer notes are being written into the active project package for{" "}
+                  {activePackage.audience}. Service selection and exports can be managed from the
+                  package workspace.
+                </p>
+              </div>
+              <div className="package-context-actions">
+                <Link href="/review-package" className="secondary-button">
+                  Open package workspace
+                </Link>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="filter-card workspace-toolbar">
           <div className="workspace-toolbar-main">
@@ -457,11 +491,12 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
                     <button type="button" onClick={() => setSelectedItem(item)}>
                       <div className="item-topline">
                         {item.severity ? <span className="pill">{item.severity}</span> : null}
-                        {item.waf ? <span className="pill">{item.waf}</span> : null}
-                        <span className="pill">{item.technology}</span>
-                        <span className="pill">{item.technologyMaturityBucket}</span>
-                        {review ? <span className="pill">{review.reviewState}</span> : null}
-                      </div>
+                      {item.waf ? <span className="pill">{item.waf}</span> : null}
+                      <span className="pill">{item.technology}</span>
+                      <span className="pill">{item.technologyMaturityBucket}</span>
+                      {review ? <span className="pill">{review.reviewState}</span> : null}
+                      {review?.packageDecision ? <span className="pill">{review.packageDecision}</span> : null}
+                    </div>
                       <p className="item-text">{item.text}</p>
                       <div className="item-meta">
                         {item.id ? <span className="chip">{item.id}</span> : null}
@@ -520,6 +555,7 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
           review={reviews[selectedItem.guid] ?? createEmptyReview()}
           onClose={() => setSelectedItem(null)}
           onUpdate={(next) => updateReview(selectedItem.guid, next)}
+          activePackageName={activePackage?.name ?? null}
         />
       ) : null}
     </>

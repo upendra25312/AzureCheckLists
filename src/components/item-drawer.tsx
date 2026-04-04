@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ChecklistItem, ReviewDraft, ReviewState } from "@/types";
+import type { ChecklistItem, PackageDecision, ReviewDraft, ReviewState } from "@/types";
 
 const REVIEW_STATES: ReviewState[] = [
   "Not Reviewed",
@@ -12,14 +12,22 @@ const REVIEW_STATES: ReviewState[] = [
   "Exception Accepted"
 ];
 
+const PACKAGE_DECISIONS: PackageDecision[] = [
+  "Needs Review",
+  "Include",
+  "Not Applicable",
+  "Exclude"
+];
+
 type ItemDrawerProps = {
   item: ChecklistItem;
   review: ReviewDraft;
   onClose: () => void;
   onUpdate: (next: Partial<ReviewDraft>) => void;
+  activePackageName?: string | null;
 };
 
-export function ItemDrawer({ item, review, onClose, onUpdate }: ItemDrawerProps) {
+export function ItemDrawer({ item, review, onClose, onUpdate, activePackageName }: ItemDrawerProps) {
   const [evidenceInput, setEvidenceInput] = useState(review.evidenceLinks.join("\n"));
 
   useEffect(() => {
@@ -88,14 +96,33 @@ export function ItemDrawer({ item, review, onClose, onUpdate }: ItemDrawerProps)
         <section className="drawer-section">
           <h3>Review record</h3>
           <p className="microcopy">
-            Edit your review decision here. It stays in this browser and can be included in local exports from the review workspace.
+            {activePackageName
+              ? `Edit the project decision for ${activePackageName} here. These notes stay scoped to the active package in this browser and can be exported from the package workspace.`
+              : "Edit your review decision here. It stays in this browser and can be included in local exports from the review workspace."}
           </p>
           <div className="filter-grid">
+            <label>
+              <span className="microcopy">Package decision</span>
+              <select
+                className="field-select"
+                value={review.packageDecision ?? "Needs Review"}
+                onChange={(event) =>
+                  onUpdate({ packageDecision: event.target.value as PackageDecision })
+                }
+              >
+                {PACKAGE_DECISIONS.map((state) => (
+                  <option key={state} value={state}>
+                    {state}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             <label>
               <span className="microcopy">Review status</span>
               <select
                 className="field-select"
-                value={review.reviewState}
+                value={review.reviewState ?? "Not Reviewed"}
                 onChange={(event) =>
                   onUpdate({ reviewState: event.target.value as ReviewState })
                 }

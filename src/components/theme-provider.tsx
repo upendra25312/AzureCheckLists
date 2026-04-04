@@ -12,6 +12,7 @@ type Theme = "light" | "dark";
 const NAV_ITEMS = [
   { href: "/", label: "Overview" },
   { href: "/services", label: "Services" },
+  { href: "/review-package", label: "Review package" },
   { href: "/explorer", label: "Explorer" },
   { href: "/how-to-use", label: "How to use" }
 ] as const;

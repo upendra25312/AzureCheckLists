@@ -4,14 +4,25 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ItemDrawer } from "@/components/item-drawer";
 import { QualityBadge } from "@/components/quality-badge";
+import { ServicePricingPanel } from "@/components/service-pricing-panel";
+import { ServiceRegionalFitPanel } from "@/components/service-regional-fit";
 import { filterItems } from "@/lib/filters";
-import { createEmptyReview, loadReviews, saveReviews } from "@/lib/review-storage";
-import type { ReviewDraft, ServicePayload } from "@/types";
+import {
+  createEmptyReview,
+  loadActivePackageId,
+  loadPackages,
+  loadScopedReviews,
+  saveScopedReviews,
+  upsertPackage
+} from "@/lib/review-storage";
+import type { ReviewDraft, ReviewPackage, ServicePayload } from "@/types";
 
 export function ServicePageView({ payload }: { payload: ServicePayload }) {
   const [selectedGuid, setSelectedGuid] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [reviews, setReviews] = useState<Record<string, ReviewDraft>>({});
+  const [activePackage, setActivePackage] = useState<ReviewPackage | null>(null);
+  const [storageReady, setStorageReady] = useState(false);
   const baselineFamilies = payload.service.families.filter((family) => family.maturityBucket === "GA");
   const extendedFamilies = payload.service.families.filter(
     (family) => family.maturityBucket === "Preview" || family.maturityBucket === "Mixed"
@@ -21,12 +32,21 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
   );
 
   useEffect(() => {
-    setReviews(loadReviews());
+    const packageId = loadActivePackageId();
+    const nextActivePackage = loadPackages().find((entry) => entry.id === packageId) ?? null;
+
+    setActivePackage(nextActivePackage);
+    setReviews(loadScopedReviews(packageId));
+    setStorageReady(true);
   }, []);
 
   useEffect(() => {
-    saveReviews(reviews);
-  }, [reviews]);
+    if (!storageReady) {
+      return;
+    }
+
+    saveScopedReviews(activePackage?.id ?? null, reviews);
+  }, [activePackage?.id, reviews, storageReady]);
 
   const filtered = useMemo(
     () =>
@@ -103,6 +123,23 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
     });
   }
 
+  function addServiceToActivePackage() {
+    if (!activePackage) {
+      return;
+    }
+
+    if (activePackage.selectedServiceSlugs.includes(payload.service.slug)) {
+      return;
+    }
+
+    const nextPackage = upsertPackage({
+      ...activePackage,
+      selectedServiceSlugs: [...activePackage.selectedServiceSlugs, payload.service.slug]
+    });
+
+    setActivePackage(nextPackage);
+  }
+
   return (
     <main className="section-stack">
       <section className="surface-panel technology-hero technology-brief-hero">
@@ -153,6 +190,70 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
           </div>
         </aside>
       </section>
+
+      <section className="filter-card package-context-card">
+        {activePackage ? (
+          <div className="package-context-grid">
+            <div>
+              <p className="eyebrow">Active package</p>
+              <h2 className="section-title">{activePackage.name}</h2>
+              <p className="section-copy">
+                Notes on this page are being written into the active project package for{" "}
+                {activePackage.audience}. Add this service to the package scope if it belongs in the
+                current solution.
+              </p>
+            </div>
+            <div className="package-context-actions">
+              <span className="chip">
+                {activePackage.selectedServiceSlugs.includes(payload.service.slug)
+                  ? "Service already in package"
+                  : "Service not yet in package"}
+              </span>
+              <div className="button-row">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={addServiceToActivePackage}
+                  disabled={activePackage.selectedServiceSlugs.includes(payload.service.slug)}
+                >
+                  Add service to package
+                </button>
+                <Link href="/review-package" className="ghost-button">
+                  Open package workspace
+                </Link>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="package-context-grid">
+            <div>
+              <p className="eyebrow">Project package</p>
+              <h2 className="section-title">No active project package is selected.</h2>
+              <p className="section-copy">
+                You can still browse this service and keep local notes, but project-specific include,
+                exclude, and not-applicable decisions work best when a package is active.
+              </p>
+            </div>
+            <div className="package-context-actions">
+              <Link href="/review-package" className="primary-button">
+                Create review package
+              </Link>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <ServiceRegionalFitPanel
+        service={payload.service}
+        regionalFit={payload.regionalFit}
+        targetRegions={activePackage?.targetRegions ?? []}
+      />
+
+      <ServicePricingPanel
+        service={payload.service}
+        regionalFit={payload.regionalFit}
+        targetRegions={activePackage?.targetRegions ?? []}
+      />
 
       <section className="surface-panel story-ribbon">
         <div className="decision-cue-grid">
@@ -349,6 +450,9 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
                       {item.waf ? <span className="pill">{item.waf}</span> : null}
                       <span className="pill">{item.technology}</span>
                       <span className="pill">{item.technologyMaturityBucket}</span>
+                      {reviews[item.guid]?.packageDecision ? (
+                        <span className="pill">{reviews[item.guid]?.packageDecision}</span>
+                      ) : null}
                     </div>
                     <p className="item-text">{item.text}</p>
                     <div className="item-meta">
@@ -386,6 +490,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
           review={reviews[selectedItem.guid] ?? createEmptyReview()}
           onClose={() => setSelectedGuid(null)}
           onUpdate={(next) => updateReview(selectedItem.guid, next)}
+          activePackageName={activePackage?.name ?? null}
         />
       ) : null}
     </main>

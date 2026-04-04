@@ -16,6 +16,8 @@ Static-first Azure review dashboard built from the [Azure review-checklists](htt
 - Checklist explorer with browser-side filtering
 - Technology detail pages generated as static routes
 - Item detail drawer with local review notes and source traceability
+- Project-scoped review package workspace with selected services, package decisions, and CSV/Markdown/Text export
+- Service-level regional fit using Microsoft region availability data, including restricted-region markers and non-regional service callouts
 - Optional Azure-backed structured review record save and CSV export through the live UI
 - Light and dark mode
 - CSV and JSON export of filtered findings
@@ -94,3 +96,4 @@ The managed API stores structured review records as JSON in Blob Storage and gen
 - Review state edits stay in `localStorage` by default and can optionally be saved to Azure Blob Storage through the managed API.
 
 See [docs/architecture.md](./docs/architecture.md) for the deployment and migration model.
+See [docs/project-package-commercial-fit.md](./docs/project-package-commercial-fit.md) for the combined package workflow and the planned regional plus pricing extension.

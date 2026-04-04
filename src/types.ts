@@ -10,6 +10,28 @@ export type ReviewState =
   | "Not Applicable"
   | "Exception Accepted";
 
+export type PackageDecision = "Needs Review" | "Include" | "Not Applicable" | "Exclude";
+
+export type ReviewPackageAudience =
+  | "Cloud Architect"
+  | "Pre-sales Architect"
+  | "Sales Architect"
+  | "Senior Director"
+  | "Cloud Engineer";
+
+export type RegionalAccessState = "Open" | "ReservedAccess" | "EarlyAccess";
+export type RegionalAvailabilityState = "GA" | "Preview" | "Retiring";
+export type ServiceRegionalMatchType = "exact" | "alias" | "manual";
+export type PricingQueryField = "serviceName" | "productName";
+export type PricingQueryOperator = "eq" | "contains";
+export type PricingLocationKind = "Region" | "BillingZone" | "Global" | "Unknown";
+export type ServicePricingQuerySource =
+  | "manual"
+  | "matchedOffering"
+  | "matchedLabel"
+  | "serviceName"
+  | "alias";
+
 export type FieldProvenance = "source" | "normalized" | "inferred" | "unavailable";
 
 export type ChecklistItem = {
@@ -140,12 +162,52 @@ export type ServiceSummary = {
   wafPillars: string[];
   description: string;
   whatThisMeans: string;
+  regionalFitSummary?: ServiceRegionalFitSummary;
   families: Array<
     Pick<
       TechnologySummary,
       "slug" | "technology" | "status" | "maturityBucket" | "itemCount" | "highSeverityCount" | "quality"
     >
   >;
+};
+
+export type ServiceRegionalFitSku = {
+  skuName: string;
+  state: RegionalAvailabilityState;
+};
+
+export type ServiceRegionalFitRegion = {
+  regionName: string;
+  geographyName: string;
+  accessState: RegionalAccessState;
+  availabilityState: RegionalAvailabilityState;
+  skuStates: ServiceRegionalFitSku[];
+};
+
+export type ServiceRegionalFitUnavailableRegion = {
+  regionName: string;
+  geographyName: string;
+  accessState: RegionalAccessState;
+};
+
+export type ServiceRegionalFitSummary = {
+  mapped: boolean;
+  matchType?: ServiceRegionalMatchType;
+  matchedOfferingName?: string;
+  matchedServiceLabel?: string;
+  matchedSkuHints?: string[];
+  notes: string[];
+  publicRegionCount: number;
+  availableRegionCount: number;
+  unavailableRegionCount: number;
+  restrictedRegionCount: number;
+  earlyAccessRegionCount: number;
+  previewRegionCount: number;
+  retiringRegionCount: number;
+  isGlobalService: boolean;
+  generatedAt: string;
+  availabilitySourceUrl: string;
+  regionsSourceUrl: string;
 };
 
 export type ServiceIndex = {
@@ -157,15 +219,117 @@ export type ServicePayload = {
   generatedAt: string;
   service: ServiceSummary;
   items: ChecklistItem[];
+  regionalFit?: ServiceRegionalFit;
+};
+
+export type ServiceRegionalFit = ServiceRegionalFitSummary & {
+  serviceSlug?: string;
+  serviceName?: string;
+  regions: ServiceRegionalFitRegion[];
+  unavailableRegions: ServiceRegionalFitUnavailableRegion[];
+  globalSkuStates: ServiceRegionalFitSku[];
+};
+
+export type ServiceRegionalFitRequest = {
+  slug: string;
+  service: string;
+  aliases: string[];
+  matchedOfferingName?: string;
+  matchedServiceLabel?: string;
+  matchedSkuHints?: string[];
+};
+
+export type ServiceRegionalFitResponse = {
+  generatedAt: string;
+  sourceUrl: string;
+  services: ServiceRegionalFit[];
+};
+
+export type ServicePricingQuery = {
+  field: PricingQueryField;
+  operator: PricingQueryOperator;
+  value: string;
+  source: ServicePricingQuerySource;
+};
+
+export type ServicePricingRequest = {
+  slug: string;
+  service: string;
+  aliases: string[];
+  matchedOfferingName?: string;
+  matchedServiceLabel?: string;
+  targetRegions?: string[];
+};
+
+export type ServicePricingRow = {
+  meterId: string;
+  meterName: string;
+  productName: string;
+  skuName: string;
+  armSkuName: string;
+  armRegionName: string;
+  location: string;
+  locationKind: PricingLocationKind;
+  effectiveStartDate: string;
+  effectiveEndDate?: string;
+  unitOfMeasure: string;
+  retailPrice: number;
+  unitPrice: number;
+  tierMinimumUnits: number;
+  currencyCode: string;
+  type: string;
+  isPrimaryMeterRegion: boolean;
+};
+
+export type ServicePricingSummary = {
+  serviceSlug: string;
+  serviceName: string;
+  mapped: boolean;
+  notes: string[];
+  generatedAt: string;
+  sourceUrl: string;
+  calculatorUrl: string;
+  priceDisclaimer: string;
+  currencyCode: string;
+  rowCount: number;
+  meterCount: number;
+  skuCount: number;
+  regionCount: number;
+  billingLocationCount: number;
+  targetRegionMatchCount: number;
+  startsAtRetailPrice?: number;
+  query?: ServicePricingQuery;
+};
+
+export type ServicePricing = ServicePricingSummary & {
+  rows: ServicePricingRow[];
+};
+
+export type ServicePricingResponse = {
+  generatedAt: string;
+  sourceUrl: string;
+  services: ServicePricing[];
 };
 
 export type ReviewDraft = {
   reviewState: ReviewState;
+  packageDecision: PackageDecision;
   comments: string;
   owner: string;
   dueDate: string;
   evidenceLinks: string[];
   exceptionReason: string;
+};
+
+export type ReviewPackage = {
+  id: string;
+  name: string;
+  audience: ReviewPackageAudience;
+  businessScope: string;
+  targetRegions: string[];
+  selectedServiceSlugs: string[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type StructuredReviewRecord = {

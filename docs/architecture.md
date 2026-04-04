@@ -44,3 +44,8 @@ Keep these constraints in place unless the hosting plan changes:
 - Do not move review-note persistence to a fake server abstraction without a real backing store.
 - Do not add evidence upload or reviewer assignment as if it were multi-user ready.
 - Do not introduce heavy SSR patterns for views that are already fully static.
+
+## Related note
+
+See [project-package-commercial-fit.md](./project-package-commercial-fit.md) for the project-scoped
+package workflow and the planned regional availability plus commercial-fit data layer.

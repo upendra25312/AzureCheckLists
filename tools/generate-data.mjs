@@ -322,6 +322,496 @@ function deriveTechnologyName(fileName, metadataName, sampleChecklist) {
   return cleanDisplayText(titleCase(withoutSuffix) ?? fileName);
 }
 
+const availabilitySourceUrl =
+  "https://azure.microsoft.com/en-us/explore/global-infrastructure/products-by-region/table";
+const regionsSourceUrl = "https://learn.microsoft.com/en-us/azure/reliability/regions-list";
+const excludedAvailabilityGeographies = new Set(["Azure Government"]);
+const availabilityManualMap = new Map(
+  Object.entries({
+    "active directory domain services": {
+      offeringName: "Microsoft Entra Domain Services"
+    },
+    "ad b2c": {
+      offeringName: "Azure Active Directory B2C",
+      notes: ["Microsoft's availability feed lists this identity service as a global, non-regional offering."]
+    },
+    "ai content safety": {
+      offeringName: "Microsoft Foundry",
+      productSkuHints: ["Content Safety"],
+      notes: ["Availability is derived from the Content Safety product line under Microsoft Foundry."]
+    },
+    "ai foundry": {
+      offeringName: "Microsoft Foundry",
+      notes: ["Availability is mapped to the umbrella Microsoft Foundry offering because the source feed groups several Foundry capabilities together."]
+    },
+    "app service plan": {
+      offeringName: "App Service",
+      notes: ["Availability is mapped through the broader App Service offering because App Service Plan isn't listed as a standalone offering in the Microsoft feed."]
+    },
+    "application insights": {
+      offeringName: "Azure Monitor",
+      productSkuHints: ["Application Insights"],
+      notes: ["Availability is derived from the Application Insights SKU under Azure Monitor."]
+    },
+    "blob storage": {
+      offeringName: "Storage",
+      productSkuHints: ["Blob Storage", "Premium Block Blobs"],
+      notes: ["Availability is derived from Blob-related Storage SKUs in the Microsoft availability feed."]
+    },
+    "cache for redis": {
+      offeringName: "Redis Cache"
+    },
+    cdn: {
+      offeringName: "Content Delivery Network",
+      notes: ["Microsoft lists CDN as a global, non-regional service in the availability feed."]
+    },
+    "container apps environment": {
+      offeringName: "Azure Container Apps",
+      notes: ["Availability is mapped through Azure Container Apps because the managed environment resource isn't listed separately in the Microsoft feed."]
+    },
+    "front door waf": {
+      offeringName: "Azure Web Application Firewall",
+      productSkuHints: ["WAF on Azure Front Door"],
+      notes: ["Availability is derived from the Front Door-specific WAF SKU under Azure Web Application Firewall."]
+    },
+    "image builder": {
+      offeringName: "Azure VM Image Builder"
+    },
+    "machine learning": {
+      offeringName: "Microsoft Foundry",
+      productSkuHints: ["Azure Machine Learning"],
+      notes: ["Availability is derived from the Azure Machine Learning SKU family under Microsoft Foundry."]
+    },
+    "monitor alerts": {
+      offeringName: "Azure Monitor",
+      notes: ["Availability is mapped through the broader Azure Monitor offering because alerts aren't listed as a standalone offering in the Microsoft feed."]
+    },
+    "nat gateway": {
+      offeringName: "Virtual Network NAT"
+    },
+    "private dns": {
+      offeringName: "Azure DNS",
+      productSkuHints: ["Private Zones"],
+      notes: ["Availability is derived from the Azure DNS Private Zones SKU in the Microsoft feed."]
+    },
+    "public ip": {
+      offeringName: "IP Services",
+      productSkuHints: ["Azure Public IP"],
+      notes: ["Availability is derived from public IP SKUs within the IP Services offering."]
+    },
+    "traffic collector": {
+      offeringName: "",
+      notes: ["The Microsoft availability feed does not currently expose a distinct offering for Azure Traffic Collector."]
+    },
+    "log analytics": {
+      offeringName: "Azure Monitor",
+      productSkuHints: ["Log Analytics"],
+      notes: ["Availability is derived from the Log Analytics SKU under Azure Monitor."]
+    },
+    purview: {
+      offeringName: "Security Platform (Purview)"
+    }
+  })
+);
+
+function normalizeAvailabilityKey(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/\(.*?\)/g, " ")
+    .replace(/^azure\s+/i, "")
+    .replace(/^microsoft\s+/i, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseRegionLabel(regionName) {
+  const raw = cleanDisplayText(regionName) ?? "";
+
+  if (raw.endsWith("**")) {
+    return {
+      regionName: raw.slice(0, -2).trim(),
+      accessState: "EarlyAccess"
+    };
+  }
+
+  if (raw.endsWith("*")) {
+    return {
+      regionName: raw.slice(0, -1).trim(),
+      accessState: "ReservedAccess"
+    };
+  }
+
+  return {
+    regionName: raw.trim(),
+    accessState: "Open"
+  };
+}
+
+function accessStateRank(accessState) {
+  if (accessState === "EarlyAccess") {
+    return 2;
+  }
+
+  if (accessState === "ReservedAccess") {
+    return 1;
+  }
+
+  return 0;
+}
+
+function normalizeAvailabilityState(raw) {
+  const normalized = String(raw ?? "").trim().toLowerCase();
+
+  if (normalized === "ga") {
+    return "GA";
+  }
+
+  if (normalized === "preview") {
+    return "Preview";
+  }
+
+  if (normalized === "closing down" || normalized === "retiring") {
+    return "Retiring";
+  }
+
+  return undefined;
+}
+
+function isCommercialPublicAvailabilityRow(row) {
+  const geographyName = cleanDisplayText(row.GeographyName) ?? "";
+  const { regionName } = parseRegionLabel(row.RegionName);
+
+  if (!geographyName || regionName === "Non Regional") {
+    return false;
+  }
+
+  if (excludedAvailabilityGeographies.has(geographyName)) {
+    return false;
+  }
+
+  return !geographyName.includes("21Vianet");
+}
+
+async function readAvailabilityRows() {
+  const response = await fetch(availabilitySourceUrl, {
+    headers: {
+      Accept: "text/html"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Unable to fetch Azure Product Availability by Region: ${response.status}`);
+  }
+
+  const html = await response.text();
+  const scriptAnchor = html.indexOf("const data =");
+
+  if (scriptAnchor === -1) {
+    throw new Error("Azure Product Availability by Region feed did not contain the embedded data payload.");
+  }
+
+  const dataStart = html.indexOf("[", scriptAnchor);
+  const dataEnd = html.indexOf("];", dataStart);
+
+  if (dataStart === -1 || dataEnd === -1) {
+    throw new Error("Azure Product Availability by Region feed did not contain a parseable data array.");
+  }
+
+  return JSON.parse(html.slice(dataStart, dataEnd + 1));
+}
+
+function buildPublicRegionCatalog(rows) {
+  const regionMap = new Map();
+
+  for (const row of rows) {
+    if (!isCommercialPublicAvailabilityRow(row)) {
+      continue;
+    }
+
+    const geographyName = cleanDisplayText(row.GeographyName) ?? "Unknown";
+    const { regionName, accessState } = parseRegionLabel(row.RegionName);
+    const existing = regionMap.get(regionName);
+
+    if (!existing) {
+      regionMap.set(regionName, {
+        regionName,
+        geographyName,
+        accessState
+      });
+      continue;
+    }
+
+    if (accessStateRank(accessState) > accessStateRank(existing.accessState)) {
+      existing.accessState = accessState;
+    }
+  }
+
+  return [...regionMap.values()].sort((left, right) => left.regionName.localeCompare(right.regionName));
+}
+
+function buildAvailabilityOfferingLookup(rows) {
+  const offerings = [...new Set(rows.map((row) => cleanDisplayText(row.OfferingName)).filter(Boolean))].sort(
+    (left, right) => left.localeCompare(right)
+  );
+  const offeringByKey = new Map();
+
+  for (const offeringName of offerings) {
+    const key = normalizeAvailabilityKey(offeringName);
+
+    if (!offeringByKey.has(key)) {
+      offeringByKey.set(key, offeringName);
+    }
+  }
+
+  return offeringByKey;
+}
+
+function resolveAvailabilityMapping(serviceName, aliases, offeringByKey) {
+  const serviceKey = normalizeAvailabilityKey(serviceName);
+  const manual = availabilityManualMap.get(serviceKey);
+
+  if (manual) {
+    if (!manual.offeringName) {
+      return {
+        mapped: false,
+        notes: manual.notes ?? [
+          "The Microsoft availability feed does not currently expose a directly mappable offering for this service."
+        ]
+      };
+    }
+
+    return {
+      mapped: true,
+      offeringName: manual.offeringName,
+      matchType: "manual",
+      matchedServiceLabel: serviceName,
+      matchedSkuHints: manual.productSkuHints ?? [],
+      notes: manual.notes ?? []
+    };
+  }
+
+  const candidates = [serviceName, ...aliases].filter(Boolean);
+
+  for (const candidate of candidates) {
+    const offeringName = offeringByKey.get(normalizeAvailabilityKey(candidate));
+
+    if (!offeringName) {
+      continue;
+    }
+
+    return {
+      mapped: true,
+      offeringName,
+      matchType: candidate === serviceName ? "exact" : "alias",
+      matchedServiceLabel: candidate,
+      matchedSkuHints: [],
+      notes: []
+    };
+  }
+
+  return {
+    mapped: false,
+    notes: [
+      "An official Azure Product Availability by Region offering could not be matched automatically for this service."
+    ]
+  };
+}
+
+function buildServiceRegionalFit(service, availabilityRows, publicRegions, offeringByKey) {
+  if (availabilityRows.length === 0) {
+    return {
+      mapped: false,
+      notes: ["Official Azure regional availability data was unavailable during this build."],
+      publicRegionCount: 0,
+      availableRegionCount: 0,
+      unavailableRegionCount: 0,
+      restrictedRegionCount: 0,
+      earlyAccessRegionCount: 0,
+      previewRegionCount: 0,
+      retiringRegionCount: 0,
+      isGlobalService: false,
+      generatedAt,
+      availabilitySourceUrl,
+      regionsSourceUrl,
+      regions: [],
+      unavailableRegions: [],
+      globalSkuStates: []
+    };
+  }
+
+  const mapping = resolveAvailabilityMapping(service.service, service.aliases, offeringByKey);
+  const baseSummary = {
+    mapped: false,
+    notes: mapping.notes,
+    publicRegionCount: publicRegions.length,
+    availableRegionCount: 0,
+    unavailableRegionCount: 0,
+    restrictedRegionCount: 0,
+    earlyAccessRegionCount: 0,
+    previewRegionCount: 0,
+    retiringRegionCount: 0,
+    isGlobalService: false,
+    generatedAt,
+    availabilitySourceUrl,
+    regionsSourceUrl
+  };
+
+  if (!mapping.mapped) {
+    return {
+      ...baseSummary,
+      regions: [],
+      unavailableRegions: [],
+      globalSkuStates: []
+    };
+  }
+
+  const matchedRows = availabilityRows.filter((row) => {
+    if (cleanDisplayText(row.OfferingName) !== mapping.offeringName) {
+      return false;
+    }
+
+    if (mapping.matchedSkuHints.length === 0) {
+      return true;
+    }
+
+    const skuName = cleanDisplayText(row.ProductSkuName) ?? "";
+
+    return mapping.matchedSkuHints.some((hint) => skuName.toLowerCase().includes(hint.toLowerCase()));
+  });
+
+  const regionMap = new Map();
+  const globalSkuMap = new Map();
+
+  for (const row of matchedRows) {
+    const state = normalizeAvailabilityState(row.CurrentState);
+
+    if (!state) {
+      continue;
+    }
+
+    const skuName = cleanDisplayText(row.ProductSkuName) || "General availability";
+    const { regionName, accessState } = parseRegionLabel(row.RegionName);
+
+    if (regionName === "Non Regional") {
+      globalSkuMap.set(`${skuName}::${state}`, {
+        skuName,
+        state
+      });
+      continue;
+    }
+
+    if (!isCommercialPublicAvailabilityRow(row)) {
+      continue;
+    }
+
+    const geographyName = cleanDisplayText(row.GeographyName) ?? "Unknown";
+    const existing = regionMap.get(regionName) ?? {
+      regionName,
+      geographyName,
+      accessState,
+      availabilityState: state,
+      skuStates: []
+    };
+
+    if (accessStateRank(accessState) > accessStateRank(existing.accessState)) {
+      existing.accessState = accessState;
+    }
+
+    if (!existing.skuStates.some((entry) => entry.skuName === skuName && entry.state === state)) {
+      existing.skuStates.push({
+        skuName,
+        state
+      });
+    }
+
+    if (existing.skuStates.some((entry) => entry.state === "GA")) {
+      existing.availabilityState = "GA";
+    } else if (existing.skuStates.some((entry) => entry.state === "Preview")) {
+      existing.availabilityState = "Preview";
+    } else {
+      existing.availabilityState = "Retiring";
+    }
+
+    regionMap.set(regionName, existing);
+  }
+
+  const regions = [...regionMap.values()]
+    .map((region) => ({
+      ...region,
+      skuStates: [...region.skuStates].sort((left, right) => left.skuName.localeCompare(right.skuName))
+    }))
+    .sort((left, right) => left.regionName.localeCompare(right.regionName));
+  const globalSkuStates = [...globalSkuMap.values()].sort((left, right) =>
+    left.skuName.localeCompare(right.skuName)
+  );
+  const availableRegionNames = new Set(regions.map((region) => region.regionName));
+  const isGlobalService = globalSkuStates.length > 0;
+  const unavailableRegions =
+    isGlobalService && regions.length === 0
+      ? []
+      : publicRegions
+          .filter((region) => !availableRegionNames.has(region.regionName))
+          .map((region) => ({
+            regionName: region.regionName,
+            geographyName: region.geographyName,
+            accessState: region.accessState
+          }));
+  const notes = [...mapping.notes];
+
+  if (isGlobalService && regions.length === 0) {
+    notes.push(
+      "Microsoft lists this as a global or non-regional service, so region-by-region availability is not applicable in the same way as regional services."
+    );
+  }
+
+  return {
+    ...baseSummary,
+    mapped: true,
+    matchType: mapping.matchType,
+    matchedOfferingName: mapping.offeringName,
+    matchedServiceLabel: mapping.matchedServiceLabel,
+    matchedSkuHints: mapping.matchedSkuHints,
+    notes,
+    availableRegionCount: regions.length,
+    unavailableRegionCount: unavailableRegions.length,
+    restrictedRegionCount: regions.filter((region) => region.accessState === "ReservedAccess").length,
+    earlyAccessRegionCount: regions.filter((region) => region.accessState === "EarlyAccess").length,
+    previewRegionCount: regions.filter((region) =>
+      region.skuStates.some((entry) => entry.state === "Preview")
+    ).length,
+    retiringRegionCount: regions.filter((region) =>
+      region.skuStates.some((entry) => entry.state === "Retiring")
+    ).length,
+    isGlobalService,
+    regions,
+    unavailableRegions,
+    globalSkuStates
+  };
+}
+
+function summarizeRegionalFit(regionalFit) {
+  return {
+    mapped: regionalFit.mapped,
+    matchType: regionalFit.matchType,
+    matchedOfferingName: regionalFit.matchedOfferingName,
+    matchedServiceLabel: regionalFit.matchedServiceLabel,
+    matchedSkuHints: regionalFit.matchedSkuHints ?? [],
+    notes: regionalFit.notes,
+    publicRegionCount: regionalFit.publicRegionCount,
+    availableRegionCount: regionalFit.availableRegionCount,
+    unavailableRegionCount: regionalFit.unavailableRegionCount,
+    restrictedRegionCount: regionalFit.restrictedRegionCount,
+    earlyAccessRegionCount: regionalFit.earlyAccessRegionCount,
+    previewRegionCount: regionalFit.previewRegionCount,
+    retiringRegionCount: regionalFit.retiringRegionCount,
+    isGlobalService: regionalFit.isGlobalService,
+    generatedAt: regionalFit.generatedAt,
+    availabilitySourceUrl: regionalFit.availabilitySourceUrl,
+    regionsSourceUrl: regionalFit.regionsSourceUrl
+  };
+}
+
 function collectUnique(items, selector) {
   return [...new Set(items.map(selector).filter(Boolean))].sort((left, right) =>
     left.localeCompare(right)
@@ -672,6 +1162,17 @@ async function generate() {
   await cleanDirectory(technologyDir);
   await cleanDirectory(serviceDir);
 
+  let availabilityRows = [];
+
+  try {
+    availabilityRows = await readAvailabilityRows();
+  } catch (error) {
+    console.warn(`Unable to refresh official Azure regional availability data: ${error.message}`);
+  }
+
+  const publicRegions = buildPublicRegionCatalog(availabilityRows);
+  const availabilityOfferingLookup = buildAvailabilityOfferingLookup(availabilityRows);
+
   const files = [
     ...(await getEnglishChecklistFiles("checklists")),
     ...(await getEnglishChecklistFiles("checklists-ext"))
@@ -865,6 +1366,15 @@ async function generate() {
 
       const descriptionSuffix =
         descriptionParts.length > 0 ? ` ${descriptionParts.join(". ")}.` : "";
+      const regionalFit = buildServiceRegionalFit(
+        {
+          service,
+          aliases: [...group.aliases]
+        },
+        availabilityRows,
+        publicRegions,
+        availabilityOfferingLookup
+      );
 
       return {
         slug: slugify(service),
@@ -883,6 +1393,7 @@ async function generate() {
           `${service} appears across ${group.items.length} normalized findings in ${familySummaries.length} checklist families.${descriptionSuffix}`
         ),
         whatThisMeans,
+        regionalFitSummary: summarizeRegionalFit(regionalFit),
         families: familySummaries.map((family) => ({
           slug: family.slug,
           technology: family.technology,
@@ -901,6 +1412,15 @@ async function generate() {
     );
 
   for (const service of services) {
+    const regionalFit = buildServiceRegionalFit(
+      {
+        service: service.service,
+        aliases: service.aliases
+      },
+      availabilityRows,
+      publicRegions,
+      availabilityOfferingLookup
+    );
     const serviceItems = allItems
       .filter((item) => (item.serviceCanonical ?? item.service) === service.service)
       .sort((left, right) => {
@@ -916,7 +1436,8 @@ async function generate() {
     await writeJson(path.join(serviceDir, `${service.slug}.json`), {
       generatedAt,
       service,
-      items: serviceItems
+      items: serviceItems,
+      regionalFit
     });
   }
 
@@ -976,6 +1497,12 @@ async function generate() {
   await writeJson(path.join(outputDir, "service-index.json"), {
     generatedAt,
     services
+  });
+  await writeJson(path.join(outputDir, "regions.json"), {
+    generatedAt,
+    regionsSourceUrl,
+    availabilitySourceUrl,
+    regions: publicRegions
   });
 }
 

@@ -1,14 +1,44 @@
-import type { ExplorerFilters, ReviewDraft } from "@/types";
+import type { ExplorerFilters, ReviewDraft, ReviewPackage, ReviewPackageAudience } from "@/types";
 
 export const STORAGE_KEYS = {
   theme: "azure-review-dashboard.theme",
   reviews: "azure-review-dashboard.reviews",
-  filters: "azure-review-dashboard.filters"
+  filters: "azure-review-dashboard.filters",
+  packages: "azure-review-dashboard.packages",
+  activePackageId: "azure-review-dashboard.active-package-id",
+  packageReviewsPrefix: "azure-review-dashboard.package-reviews"
 } as const;
+
+function readStorage<T>(key: string, fallback: T) {
+  if (typeof window === "undefined") {
+    return fallback;
+  }
+
+  const raw = window.localStorage.getItem(key);
+
+  if (!raw) {
+    return fallback;
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function packageReviewsKey(packageId: string) {
+  return `${STORAGE_KEYS.packageReviewsPrefix}.${packageId}`;
+}
+
+function createPackageId() {
+  return `pkg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
 
 export function createEmptyReview(): ReviewDraft {
   return {
     reviewState: "Not Reviewed",
+    packageDecision: "Needs Review",
     comments: "",
     owner: "",
     dueDate: "",
@@ -18,21 +48,7 @@ export function createEmptyReview(): ReviewDraft {
 }
 
 export function loadReviews() {
-  if (typeof window === "undefined") {
-    return {} as Record<string, ReviewDraft>;
-  }
-
-  const raw = window.localStorage.getItem(STORAGE_KEYS.reviews);
-
-  if (!raw) {
-    return {} as Record<string, ReviewDraft>;
-  }
-
-  try {
-    return JSON.parse(raw) as Record<string, ReviewDraft>;
-  } catch {
-    return {} as Record<string, ReviewDraft>;
-  }
+  return readStorage<Record<string, ReviewDraft>>(STORAGE_KEYS.reviews, {});
 }
 
 export function saveReviews(reviews: Record<string, ReviewDraft>) {
@@ -47,24 +63,111 @@ export function clearReviews() {
   window.localStorage.removeItem(STORAGE_KEYS.reviews);
 }
 
+export function loadPackageReviews(packageId: string) {
+  return readStorage<Record<string, ReviewDraft>>(packageReviewsKey(packageId), {});
+}
+
+export function savePackageReviews(packageId: string, reviews: Record<string, ReviewDraft>) {
+  window.localStorage.setItem(packageReviewsKey(packageId), JSON.stringify(reviews));
+}
+
+export function loadScopedReviews(packageId: string | null) {
+  return packageId ? loadPackageReviews(packageId) : loadReviews();
+}
+
+export function saveScopedReviews(packageId: string | null, reviews: Record<string, ReviewDraft>) {
+  if (packageId) {
+    savePackageReviews(packageId, reviews);
+    return;
+  }
+
+  saveReviews(reviews);
+}
+
 export function loadFilters() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const raw = window.localStorage.getItem(STORAGE_KEYS.filters);
-
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(raw) as ExplorerFilters;
-  } catch {
-    return null;
-  }
+  return readStorage<ExplorerFilters | null>(STORAGE_KEYS.filters, null);
 }
 
 export function saveFilters(filters: ExplorerFilters) {
   window.localStorage.setItem(STORAGE_KEYS.filters, JSON.stringify(filters));
+}
+
+export function createReviewPackage(input?: Partial<ReviewPackage>): ReviewPackage {
+  const now = new Date().toISOString();
+
+  return {
+    id: input?.id ?? createPackageId(),
+    name: input?.name?.trim() || "Project review package",
+    audience: input?.audience ?? ("Cloud Architect" as ReviewPackageAudience),
+    businessScope: input?.businessScope ?? "",
+    targetRegions: input?.targetRegions ?? [],
+    selectedServiceSlugs: input?.selectedServiceSlugs ?? [],
+    createdAt: input?.createdAt ?? now,
+    updatedAt: input?.updatedAt ?? now
+  };
+}
+
+export function loadPackages() {
+  return readStorage<ReviewPackage[]>(STORAGE_KEYS.packages, []);
+}
+
+export function savePackages(packages: ReviewPackage[]) {
+  window.localStorage.setItem(STORAGE_KEYS.packages, JSON.stringify(packages));
+}
+
+export function loadActivePackageId() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return window.localStorage.getItem(STORAGE_KEYS.activePackageId);
+}
+
+export function saveActivePackageId(packageId: string | null) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (!packageId) {
+    window.localStorage.removeItem(STORAGE_KEYS.activePackageId);
+    return;
+  }
+
+  window.localStorage.setItem(STORAGE_KEYS.activePackageId, packageId);
+}
+
+export function upsertPackage(nextPackage: ReviewPackage) {
+  const packages = loadPackages();
+  const existingIndex = packages.findIndex((entry) => entry.id === nextPackage.id);
+  const updated = {
+    ...nextPackage,
+    updatedAt: new Date().toISOString()
+  };
+
+  if (existingIndex === -1) {
+    savePackages([updated, ...packages]);
+    return updated;
+  }
+
+  const nextPackages = [...packages];
+
+  nextPackages.splice(existingIndex, 1, updated);
+  savePackages(nextPackages);
+
+  return updated;
+}
+
+export function deletePackage(packageId: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const packages = loadPackages().filter((entry) => entry.id !== packageId);
+
+  savePackages(packages);
+  window.localStorage.removeItem(packageReviewsKey(packageId));
+
+  if (loadActivePackageId() === packageId) {
+    saveActivePackageId(packages[0]?.id ?? null);
+  }
 }

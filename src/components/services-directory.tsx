@@ -224,6 +224,27 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
                     <span className="pill">{service.deprecatedFamilyCount.toLocaleString()} deprecated</span>
                   ) : null}
                   <span className="pill">{service.highSeverityCount.toLocaleString()} high severity</span>
+                  {service.regionalFitSummary?.mapped ? (
+                    service.regionalFitSummary.isGlobalService ? (
+                      <span className="pill">global / non-regional</span>
+                    ) : (
+                      <span className="pill">
+                        {service.regionalFitSummary.availableRegionCount.toLocaleString()} regions
+                      </span>
+                    )
+                  ) : (
+                    <span className="pill">availability mapping pending</span>
+                  )}
+                  {service.regionalFitSummary?.restrictedRegionCount ? (
+                    <span className="pill">
+                      {service.regionalFitSummary.restrictedRegionCount.toLocaleString()} restricted
+                    </span>
+                  ) : null}
+                  {service.regionalFitSummary?.previewRegionCount ? (
+                    <span className="pill">
+                      {service.regionalFitSummary.previewRegionCount.toLocaleString()} preview regions
+                    </span>
+                  ) : null}
                 </div>
 
                 {service.aliases.length > 0 ? (
