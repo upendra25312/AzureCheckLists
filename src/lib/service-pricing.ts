@@ -19,6 +19,8 @@ type CachedServicePricing = {
   payload: ServicePricing;
 };
 
+const servicePricingMemoryCache = new Map<string, CachedServicePricing>();
+
 function normalizeRegionName(value: string) {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
 }
@@ -32,12 +34,67 @@ function buildCacheKey(request: ServicePricingRequest) {
   return `${SERVICE_PRICING_CACHE_PREFIX}.${request.slug}.${targetRegionKey || "all"}`;
 }
 
+function isExpired(savedAt: string, ttlMs: number) {
+  return Date.now() - Date.parse(savedAt) > ttlMs;
+}
+
+function clearCachedServicePricingByKey(cacheKey: string) {
+  servicePricingMemoryCache.delete(cacheKey);
+
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(cacheKey);
+}
+
+function isQuotaExceededError(error: unknown) {
+  if (error instanceof DOMException) {
+    return (
+      error.name === "QuotaExceededError" ||
+      error.name === "NS_ERROR_DOM_QUOTA_REACHED"
+    );
+  }
+
+  return error instanceof Error && /quota/i.test(error.message);
+}
+
+function purgePersistedServicePricingCache() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const keysToRemove: string[] = [];
+
+  for (let index = 0; index < window.localStorage.length; index += 1) {
+    const key = window.localStorage.key(index);
+
+    if (key?.startsWith(SERVICE_PRICING_CACHE_PREFIX)) {
+      keysToRemove.push(key);
+    }
+  }
+
+  keysToRemove.forEach((key) => window.localStorage.removeItem(key));
+}
+
 function readCachedServicePricing(request: ServicePricingRequest) {
+  const cacheKey = buildCacheKey(request);
+  const inMemory = servicePricingMemoryCache.get(cacheKey);
+
+  if (inMemory) {
+    if (isExpired(inMemory.savedAt, SERVICE_PRICING_CACHE_TTL_MS)) {
+      clearCachedServicePricingByKey(cacheKey);
+      return null;
+    }
+
+    return inMemory.payload;
+  }
+
   if (typeof window === "undefined") {
     return null;
   }
 
-  const raw = window.localStorage.getItem(buildCacheKey(request));
+  const raw = window.localStorage.getItem(cacheKey);
 
   if (!raw) {
     return null;
@@ -46,29 +103,49 @@ function readCachedServicePricing(request: ServicePricingRequest) {
   try {
     const cached = JSON.parse(raw) as CachedServicePricing;
 
-    if (Date.now() - Date.parse(cached.savedAt) > SERVICE_PRICING_CACHE_TTL_MS) {
-      window.localStorage.removeItem(buildCacheKey(request));
+    if (isExpired(cached.savedAt, SERVICE_PRICING_CACHE_TTL_MS)) {
+      clearCachedServicePricingByKey(cacheKey);
       return null;
     }
 
+    servicePricingMemoryCache.set(cacheKey, cached);
     return cached.payload;
   } catch {
-    window.localStorage.removeItem(buildCacheKey(request));
+    clearCachedServicePricingByKey(cacheKey);
     return null;
   }
 }
 
 function writeCachedServicePricing(request: ServicePricingRequest, payload: ServicePricing) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
+  const cacheKey = buildCacheKey(request);
   const cached: CachedServicePricing = {
     savedAt: new Date().toISOString(),
     payload
   };
 
-  window.localStorage.setItem(buildCacheKey(request), JSON.stringify(cached));
+  servicePricingMemoryCache.set(cacheKey, cached);
+
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const serialized = JSON.stringify(cached);
+
+  try {
+    window.localStorage.setItem(cacheKey, serialized);
+  } catch (error) {
+    if (!isQuotaExceededError(error)) {
+      return;
+    }
+
+    purgePersistedServicePricingCache();
+
+    try {
+      window.localStorage.setItem(cacheKey, serialized);
+    } catch {
+      // Keep the in-memory cache and allow the live pricing payload to render.
+    }
+  }
 }
 
 function chunkRequests<T>(values: T[], size: number) {
