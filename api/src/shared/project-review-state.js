@@ -72,9 +72,19 @@ function normalizeCopilotService(service) {
     regionFitSummary: isNonEmptyString(service?.regionFitSummary)
       ? service.regionFitSummary.trim()
       : "",
+    regionFitSignals: Array.isArray(service?.regionFitSignals)
+      ? service.regionFitSignals
+          .filter((entry) => isNonEmptyString(entry))
+          .map((entry) => entry.trim())
+      : [],
     costFitSummary: isNonEmptyString(service?.costFitSummary)
       ? service.costFitSummary.trim()
-      : ""
+      : "",
+    costFitSignals: Array.isArray(service?.costFitSignals)
+      ? service.costFitSignals
+          .filter((entry) => isNonEmptyString(entry))
+          .map((entry) => entry.trim())
+      : []
   };
 }
 

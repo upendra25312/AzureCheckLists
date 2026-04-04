@@ -859,7 +859,9 @@ export function ReviewPackageWorkbench({
           excludedCount: row.excludedCount,
           pendingCount: row.pendingCount,
           regionFitSummary: row.regionFit.summary,
-          costFitSummary: row.costFit.summary
+          regionFitSignals: row.regionFit.chips.map((chip) => chip.label),
+          costFitSummary: row.costFit.summary,
+          costFitSignals: row.costFit.chips.map((chip) => chip.label)
         };
       }),
       findings,

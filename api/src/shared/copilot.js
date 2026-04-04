@@ -55,21 +55,27 @@ function sanitizeSources(sources) {
 
 function sanitizeServices(services) {
   return (Array.isArray(services) ? services : [])
-    .slice(0, 12)
+    .slice(0, 40)
     .map((service) => ({
       serviceSlug: truncate(service?.serviceSlug ?? "", 80),
       serviceName: truncate(service?.serviceName ?? "Unknown service", 120),
-      description: truncate(service?.description ?? "", 260),
+      description: truncate(service?.description ?? "", 220),
       plannedRegion: truncate(service?.plannedRegion ?? "", 80),
       preferredSku: truncate(service?.preferredSku ?? "", 120),
-      sizingNote: truncate(service?.sizingNote ?? "", 240),
+      sizingNote: truncate(service?.sizingNote ?? "", 180),
       itemCount: Number(service?.itemCount ?? 0),
       includedCount: Number(service?.includedCount ?? 0),
       notApplicableCount: Number(service?.notApplicableCount ?? 0),
       excludedCount: Number(service?.excludedCount ?? 0),
       pendingCount: Number(service?.pendingCount ?? 0),
       regionFitSummary: truncate(service?.regionFitSummary ?? "", 260),
-      costFitSummary: truncate(service?.costFitSummary ?? "", 260)
+      regionFitSignals: (Array.isArray(service?.regionFitSignals) ? service.regionFitSignals : [])
+        .slice(0, 8)
+        .map((entry) => truncate(entry, 120)),
+      costFitSummary: truncate(service?.costFitSummary ?? "", 260),
+      costFitSignals: (Array.isArray(service?.costFitSignals) ? service.costFitSignals : [])
+        .slice(0, 8)
+        .map((entry) => truncate(entry, 120))
     }));
 }
 
@@ -113,7 +119,7 @@ function buildCopilotMessages(question, context) {
     {
       role: "system",
       content:
-        "You are the Azure Checklists project review copilot. Answer only from the supplied project review context and source list. Do not invent Azure pricing, region availability, contract discounts, checklist decisions, or service dependencies. If the context is insufficient, say so clearly. Keep the answer concise, decision-oriented, and useful for architects, pre-sales teams, cloud engineers, and leadership readers when relevant. Prefer short sections and bullets only when helpful."
+        "You are the Azure Checklists project review copilot. Answer only from the supplied project review context and source list. Do not invent Azure pricing, region availability, contract discounts, checklist decisions, or service dependencies. If the context is insufficient, say so clearly. Keep the answer concise, decision-oriented, and useful for architects, pre-sales teams, cloud engineers, and leadership readers when relevant. Prefer short sections and bullets only when helpful. Treat explicit region-fit signals such as Restricted, Restricted region, Early access, Preview, Retiring, Unavailable, and Not in feed as blockers or caveats, not as full regional coverage. Do not translate 'accounted for' into 'available/open/GA' unless the region-fit signals actually say Available or Global service."
     },
     {
       role: "user",
@@ -123,6 +129,7 @@ function buildCopilotMessages(question, context) {
           instructions: [
             "Use only the provided project review data and listed sources.",
             "Call out regional restrictions, pricing caveats, and pending checklist decisions when they matter.",
+            "When a service has region-fit signals, rely on those exact signal labels before summarizing availability.",
             "Mention uncertainty explicitly if the supplied context does not answer part of the question."
           ],
           projectReview: context

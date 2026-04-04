@@ -369,7 +369,9 @@ export type ProjectReviewCopilotServiceContext = {
   excludedCount: number;
   pendingCount: number;
   regionFitSummary: string;
+  regionFitSignals: string[];
   costFitSummary: string;
+  costFitSignals: string[];
 };
 
 export type ProjectReviewCopilotFindingContext = {
