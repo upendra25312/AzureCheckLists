@@ -25,6 +25,8 @@ export function DashboardHome({
   const featuredServices = serviceIndex.services.slice(0, 6);
   const quickStartPaths = [
     {
+      step: "01",
+      audience: "Leadership",
       eyebrow: "Leadership start",
       title: "See what is safe to use in decision packs first.",
       copy:
@@ -34,6 +36,8 @@ export function DashboardHome({
       cta: "Open executive summary"
     },
     {
+      step: "02",
+      audience: "Architecture",
       eyebrow: "Service start",
       title: "Review the Azure service you are actually designing.",
       copy:
@@ -43,6 +47,8 @@ export function DashboardHome({
       cta: "Review by service"
     },
     {
+      step: "03",
+      audience: "Delivery",
       eyebrow: "Working detail",
       title: "Filter exact findings only when the review question is clear.",
       copy:
@@ -50,6 +56,43 @@ export function DashboardHome({
       meta: "Best for implementation triage and operator handoff.",
       href: "/explorer" as const,
       cta: "Open explorer"
+    }
+  ];
+  const boardroomSignals = [
+    {
+      title: "Shorter prep",
+      copy: "Lead with the baseline first instead of translating raw checklist files into a story under time pressure."
+    },
+    {
+      title: "Clearer escalation",
+      copy: "Keep preview, mixed, and deprecated guidance visible without letting it masquerade as default policy."
+    },
+    {
+      title: "Provable guidance",
+      copy: "Carry every recommendation with its source trail so the room can trust the conclusion and verify the evidence."
+    }
+  ];
+  const audienceStories = [
+    {
+      audience: "Leadership",
+      title: "Walk into the review knowing what deserves default confidence.",
+      copy:
+        "Use the board as an executive framing tool first: mature baseline, visible watchlist, and clear guidance on what should stay out of the pack.",
+      metric: `${summary.gaDefaultTechnologyCount.toLocaleString()} GA-ready families to anchor the default brief`
+    },
+    {
+      audience: "Architecture",
+      title: "See the service path before diving into family-level depth.",
+      copy:
+        "Move from service posture to family confidence to item detail in the same sequence architects use when they prepare design reviews and challenge assumptions.",
+      metric: `${serviceIndex.services.length.toLocaleString()} Azure services organized into review-ready views`
+    },
+    {
+      audience: "Delivery",
+      title: "Keep detailed findings useful without turning the homepage into a workbench.",
+      copy:
+        "The explorer remains the working surface for scoped findings, notes, and exports, while the homepage stays focused on decisions, direction, and confidence.",
+      metric: `${summary.itemCount.toLocaleString()} normalized findings available when the question becomes specific`
     }
   ];
   const productProof = [
@@ -75,15 +118,22 @@ export function DashboardHome({
       <section className="hero-panel director-hero editorial-hero">
         <div className="editorial-hero-layout">
           <div className="editorial-hero-copy">
+            <div className="hero-kicker-row">
+              <span className="hero-kicker">Decision-ready</span>
+              <span className="hero-kicker">Source-backed</span>
+              <span className="hero-kicker">Service-first</span>
+            </div>
             <p className="eyebrow">{SITE_NAME}</p>
-            <h1 className="hero-title">Azure architecture review, made decision-ready.</h1>
+            <h1 className="hero-title">Review decisions that stand up in the room.</h1>
             <p className="hero-copy">
-              Use source-backed Azure review guidance to separate what leadership can rely on,
-              what architects should validate, and what teams should treat as advisory.
+              Use source-backed Azure review guidance to show what leadership can rely on,
+              what architects should validate next, and what teams should treat as advisory
+              until it earns more confidence.
             </p>
             <p className="hero-note">
-              Generated {generatedDate}. Built to shorten review preparation, surface risk
-              earlier, and keep every recommendation tied to its source.
+              Generated {generatedDate}. This workspace is designed to shorten review
+              preparation, surface risk earlier, and keep every recommendation connected to
+              proof instead of polished but untraceable AI output.
             </p>
             <div className="hero-actions">
               <a href="#executive" className="primary-button">
@@ -97,9 +147,9 @@ export function DashboardHome({
               </Link>
             </div>
           </div>
-          <aside className="leadership-brief">
-            <p className="eyebrow">Leadership brief</p>
-            <h2 className="leadership-title">What matters first.</h2>
+          <aside className="leadership-brief boardroom-brief">
+            <p className="eyebrow">Boardroom brief</p>
+            <h2 className="leadership-title">What changes in the first five minutes.</h2>
             <div className="leadership-list">
               <article>
                 <strong>Baseline</strong>
@@ -122,6 +172,14 @@ export function DashboardHome({
                   before using them in executive decision packs.
                 </p>
               </article>
+            </div>
+            <div className="boardroom-mini-grid">
+              {boardroomSignals.map((signal) => (
+                <article className="boardroom-mini-card" key={signal.title}>
+                  <strong>{signal.title}</strong>
+                  <p>{signal.copy}</p>
+                </article>
+              ))}
             </div>
           </aside>
         </div>
@@ -163,6 +221,10 @@ export function DashboardHome({
 
             return (
               <article className="path-card" key={path.title}>
+                <div className="path-card-topline">
+                  <span className="path-card-number">{path.step}</span>
+                  <span className="path-card-audience">{path.audience}</span>
+                </div>
                 <p className="eyebrow">{path.eyebrow}</p>
                 <h3>{path.title}</h3>
                 <p>{path.copy}</p>
@@ -185,6 +247,31 @@ export function DashboardHome({
       <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
+            <p className="eyebrow">Who this helps first</p>
+            <h2 className="section-title">
+              One product, three clear jobs: leadership framing, architecture guidance, and delivery depth.
+            </h2>
+            <p className="section-copy">
+              The site becomes more intuitive when each audience can immediately see what it gets
+              from the workspace and what it should ignore for now.
+            </p>
+          </div>
+        </div>
+        <div className="audience-story-grid">
+          {audienceStories.map((story) => (
+            <article className="audience-story-card" key={story.audience}>
+              <p className="eyebrow">{story.audience}</p>
+              <h3>{story.title}</h3>
+              <p>{story.copy}</p>
+              <span className="audience-story-metric">{story.metric}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="surface-panel editorial-section">
+        <div className="section-head">
+          <div>
             <p className="eyebrow">Why this stands up in the room</p>
             <h2 className="section-title">
               Built for accountable review decisions, not generic AI summarization.
@@ -195,6 +282,14 @@ export function DashboardHome({
             </p>
           </div>
         </div>
+        <article className="proof-spotlight">
+          <p className="eyebrow">What makes it feel non-generic</p>
+          <h3>Evidence and confidence travel with the recommendation, not as an afterthought.</h3>
+          <p>
+            That is the difference between a site that merely looks polished and a review product
+            teams will trust in architecture reviews, steering meetings, and customer-facing conversations.
+          </p>
+        </article>
         <div className="proof-grid">
           {productProof.map((point) => (
             <article className="proof-card" key={point.title}>

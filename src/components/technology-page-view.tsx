@@ -52,6 +52,26 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
     month: "long",
     day: "numeric"
   });
+  const familyDecisionCues = [
+    {
+      label: "Default role",
+      value: `${payload.technology.quality.recommendedUsageConfidence} confidence`,
+      copy:
+        "Use this family according to the confidence it has earned, rather than because it merely exists in the checklist repository."
+    },
+    {
+      label: "Validation pressure",
+      value: `${payload.technology.highSeverityCount.toLocaleString()} high-severity findings`,
+      copy:
+        "High-severity items deserve faster review, but still need source-aware interpretation before they become leadership conclusions."
+    },
+    {
+      label: "Proof path",
+      value: `${payload.technology.quality.sourceCoverageQuality}% source-linked coverage`,
+      copy:
+        "Keep traceability visible so reviewers can inspect the originating family, repository source, and normalization run before promotion."
+    }
+  ];
 
   function updateReview(guid: string, next: Partial<ReviewDraft>) {
     setReviews((current) => {
@@ -113,6 +133,18 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
             </article>
           </div>
         </aside>
+      </section>
+
+      <section className="surface-panel story-ribbon">
+        <div className="decision-cue-grid">
+          {familyDecisionCues.map((cue) => (
+            <article className="decision-cue-card" key={cue.label}>
+              <span>{cue.label}</span>
+              <strong>{cue.value}</strong>
+              <p>{cue.copy}</p>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="surface-panel family-metric-strip">

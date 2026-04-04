@@ -60,6 +60,36 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
   const categorySummary =
     payload.service.categories.slice(0, 5).join(", ") || "Generalized review guidance";
   const wafSummary = payload.service.wafPillars.join(", ") || "Unspecified";
+  const serviceDecisionCues = [
+    {
+      label: "Lead with",
+      value:
+        payload.service.gaFamilyCount > 0
+          ? `${payload.service.gaFamilyCount.toLocaleString()} GA-ready families`
+          : "Specialist review posture",
+      copy:
+        payload.service.gaFamilyCount > 0
+          ? "Use the baseline families first when preparing design reviews, deployment checks, and leadership summaries."
+          : "No default GA baseline exists yet, so this service should be presented with explicit validation caveats."
+    },
+    {
+      label: "Widen with",
+      value:
+        extendedFamilies.length > 0
+          ? `${extendedFamilies.length.toLocaleString()} extended families`
+          : "Limited extension",
+      copy:
+        extendedFamilies.length > 0
+          ? "Bring in preview and mixed-confidence families after the baseline is understood or when the architecture question needs more depth."
+          : "There is little additional mapped guidance beyond the primary baseline, so most value comes from the core family set."
+    },
+    {
+      label: "Prove before promotion",
+      value: `${payload.service.highSeverityCount.toLocaleString()} high-severity findings`,
+      copy:
+        "Open item detail before carrying recommendations into leadership material so the source lineage and normalization context remain visible."
+    }
+  ];
 
   function updateReview(guid: string, next: Partial<ReviewDraft>) {
     setReviews((current) => {
@@ -122,6 +152,18 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
             </article>
           </div>
         </aside>
+      </section>
+
+      <section className="surface-panel story-ribbon">
+        <div className="decision-cue-grid">
+          {serviceDecisionCues.map((cue) => (
+            <article className="decision-cue-card" key={cue.label}>
+              <span>{cue.label}</span>
+              <strong>{cue.value}</strong>
+              <p>{cue.copy}</p>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="surface-panel family-metric-strip">

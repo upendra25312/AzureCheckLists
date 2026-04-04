@@ -25,6 +25,25 @@ export function SummaryCards({ summary }: { summary: CatalogSummary }) {
       copy: `${summary.deprecatedTechnologyCount.toLocaleString()} family is currently deprecated and should remain visible for traceability, not as a new baseline.`
     }
   ];
+  const executiveSnapshot = [
+    {
+      label: "Use now",
+      value: `${summary.gaDefaultTechnologyCount.toLocaleString()} mature families`,
+      copy: "Start the board pack here when you need the strongest baseline with the least explanation."
+    },
+    {
+      label: "Escalate deliberately",
+      value: `${(
+        summary.previewTechnologyCount + summary.mixedTechnologyCount
+      ).toLocaleString()} advisory families`,
+      copy: "Bring these in when the design question needs extra depth, but keep the confidence caveat visible."
+    },
+    {
+      label: "Keep for context",
+      value: `${summary.deprecatedTechnologyCount.toLocaleString()} deprecated family`,
+      copy: "Retain historical traceability without allowing deprecated guidance to frame a new decision."
+    }
+  ];
 
   return (
     <>
@@ -41,6 +60,15 @@ export function SummaryCards({ summary }: { summary: CatalogSummary }) {
               accountability, not false precision.
             </p>
           </div>
+        </div>
+        <div className="decision-cue-grid executive-snapshot-grid">
+          {executiveSnapshot.map((item) => (
+            <article className="decision-cue-card" key={item.label}>
+              <span>{item.label}</span>
+              <strong>{item.value}</strong>
+              <p>{item.copy}</p>
+            </article>
+          ))}
         </div>
         <div className="metrics-grid">
           {summary.metrics.map((metric) => (
