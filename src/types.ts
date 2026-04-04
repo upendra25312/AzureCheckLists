@@ -31,6 +31,7 @@ export type ServicePricingQuerySource =
   | "matchedLabel"
   | "serviceName"
   | "alias";
+export type CommercialDataSourceMode = "live" | "cache" | "stale-cache";
 
 export type FieldProvenance = "source" | "normalized" | "inferred" | "unavailable";
 
@@ -210,6 +211,14 @@ export type ServiceRegionalFitSummary = {
   regionsSourceUrl: string;
 };
 
+export type CommercialDataSourceInfo = {
+  mode: CommercialDataSourceMode;
+  refreshedAt?: string;
+  expiresAt?: string;
+  cacheTtlHours: number;
+  lastError?: string;
+};
+
 export type ServiceIndex = {
   generatedAt: string;
   services: ServiceSummary[];
@@ -228,6 +237,7 @@ export type ServiceRegionalFit = ServiceRegionalFitSummary & {
   regions: ServiceRegionalFitRegion[];
   unavailableRegions: ServiceRegionalFitUnavailableRegion[];
   globalSkuStates: ServiceRegionalFitSku[];
+  dataSource?: CommercialDataSourceInfo;
 };
 
 export type ServiceRegionalFitRequest = {
@@ -299,6 +309,7 @@ export type ServicePricingSummary = {
   targetRegionMatchCount: number;
   startsAtRetailPrice?: number;
   query?: ServicePricingQuery;
+  dataSource?: CommercialDataSourceInfo;
 };
 
 export type ServicePricing = ServicePricingSummary & {

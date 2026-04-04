@@ -3,9 +3,9 @@ import { ReviewPackageWorkbench } from "@/components/review-package-workbench";
 import { readServiceIndex } from "@/lib/catalog";
 
 export const metadata: Metadata = {
-  title: "Review Package",
+  title: "Project Review",
   description:
-    "Create a project-scoped Azure review package, select only the services in scope, and export the resulting review notes."
+    "Create a project-scoped Azure review, select only the services in scope, and export the resulting review notes."
 };
 
 export default async function ReviewPackagePage() {

@@ -216,10 +216,10 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
                   onClick={addServiceToActivePackage}
                   disabled={activePackage.selectedServiceSlugs.includes(payload.service.slug)}
                 >
-                  Add service to package
+                  Add service to project review
                 </button>
                 <Link href="/review-package" className="ghost-button">
-                  Open package workspace
+                  Open project review
                 </Link>
               </div>
             </div>
@@ -227,16 +227,16 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
         ) : (
           <div className="package-context-grid">
             <div>
-              <p className="eyebrow">Project package</p>
-              <h2 className="section-title">No active project package is selected.</h2>
+              <p className="eyebrow">Project review</p>
+              <h2 className="section-title">No active project review is selected.</h2>
               <p className="section-copy">
                 You can still browse this service and keep local notes, but project-specific include,
-                exclude, and not-applicable decisions work best when a package is active.
+                exclude, and not-applicable decisions work best when a project review is active.
               </p>
             </div>
             <div className="package-context-actions">
               <Link href="/review-package" className="primary-button">
-                Create review package
+                Start project review
               </Link>
             </div>
           </div>

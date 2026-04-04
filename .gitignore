@@ -1,6 +1,7 @@
 node_modules/
 .next/
 out/
+output/
 public/data/
 source-repo/
 .DS_Store

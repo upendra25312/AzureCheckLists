@@ -246,12 +246,12 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
                 <p className="microcopy">
                   Explorer notes are being written into the active project package for{" "}
                   {activePackage.audience}. Service selection and exports can be managed from the
-                  package workspace.
+                  project review workspace.
                 </p>
               </div>
               <div className="package-context-actions">
                 <Link href="/review-package" className="secondary-button">
-                  Open package workspace
+                  Open project review
                 </Link>
               </div>
             </div>

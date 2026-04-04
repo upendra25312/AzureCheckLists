@@ -121,7 +121,7 @@ export async function loadServicePricingBatch(requests: ServicePricingRequest[])
   });
 
   if (uncachedRequests.length > 0) {
-    const response = await fetch("/api/service-pricing", {
+    const response = await fetch("/api/pricing", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

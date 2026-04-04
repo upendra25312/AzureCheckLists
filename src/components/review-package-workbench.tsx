@@ -411,7 +411,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
       <section className="hero-panel director-hero editorial-hero">
         <div className="editorial-hero-layout">
           <div className="editorial-hero-copy">
-            <p className="eyebrow">Project review package</p>
+            <p className="eyebrow">Project review</p>
             <h1 className="hero-title">Scope the project once, then keep only the services that matter.</h1>
             <p className="hero-copy">
               Build a project package for a specific customer or solution, select only the Azure

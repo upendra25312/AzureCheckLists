@@ -88,7 +88,7 @@ export async function loadServiceRegionalFitBatch(requests: ServiceRegionalFitRe
   });
 
   if (uncachedRequests.length > 0) {
-    const response = await fetch("/api/service-regional-fit", {
+    const response = await fetch("/api/availability", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

@@ -4,13 +4,16 @@ const NOTES_CONTAINER_NAME =
   process.env.AZURE_STORAGE_REVIEW_CONTAINER_NAME || "review-notes";
 const ARTIFACTS_CONTAINER_NAME =
   process.env.AZURE_STORAGE_REVIEW_ARTIFACT_CONTAINER_NAME || "review-artifacts";
+const COMMERCIAL_CACHE_CONTAINER_NAME =
+  process.env.AZURE_STORAGE_COMMERCIAL_CACHE_CONTAINER_NAME || "commercial-data-cache";
 
 function getBlobServiceClient() {
-  const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+  const connectionString =
+    process.env.AZURE_STORAGE_CONNECTION_STRING || process.env.AzureWebJobsStorage;
 
   if (!connectionString) {
     throw new Error(
-      "AZURE_STORAGE_CONNECTION_STRING is required for Azure-backed review storage."
+      "AZURE_STORAGE_CONNECTION_STRING or AzureWebJobsStorage is required for Azure-backed review storage."
     );
   }
 
@@ -84,6 +87,7 @@ function buildArtifactBlobName(userId, filename) {
 
 module.exports = {
   ARTIFACTS_CONTAINER_NAME,
+  COMMERCIAL_CACHE_CONTAINER_NAME,
   NOTES_CONTAINER_NAME,
   buildArtifactBlobName,
   buildNotesBlobName,

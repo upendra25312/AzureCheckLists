@@ -12,7 +12,8 @@ type Theme = "light" | "dark";
 const NAV_ITEMS = [
   { href: "/", label: "Overview" },
   { href: "/services", label: "Services" },
-  { href: "/review-package", label: "Review package" },
+  { href: "/review-package", label: "Project review" },
+  { href: "/data-health", label: "Data health" },
   { href: "/explorer", label: "Explorer" },
   { href: "/how-to-use", label: "How to use" }
 ] as const;
@@ -111,7 +112,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             <h3>Source and transparency</h3>
             <p>
               Built from Azure review checklist content with preserved traceability,
-              maturity disclosure, and local-only working state.
+              maturity disclosure, and dedicated backend data-health visibility.
             </p>
           </article>
         </div>

@@ -97,8 +97,8 @@ export function ItemDrawer({ item, review, onClose, onUpdate, activePackageName 
           <h3>Review record</h3>
           <p className="microcopy">
             {activePackageName
-              ? `Edit the project decision for ${activePackageName} here. These notes stay scoped to the active package in this browser and can be exported from the package workspace.`
-              : "Edit your review decision here. It stays in this browser and can be included in local exports from the review workspace."}
+              ? `Edit the project decision for ${activePackageName} here. These notes stay scoped to the active project review in this browser and can be exported from the project review workspace.`
+              : "Edit your review decision here. It stays in this browser and can be included in local exports from the project review workspace."}
           </p>
           <div className="filter-grid">
             <label>

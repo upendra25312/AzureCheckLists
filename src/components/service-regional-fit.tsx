@@ -36,6 +36,7 @@ export function ServiceRegionalFitPanel({
   const resolvedRegionalFit =
     liveRegionalFit && (liveRegionalFit.mapped || !regionalFit) ? liveRegionalFit : regionalFit;
   const usingLiveRegionalFit = Boolean(liveRegionalFit && resolvedRegionalFit === liveRegionalFit);
+  const regionalDataSource = liveRegionalFit?.dataSource ?? resolvedRegionalFit?.dataSource;
 
   useEffect(() => {
     if (targetRegions.length > 0) {
@@ -88,17 +89,18 @@ export function ServiceRegionalFitPanel({
         </div>
         {liveLoading ? (
           <section className="filter-card">
-            <p className="eyebrow">Live source</p>
-            <h3>Checking Microsoft’s current regional availability feed.</h3>
+            <p className="eyebrow">Availability source</p>
+            <h3>Checking the Azure Function cache and Microsoft’s current regional feed.</h3>
             <p className="microcopy">
-              The page prefers live availability and will fall back to the generated snapshot if the live call fails.
+              The page first asks the dedicated backend for scheduled cache data and only falls back
+              to the generated snapshot if the backend call fails.
             </p>
           </section>
         ) : null}
         {liveError && regionalFit ? (
           <section className="filter-card">
-            <p className="eyebrow">Live source</p>
-            <h3>Using the generated snapshot because the live availability call did not complete.</h3>
+            <p className="eyebrow">Availability source</p>
+            <h3>Using the generated snapshot because the backend availability call did not complete.</h3>
             <p className="microcopy">{liveError}</p>
           </section>
         ) : null}
@@ -259,15 +261,29 @@ export function ServiceRegionalFitPanel({
 
       <div className="filter-card">
         <p className="eyebrow">Availability source</p>
-        <h3>{usingLiveRegionalFit ? "Using live Microsoft availability data." : "Using the generated availability snapshot."}</h3>
+        <h3>
+          {regionalDataSource?.mode === "live"
+            ? "Using a fresh Microsoft availability refresh."
+            : regionalDataSource?.mode === "cache"
+              ? "Using the scheduled Azure Function cache."
+              : regionalDataSource?.mode === "stale-cache"
+                ? "Using stale cache because the live refresh did not complete."
+                : usingLiveRegionalFit
+                  ? "Using the dedicated backend availability feed."
+                  : "Using the generated availability snapshot."}
+        </h3>
         <p className="microcopy">
-          {usingLiveRegionalFit
-            ? `Live feed captured ${new Date(resolvedRegionalFit.generatedAt).toLocaleString("en-US")} and cached locally for faster repeat views.`
-            : liveError
-              ? `${liveError} The page stayed on the generated snapshot so the service review could continue.`
-              : liveRegionalFit && regionalFit
-                ? "The live availability feed returned a weaker match than the generated snapshot, so the page kept the snapshot until the mapping can be improved."
-              : "The live availability fetch is still loading. The generated snapshot remains visible until the live result arrives."}
+          {regionalDataSource?.mode === "live" && regionalDataSource.refreshedAt
+            ? `Microsoft availability was refreshed at ${new Date(regionalDataSource.refreshedAt).toLocaleString("en-US")}.`
+            : regionalDataSource?.mode === "cache" && regionalDataSource.refreshedAt
+              ? `The dedicated backend is serving the scheduled cache captured at ${new Date(regionalDataSource.refreshedAt).toLocaleString("en-US")}.`
+              : regionalDataSource?.mode === "stale-cache" && regionalDataSource.refreshedAt
+                ? `${regionalDataSource.lastError ?? "The live refresh did not complete."} The page stayed on the last successful cache from ${new Date(regionalDataSource.refreshedAt).toLocaleString("en-US")}.`
+                : liveError
+                  ? `${liveError} The page stayed on the generated snapshot so the service review could continue.`
+                  : liveRegionalFit && regionalFit
+                    ? "The backend returned a weaker match than the generated snapshot, so the page kept the snapshot until the mapping can be improved."
+                    : "The backend availability fetch is still loading. The generated snapshot remains visible until the live result arrives."}
         </p>
       </div>
 

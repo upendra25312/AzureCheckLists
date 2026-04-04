@@ -165,7 +165,7 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
             </div>
             <div className="package-context-actions">
               <Link href="/review-package" className="secondary-button">
-                Open package workspace
+                Open project review
               </Link>
             </div>
           </div>
