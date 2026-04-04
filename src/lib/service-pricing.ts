@@ -8,6 +8,11 @@ import type {
 
 const SERVICE_PRICING_CACHE_PREFIX = "azure-review-dashboard.service-pricing.v1";
 const SERVICE_PRICING_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const SERVICE_PRICING_BATCH_SIZE = 20;
+const SERVICE_PRICING_SOURCE_URL = "https://prices.azure.com/api/retail/prices";
+const SERVICE_PRICING_CALCULATOR_URL = "https://azure.microsoft.com/en-us/pricing/calculator/";
+const SERVICE_PRICING_PRICE_DISCLAIMER =
+  "Public retail list pricing from Microsoft. Use the Azure Pricing Calculator after sign-in to layer negotiated rates and monthly usage assumptions.";
 
 type CachedServicePricing = {
   savedAt: string;
@@ -66,6 +71,40 @@ function writeCachedServicePricing(request: ServicePricingRequest, payload: Serv
   window.localStorage.setItem(buildCacheKey(request), JSON.stringify(cached));
 }
 
+function chunkRequests<T>(values: T[], size: number) {
+  const chunks: T[][] = [];
+
+  for (let index = 0; index < values.length; index += size) {
+    chunks.push(values.slice(index, index + size));
+  }
+
+  return chunks;
+}
+
+function buildPricingFallback(
+  request: ServicePricingRequest,
+  note: string
+): ServicePricing {
+  return {
+    serviceSlug: request.slug,
+    serviceName: request.service,
+    mapped: false,
+    notes: [note],
+    generatedAt: new Date().toISOString(),
+    sourceUrl: SERVICE_PRICING_SOURCE_URL,
+    calculatorUrl: SERVICE_PRICING_CALCULATOR_URL,
+    priceDisclaimer: SERVICE_PRICING_PRICE_DISCLAIMER,
+    currencyCode: "USD",
+    rowCount: 0,
+    meterCount: 0,
+    skuCount: 0,
+    regionCount: 0,
+    billingLocationCount: 0,
+    targetRegionMatchCount: 0,
+    rows: []
+  };
+}
+
 export function buildServicePricingRequest(
   service: Pick<ServiceSummary, "slug" | "service" | "aliases" | "regionalFitSummary">,
   regionalFit?: ServiceRegionalFitSummary,
@@ -107,6 +146,7 @@ export async function loadServicePricingBatch(requests: ServicePricingRequest[])
     (request, index) => requests.findIndex((entry) => entry.slug === request.slug) === index
   );
   const cachedPayloads = new Map<string, ServicePricing>();
+  const fallbackPayloads = new Map<string, ServicePricing>();
   const uncachedRequests: ServicePricingRequest[] = [];
 
   uniqueRequests.forEach((request) => {
@@ -121,38 +161,81 @@ export async function loadServicePricingBatch(requests: ServicePricingRequest[])
   });
 
   if (uncachedRequests.length > 0) {
-    const response = await fetch("/api/pricing", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      cache: "no-store",
-      body: JSON.stringify({
-        services: uncachedRequests
-      })
-    });
+    const requestChunks = chunkRequests(uncachedRequests, SERVICE_PRICING_BATCH_SIZE);
 
-    if (!response.ok) {
-      const message = await response.text();
+    for (const requestChunk of requestChunks) {
+      try {
+        const response = await fetch("/api/pricing", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          cache: "no-store",
+          body: JSON.stringify({
+            services: requestChunk
+          })
+        });
 
-      throw new Error(message || `Unable to load service pricing. (${response.status})`);
-    }
+        if (!response.ok) {
+          const message = await response.text();
 
-    const payload = (await response.json()) as ServicePricingResponse;
+          throw new Error(message || `Unable to load service pricing. (${response.status})`);
+        }
 
-    payload.services.forEach((servicePricing) => {
-      const request = uncachedRequests.find((entry) => entry.slug === servicePricing.serviceSlug);
+        const payload = (await response.json()) as ServicePricingResponse;
+        const returnedSlugs = new Set<string>();
 
-      if (!request) {
-        return;
+        payload.services.forEach((servicePricing) => {
+          const request = requestChunk.find((entry) => entry.slug === servicePricing.serviceSlug);
+
+          if (!request) {
+            return;
+          }
+
+          returnedSlugs.add(servicePricing.serviceSlug);
+          writeCachedServicePricing(request, servicePricing);
+          cachedPayloads.set(servicePricing.serviceSlug, servicePricing);
+        });
+
+        requestChunk.forEach((request) => {
+          if (returnedSlugs.has(request.slug) || cachedPayloads.has(request.slug)) {
+            return;
+          }
+
+          fallbackPayloads.set(
+            request.slug,
+            buildPricingFallback(
+              request,
+              "The pricing request completed, but no pricing payload was returned for this selected service."
+            )
+          );
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Unable to load service pricing for this selected service right now.";
+
+        requestChunk.forEach((request) => {
+          fallbackPayloads.set(
+            request.slug,
+            buildPricingFallback(
+              request,
+              `Pricing could not be loaded right now for this selected service. ${message}`
+            )
+          );
+        });
       }
-
-      writeCachedServicePricing(request, servicePricing);
-      cachedPayloads.set(servicePricing.serviceSlug, servicePricing);
-    });
+    }
   }
 
-  return uniqueRequests
-    .map((request) => cachedPayloads.get(request.slug))
-    .filter(Boolean) as ServicePricing[];
+  return uniqueRequests.map(
+    (request) =>
+      cachedPayloads.get(request.slug) ??
+      fallbackPayloads.get(request.slug) ??
+      buildPricingFallback(
+        request,
+        "No pricing payload is available for this selected service yet."
+      )
+  );
 }
