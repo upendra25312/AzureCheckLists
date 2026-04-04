@@ -2090,6 +2090,49 @@ button.chip:disabled:hover {
   overflow: auto;
 }
 
+.service-drawer-panel {
+  width: min(980px, 100vw);
+}
+
+.service-drawer-header {
+  align-items: flex-start;
+}
+
+.service-drawer-header-copy {
+  display: grid;
+  gap: 12px;
+}
+
+.service-drawer-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.service-drawer-assumptions {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.service-drawer-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.service-drawer-subsection {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.service-drawer-note-list {
+  display: grid;
+  gap: 8px;
+}
+
+.service-drawer-pricing-table {
+  margin-top: 12px;
+}
+
 .drawer-section {
   margin-top: 22px;
   padding-top: 22px;
@@ -2157,7 +2200,9 @@ button.chip:disabled:hover {
   .package-header-grid,
   .package-stats-grid,
   .service-selection-grid,
-  .package-context-grid {
+  .package-context-grid,
+  .service-drawer-metrics,
+  .service-drawer-assumptions {
     grid-template-columns: 1fr;
   }
 
@@ -2179,7 +2224,8 @@ button.chip:disabled:hover {
   .section-head,
   .results-toolbar,
   .drawer-header,
-  .family-list-head {
+  .family-list-head,
+  .service-drawer-section-head {
     flex-direction: column;
     align-items: stretch;
   }

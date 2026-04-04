@@ -31,6 +31,7 @@ import {
   structuredRecordsToReviewMap
 } from "@/lib/review-cloud";
 import {
+  createEmptyReview,
   createReviewPackage,
   deletePackage,
   loadActivePackageId,
@@ -42,7 +43,9 @@ import {
   saveReviews,
   upsertPackage
 } from "@/lib/review-storage";
+import { ItemDrawer } from "@/components/item-drawer";
 import { ProjectReviewCopilot } from "@/components/project-review-copilot";
+import { ProjectReviewServiceDrawer } from "@/components/project-review-service-drawer";
 import { ReviewCloudControls } from "@/components/review-cloud-controls";
 import type {
   ChecklistItem,
@@ -485,6 +488,8 @@ export function ReviewPackageWorkbench({
   index: ServiceIndex;
 }) {
   const [items, setItems] = useState<ChecklistItem[] | null>(null);
+  const [selectedGuid, setSelectedGuid] = useState<string | null>(null);
+  const [selectedServiceDrawerSlug, setSelectedServiceDrawerSlug] = useState<string | null>(null);
   const [requestedCloudReviewId, setRequestedCloudReviewId] = useState<string | null>(null);
   const [packages, setPackages] = useState<ReviewPackage[]>([]);
   const [activePackageId, setActivePackageId] = useState<string | null>(null);
@@ -761,6 +766,7 @@ export function ReviewPackageWorkbench({
 
         return {
           service,
+          serviceItems,
           itemCount: serviceItems.length,
           includedCount: serviceItems.filter(
             (item) => (reviews[item.guid]?.packageDecision ?? "Needs Review") === "Include"
@@ -921,6 +927,9 @@ export function ReviewPackageWorkbench({
           costFit,
           pricingDrilldown,
           checklistChips,
+          regionalFit: liveRegionalFit,
+          pricing: servicePricing[entry.service.slug],
+          serviceAssumption,
           checklistSummary:
             `${entry.itemCount.toLocaleString()} findings across ${entry.service.familyCount.toLocaleString()} families are currently tied to this service in the active project review.`
         };
@@ -1088,6 +1097,29 @@ export function ReviewPackageWorkbench({
       ].filter(Boolean) as ProjectReviewCopilotContext["sources"]
     };
   }, [activePackage, matrixRows, packageItems, pricingSnapshots, reviews, serviceRegionalFits]);
+  const selectedServiceDrawerRow = useMemo(
+    () =>
+      selectedServiceDrawerSlug
+        ? matrixRows.find((row) => row.service.slug === selectedServiceDrawerSlug) ?? null
+        : null,
+    [matrixRows, selectedServiceDrawerSlug]
+  );
+  const selectedItem = useMemo(
+    () =>
+      selectedGuid !== null
+        ? packageItems.find((item) => item.guid === selectedGuid) ?? null
+        : null,
+    [packageItems, selectedGuid]
+  );
+
+  useEffect(() => {
+    if (
+      selectedServiceDrawerSlug &&
+      !matrixRows.some((row) => row.service.slug === selectedServiceDrawerSlug)
+    ) {
+      setSelectedServiceDrawerSlug(null);
+    }
+  }, [matrixRows, selectedServiceDrawerSlug]);
 
   function refreshPackages(nextPackages: ReviewPackage[], nextActiveId: string | null) {
     setPackages(nextPackages);
@@ -1269,6 +1301,35 @@ export function ReviewPackageWorkbench({
 
       nextPackages.splice(existingIndex, 1, saved);
       return nextPackages;
+    });
+  }
+
+  function handleOpenServiceDrawer(serviceSlug: string) {
+    setSelectedServiceDrawerSlug(serviceSlug);
+  }
+
+  function handleOpenMatrixFinding(guid: string) {
+    setSelectedServiceDrawerSlug(null);
+    setSelectedGuid(guid);
+  }
+
+  function updateReview(guid: string, next: Partial<ReviewDraft>) {
+    setReviews((current) => {
+      const nextReviews = {
+        ...current,
+        [guid]: {
+          ...(current[guid] ?? createEmptyReview()),
+          ...next
+        }
+      };
+
+      if (activePackage?.id) {
+        savePackageReviews(activePackage.id, nextReviews);
+      } else {
+        saveReviews(nextReviews);
+      }
+
+      return nextReviews;
     });
   }
 
@@ -1976,6 +2037,13 @@ export function ReviewPackageWorkbench({
                       />
                     </label>
                   </div>
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={() => handleOpenServiceDrawer(row.service.slug)}
+                  >
+                    Open details
+                  </button>
                   <Link href={`/services/${row.service.slug}`} className="secondary-button">
                     Open service review
                   </Link>
@@ -2389,6 +2457,32 @@ export function ReviewPackageWorkbench({
           </div>
         ) : null}
       </section>
+
+      {selectedServiceDrawerRow ? (
+        <ProjectReviewServiceDrawer
+          row={selectedServiceDrawerRow}
+          targetRegions={activePackage?.targetRegions ?? []}
+          reviews={reviews}
+          activePackageName={activePackage?.name ?? null}
+          pricingLoading={pricingLoading}
+          pricingError={pricingError}
+          regionalFitLoading={regionalFitLoading}
+          regionalFitError={regionalFitError}
+          onClose={() => setSelectedServiceDrawerSlug(null)}
+          onOpenItem={handleOpenMatrixFinding}
+          onUpdateServiceAssumption={updateServiceAssumption}
+        />
+      ) : null}
+
+      {selectedItem ? (
+        <ItemDrawer
+          item={selectedItem}
+          review={reviews[selectedItem.guid] ?? createEmptyReview()}
+          onClose={() => setSelectedGuid(null)}
+          onUpdate={(next) => updateReview(selectedItem.guid, next)}
+          activePackageName={activePackage?.name ?? null}
+        />
+      ) : null}
     </main>
   );
 }
