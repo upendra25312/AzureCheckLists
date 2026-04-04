@@ -7,6 +7,7 @@ const {
   availabilityStateRank,
   cleanDisplayText,
   isCommercialPublicAvailabilityRow,
+  normalizeKey,
   normalizeAvailabilityState,
   parseRegionLabel,
   resolveAvailabilityMapping
@@ -45,7 +46,7 @@ function buildServiceRegionalFit(service, dataset) {
   }
 
   const matchedRows = dataset.availabilityRows.filter((row) => {
-    if (cleanDisplayText(row.OfferingName) !== mapping.offeringName) {
+    if (normalizeKey(cleanDisplayText(row.OfferingName)) !== normalizeKey(mapping.offeringName)) {
       return false;
     }
 
@@ -116,7 +117,10 @@ function buildServiceRegionalFit(service, dataset) {
   const availableRegions = [...regionMap.values()].sort((left, right) =>
     left.regionName.localeCompare(right.regionName)
   );
-  const unavailableRegions = dataset.publicRegions
+  const isGlobalService = globalSkuMap.size > 0;
+  const unavailableRegions = isGlobalService
+    ? []
+    : dataset.publicRegions
     .filter((region) => !regionMap.has(region.regionName))
     .map((region) => ({
       regionName: region.regionName,
@@ -150,7 +154,7 @@ function buildServiceRegionalFit(service, dataset) {
     earlyAccessRegionCount,
     previewRegionCount,
     retiringRegionCount,
-    isGlobalService: globalSkuMap.size > 0,
+    isGlobalService,
     regions: availableRegions,
     unavailableRegions,
     globalSkuStates: [...globalSkuMap.values()].sort(

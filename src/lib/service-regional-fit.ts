@@ -5,7 +5,7 @@ import type {
   ServiceSummary
 } from "@/types";
 
-const SERVICE_REGIONAL_FIT_CACHE_PREFIX = "azure-review-dashboard.service-regional-fit.v1";
+const SERVICE_REGIONAL_FIT_CACHE_PREFIX = "azure-review-dashboard.service-regional-fit.v2";
 const SERVICE_REGIONAL_FIT_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
 
 type CachedServiceRegionalFit = {
@@ -67,6 +67,11 @@ function readCachedServiceRegionalFit(request: ServiceRegionalFitRequest) {
   const inMemory = serviceRegionalFitMemoryCache.get(cacheKey);
 
   if (inMemory) {
+    if (inMemory.payload.isGlobalService && inMemory.payload.unavailableRegions.length > 0) {
+      clearCachedServiceRegionalFitByKey(cacheKey);
+      return null;
+    }
+
     if (isExpired(inMemory.savedAt, SERVICE_REGIONAL_FIT_CACHE_TTL_MS)) {
       clearCachedServiceRegionalFitByKey(cacheKey);
       return null;
@@ -87,6 +92,11 @@ function readCachedServiceRegionalFit(request: ServiceRegionalFitRequest) {
 
   try {
     const cached = JSON.parse(raw) as CachedServiceRegionalFit;
+
+    if (cached.payload.isGlobalService && cached.payload.unavailableRegions.length > 0) {
+      clearCachedServiceRegionalFitByKey(cacheKey);
+      return null;
+    }
 
     if (isExpired(cached.savedAt, SERVICE_REGIONAL_FIT_CACHE_TTL_MS)) {
       clearCachedServiceRegionalFitByKey(cacheKey);
