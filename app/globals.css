@@ -1112,6 +1112,15 @@ button.chip:hover {
   gap: 14px;
 }
 
+.status-copy {
+  margin: 0;
+}
+
+.status-copy-success {
+  color: var(--success);
+  font-weight: 600;
+}
+
 .technology-side-panel {
   align-content: start;
 }

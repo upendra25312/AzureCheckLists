@@ -280,6 +280,8 @@ type PackageFormState = {
   targetRegions: string;
 };
 
+type PackageActionTone = "neutral" | "success";
+
 function createFormState(reviewPackage?: ReviewPackage): PackageFormState {
   return {
     name: reviewPackage?.name ?? "",
@@ -302,6 +304,26 @@ function getServiceAssumption(
   );
 }
 
+function createUniquePackageName(name: string, existingPackages: ReviewPackage[]) {
+  const baseName = name.trim() || "Project review";
+  const normalizedBaseName = baseName.toLowerCase();
+  const existingNames = new Set(
+    existingPackages.map((entry) => entry.name.trim().toLowerCase()).filter(Boolean)
+  );
+
+  if (!existingNames.has(normalizedBaseName)) {
+    return baseName;
+  }
+
+  let suffix = 2;
+
+  while (existingNames.has(`${normalizedBaseName} (${suffix})`)) {
+    suffix += 1;
+  }
+
+  return `${baseName} (${suffix})`;
+}
+
 export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
   const [items, setItems] = useState<ChecklistItem[] | null>(null);
   const [packages, setPackages] = useState<ReviewPackage[]>([]);
@@ -317,6 +339,8 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
   const [servicePricing, setServicePricing] = useState<Record<string, ServicePricing>>({});
   const [pricingLoading, setPricingLoading] = useState(false);
   const [pricingError, setPricingError] = useState<string | null>(null);
+  const [packageActionMessage, setPackageActionMessage] = useState<string | null>(null);
+  const [packageActionTone, setPackageActionTone] = useState<PackageActionTone>("neutral");
 
   useEffect(() => {
     let active = true;
@@ -745,9 +769,11 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
   }
 
   function handleCreatePackage() {
+    const requestedName = form.name.trim();
+    const nextName = createUniquePackageName(requestedName, packages);
     const nextPackage = upsertPackage(
       createReviewPackage({
-        name: form.name,
+        name: nextName,
         audience: form.audience,
         businessScope: form.businessScope,
         targetRegions: normalizeList(form.targetRegions)
@@ -756,10 +782,22 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
     const nextPackages = loadPackages();
 
     refreshPackages(nextPackages, nextPackage.id);
+    setPackageActionTone("success");
+    setPackageActionMessage(
+      requestedName && requestedName.toLowerCase() !== nextName.toLowerCase()
+        ? `Created "${nextName}" and made it the active project review because "${requestedName}" already existed.`
+        : `Created "${nextPackage.name}" and made it the active project review.`
+    );
   }
 
   function handleSelectPackage(nextPackageId: string) {
     refreshPackages(loadPackages(), nextPackageId || null);
+    setPackageActionTone("neutral");
+    setPackageActionMessage(
+      nextPackageId
+        ? `Switched the active project review.`
+        : "Cleared the active project review. Notes will stay local until you activate another review."
+    );
   }
 
   function handleSavePackageDetails() {
@@ -776,6 +814,8 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
     });
 
     refreshPackages(loadPackages(), activePackage.id);
+    setPackageActionTone("success");
+    setPackageActionMessage(`Saved the project review details for "${form.name.trim() || activePackage.name}".`);
   }
 
   function handleDeletePackage() {
@@ -783,10 +823,17 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
       return;
     }
 
+    const deletedPackageName = activePackage.name;
     deletePackage(activePackage.id);
     const nextPackages = loadPackages();
 
     refreshPackages(nextPackages, nextPackages[0]?.id ?? null);
+    setPackageActionTone("success");
+    setPackageActionMessage(
+      nextPackages[0]
+        ? `Deleted "${deletedPackageName}". "${nextPackages[0].name}" is now the active project review.`
+        : `Deleted "${deletedPackageName}". No project review is active right now.`
+    );
   }
 
   function toggleServiceSelection(serviceSlug: string) {
@@ -1109,6 +1156,16 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
                 Delete review
               </button>
             </div>
+
+            {packageActionMessage ? (
+              <p
+                className={`microcopy ${
+                  packageActionTone === "success" ? "status-copy status-copy-success" : "status-copy"
+                }`}
+              >
+                {packageActionMessage}
+              </p>
+            ) : null}
           </article>
 
           <article className="filter-card package-card">
