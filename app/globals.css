@@ -1683,6 +1683,38 @@ button.chip:disabled:hover {
   gap: 12px;
 }
 
+.regional-risk-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.regional-risk-card {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.regional-risk-card h3 {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.regional-risk-card-blocker {
+  border-color: rgba(183, 64, 42, 0.24);
+  background:
+    linear-gradient(180deg, rgba(183, 64, 42, 0.06), rgba(255, 255, 255, 0.5)),
+    rgba(255, 255, 255, 0.74);
+}
+
+.regional-risk-card-caveat {
+  border-color: rgba(183, 116, 23, 0.22);
+  background:
+    linear-gradient(180deg, rgba(183, 116, 23, 0.05), rgba(255, 255, 255, 0.5)),
+    rgba(255, 255, 255, 0.74);
+}
+
 .project-review-matrix-head,
 .project-review-matrix-row {
   display: grid;
@@ -1742,6 +1774,63 @@ button.chip:disabled:hover {
 
 .project-review-matrix-actions {
   justify-items: start;
+}
+
+.project-review-matrix-detail {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 14px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.project-review-matrix-detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.pricing-drilldown-table {
+  display: grid;
+  gap: 8px;
+}
+
+.pricing-drilldown-head,
+.pricing-drilldown-row {
+  display: grid;
+  grid-template-columns:
+    minmax(140px, 1fr)
+    minmax(140px, 1fr)
+    minmax(180px, 1.4fr)
+    minmax(120px, 0.8fr)
+    minmax(100px, 0.8fr);
+  gap: 12px;
+}
+
+.pricing-drilldown-head {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pricing-drilldown-row {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.52);
+  font-size: 0.94rem;
+}
+
+[data-theme="dark"] .pricing-drilldown-row {
+  background: rgba(12, 24, 36, 0.56);
+}
+
+.button-compact {
+  justify-self: start;
+  padding: 10px 14px;
 }
 
 .matrix-assumption-grid {
@@ -2056,6 +2145,7 @@ button.chip:disabled:hover {
   .decision-cue-grid,
   .workflow-lane-grid,
   .workflow-output-grid,
+  .regional-risk-grid,
   .project-review-matrix-row,
   .copilot-layout,
   .copilot-suggestion-grid,
@@ -2068,6 +2158,14 @@ button.chip:disabled:hover {
 
   .project-review-matrix-head {
     display: none;
+  }
+
+  .pricing-drilldown-head {
+    display: none;
+  }
+
+  .pricing-drilldown-row {
+    grid-template-columns: 1fr;
   }
 }
 

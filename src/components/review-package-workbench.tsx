@@ -16,7 +16,11 @@ import {
   buildServiceRegionalFitRequest,
   loadServiceRegionalFitBatch
 } from "@/lib/service-regional-fit";
-import { buildServicePricingRequest, loadServicePricingBatch } from "@/lib/service-pricing";
+import {
+  buildServicePricingRequest,
+  loadServicePricingBatch,
+  matchesPricingTargetRegion
+} from "@/lib/service-pricing";
 import {
   activateCloudProjectReview,
   fetchClientPrincipal,
@@ -48,7 +52,8 @@ import type {
   ServiceRegionalFitSummary,
   ServiceIndex,
   ReviewServiceAssumption,
-  ServicePricing
+  ServicePricing,
+  ServicePricingRow
 } from "@/types";
 
 const AUDIENCES: ReviewPackageAudience[] = [
@@ -311,6 +316,114 @@ function buildCostFitMatrix(
   };
 }
 
+function classifyRegionalChip(chip: MatrixChip) {
+  const normalized = chip.label.toLowerCase();
+
+  if (
+    normalized.includes("restricted") ||
+    normalized.includes("unavailable") ||
+    normalized.includes("not in feed")
+  ) {
+    return "blocker" as const;
+  }
+
+  if (
+    normalized.includes("retiring") ||
+    normalized.includes("preview") ||
+    normalized.includes("early access")
+  ) {
+    return "caveat" as const;
+  }
+
+  if (normalized.includes("global service")) {
+    return "global" as const;
+  }
+
+  if (normalized.includes("available")) {
+    return "available" as const;
+  }
+
+  return "neutral" as const;
+}
+
+function formatPricingDrilldownRows(
+  pricing: ServicePricing | undefined,
+  assumption: ReviewServiceAssumption,
+  targetRegions: string[]
+) {
+  if (!pricing) {
+    return {
+      ready: false,
+      title: "Pricing not loaded yet",
+      summary: "The pricing drilldown appears after the current retail pricing snapshot finishes loading.",
+      rows: [] as ServicePricingRow[],
+      skuLabels: [] as string[],
+      hasHiddenRows: false
+    };
+  }
+
+  if (!pricing.mapped || pricing.rows.length === 0) {
+    return {
+      ready: false,
+      title: "No published retail rows",
+      summary:
+        pricing.notes[0] ??
+        "Microsoft does not currently publish a clean standalone retail pricing mapping for this service.",
+      rows: [] as ServicePricingRow[],
+      skuLabels: [] as string[],
+      hasHiddenRows: false
+    };
+  }
+
+  const targetMatchedRows =
+    targetRegions.length > 0
+      ? pricing.rows.filter((row) =>
+          matchesPricingTargetRegion(row.armRegionName, row.location, targetRegions)
+        )
+      : [];
+  const scopedRows = targetMatchedRows.length > 0 ? targetMatchedRows : pricing.rows;
+  const sortedRows = [...scopedRows].sort((left, right) => {
+    if (left.retailPrice !== right.retailPrice) {
+      return left.retailPrice - right.retailPrice;
+    }
+
+    return `${left.location}-${left.skuName}-${left.meterName}`.localeCompare(
+      `${right.location}-${right.skuName}-${right.meterName}`
+    );
+  });
+  const rows = sortedRows.slice(0, 12);
+  const skuLabels = [...new Set(scopedRows.map((row) => row.skuName || row.armSkuName).filter(Boolean))];
+  const preferredSku = assumption.preferredSku.trim();
+  const title =
+    targetMatchedRows.length > 0
+      ? `Published retail rows in ${targetRegions.join(", ")}`
+      : targetRegions.length > 0
+        ? "No direct target-region retail rows"
+        : "Published retail rows";
+  const summaryParts = [
+    preferredSku
+      ? `Preferred SKU "${preferredSku}" is saved as a design assumption, but the drilldown still shows all published SKU rows for comparison.`
+      : "No preferred SKU is set, so the drilldown includes all published SKU rows.",
+    targetMatchedRows.length > 0
+      ? `${targetMatchedRows.length.toLocaleString()} retail row${targetMatchedRows.length === 1 ? "" : "s"} currently match the selected target region${targetRegions.length === 1 ? "" : "s"}.`
+      : targetRegions.length > 0
+        ? "No direct selected-region retail rows are published yet, so this drilldown falls back to the broader Microsoft retail snapshot."
+        : "No target region is captured yet, so this drilldown shows the broader Microsoft retail snapshot.",
+    assumption.sizingNote.trim()
+      ? "Sizing notes help turn list pricing into an estimate later."
+      : "Sizing notes are optional; list pricing can still be reviewed without them."
+  ];
+
+  return {
+    ready: true,
+    title,
+    summary: summaryParts.join(" "),
+    rows,
+    skuLabels,
+    hasHiddenRows: sortedRows.length > rows.length
+  };
+}
+
 function matchesPackageService(
   item: ChecklistItem,
   selectedServiceSlugs: Set<string>,
@@ -384,6 +497,7 @@ export function ReviewPackageWorkbench({
   const [servicePricing, setServicePricing] = useState<Record<string, ServicePricing>>({});
   const [pricingLoading, setPricingLoading] = useState(false);
   const [pricingError, setPricingError] = useState<string | null>(null);
+  const [expandedPricingServices, setExpandedPricingServices] = useState<string[]>([]);
   const [packageActionMessage, setPackageActionMessage] = useState<string | null>(null);
   const [packageActionTone, setPackageActionTone] = useState<PackageActionTone>("neutral");
   const [cloudRestoreAttempted, setCloudRestoreAttempted] = useState(false);
@@ -705,6 +819,14 @@ export function ReviewPackageWorkbench({
   }, [activePackage, selectedServices]);
 
   useEffect(() => {
+    const selectedSlugs = new Set(selectedServices.map((service) => service.slug));
+
+    setExpandedPricingServices((current) =>
+      current.filter((serviceSlug) => selectedSlugs.has(serviceSlug))
+    );
+  }, [selectedServices]);
+
+  useEffect(() => {
     let active = true;
 
     if (!activePackage || selectedServices.length === 0) {
@@ -766,6 +888,11 @@ export function ReviewPackageWorkbench({
           serviceAssumption,
           activePackage?.targetRegions ?? []
         );
+        const pricingDrilldown = formatPricingDrilldownRows(
+          servicePricing[entry.service.slug],
+          serviceAssumption,
+          activePackage?.targetRegions ?? []
+        );
         const checklistChips: MatrixChip[] = [
           createMatrixChip(`${entry.includedCount.toLocaleString()} included`, "good"),
           createMatrixChip(`${entry.notApplicableCount.toLocaleString()} not applicable`, "warning"),
@@ -782,6 +909,7 @@ export function ReviewPackageWorkbench({
           ...entry,
           regionFit,
           costFit,
+          pricingDrilldown,
           checklistChips,
           checklistSummary:
             `${entry.itemCount.toLocaleString()} findings across ${entry.service.familyCount.toLocaleString()} families are currently tied to this service in the active project review.`
@@ -796,6 +924,59 @@ export function ReviewPackageWorkbench({
       serviceRegionalFits
     ]
   );
+  const regionalRiskSummary = useMemo(() => {
+    const blockedServices: Array<{ serviceName: string; signals: string[] }> = [];
+    const caveatServices: Array<{ serviceName: string; signals: string[] }> = [];
+    const globalServices: string[] = [];
+    const availableServices: string[] = [];
+
+    matrixRows.forEach((row) => {
+      const blockerSignals = row.regionFit.chips
+        .filter((chip) => classifyRegionalChip(chip) === "blocker")
+        .map((chip) => chip.label);
+      const caveatSignals = row.regionFit.chips
+        .filter((chip) => classifyRegionalChip(chip) === "caveat")
+        .map((chip) => chip.label);
+      const hasGlobalSignal = row.regionFit.chips.some(
+        (chip) => classifyRegionalChip(chip) === "global"
+      );
+      const hasAvailableSignal = row.regionFit.chips.some(
+        (chip) => classifyRegionalChip(chip) === "available"
+      );
+
+      if (blockerSignals.length > 0) {
+        blockedServices.push({
+          serviceName: row.service.service,
+          signals: blockerSignals
+        });
+        return;
+      }
+
+      if (caveatSignals.length > 0) {
+        caveatServices.push({
+          serviceName: row.service.service,
+          signals: caveatSignals
+        });
+        return;
+      }
+
+      if (hasGlobalSignal) {
+        globalServices.push(row.service.service);
+        return;
+      }
+
+      if (hasAvailableSignal) {
+        availableServices.push(row.service.service);
+      }
+    });
+
+    return {
+      blockedServices,
+      caveatServices,
+      globalServices,
+      availableServices
+    };
+  }, [matrixRows]);
   const copilotContext = useMemo<ProjectReviewCopilotContext | null>(() => {
     if (!activePackage || matrixRows.length === 0) {
       return null;
@@ -1499,6 +1680,51 @@ export function ReviewPackageWorkbench({
         ) : null}
 
         {matrixRows.length > 0 ? (
+          <div className="regional-risk-grid">
+            <article className="trace-card regional-risk-card regional-risk-card-blocker">
+              <p className="eyebrow">Blocked or restricted</p>
+              <h3>{regionalRiskSummary.blockedServices.length.toLocaleString()}</h3>
+              <p className="microcopy">
+                {regionalRiskSummary.blockedServices.length > 0
+                  ? regionalRiskSummary.blockedServices
+                      .map((entry) => `${entry.serviceName}: ${entry.signals.join(", ")}`)
+                      .join(" | ")
+                  : "No selected services currently show restricted, unavailable, or not-in-feed target-region signals."}
+              </p>
+            </article>
+            <article className="trace-card regional-risk-card regional-risk-card-caveat">
+              <p className="eyebrow">Preview, retiring, or early access</p>
+              <h3>{regionalRiskSummary.caveatServices.length.toLocaleString()}</h3>
+              <p className="microcopy">
+                {regionalRiskSummary.caveatServices.length > 0
+                  ? regionalRiskSummary.caveatServices
+                      .map((entry) => `${entry.serviceName}: ${entry.signals.join(", ")}`)
+                      .join(" | ")
+                  : "No selected services are currently flagged only with preview, retiring, or early-access caveats."}
+              </p>
+            </article>
+            <article className="trace-card regional-risk-card">
+              <p className="eyebrow">Global services</p>
+              <h3>{regionalRiskSummary.globalServices.length.toLocaleString()}</h3>
+              <p className="microcopy">
+                {regionalRiskSummary.globalServices.length > 0
+                  ? regionalRiskSummary.globalServices.join(", ")
+                  : "No selected services are currently treated as global or non-regional in the matrix."}
+              </p>
+            </article>
+            <article className="trace-card regional-risk-card">
+              <p className="eyebrow">Available without caveat</p>
+              <h3>{regionalRiskSummary.availableServices.length.toLocaleString()}</h3>
+              <p className="microcopy">
+                {regionalRiskSummary.availableServices.length > 0
+                  ? regionalRiskSummary.availableServices.join(", ")
+                  : "No selected services are currently classified as fully available across the chosen target regions."}
+              </p>
+            </article>
+          </div>
+        ) : null}
+
+        {matrixRows.length > 0 ? (
           <div className="project-review-matrix">
             <div className="project-review-matrix-head">
               <span>Service</span>
@@ -1547,6 +1773,21 @@ export function ReviewPackageWorkbench({
                     ))}
                   </div>
                   <p className="microcopy">{row.costFit.summary}</p>
+                  <button
+                    type="button"
+                    className="secondary-button button-compact"
+                    onClick={() =>
+                      setExpandedPricingServices((current) =>
+                        current.includes(row.service.slug)
+                          ? current.filter((serviceSlug) => serviceSlug !== row.service.slug)
+                          : [...current, row.service.slug]
+                      )
+                    }
+                  >
+                    {expandedPricingServices.includes(row.service.slug)
+                      ? "Hide pricing drilldown"
+                      : "Show pricing drilldown"}
+                  </button>
                 </div>
 
                 <div className="project-review-matrix-cell">
@@ -1611,6 +1852,65 @@ export function ReviewPackageWorkbench({
                     Open service review
                   </Link>
                 </div>
+
+                {expandedPricingServices.includes(row.service.slug) ? (
+                  <div className="project-review-matrix-detail">
+                    <div className="project-review-matrix-detail-head">
+                      <div>
+                        <p className="eyebrow">Pricing drilldown</p>
+                        <h3>{row.pricingDrilldown.title}</h3>
+                        <p className="microcopy">{row.pricingDrilldown.summary}</p>
+                      </div>
+                    </div>
+
+                    {row.pricingDrilldown.skuLabels.length > 0 ? (
+                      <div className="chip-row compact-chip-row">
+                        {row.pricingDrilldown.skuLabels.map((skuLabel) => (
+                          <span className="chip" key={`${row.service.slug}-${skuLabel}`}>
+                            {skuLabel}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    {row.pricingDrilldown.ready && row.pricingDrilldown.rows.length > 0 ? (
+                      <>
+                        <div className="pricing-drilldown-table">
+                          <div className="pricing-drilldown-head">
+                            <span>Location</span>
+                            <span>SKU</span>
+                            <span>Meter</span>
+                            <span>Retail price</span>
+                            <span>Unit</span>
+                          </div>
+                          {row.pricingDrilldown.rows.map((pricingRow) => (
+                            <div
+                              className="pricing-drilldown-row"
+                              key={`${row.service.slug}-${pricingRow.meterId}-${pricingRow.location}-${pricingRow.skuName}`}
+                            >
+                              <span>{pricingRow.location || pricingRow.armRegionName || "Global"}</span>
+                              <span>{pricingRow.skuName || pricingRow.armSkuName || "Unspecified SKU"}</span>
+                              <span>{pricingRow.meterName}</span>
+                              <span>{formatRetailPrice(pricingRow.retailPrice, pricingRow.currencyCode)}</span>
+                              <span>{pricingRow.unitOfMeasure}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {row.pricingDrilldown.hasHiddenRows ? (
+                          <p className="microcopy">
+                            Showing the first {row.pricingDrilldown.rows.length.toLocaleString()} published pricing rows in this
+                            drilldown. Use the pricing CSV export when you need every scoped row.
+                          </p>
+                        ) : null}
+                      </>
+                    ) : (
+                      <section className="trace-card">
+                        <strong>Pricing rows unavailable</strong>
+                        <p>{row.pricingDrilldown.summary}</p>
+                      </section>
+                    )}
+                  </div>
+                ) : null}
               </article>
             ))}
           </div>
