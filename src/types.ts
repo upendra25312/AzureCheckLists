@@ -332,6 +332,12 @@ export type ReviewDraft = {
   exceptionReason: string;
 };
 
+export type ReviewServiceAssumption = {
+  plannedRegion: string;
+  preferredSku: string;
+  sizingNote: string;
+};
+
 export type ReviewPackage = {
   id: string;
   name: string;
@@ -339,6 +345,7 @@ export type ReviewPackage = {
   businessScope: string;
   targetRegions: string[];
   selectedServiceSlugs: string[];
+  serviceAssumptions: Record<string, ReviewServiceAssumption>;
   createdAt: string;
   updatedAt: string;
 };

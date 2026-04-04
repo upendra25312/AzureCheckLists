@@ -33,6 +33,7 @@ import type {
   ReviewPackageAudience,
   ServiceRegionalFit,
   ServiceIndex,
+  ReviewServiceAssumption,
   ServicePricing
 } from "@/types";
 
@@ -283,6 +284,19 @@ function createFormState(reviewPackage?: ReviewPackage): PackageFormState {
     businessScope: reviewPackage?.businessScope ?? "",
     targetRegions: reviewPackage?.targetRegions.join(", ") ?? ""
   };
+}
+
+function getServiceAssumption(
+  reviewPackage: ReviewPackage | null,
+  serviceSlug: string
+): ReviewServiceAssumption {
+  return (
+    reviewPackage?.serviceAssumptions[serviceSlug] ?? {
+      plannedRegion: "",
+      preferredSku: "",
+      sizingNote: ""
+    }
+  );
 }
 
 export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
@@ -678,6 +692,52 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
     });
 
     refreshPackages(loadPackages(), activePackage.id);
+  }
+
+  function updateServiceAssumption(
+    serviceSlug: string,
+    patch: Partial<ReviewServiceAssumption>
+  ) {
+    if (!activePackage) {
+      return;
+    }
+
+    const current = getServiceAssumption(activePackage, serviceSlug);
+    const nextAssumption = {
+      ...current,
+      ...patch
+    };
+    const shouldRemove =
+      !nextAssumption.plannedRegion.trim() &&
+      !nextAssumption.preferredSku.trim() &&
+      !nextAssumption.sizingNote.trim();
+    const nextServiceAssumptions = {
+      ...activePackage.serviceAssumptions
+    };
+
+    if (shouldRemove) {
+      delete nextServiceAssumptions[serviceSlug];
+    } else {
+      nextServiceAssumptions[serviceSlug] = nextAssumption;
+    }
+
+    const saved = upsertPackage({
+      ...activePackage,
+      serviceAssumptions: nextServiceAssumptions
+    });
+
+    setPackages((currentPackages) => {
+      const existingIndex = currentPackages.findIndex((entry) => entry.id === saved.id);
+
+      if (existingIndex === -1) {
+        return [saved, ...currentPackages];
+      }
+
+      const nextPackages = [...currentPackages];
+
+      nextPackages.splice(existingIndex, 1, saved);
+      return nextPackages;
+    });
   }
 
   function exportPackageCsv() {
@@ -1087,7 +1147,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
               <span>Region fit</span>
               <span>Cost fit</span>
               <span>Checklist progress</span>
-              <span>Action</span>
+              <span>Design assumptions</span>
             </div>
             {matrixRows.map((row) => (
               <article className="project-review-matrix-row" key={row.service.slug}>
@@ -1147,11 +1207,50 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
                 </div>
 
                 <div className="project-review-matrix-cell project-review-matrix-actions">
+                  <p className="eyebrow">Design assumptions</p>
+                  <div className="matrix-assumption-grid">
+                    <label>
+                      <span className="microcopy">Planned region</span>
+                      <input
+                        className="field-input"
+                        value={getServiceAssumption(activePackage, row.service.slug).plannedRegion}
+                        onChange={(event) =>
+                          updateServiceAssumption(row.service.slug, {
+                            plannedRegion: event.target.value
+                          })
+                        }
+                        placeholder={activePackage?.targetRegions[0] ?? "East US"}
+                      />
+                    </label>
+                    <label>
+                      <span className="microcopy">Preferred SKU</span>
+                      <input
+                        className="field-input"
+                        value={getServiceAssumption(activePackage, row.service.slug).preferredSku}
+                        onChange={(event) =>
+                          updateServiceAssumption(row.service.slug, {
+                            preferredSku: event.target.value
+                          })
+                        }
+                        placeholder="Standard v2, Premium, P1v3, S1"
+                      />
+                    </label>
+                    <label>
+                      <span className="microcopy">Sizing note</span>
+                      <textarea
+                        className="field-textarea matrix-textarea"
+                        value={getServiceAssumption(activePackage, row.service.slug).sizingNote}
+                        onChange={(event) =>
+                          updateServiceAssumption(row.service.slug, {
+                            sizingNote: event.target.value
+                          })
+                        }
+                        placeholder="Capture rough sizing, expected scale, customer constraints, or estimate assumptions for this service."
+                      />
+                    </label>
+                  </div>
                   <Link href={`/services/${row.service.slug}`} className="secondary-button">
                     Open service review
-                  </Link>
-                  <Link href="/review-package" className="muted-link">
-                    Keep project review open
                   </Link>
                 </div>
               </article>

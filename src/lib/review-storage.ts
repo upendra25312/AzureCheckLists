@@ -1,4 +1,10 @@
-import type { ExplorerFilters, ReviewDraft, ReviewPackage, ReviewPackageAudience } from "@/types";
+import type {
+  ExplorerFilters,
+  ReviewDraft,
+  ReviewPackage,
+  ReviewPackageAudience,
+  ReviewServiceAssumption
+} from "@/types";
 
 export const STORAGE_KEYS = {
   theme: "azure-review-dashboard.theme",
@@ -33,6 +39,36 @@ function packageReviewsKey(packageId: string) {
 
 function createPackageId() {
   return `pkg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export function createEmptyServiceAssumption(): ReviewServiceAssumption {
+  return {
+    plannedRegion: "",
+    preferredSku: "",
+    sizingNote: ""
+  };
+}
+
+function normalizeServiceAssumptions(
+  assumptions: Record<string, Partial<ReviewServiceAssumption>> | undefined
+) {
+  return Object.fromEntries(
+    Object.entries(assumptions ?? {}).map(([serviceSlug, value]) => [
+      serviceSlug,
+      {
+        plannedRegion: value.plannedRegion ?? "",
+        preferredSku: value.preferredSku ?? "",
+        sizingNote: value.sizingNote ?? ""
+      }
+    ])
+  ) as Record<string, ReviewServiceAssumption>;
+}
+
+function normalizeReviewPackage(reviewPackage: ReviewPackage): ReviewPackage {
+  return {
+    ...reviewPackage,
+    serviceAssumptions: normalizeServiceAssumptions(reviewPackage.serviceAssumptions)
+  };
 }
 
 export function createEmptyReview(): ReviewDraft {
@@ -95,20 +131,23 @@ export function saveFilters(filters: ExplorerFilters) {
 export function createReviewPackage(input?: Partial<ReviewPackage>): ReviewPackage {
   const now = new Date().toISOString();
 
-  return {
+  return normalizeReviewPackage({
     id: input?.id ?? createPackageId(),
     name: input?.name?.trim() || "Project review package",
     audience: input?.audience ?? ("Cloud Architect" as ReviewPackageAudience),
     businessScope: input?.businessScope ?? "",
     targetRegions: input?.targetRegions ?? [],
     selectedServiceSlugs: input?.selectedServiceSlugs ?? [],
+    serviceAssumptions: input?.serviceAssumptions ?? {},
     createdAt: input?.createdAt ?? now,
     updatedAt: input?.updatedAt ?? now
-  };
+  });
 }
 
 export function loadPackages() {
-  return readStorage<ReviewPackage[]>(STORAGE_KEYS.packages, []);
+  return readStorage<ReviewPackage[]>(STORAGE_KEYS.packages, []).map((entry) =>
+    normalizeReviewPackage(entry)
+  );
 }
 
 export function savePackages(packages: ReviewPackage[]) {
@@ -139,10 +178,10 @@ export function saveActivePackageId(packageId: string | null) {
 export function upsertPackage(nextPackage: ReviewPackage) {
   const packages = loadPackages();
   const existingIndex = packages.findIndex((entry) => entry.id === nextPackage.id);
-  const updated = {
+  const updated = normalizeReviewPackage({
     ...nextPackage,
     updatedAt: new Date().toISOString()
-  };
+  });
 
   if (existingIndex === -1) {
     savePackages([updated, ...packages]);

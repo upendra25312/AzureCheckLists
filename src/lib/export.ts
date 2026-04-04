@@ -1,5 +1,11 @@
 import { matchesPricingTargetRegion } from "@/lib/service-pricing";
-import type { ChecklistItem, ReviewDraft, ReviewPackage, ServicePricing } from "@/types";
+import type {
+  ChecklistItem,
+  ReviewDraft,
+  ReviewPackage,
+  ReviewServiceAssumption,
+  ServicePricing
+} from "@/types";
 
 type PackageExportOptions = {
   includeNotApplicable: boolean;
@@ -33,6 +39,46 @@ function formatReview(item: ChecklistItem, reviews: Record<string, ReviewDraft>)
     dueDate: review?.dueDate ?? "",
     evidenceLinks: review?.evidenceLinks.join(" | ") ?? ""
   };
+}
+
+function emptyServiceAssumption(): ReviewServiceAssumption {
+  return {
+    plannedRegion: "",
+    preferredSku: "",
+    sizingNote: ""
+  };
+}
+
+function getServiceAssumption(reviewPackage: ReviewPackage, serviceSlug: string | undefined) {
+  if (!serviceSlug) {
+    return emptyServiceAssumption();
+  }
+
+  return reviewPackage.serviceAssumptions[serviceSlug] ?? emptyServiceAssumption();
+}
+
+function hasServiceAssumption(assumption: ReviewServiceAssumption) {
+  return Boolean(
+    assumption.plannedRegion.trim() || assumption.preferredSku.trim() || assumption.sizingNote.trim()
+  );
+}
+
+function pushServiceAssumptionLines(lines: string[], assumption: ReviewServiceAssumption) {
+  if (!hasServiceAssumption(assumption)) {
+    return;
+  }
+
+  if (assumption.plannedRegion.trim()) {
+    lines.push(`- Planned region: ${assumption.plannedRegion.trim()}`);
+  }
+
+  if (assumption.preferredSku.trim()) {
+    lines.push(`- Preferred SKU: ${assumption.preferredSku.trim()}`);
+  }
+
+  if (assumption.sizingNote.trim()) {
+    lines.push(`- Sizing note: ${assumption.sizingNote.trim()}`);
+  }
 }
 
 function shouldIncludeItem(
@@ -118,10 +164,11 @@ export function buildPackageExportRows(
   return items
     .filter((item) => shouldIncludeItem(item, reviews, options))
     .map((item) => {
-      const review = formatReview(item, reviews);
+    const review = formatReview(item, reviews);
+    const assumption = getServiceAssumption(reviewPackage, item.serviceSlug);
 
-      return {
-        projectReviewName: reviewPackage.name,
+    return {
+      projectReviewName: reviewPackage.name,
         audience: reviewPackage.audience,
         businessScope: reviewPackage.businessScope,
         targetRegions: reviewPackage.targetRegions.join(" | "),
@@ -135,9 +182,12 @@ export function buildPackageExportRows(
         severity: item.severity ?? "",
         waf: item.waf ?? "",
         category: item.category ?? "",
-        subcategory: item.subcategory ?? "",
-        projectAction: review.projectAction,
-        comments: review.comments,
+      subcategory: item.subcategory ?? "",
+      plannedRegion: assumption.plannedRegion,
+      preferredSku: assumption.preferredSku,
+      sizingNote: assumption.sizingNote,
+      projectAction: review.projectAction,
+      comments: review.comments,
         owner: review.owner,
         dueDate: review.dueDate,
         evidenceLinks: review.evidenceLinks,
@@ -179,6 +229,12 @@ export function buildPackageMarkdown(
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([serviceName, serviceItems]) => {
       const lines = [`## ${serviceName}`, ""];
+      const assumption = getServiceAssumption(reviewPackage, serviceItems[0]?.serviceSlug);
+
+      pushServiceAssumptionLines(lines, assumption);
+      if (hasServiceAssumption(assumption)) {
+        lines.push("");
+      }
 
       serviceItems.forEach((item) => {
         const review = formatReview(item, reviews);
@@ -233,8 +289,12 @@ export function buildPackageText(
 
   includedItems.forEach((item) => {
     const review = formatReview(item, reviews);
+    const assumption = getServiceAssumption(reviewPackage, item.serviceSlug);
 
     lines.push(`Service: ${item.serviceCanonical ?? item.service ?? "Unmapped service"}`);
+    if (assumption.plannedRegion.trim()) lines.push(`Planned region: ${assumption.plannedRegion.trim()}`);
+    if (assumption.preferredSku.trim()) lines.push(`Preferred SKU: ${assumption.preferredSku.trim()}`);
+    if (assumption.sizingNote.trim()) lines.push(`Sizing note: ${assumption.sizingNote.trim()}`);
     lines.push(`Family: ${item.technology}`);
     lines.push(`Finding: ${item.text}`);
     lines.push(`Project action: ${review.projectAction}`);
@@ -255,6 +315,8 @@ export function buildPackagePricingRows(
   const rows: Array<Record<string, string | number>> = [];
 
   servicePricing.forEach((pricing) => {
+    const assumption = getServiceAssumption(reviewPackage, pricing.serviceSlug);
+
     if (!pricing.mapped || pricing.rows.length === 0) {
       rows.push({
         projectReviewName: reviewPackage.name,
@@ -263,6 +325,9 @@ export function buildPackagePricingRows(
         targetRegions: reviewPackage.targetRegions.join(" | "),
         service: pricing.serviceName,
         serviceSlug: pricing.serviceSlug,
+        plannedRegion: assumption.plannedRegion,
+        preferredSku: assumption.preferredSku,
+        sizingNote: assumption.sizingNote,
         pricingMapped: "No",
         query: pricing.query
           ? `${pricing.query.field} ${pricing.query.operator} ${pricing.query.value}`
@@ -297,6 +362,9 @@ export function buildPackagePricingRows(
         targetRegions: reviewPackage.targetRegions.join(" | "),
         service: pricing.serviceName,
         serviceSlug: pricing.serviceSlug,
+        plannedRegion: assumption.plannedRegion,
+        preferredSku: assumption.preferredSku,
+        sizingNote: assumption.sizingNote,
         pricingMapped: "Yes",
         query: pricing.query
           ? `${pricing.query.field} ${pricing.query.operator} ${pricing.query.value}`
@@ -340,7 +408,12 @@ export function buildPackagePricingMarkdown(
     .sort((left, right) => left.serviceName.localeCompare(right.serviceName))
     .map((pricing) => {
       const lines = [`## ${pricing.serviceName}`, ""];
+      const assumption = getServiceAssumption(reviewPackage, pricing.serviceSlug);
 
+      pushServiceAssumptionLines(lines, assumption);
+      if (hasServiceAssumption(assumption)) {
+        lines.push("");
+      }
       lines.push(`- Pricing mapped: ${pricing.mapped ? "Yes" : "No"}`);
       lines.push(`- Query used: ${pricing.query ? `${pricing.query.field} ${pricing.query.operator} ${pricing.query.value}` : "No query matched"}`);
       lines.push(`- Billing locations published: ${pricing.billingLocationCount.toLocaleString()}`);
@@ -405,7 +478,12 @@ export function buildPackagePricingText(reviewPackage: ReviewPackage, servicePri
     .slice()
     .sort((left, right) => left.serviceName.localeCompare(right.serviceName))
     .forEach((pricing) => {
+      const assumption = getServiceAssumption(reviewPackage, pricing.serviceSlug);
+
       lines.push(`Service: ${pricing.serviceName}`);
+      if (assumption.plannedRegion.trim()) lines.push(`Planned region: ${assumption.plannedRegion.trim()}`);
+      if (assumption.preferredSku.trim()) lines.push(`Preferred SKU: ${assumption.preferredSku.trim()}`);
+      if (assumption.sizingNote.trim()) lines.push(`Sizing note: ${assumption.sizingNote.trim()}`);
       lines.push(`Pricing mapped: ${pricing.mapped ? "Yes" : "No"}`);
       lines.push(
         `Query used: ${pricing.query ? `${pricing.query.field} ${pricing.query.operator} ${pricing.query.value}` : "No query matched"}`

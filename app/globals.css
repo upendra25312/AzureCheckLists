@@ -1643,6 +1643,20 @@ button.chip:hover {
   justify-items: start;
 }
 
+.matrix-assumption-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.matrix-assumption-grid label {
+  display: grid;
+  gap: 6px;
+}
+
+.matrix-textarea {
+  min-height: 96px;
+}
+
 .matrix-chip {
   display: inline-flex;
   align-items: center;
