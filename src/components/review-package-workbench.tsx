@@ -124,6 +124,16 @@ function buildRegionFitMatrix(
   }
 
   if (targetRegions.length > 0) {
+    if (regionalFit.isGlobalService) {
+      return {
+        chips: targetRegions.map((targetRegion) =>
+          createMatrixChip(`${targetRegion} · Global service`, "neutral")
+        ),
+        summary:
+          "This service is treated as global or non-regional in the Microsoft availability feed, so target deployment regions do not directly constrain this matrix view."
+      };
+    }
+
     const chips = targetRegions.map((targetRegion) => {
       const normalizedTarget = normalizeRegionName(targetRegion);
       const availableRegion = regionalFit.regions.find(
@@ -171,11 +181,6 @@ function buildRegionFitMatrix(
 
         return createMatrixChip(`${targetRegion} · Unavailable`, "danger");
       }
-
-      if (regionalFit.isGlobalService) {
-        return createMatrixChip(`${targetRegion} · Global service`, "neutral");
-      }
-
       return createMatrixChip(`${targetRegion} · Not in feed`, "danger");
     });
 
