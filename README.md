@@ -145,3 +145,4 @@ The dedicated backend stores structured review records as JSON in Blob Storage, 
 
 See [docs/architecture.md](./docs/architecture.md) for the deployment and migration model.
 See [docs/project-package-commercial-fit.md](./docs/project-package-commercial-fit.md) for the combined package workflow and the planned regional plus pricing extension.
+See [Architecture/README.md](./Architecture/README.md) for the architecture pack, diagrams, roadmap, and exact implementation design.
