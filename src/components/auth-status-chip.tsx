@@ -77,28 +77,33 @@ export function AuthStatusChip() {
   }
 
   return (
-    <details className="auth-menu">
-      <summary className="auth-chip auth-chip-signed-in">
-        <span className="auth-chip-label">Signed in</span>
-        <span className="auth-chip-value">{principal.userDetails || principal.userId}</span>
-      </summary>
-      <div className="auth-menu-panel">
-        <p className="microcopy">
-          Signed in with {formatProvider(principal.identityProvider)} as{" "}
-          {principal.userDetails || principal.userId}.
-        </p>
-        <div className="auth-menu-actions">
-          <Link href="/my-project-reviews" className="secondary-button">
-            My project reviews
-          </Link>
-          <Link href="/review-package" className="ghost-button">
-            Open project review
-          </Link>
-          <a href="/.auth/logout" className="ghost-button">
-            Sign out
-          </a>
+    <div className="auth-chip-group">
+      <details className="auth-menu">
+        <summary className="auth-chip auth-chip-signed-in">
+          <span className="auth-chip-label">Signed in</span>
+          <span className="auth-chip-value">{principal.userDetails || principal.userId}</span>
+        </summary>
+        <div className="auth-menu-panel">
+          <p className="microcopy">
+            Signed in with {formatProvider(principal.identityProvider)} as{" "}
+            {principal.userDetails || principal.userId}.
+          </p>
+          <div className="auth-menu-actions">
+            <Link href="/my-project-reviews" className="secondary-button">
+              My project reviews
+            </Link>
+            <Link href="/review-package" className="ghost-button">
+              Open project review
+            </Link>
+            <a href="/.auth/logout" className="ghost-button">
+              Sign out
+            </a>
+          </div>
         </div>
-      </div>
-    </details>
+      </details>
+      <a href="/.auth/logout" className="ghost-button auth-signout-button">
+        Sign out
+      </a>
+    </div>
   );
 }

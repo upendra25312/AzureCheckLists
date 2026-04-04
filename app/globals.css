@@ -137,9 +137,16 @@ pre {
   gap: 18px;
 }
 
-.auth-menu {
-  position: relative;
-}
+  .auth-menu {
+    position: relative;
+  }
+
+  .auth-chip-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
 
 .auth-menu summary {
   list-style: none;
@@ -184,8 +191,8 @@ pre {
   white-space: nowrap;
 }
 
-.auth-menu-panel {
-  position: absolute;
+  .auth-menu-panel {
+    position: absolute;
   top: calc(100% + 12px);
   right: 0;
   z-index: 30;
@@ -197,12 +204,16 @@ pre {
   box-shadow: 0 18px 50px rgba(13, 24, 38, 0.14);
 }
 
-.auth-menu-actions {
-  display: flex;
+  .auth-menu-actions {
+    display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 14px;
-}
+    margin-top: 14px;
+  }
+
+  .auth-signout-button {
+    min-height: 42px;
+  }
 
 .header-nav {
   align-items: center;
@@ -2046,8 +2057,12 @@ button.chip:hover {
   }
 
   .auth-menu {
-    width: 100%;
-  }
+      width: 100%;
+    }
+
+    .auth-chip-group {
+      width: 100%;
+    }
 
   .auth-menu-panel {
     position: static;

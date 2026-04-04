@@ -158,6 +158,11 @@ export function ProjectReviewLibrary() {
               Signed in with {formatProvider(payload.user.provider)}. The active saved review is{" "}
               {payload.user.activeReviewId ?? "not set"}.
             </p>
+            <div className="button-row">
+              <a href="/.auth/logout" className="ghost-button">
+                Sign out
+              </a>
+            </div>
           </section>
         ) : null}
 
