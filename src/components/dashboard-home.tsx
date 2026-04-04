@@ -23,93 +23,100 @@ export function DashboardHome({
     summary.mixedTechnologyCount +
     summary.deprecatedTechnologyCount;
   const featuredServices = serviceIndex.services.slice(0, 6);
-  const quickStartPaths = [
+  const reviewSteps = [
     {
       step: "01",
-      audience: "Leadership",
-      eyebrow: "Leadership start",
-      title: "See what is safe to use in decision packs first.",
+      eyebrow: "Start review",
+      title: "Create one project review for the customer or workload you are designing.",
       copy:
-        "Open the executive summary when the question is what leadership can rely on before teams widen into preview or mixed-confidence guidance.",
-      meta: "Best for steering conversations and review pack framing.",
-      anchor: "#executive",
-      cta: "Open executive summary"
+        "This becomes the working space for one solution. It keeps your selected services, target regions, pricing snapshot, and checklist notes together.",
+      meta: "Best first click for architects, pre-sales, and solution teams.",
+      href: "/review-package" as const,
+      cta: "Start project review"
     },
     {
       step: "02",
-      audience: "Architecture",
-      eyebrow: "Service start",
-      title: "Review the Azure service you are actually designing.",
+      eyebrow: "Add services",
+      title: "Add only the Azure services that belong to this solution.",
       copy:
-        "Use the service directory for Azure OpenAI, AKS, Firewall, App Service, and other platform decisions instead of starting from checklist filenames.",
-      meta: "Best for workload and platform-specific architecture reviews.",
+        "Use the service directory to bring in API Management, AKS, App Service, Front Door, and any other components that are truly in scope.",
+      meta: "Keeps the review focused on the actual design, not the full catalog.",
       href: "/services" as const,
-      cta: "Review by service"
+      cta: "Browse services"
     },
     {
       step: "03",
-      audience: "Delivery",
-      eyebrow: "Working detail",
-      title: "Filter exact findings only when the review question is clear.",
+      eyebrow: "Review findings",
+      title: "Open a service page, check region and pricing, then add project notes to findings.",
       copy:
-        "Move into the explorer for scoped recommendations, local notes, and exports once the team knows the service, severity, or pillar it needs to inspect.",
-      meta: "Best for implementation triage and operator handoff.",
-      href: "/explorer" as const,
-      cta: "Open explorer"
+        "When a finding matters to the customer design, mark it as included, not applicable, or excluded, then capture comments, evidence, owner, and due date.",
+      meta: "This is where the project-specific design story gets written.",
+      href: "/services" as const,
+      cta: "Review service pages"
+    },
+    {
+      step: "04",
+      eyebrow: "Export",
+      title: "Download only the services and notes that belong to that project review.",
+      copy:
+        "Export scoped checklist notes and scoped pricing snapshots in CSV, Markdown, or text without carrying unrelated services into the customer artifact.",
+      meta: "Best for design documents, action tracking, and pre-sales handoff.",
+      href: "/review-package" as const,
+      cta: "Download project artifacts"
     }
   ];
-  const boardroomSignals = [
+  const workflowSignals = [
     {
-      title: "Shorter prep",
-      copy: "Lead with the baseline first instead of translating raw checklist files into a story under time pressure."
+      title: "One review at a time",
+      copy: "Keep the notes and exports tied to one project instead of mixing multiple customer decisions together."
     },
     {
-      title: "Clearer escalation",
-      copy: "Keep preview, mixed, and deprecated guidance visible without letting it masquerade as default policy."
+      title: "Region and cost included",
+      copy: "Check availability restrictions and public retail pricing for the same services you selected for the review."
     },
     {
-      title: "Provable guidance",
-      copy: "Carry every recommendation with its source trail so the room can trust the conclusion and verify the evidence."
+      title: "Export only what matters",
+      copy: "Download just the scoped services and project notes instead of the entire checklist repository."
     }
   ];
   const audienceStories = [
     {
-      audience: "Leadership",
-      title: "Walk into the review knowing what deserves default confidence.",
+      audience: "Sales Architect",
+      title: "Turn service choices into a cleaner customer-facing review pack.",
       copy:
-        "Use the board as an executive framing tool first: mature baseline, visible watchlist, and clear guidance on what should stay out of the pack.",
-      metric: `${summary.gaDefaultTechnologyCount.toLocaleString()} GA-ready families to anchor the default brief`
+        "Use the workspace to scope the services, carry project comments, and export a focused artifact that is easier to explain to customers and account teams.",
+      metric: `${serviceIndex.services.length.toLocaleString()} services available for scoped design reviews`
     },
     {
-      audience: "Architecture",
-      title: "See the service path before diving into family-level depth.",
+      audience: "Solutions Architect",
+      title: "Move from service choice to region fit, cost, and checklist notes in one flow.",
       copy:
-        "Move from service posture to family confidence to item detail in the same sequence architects use when they prepare design reviews and challenge assumptions.",
-      metric: `${serviceIndex.services.length.toLocaleString()} Azure services organized into review-ready views`
+        "Open the service you are designing, verify region availability and restrictions, review public retail pricing, and then record project-specific checklist decisions.",
+      metric: `${summary.itemCount.toLocaleString()} normalized findings available when the design question becomes specific`
     },
     {
-      audience: "Delivery",
-      title: "Keep detailed findings useful without turning the homepage into a workbench.",
+      audience: "Cloud Engineer",
+      title: "Keep implementation notes tied to the exact findings that affect the build.",
       copy:
-        "The explorer remains the working surface for scoped findings, notes, and exports, while the homepage stays focused on decisions, direction, and confidence.",
-      metric: `${summary.itemCount.toLocaleString()} normalized findings available when the question becomes specific`
+        "Included, excluded, and not-applicable decisions stay attached to the active project review so handoff and follow-up are easier to track.",
+      metric: `${reviewWatchlistCount.toLocaleString()} non-baseline families still stay visible when extra validation is needed`
     }
   ];
   const productProof = [
     {
-      title: "Every recommendation keeps its source trail.",
+      title: "The review follows the project scope, not the repository structure.",
       copy:
-        "Family detail pages and item views preserve checklist lineage so teams can validate the advice instead of trusting a detached summary."
+        "Users start with the services they actually need, then keep only those services in the exported artifact."
     },
     {
-      title: "Maturity is visible, not hand-waved.",
+      title: "Regional availability and retail pricing are part of the same service review.",
       copy:
-        "GA, preview, mixed, and deprecated guidance stay clearly separated so leadership does not mistake advisory content for a default baseline."
+        "A reviewer can check availability, restricted regions like UAE Central, and pricing context without leaving the service workflow."
     },
     {
-      title: "The workflow mirrors real Azure reviews.",
+      title: "Every project note stays attached to a real checklist item.",
       copy:
-        "Service-first entry, family context, and local working notes reflect how architects actually prepare reviews instead of imitating a generic AI dashboard."
+        "That makes the export useful in design documents, customer handoff, and implementation reviews because the reasoning stays traceable."
     }
   ];
 
@@ -119,62 +126,53 @@ export function DashboardHome({
         <div className="editorial-hero-layout">
           <div className="editorial-hero-copy">
             <div className="hero-kicker-row">
-              <span className="hero-kicker">Decision-ready</span>
+              <span className="hero-kicker">Project-first</span>
               <span className="hero-kicker">Source-backed</span>
-              <span className="hero-kicker">Service-first</span>
+              <span className="hero-kicker">Export-ready</span>
             </div>
             <p className="eyebrow">{SITE_NAME}</p>
-            <h1 className="hero-title">Review decisions that stand up in the room.</h1>
+            <h1 className="hero-title">Start a project review and keep only the services that matter.</h1>
             <p className="hero-copy">
-              Use source-backed Azure review guidance to show what leadership can rely on,
-              what architects should validate next, and what teams should treat as advisory
-              until it earns more confidence.
+              Create one project review, add the Azure services in scope, check region availability
+              and pricing, capture project-specific checklist notes, and export a customer-ready
+              artifact without dragging the whole catalog into the conversation.
             </p>
             <p className="hero-note">
-              Generated {generatedDate}. This workspace is designed to shorten review
-              preparation, surface risk earlier, and keep every recommendation connected to
-              proof instead of polished but untraceable AI output.
+              Generated {generatedDate}. This workspace is designed to shorten review preparation,
+              keep notes tied to real findings, and produce a project-specific export that feels more
+              useful than a generic AI-generated summary.
             </p>
             <div className="hero-actions">
-              <a href="#executive" className="primary-button">
-                See executive summary
-              </a>
+              <Link href="/review-package" className="primary-button">
+                Start project review
+              </Link>
               <Link href="/services" className="secondary-button">
                 Browse services
               </Link>
-              <Link href="/how-to-use" className="ghost-button">
-                Review guidance
+              <Link href="/data-health" className="ghost-button">
+                Check live data health
               </Link>
             </div>
           </div>
           <aside className="leadership-brief boardroom-brief">
-            <p className="eyebrow">Boardroom brief</p>
-            <h2 className="leadership-title">What changes in the first five minutes.</h2>
+            <p className="eyebrow">Project review in four moves</p>
+            <h2 className="leadership-title">What the user should understand immediately.</h2>
             <div className="leadership-list">
               <article>
-                <strong>Baseline</strong>
-                <p>
-                  Start with {summary.gaDefaultTechnologyCount.toLocaleString()} GA-ready
-                  families and {summary.gaReadyItemCount.toLocaleString()} mature items.
-                </p>
+                <strong>Create the review</strong>
+                <p>Name the project, audience, target regions, and business scope once.</p>
               </article>
               <article>
-                <strong>Risk concentration</strong>
-                <p>
-                  {highSeverityMetric?.value.toLocaleString() ?? "0"} high-severity findings
-                  remain visible across the full catalog.
-                </p>
+                <strong>Add the services</strong>
+                <p>Keep only the Azure components that belong to the design under review.</p>
               </article>
               <article>
-                <strong>Leadership action</strong>
-                <p>
-                  Validate {reviewWatchlistCount.toLocaleString()} lower-confidence families
-                  before using them in executive decision packs.
-                </p>
+                <strong>Review and export</strong>
+                <p>Capture project notes on findings and download the scoped checklist and pricing artifact.</p>
               </article>
             </div>
             <div className="boardroom-mini-grid">
-              {boardroomSignals.map((signal) => (
+              {workflowSignals.map((signal) => (
                 <article className="boardroom-mini-card" key={signal.title}>
                   <strong>{signal.title}</strong>
                   <p>{signal.copy}</p>
@@ -185,19 +183,19 @@ export function DashboardHome({
         </div>
         <div className="hero-metrics-row">
           <article className="hero-metric-card">
+            <span>Services ready to review</span>
+            <strong>{serviceIndex.services.length.toLocaleString()}</strong>
+            <p>Azure services that can be pulled into a project-specific review flow.</p>
+          </article>
+          <article className="hero-metric-card">
             <span>GA-ready baseline</span>
             <strong>{summary.gaDefaultTechnologyCount.toLocaleString()}</strong>
-            <p>Mature checklist families suitable for the default executive view.</p>
+            <p>Mature families that can anchor the default recommendation set.</p>
           </article>
           <article className="hero-metric-card">
             <span>High-severity findings</span>
             <strong>{highSeverityMetric?.value.toLocaleString() ?? "0"}</strong>
-            <p>Risk signal across the full catalog, including preview and deprecated sources.</p>
-          </article>
-          <article className="hero-metric-card">
-            <span>Review watchlist</span>
-            <strong>{reviewWatchlistCount.toLocaleString()}</strong>
-            <p>Families that require explicit review judgment before heavy reliance.</p>
+            <p>Design and operational risks that should be reviewed earlier in the project cycle.</p>
           </article>
         </div>
       </section>
@@ -205,42 +203,34 @@ export function DashboardHome({
       <section className="surface-panel editorial-section executive-brief-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Choose your starting path</p>
+            <p className="eyebrow">How the workflow works</p>
             <h2 className="section-title">
-              Make the first click obvious, then widen only when the review needs more depth.
+              Make the first click obvious, then keep moving in the same project review flow.
             </h2>
             <p className="section-copy">
-              The product works best when it behaves like a guided review workspace, not a wall of
-              equally weighted content. These are the three clean entry points most teams need.
+              The easiest experience is not to browse the whole product. It is to start a project
+              review, add services, review findings, and export only what belongs to that solution.
             </p>
           </div>
         </div>
         <div className="start-here-grid">
-          {quickStartPaths.map((path) => {
-            const buttonClass = path.href ? "primary-button" : "secondary-button";
-
-            return (
-              <article className="path-card" key={path.title}>
-                <div className="path-card-topline">
-                  <span className="path-card-number">{path.step}</span>
-                  <span className="path-card-audience">{path.audience}</span>
-                </div>
-                <p className="eyebrow">{path.eyebrow}</p>
-                <h3>{path.title}</h3>
-                <p>{path.copy}</p>
-                <p className="path-card-meta">{path.meta}</p>
-                {path.href ? (
-                  <Link href={path.href} className={buttonClass}>
-                    {path.cta}
-                  </Link>
-                ) : (
-                  <a href={path.anchor} className={buttonClass}>
-                    {path.cta}
-                  </a>
-                )}
-              </article>
-            );
-          })}
+          {reviewSteps.map((step) => (
+            <article className="path-card" key={step.title}>
+              <div className="path-card-topline">
+                <span className="path-card-number">{step.step}</span>
+              </div>
+              <p className="eyebrow">{step.eyebrow}</p>
+              <h3>{step.title}</h3>
+              <p>{step.copy}</p>
+              <p className="path-card-meta">{step.meta}</p>
+              <Link
+                href={step.href}
+                className={step.step === "01" ? "primary-button" : "secondary-button"}
+              >
+                {step.cta}
+              </Link>
+            </article>
+          ))}
         </div>
       </section>
 
@@ -249,11 +239,11 @@ export function DashboardHome({
           <div>
             <p className="eyebrow">Who this helps first</p>
             <h2 className="section-title">
-              One product, three clear jobs: leadership framing, architecture guidance, and delivery depth.
+              Built for the people who need to scope, explain, and hand off Azure designs.
             </h2>
             <p className="section-copy">
-              The site becomes more intuitive when each audience can immediately see what it gets
-              from the workspace and what it should ignore for now.
+              The product becomes easier to use when each audience can see how the same project review
+              workspace supports its own job to be done.
             </p>
           </div>
         </div>
@@ -272,22 +262,22 @@ export function DashboardHome({
       <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Why this stands up in the room</p>
+            <p className="eyebrow">Why this feels useful</p>
             <h2 className="section-title">
-              Built for accountable review decisions, not generic AI summarization.
+              Better than a generic AI-generated site because the review stays scoped and traceable.
             </h2>
             <p className="section-copy">
-              A generic AI-generated site can summarize checklist content. This product is more
-              useful because it keeps proof, confidence, and review workflow visible at every step.
+              A generic summary tool can paraphrase Azure guidance. This product is more valuable
+              because it stays aligned to project scope, service decisions, and exportable review notes.
             </p>
           </div>
         </div>
         <article className="proof-spotlight">
-          <p className="eyebrow">What makes it feel non-generic</p>
-          <h3>Evidence and confidence travel with the recommendation, not as an afterthought.</h3>
+          <p className="eyebrow">What users actually get</p>
+          <h3>One project review that keeps services, notes, regional fit, and pricing connected.</h3>
           <p>
-            That is the difference between a site that merely looks polished and a review product
-            teams will trust in architecture reviews, steering meetings, and customer-facing conversations.
+            That is what makes the output reusable in design documents, customer reviews, and
+            delivery handoff instead of becoming another polished summary that has to be rewritten later.
           </p>
         </article>
         <div className="proof-grid">
@@ -307,16 +297,16 @@ export function DashboardHome({
           <div>
             <p className="eyebrow">Browse by Azure service</p>
             <h2 className="section-title">
-              Start with the service you are designing or reviewing, then open the right checklist path.
+              Start with the Azure service you are designing, then add it into the project review.
             </h2>
             <p className="section-copy">
-              This is the clearest entry point when the question is service-specific: Azure Firewall,
-              Key Vault, AKS, Azure OpenAI, App Service, and the rest now have dedicated service views.
+              Service pages are the clearest working surface when the question is practical: can we
+              use this service, in which regions, at what price range, and which findings belong in the review?
             </p>
           </div>
           <div className="button-row">
             <Link href="/services" className="primary-button">
-              View all services
+              Browse all services
             </Link>
           </div>
         </div>
@@ -355,7 +345,10 @@ export function DashboardHome({
               </div>
               <div className="button-row">
                 <Link href={`/services/${service.slug}`} className="secondary-button">
-                  Open service view
+                  Open service review
+                </Link>
+                <Link href="/review-package" className="ghost-button">
+                  Open project review
                 </Link>
               </div>
             </article>
@@ -366,14 +359,13 @@ export function DashboardHome({
       <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Detailed explorer</p>
+            <p className="eyebrow">Advanced tools</p>
             <h2 className="section-title">
-              Open the explorer only when the review question becomes specific.
+              Use the explorer only when you already know the question you are asking.
             </h2>
             <p className="section-copy">
-              The homepage stays focused on decisions and entry points. The explorer is a dedicated
-              workspace for filtering, local-only notes, and exportable result sets once the scope
-              is clear.
+              The homepage should point people into the project review workflow first. The explorer
+              stays useful for deeper filtering, cross-service search, and narrower triage once the scope is clear.
             </p>
           </div>
           <div className="button-row">
@@ -388,24 +380,24 @@ export function DashboardHome({
 
         <div className="future-grid">
           <article className="future-card">
-            <h3>GA-first by default</h3>
+            <h3>Search when the scope is clear</h3>
             <p>
-              Start with mature guidance, then widen into preview-led findings only when the
-              review question genuinely requires extra depth.
+              Use the explorer after the service or design concern is known, not as the first screen
+              for every user.
             </p>
           </article>
           <article className="future-card">
-            <h3>Local-only working notes</h3>
+            <h3>Keep project notes on service pages</h3>
             <p>
-              Capture review notes in the browser without implying shared workflow, durable
-              records, or enterprise governance that is not present.
+              The service view and project review workspace should remain the default place to make
+              project decisions and build the export artifact.
             </p>
           </article>
           <article className="future-card">
-            <h3>Export from the filtered view</h3>
+            <h3>Export only what belongs to the design</h3>
             <p>
-              Export the current result set once the scope is clear, rather than forcing detailed
-              working controls onto the homepage.
+              The goal is a project-ready artifact, not a dump of everything the source repository
+              happens to contain.
             </p>
           </article>
         </div>

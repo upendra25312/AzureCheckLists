@@ -211,6 +211,59 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
   const startingRetailPrice = pricingSnapshots
     .map((pricing) => pricing.startsAtRetailPrice)
     .filter((price) => price !== undefined) as number[];
+  const projectReviewSteps = [
+    {
+      step: "01",
+      title: "Create the project review",
+      copy: "Name the project, audience, target regions, and scope so every note stays tied to one solution."
+    },
+    {
+      step: "02",
+      title: "Add the Azure services in scope",
+      copy: "Keep only the components that actually belong to this design so the export stays focused."
+    },
+    {
+      step: "03",
+      title: "Open service pages and write project notes",
+      copy: "From each selected service, open findings, mark them as included or not applicable, and capture your comments."
+    },
+    {
+      step: "04",
+      title: "Download the design notes and pricing snapshot",
+      copy: "Export only the selected services and their project-specific notes in the format that suits the audience."
+    }
+  ];
+  const selectedServiceProgress = useMemo(
+    () =>
+      selectedServices.map((service) => {
+        const serviceNameSet = new Set(
+          [service.service, ...service.aliases].map((value) => value.trim().toLowerCase())
+        );
+        const serviceItems = packageItems.filter((item) => {
+          if (item.serviceSlug && item.serviceSlug === service.slug) {
+            return true;
+          }
+
+          const serviceName = (item.serviceCanonical ?? item.service ?? "").trim().toLowerCase();
+          return serviceName ? serviceNameSet.has(serviceName) : false;
+        });
+
+        return {
+          service,
+          itemCount: serviceItems.length,
+          includedCount: serviceItems.filter(
+            (item) => (reviews[item.guid]?.packageDecision ?? "Needs Review") === "Include"
+          ).length,
+          notApplicableCount: serviceItems.filter(
+            (item) => (reviews[item.guid]?.packageDecision ?? "Needs Review") === "Not Applicable"
+          ).length,
+          pendingCount: serviceItems.filter(
+            (item) => (reviews[item.guid]?.packageDecision ?? "Needs Review") === "Needs Review"
+          ).length
+        };
+      }),
+    [packageItems, reviews, selectedServices]
+  );
 
   useEffect(() => {
     let active = true;
@@ -335,7 +388,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
     }
 
     downloadCsv(
-      `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "review-package"}.csv`,
+      `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}.csv`,
       buildPackageExportRows(activePackage, packageItems, reviews, {
         includeNotApplicable,
         includeNeedsReview
@@ -349,7 +402,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
     }
 
     downloadText(
-      `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "review-package"}.md`,
+      `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}.md`,
       buildPackageMarkdown(activePackage, packageItems, reviews, {
         includeNotApplicable,
         includeNeedsReview
@@ -364,7 +417,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
     }
 
     downloadText(
-      `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "review-package"}.txt`,
+      `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}.txt`,
       buildPackageText(activePackage, packageItems, reviews, {
         includeNotApplicable,
         includeNeedsReview
@@ -378,7 +431,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
     }
 
     downloadCsv(
-      `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "review-package"}-pricing.csv`,
+      `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}-pricing.csv`,
       buildPackagePricingRows(activePackage, pricingSnapshots)
     );
   }
@@ -389,7 +442,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
     }
 
     downloadText(
-      `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "review-package"}-pricing.md`,
+      `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}-pricing.md`,
       buildPackagePricingMarkdown(activePackage, pricingSnapshots),
       "text/markdown;charset=utf-8"
     );
@@ -401,7 +454,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
     }
 
     downloadText(
-      `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "review-package"}-pricing.txt`,
+      `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}-pricing.txt`,
       buildPackagePricingText(activePackage, pricingSnapshots)
     );
   }
@@ -412,16 +465,15 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
         <div className="editorial-hero-layout">
           <div className="editorial-hero-copy">
             <p className="eyebrow">Project review</p>
-            <h1 className="hero-title">Scope the project once, then keep only the services that matter.</h1>
+            <h1 className="hero-title">Create one project review, then keep every note tied to that solution.</h1>
             <p className="hero-copy">
-              Build a project package for a specific customer or solution, select only the Azure
-              services in scope, review findings with project-specific notes, and export a clean
-              handoff in CSV, Markdown, or text.
+              Start with the customer or workload, add only the Azure services that belong to it,
+              review the relevant findings, and export design notes and pricing that stay scoped to
+              that single project.
             </p>
             <p className="hero-note">
-              This is the right workflow for cloud architects, pre-sales architects, sales
-              architects, and senior reviewers who need a project-specific checklist instead of the
-              full source catalog.
+              This is the clearest workflow for cloud architects, pre-sales, sales architects, and
+              senior reviewers who need a project-ready artifact instead of the full source catalog.
             </p>
             <div className="hero-actions">
               <Link href="/services" className="secondary-button">
@@ -435,11 +487,11 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
 
           <aside className="leadership-brief">
             <p className="eyebrow">Why this matters</p>
-            <h2 className="leadership-title">One package, one project, one review story.</h2>
+            <h2 className="leadership-title">One project review, one project story.</h2>
             <div className="leadership-list">
               <article>
                 <strong>Scoped services</strong>
-                <p>Keep only the Azure services that belong to the current solution in the package.</p>
+                <p>Keep only the Azure services that belong to the current solution in the review.</p>
               </article>
               <article>
                 <strong>Project-specific notes</strong>
@@ -447,21 +499,45 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
               </article>
               <article>
                 <strong>Commercial fit</strong>
-                <p>Regional availability and public retail pricing now follow the same package scope and target regions.</p>
+                <p>Regional availability and public retail pricing now follow the same project review scope and target regions.</p>
               </article>
             </div>
           </aside>
         </div>
       </section>
 
+      <section className="surface-panel editorial-section executive-brief-section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">How to use this page</p>
+            <h2 className="section-title">Follow the same four steps every time you build a customer review artifact.</h2>
+            <p className="section-copy">
+              The goal of this page is to make the workflow obvious: create the review, add services,
+              write notes on the selected service pages, and then export only what belongs to the design.
+            </p>
+          </div>
+        </div>
+        <div className="start-here-grid">
+          {projectReviewSteps.map((step) => (
+            <article className="path-card" key={step.step}>
+              <div className="path-card-topline">
+                <span className="path-card-number">{step.step}</span>
+              </div>
+              <h3>{step.title}</h3>
+              <p>{step.copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Package setup</p>
-            <h2 className="section-title">Create or activate the project package that should receive notes.</h2>
+            <p className="eyebrow">Step 1</p>
+            <h2 className="section-title">Create or activate the project review that should receive notes.</h2>
             <p className="section-copy">
-              Notes entered on service and explorer pages are scoped to the active package. If no
-              package is active, the app falls back to local-only general notes.
+              Notes entered on service and explorer pages are scoped to the active project review.
+              If no review is active, the app falls back to local-only general notes.
             </p>
           </div>
         </div>
@@ -470,13 +546,13 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
           <article className="filter-card package-card">
             <div className="filter-grid">
               <label>
-                <span className="microcopy">Active package</span>
+                <span className="microcopy">Active project review</span>
                 <select
                   className="field-select"
                   value={activePackageId ?? ""}
                   onChange={(event) => handleSelectPackage(event.target.value)}
                 >
-                  <option value="">No active package</option>
+                  <option value="">No active project review</option>
                   {packages.map((reviewPackage) => (
                     <option key={reviewPackage.id} value={reviewPackage.id}>
                       {reviewPackage.name}
@@ -486,7 +562,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
               </label>
 
               <label>
-                <span className="microcopy">Package name</span>
+                <span className="microcopy">Project review name</span>
                 <input
                   className="field-input"
                   value={form.name}
@@ -542,7 +618,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
 
             <div className="button-row">
               <button type="button" className="primary-button" onClick={handleCreatePackage}>
-                Create package
+                Create project review
               </button>
               <button
                 type="button"
@@ -550,7 +626,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
                 onClick={handleSavePackageDetails}
                 disabled={!activePackage}
               >
-                Save package details
+                Save review details
               </button>
               <button
                 type="button"
@@ -558,13 +634,13 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
                 onClick={handleDeletePackage}
                 disabled={!activePackage}
               >
-                Delete package
+                Delete review
               </button>
             </div>
           </article>
 
           <article className="filter-card package-card">
-            <p className="eyebrow">Package summary</p>
+            <p className="eyebrow">Project summary</p>
             <div className="package-stats-grid">
               <article className="hero-metric-card">
                 <span>Services in scope</span>
@@ -574,7 +650,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
               <article className="hero-metric-card">
                 <span>Included findings</span>
                 <strong>{includedCount.toLocaleString()}</strong>
-                <p>Findings explicitly marked for the project package.</p>
+                <p>Findings explicitly marked for the active project review.</p>
               </article>
               <article className="hero-metric-card">
                 <span>Not applicable</span>
@@ -594,10 +670,10 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
       <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Service scope</p>
+            <p className="eyebrow">Step 2</p>
             <h2 className="section-title">Choose only the Azure services that belong to this solution.</h2>
             <p className="section-copy">
-              Start with the solution scope, then toggle services in or out of the project package.
+              Start with the solution scope, then toggle services in or out of the project review.
               You can still review the full catalog from the service and explorer pages.
             </p>
           </div>
@@ -612,11 +688,11 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
               className="search-input"
               type="search"
               value={serviceSearch}
-              placeholder="Search services to add into the package"
+              placeholder="Search services to add into the project review"
               onChange={(event) => setServiceSearch(event.target.value)}
             />
             <p className="microcopy">
-              Package selection should reflect the actual solution scope, not every adjacent service
+              Service selection should reflect the actual solution scope, not every adjacent service
               that appears in the source repository.
             </p>
           </div>
@@ -634,7 +710,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
                     <h3>{service.service}</h3>
                   </div>
                   <span className="chip">
-                    {selected ? "In package" : "Not in package"}
+                    {selected ? "In project review" : "Not in project review"}
                   </span>
                 </div>
                 <p className="microcopy">{service.description}</p>
@@ -645,10 +721,10 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
                     disabled={!activePackage}
                     onClick={() => toggleServiceSelection(service.slug)}
                   >
-                    {selected ? "Remove from package" : "Add to package"}
+                    {selected ? "Remove from review" : "Add to review"}
                   </button>
                   <Link href={`/services/${service.slug}`} className="muted-link">
-                    Open service view
+                    Open service review
                   </Link>
                 </div>
               </article>
@@ -660,7 +736,58 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
       <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Export package</p>
+            <p className="eyebrow">Step 3</p>
+            <h2 className="section-title">Open the selected service pages and write project-specific notes.</h2>
+            <p className="section-copy">
+              This is where the real review happens. Open a selected service, review findings, and
+              record why each relevant item is included, not applicable, excluded, or still pending.
+            </p>
+          </div>
+        </div>
+
+        {selectedServiceProgress.length > 0 ? (
+          <div className="service-selection-grid">
+            {selectedServiceProgress.map((entry) => (
+              <article className="future-card service-selection-card" key={entry.service.slug}>
+                <div className="section-head">
+                  <div>
+                    <p className="eyebrow">Service review</p>
+                    <h3>{entry.service.service}</h3>
+                  </div>
+                  <span className="chip">{entry.itemCount.toLocaleString()} findings</span>
+                </div>
+                <p className="microcopy">
+                  {entry.includedCount.toLocaleString()} included, {entry.notApplicableCount.toLocaleString()} not applicable,
+                  and {entry.pendingCount.toLocaleString()} still waiting for a project decision.
+                </p>
+                <div className="chip-row">
+                  <span className="chip">{entry.service.familyCount.toLocaleString()} families</span>
+                  <span className="chip">{entry.service.itemCount.toLocaleString()} total service findings</span>
+                </div>
+                <div className="button-row">
+                  <Link href={`/services/${entry.service.slug}`} className="secondary-button">
+                    Open service review
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <section className="filter-card">
+            <p className="eyebrow">No services selected yet</p>
+            <h3>Add services first, then come back here to continue the review.</h3>
+            <p className="microcopy">
+              Once services are in scope, this section becomes the quickest way to jump back into the
+              exact service pages where you should record project notes.
+            </p>
+          </section>
+        )}
+      </section>
+
+      <section className="surface-panel editorial-section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Step 4</p>
             <h2 className="section-title">Download only the scoped services and their project notes.</h2>
             <p className="section-copy">
               CSV works well for spreadsheets and action tracking. Markdown and text are better for
@@ -696,7 +823,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
                 disabled={!activePackage || packageItems.length === 0}
                 onClick={exportPackageCsv}
               >
-                Download CSV
+                Download checklist CSV
               </button>
               <button
                 type="button"
@@ -704,7 +831,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
                 disabled={!activePackage || packageItems.length === 0}
                 onClick={exportPackageMarkdown}
               >
-                Download Markdown
+                Download design Markdown
               </button>
               <button
                 type="button"
@@ -712,18 +839,18 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
                 disabled={!activePackage || packageItems.length === 0}
                 onClick={exportPackageText}
               >
-                Download text
+                Download plain text notes
               </button>
             </div>
           </article>
 
           <article className="leadership-brief package-card">
-            <p className="eyebrow">Package guidance</p>
+            <p className="eyebrow">Project review guidance</p>
             <h2 className="leadership-title">Notes, regional fit, and pricing now share the same project scope.</h2>
             <div className="leadership-list">
               <article>
                 <strong>Target regions</strong>
-                <p>Package target regions now drive the default filter for service availability, restrictions, and pricing emphasis.</p>
+                <p>Project review target regions now drive the default filter for service availability, restrictions, and pricing emphasis.</p>
               </article>
               <article>
                 <strong>Pricing baseline</strong>
@@ -742,10 +869,10 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
         <div className="section-head">
           <div>
             <p className="eyebrow">Commercial snapshot</p>
-            <h2 className="section-title">Export pricing only for the services included in this package.</h2>
+            <h2 className="section-title">Export pricing only for the services included in this project review.</h2>
             <p className="section-copy">
               This commercial view follows the selected services and target regions from the active
-              package, so pre-sales and solution teams can carry a focused retail pricing snapshot
+              project review, so pre-sales and solution teams can carry a focused retail pricing snapshot
               instead of the full Azure catalog.
             </p>
           </div>
@@ -771,7 +898,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
                     ? formatRetailPrice(Math.min(...startingRetailPrice), pricingSnapshots[0]?.currencyCode ?? "USD")
                     : "Not published"}
                 </strong>
-                <p>Lowest retail row across the scoped services in this package.</p>
+                <p>Lowest retail row across the scoped services in this project review.</p>
               </article>
               <article className="hero-metric-card">
                 <span>Target regions</span>
@@ -814,11 +941,11 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
             <div className="leadership-list">
               <article>
                 <strong>Retail baseline</strong>
-                <p>The package snapshot uses Microsoft public retail pricing so the numbers are sourced and repeatable.</p>
+                <p>The project review snapshot uses Microsoft public retail pricing so the numbers are sourced and repeatable.</p>
               </article>
               <article>
                 <strong>Target-region bias</strong>
-                <p>Pricing queries stay global, but the package highlights rows that line up with the target deployment regions.</p>
+                <p>Pricing queries stay global, but the project review highlights rows that line up with the target deployment regions.</p>
               </article>
               <article>
                 <strong>Refine later</strong>
@@ -833,7 +960,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
             <p className="eyebrow">Pricing load</p>
             <h3>Loading retail pricing for the selected services.</h3>
             <p className="microcopy">
-              The package is querying Microsoft’s Azure Retail Prices API for every service in scope.
+              The project review is querying Microsoft’s Azure Retail Prices API for every service in scope.
             </p>
           </section>
         ) : null}
@@ -860,7 +987,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
                 <p className="microcopy">
                   {pricing.mapped
                     ? `${pricing.skuCount.toLocaleString()} SKUs, ${pricing.billingLocationCount.toLocaleString()} billing locations, and ${pricing.targetRegionMatchCount.toLocaleString()} target-region matches are currently published.`
-                    : "No retail pricing mapping is published for this service yet in the current package workflow."}
+                    : "No retail pricing mapping is published for this service yet in the current project review workflow."}
                 </p>
                 <div className="chip-row">
                   <span className="chip">

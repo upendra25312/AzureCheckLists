@@ -148,8 +148,9 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
           <h1 className="technology-title">{payload.service.service}</h1>
           <p className="technology-summary">{payload.service.description}</p>
           <p className="hero-note">
-            Generated {generatedDate}. Use this page to decide what should lead the review for
-            this service, what should broaden the discussion, and what still needs explicit validation.
+            Generated {generatedDate}. Use this page to decide whether this service belongs in the
+            design, where it can run, what the public pricing looks like, and which findings need
+            project-specific notes.
           </p>
           <div className="button-row">
             <Link href="/services" className="secondary-button">
@@ -195,19 +196,19 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
         {activePackage ? (
           <div className="package-context-grid">
             <div>
-              <p className="eyebrow">Active package</p>
+              <p className="eyebrow">Active project review</p>
               <h2 className="section-title">{activePackage.name}</h2>
               <p className="section-copy">
-                Notes on this page are being written into the active project package for{" "}
-                {activePackage.audience}. Add this service to the package scope if it belongs in the
+                Notes on this page are being written into the active project review for{" "}
+                {activePackage.audience}. Add this service to the review scope if it belongs in the
                 current solution.
               </p>
             </div>
             <div className="package-context-actions">
               <span className="chip">
                 {activePackage.selectedServiceSlugs.includes(payload.service.slug)
-                  ? "Service already in package"
-                  : "Service not yet in package"}
+                  ? "Service already in review"
+                  : "Service not yet in review"}
               </span>
               <div className="button-row">
                 <button
@@ -241,6 +242,26 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
             </div>
           </div>
         )}
+      </section>
+
+      <section className="surface-panel story-ribbon">
+        <div className="decision-cue-grid">
+          <article className="decision-cue-card">
+            <span>Step 1</span>
+            <strong>Add the service to the project review</strong>
+            <p>Do this first when the service really belongs to the customer design.</p>
+          </article>
+          <article className="decision-cue-card">
+            <span>Step 2</span>
+            <strong>Check regional fit and public pricing</strong>
+            <p>Use the sections below to see availability, restrictions, and current retail pricing.</p>
+          </article>
+          <article className="decision-cue-card">
+            <span>Step 3</span>
+            <strong>Open findings and leave project notes</strong>
+            <p>Mark items as included, not applicable, or excluded, then capture comments and evidence.</p>
+          </article>
+        </div>
       </section>
 
       <ServiceRegionalFitPanel

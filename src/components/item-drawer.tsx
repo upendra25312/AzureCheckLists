@@ -1,16 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ChecklistItem, PackageDecision, ReviewDraft, ReviewState } from "@/types";
-
-const REVIEW_STATES: ReviewState[] = [
-  "Not Reviewed",
-  "Compliant",
-  "Non-Compliant",
-  "Partially Compliant",
-  "Not Applicable",
-  "Exception Accepted"
-];
+import type { ChecklistItem, PackageDecision, ReviewDraft } from "@/types";
 
 const PACKAGE_DECISIONS: PackageDecision[] = [
   "Needs Review",
@@ -18,6 +9,12 @@ const PACKAGE_DECISIONS: PackageDecision[] = [
   "Not Applicable",
   "Exclude"
 ];
+const PACKAGE_DECISION_LABELS: Record<PackageDecision, string> = {
+  "Needs Review": "Needs review",
+  Include: "Include in review",
+  "Not Applicable": "Not applicable",
+  Exclude: "Exclude from review"
+};
 
 type ItemDrawerProps = {
   item: ChecklistItem;
@@ -94,7 +91,7 @@ export function ItemDrawer({ item, review, onClose, onUpdate, activePackageName 
         </section>
 
         <section className="drawer-section">
-          <h3>Review record</h3>
+          <h3>Project notes</h3>
           <p className="microcopy">
             {activePackageName
               ? `Edit the project decision for ${activePackageName} here. These notes stay scoped to the active project review in this browser and can be exported from the project review workspace.`
@@ -102,7 +99,7 @@ export function ItemDrawer({ item, review, onClose, onUpdate, activePackageName 
           </p>
           <div className="filter-grid">
             <label>
-              <span className="microcopy">Package decision</span>
+              <span className="microcopy">Project action</span>
               <select
                 className="field-select"
                 value={review.packageDecision ?? "Needs Review"}
@@ -112,24 +109,7 @@ export function ItemDrawer({ item, review, onClose, onUpdate, activePackageName 
               >
                 {PACKAGE_DECISIONS.map((state) => (
                   <option key={state} value={state}>
-                    {state}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              <span className="microcopy">Review status</span>
-              <select
-                className="field-select"
-                value={review.reviewState ?? "Not Reviewed"}
-                onChange={(event) =>
-                  onUpdate({ reviewState: event.target.value as ReviewState })
-                }
-              >
-                {REVIEW_STATES.map((state) => (
-                  <option key={state} value={state}>
-                    {state}
+                    {PACKAGE_DECISION_LABELS[state]}
                   </option>
                 ))}
               </select>
@@ -182,16 +162,6 @@ export function ItemDrawer({ item, review, onClose, onUpdate, activePackageName 
                   });
                 }}
                 placeholder="One link per line"
-              />
-            </label>
-
-            <label>
-              <span className="microcopy">Exception reason</span>
-              <textarea
-                className="field-textarea"
-                value={review.exceptionReason}
-                onChange={(event) => onUpdate({ exceptionReason: event.target.value })}
-                placeholder="Optional rationale when recording an accepted exception."
               />
             </label>
           </div>

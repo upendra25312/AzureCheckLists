@@ -109,7 +109,7 @@ export function ServicePricingPanel({
             <h2 className="section-title">Loading public retail pricing for this service.</h2>
             <p className="section-copy">
               Pricing is pulled from Microsoft’s Azure Retail Prices API so pre-sales and solution
-              teams can see real SKU and region meter data before creating a package export.
+              teams can see real SKU and region meter data before creating a project review export.
             </p>
           </div>
         </div>
@@ -180,7 +180,7 @@ export function ServicePricingPanel({
           <h2 className="section-title">See the current public retail pricing by SKU, meter, and billing location.</h2>
           <p className="section-copy">
             This view is designed for pre-sales, solution architects, and sales teams who need list
-            pricing visibility while scoping a service. Regional filters follow the active package when present.
+            pricing visibility while scoping a service. Regional filters follow the active project review when present.
           </p>
         </div>
         {targetRegions.length > 0 ? (
@@ -217,7 +217,7 @@ export function ServicePricingPanel({
         <article className="hero-metric-card">
           <span>Target-region matches</span>
           <strong>{pricing.targetRegionMatchCount.toLocaleString()}</strong>
-          <p>Pricing locations that match the active package target regions.</p>
+          <p>Pricing locations that match the active project review target regions.</p>
         </article>
       </div>
 
@@ -338,7 +338,7 @@ export function ServicePricingPanel({
           <p className="eyebrow">No pricing rows in view</p>
           <h3>Broaden the pricing filter to see more SKU and meter rows.</h3>
           <p className="microcopy">
-            This can happen when the active package target regions do not line up with the current
+            This can happen when the active project review target regions do not line up with the current
             retail billing locations published for the service.
           </p>
         </section>
@@ -349,7 +349,7 @@ export function ServicePricingPanel({
           <p className="eyebrow">Result cap</p>
           <h3>Showing the first 200 pricing rows for readability.</h3>
           <p className="microcopy">
-            Export the package commercial snapshot to download every selected pricing row.
+            Export the project review commercial snapshot to download every selected pricing row.
           </p>
         </section>
       ) : null}

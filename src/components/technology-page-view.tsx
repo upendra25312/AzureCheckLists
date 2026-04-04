@@ -156,11 +156,11 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
         <section className="filter-card package-context-card">
           <div className="package-context-grid">
             <div>
-              <p className="eyebrow">Active package</p>
+              <p className="eyebrow">Active project review</p>
               <h2 className="section-title">{activePackage.name}</h2>
               <p className="section-copy">
-                Notes in this family view are being captured under the active project package for{" "}
-                {activePackage.audience}. Package decisions remain scoped to that project.
+                Notes in this family view are being captured under the active project review for{" "}
+                {activePackage.audience}. Project decisions remain scoped to that solution.
               </p>
             </div>
             <div className="package-context-actions">

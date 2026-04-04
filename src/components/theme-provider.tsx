@@ -10,7 +10,7 @@ import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 type Theme = "light" | "dark";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Overview" },
+  { href: "/", label: "Start review" },
   { href: "/services", label: "Services" },
   { href: "/review-package", label: "Project review" },
   { href: "/data-health", label: "Data health" },

@@ -300,8 +300,8 @@ export function ServiceRegionalFitPanel({
 
       {scope === "target" && targetRegions.length > 0 ? (
         <div className="filter-card">
-          <p className="eyebrow">Package region filter</p>
-          <h3>Showing the regions listed in the active project package.</h3>
+          <p className="eyebrow">Project review region filter</p>
+          <h3>Showing the regions listed in the active project review.</h3>
           <p className="microcopy">
             Target regions: {targetRegions.join(", ")}
             {missingTargetRegions.length > 0
@@ -360,7 +360,7 @@ export function ServiceRegionalFitPanel({
           <p className="eyebrow">No regional rows in view</p>
           <h3>There are no regional availability rows for the current filter.</h3>
           <p className="microcopy">
-            This can happen when the service is global or when the active package target regions do
+            This can happen when the service is global or when the active project review target regions do
             not intersect with Microsoft’s current public regional availability rows.
           </p>
         </section>

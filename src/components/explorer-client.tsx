@@ -241,10 +241,10 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
           <div className="filter-card package-context-card">
             <div className="package-context-grid">
               <div>
-                <p className="eyebrow">Active package</p>
+                <p className="eyebrow">Active project review</p>
                 <h3>{activePackage.name}</h3>
                 <p className="microcopy">
-                  Explorer notes are being written into the active project package for{" "}
+                  Explorer notes are being written into the active project review for{" "}
                   {activePackage.audience}. Service selection and exports can be managed from the
                   project review workspace.
                 </p>

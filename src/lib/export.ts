@@ -27,13 +27,11 @@ function formatReview(item: ChecklistItem, reviews: Record<string, ReviewDraft>)
   const review = reviews[item.guid] ?? undefined;
 
   return {
-    reviewState: review?.reviewState ?? "Not Reviewed",
-    packageDecision: review?.packageDecision ?? "Needs Review",
+    projectAction: review?.packageDecision ?? "Needs Review",
     comments: review?.comments ?? "",
     owner: review?.owner ?? "",
     dueDate: review?.dueDate ?? "",
-    evidenceLinks: review?.evidenceLinks.join(" | ") ?? "",
-    exceptionReason: review?.exceptionReason ?? ""
+    evidenceLinks: review?.evidenceLinks.join(" | ") ?? ""
   };
 }
 
@@ -102,13 +100,11 @@ export function buildExportRows(items: ChecklistItem[], reviews: Record<string, 
       description: item.description ?? "",
       sourcePath: item.sourcePath ?? "",
       sourceUrl: visibleSourceUrl(item.sourceUrl),
-      reviewState: review.reviewState,
-      packageDecision: review.packageDecision,
+      projectAction: review.projectAction,
       comments: review.comments,
       owner: review.owner,
       dueDate: review.dueDate,
-      evidenceLinks: review.evidenceLinks,
-      exceptionReason: review.exceptionReason
+      evidenceLinks: review.evidenceLinks
     };
   });
 }
@@ -125,7 +121,7 @@ export function buildPackageExportRows(
       const review = formatReview(item, reviews);
 
       return {
-        packageName: reviewPackage.name,
+        projectReviewName: reviewPackage.name,
         audience: reviewPackage.audience,
         businessScope: reviewPackage.businessScope,
         targetRegions: reviewPackage.targetRegions.join(" | "),
@@ -140,13 +136,11 @@ export function buildPackageExportRows(
         waf: item.waf ?? "",
         category: item.category ?? "",
         subcategory: item.subcategory ?? "",
-        reviewState: review.reviewState,
-        packageDecision: review.packageDecision,
+        projectAction: review.projectAction,
         comments: review.comments,
         owner: review.owner,
         dueDate: review.dueDate,
         evidenceLinks: review.evidenceLinks,
-        exceptionReason: review.exceptionReason,
         sourcePath: item.sourcePath ?? "",
         sourceUrl: visibleSourceUrl(item.sourceUrl)
       };
@@ -190,15 +184,13 @@ export function buildPackageMarkdown(
         const review = formatReview(item, reviews);
 
         lines.push(`### ${item.text}`);
-        lines.push(`- Package decision: ${review.packageDecision}`);
-        lines.push(`- Review status: ${review.reviewState}`);
+        lines.push(`- Project action: ${review.projectAction}`);
         lines.push(`- Checklist family: ${item.technology}`);
         lines.push(`- Severity: ${item.severity ?? "Unspecified"}`);
         if (review.owner) lines.push(`- Owner: ${review.owner}`);
         if (review.dueDate) lines.push(`- Due date: ${review.dueDate}`);
         if (review.comments) lines.push(`- Notes: ${review.comments}`);
         if (review.evidenceLinks) lines.push(`- Evidence: ${review.evidenceLinks}`);
-        if (review.exceptionReason) lines.push(`- Exception reason: ${review.exceptionReason}`);
         if (item.sourceUrl) lines.push(`- Source: ${visibleSourceUrl(item.sourceUrl) || item.sourceUrl}`);
         lines.push("");
       });
@@ -245,13 +237,11 @@ export function buildPackageText(
     lines.push(`Service: ${item.serviceCanonical ?? item.service ?? "Unmapped service"}`);
     lines.push(`Family: ${item.technology}`);
     lines.push(`Finding: ${item.text}`);
-    lines.push(`Package decision: ${review.packageDecision}`);
-    lines.push(`Review status: ${review.reviewState}`);
+    lines.push(`Project action: ${review.projectAction}`);
     if (review.comments) lines.push(`Notes: ${review.comments}`);
     if (review.evidenceLinks) lines.push(`Evidence: ${review.evidenceLinks}`);
     if (review.owner) lines.push(`Owner: ${review.owner}`);
     if (review.dueDate) lines.push(`Due date: ${review.dueDate}`);
-    if (review.exceptionReason) lines.push(`Exception reason: ${review.exceptionReason}`);
     lines.push("");
   });
 
@@ -267,7 +257,7 @@ export function buildPackagePricingRows(
   servicePricing.forEach((pricing) => {
     if (!pricing.mapped || pricing.rows.length === 0) {
       rows.push({
-        packageName: reviewPackage.name,
+        projectReviewName: reviewPackage.name,
         audience: reviewPackage.audience,
         businessScope: reviewPackage.businessScope,
         targetRegions: reviewPackage.targetRegions.join(" | "),
@@ -301,7 +291,7 @@ export function buildPackagePricingRows(
 
     pricing.rows.forEach((row) => {
       rows.push({
-        packageName: reviewPackage.name,
+        projectReviewName: reviewPackage.name,
         audience: reviewPackage.audience,
         businessScope: reviewPackage.businessScope,
         targetRegions: reviewPackage.targetRegions.join(" | "),
