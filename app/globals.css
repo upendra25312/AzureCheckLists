@@ -137,6 +137,73 @@ pre {
   gap: 18px;
 }
 
+.auth-menu {
+  position: relative;
+}
+
+.auth-menu summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.auth-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.auth-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-strong);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.auth-chip-pending {
+  color: var(--text-muted);
+}
+
+.auth-chip-signed-in {
+  max-width: min(34vw, 340px);
+}
+
+.auth-chip-label {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.auth-chip-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-menu-panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 30;
+  width: min(420px, 88vw);
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--bg-elevated);
+  box-shadow: 0 18px 50px rgba(13, 24, 38, 0.14);
+}
+
+.auth-menu-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
 .header-nav {
   align-items: center;
   gap: 20px;
@@ -1976,6 +2043,20 @@ button.chip:hover {
   .header-nav {
     width: 100%;
     gap: 14px;
+  }
+
+  .auth-menu {
+    width: 100%;
+  }
+
+  .auth-menu-panel {
+    position: static;
+    width: 100%;
+    margin-top: 12px;
+  }
+
+  .auth-chip-signed-in {
+    max-width: 100%;
   }
 
   .trust-banner-summary {

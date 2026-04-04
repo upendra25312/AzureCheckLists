@@ -1,18 +1,12 @@
 const { app } = require("@azure/functions");
 const { jsonResponse, requireAuthenticated } = require("../shared/auth");
-const { loadProjectReviewState, saveProjectReviewState } = require("../shared/project-review-store");
+const {
+  activateProjectReview,
+  listProjectReviews
+} = require("../shared/project-review-store");
 
-function createEmptyStateDocument() {
-  return {
-    schemaVersion: 1,
-    updatedAt: new Date().toISOString(),
-    activePackage: null,
-    copilotContext: null
-  };
-}
-
-app.http("project-review-state-get", {
-  route: "project-review-state",
+app.http("project-reviews-get", {
+  route: "project-reviews",
   methods: ["GET"],
   authLevel: "anonymous",
   handler: async (request) => {
@@ -23,9 +17,9 @@ app.http("project-review-state-get", {
     }
 
     try {
-      const document = (await loadProjectReviewState(principal)) ?? createEmptyStateDocument();
+      const payload = await listProjectReviews(principal);
 
-      return jsonResponse(200, document, {
+      return jsonResponse(200, payload, {
         "Cache-Control": "no-store"
       });
     } catch (error) {
@@ -33,14 +27,14 @@ app.http("project-review-state-get", {
         error:
           error instanceof Error
             ? error.message
-            : "Unable to load the saved project review state."
+            : "Unable to list saved project reviews."
       });
     }
   }
 });
 
-app.http("project-review-state-save", {
-  route: "project-review-state",
+app.http("project-reviews-activate", {
+  route: "project-reviews/activate",
   methods: ["POST"],
   authLevel: "anonymous",
   handler: async (request) => {
@@ -52,17 +46,25 @@ app.http("project-review-state-save", {
 
     try {
       const body = await request.json();
-      const document = await saveProjectReviewState(principal, body);
+      const reviewId = String(body?.reviewId ?? "").trim();
 
-      return jsonResponse(200, document, {
+      if (!reviewId) {
+        return jsonResponse(400, {
+          error: "A reviewId is required before the active project review can be changed."
+        });
+      }
+
+      const payload = await activateProjectReview(principal, reviewId);
+
+      return jsonResponse(200, payload, {
         "Cache-Control": "no-store"
       });
     } catch (error) {
-      return jsonResponse(500, {
+      return jsonResponse(error?.statusCode === 404 ? 404 : 500, {
         error:
           error instanceof Error
             ? error.message
-            : "Unable to save the project review state."
+            : "Unable to activate the selected project review."
       });
     }
   }

@@ -418,6 +418,38 @@ export type ProjectReviewStateDocument = {
   copilotContext: ProjectReviewCopilotContext | null;
 };
 
+export type SavedProjectReviewSummary = {
+  id: string;
+  name: string;
+  audience: ReviewPackageAudience;
+  businessScope: string;
+  targetRegions: string[];
+  selectedServiceSlugs: string[];
+  serviceCount: number;
+  recordCount: number;
+  includedCount: number;
+  notApplicableCount: number;
+  excludedCount: number;
+  pendingCount: number;
+  createdAt: string;
+  updatedAt: string;
+  lastSavedAt: string;
+  isActive: boolean;
+};
+
+export type CloudProjectReviewUser = {
+  userId: string;
+  email: string;
+  displayName: string;
+  provider: string;
+  activeReviewId: string | null;
+};
+
+export type ProjectReviewLibraryResponse = {
+  user: CloudProjectReviewUser;
+  reviews: SavedProjectReviewSummary[];
+};
+
 export type AdminCopilotScope = {
   resourceGroup: string;
   staticWebAppName?: string;

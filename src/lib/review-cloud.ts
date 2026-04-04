@@ -1,6 +1,8 @@
 import type {
   ChecklistItem,
+  CloudProjectReviewUser,
   ProjectReviewCopilotContext,
+  ProjectReviewLibraryResponse,
   ProjectReviewStateDocument,
   ReviewDraft,
   ReviewRecordDocument,
@@ -8,6 +10,8 @@ import type {
   StaticWebAppClientPrincipal,
   StructuredReviewRecord
 } from "@/types";
+
+export type AuthProvider = "aad" | "google";
 
 type AuthMeResponse =
   | {
@@ -99,6 +103,14 @@ export async function fetchClientPrincipal() {
   return parseClientPrincipal(payload);
 }
 
+export function buildLoginUrl(provider: AuthProvider, redirectUri?: string) {
+  const fallbackRedirect =
+    typeof window === "undefined" ? "/" : window.location.href;
+  const nextRedirect = redirectUri ?? fallbackRedirect;
+
+  return `/.auth/login/${provider}?post_login_redirect_uri=${encodeURIComponent(nextRedirect)}`;
+}
+
 async function parseJsonResponse<T>(response: Response) {
   if (!response.ok) {
     const message = await response.text();
@@ -118,14 +130,17 @@ export async function loadCloudReviewRecords() {
   return parseJsonResponse<ReviewRecordDocument>(response);
 }
 
-export async function saveCloudReviewRecords(records: StructuredReviewRecord[]) {
+export async function saveCloudReviewRecords(
+  records: StructuredReviewRecord[],
+  reviewId?: string | null
+) {
   const response = await fetch("/api/review-records", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
     credentials: "same-origin",
-    body: JSON.stringify({ records })
+    body: JSON.stringify({ records, reviewId: reviewId ?? undefined })
   });
 
   return parseJsonResponse<ReviewRecordDocument>(response);
@@ -206,4 +221,28 @@ export async function downloadCloudReviewCsv(records: StructuredReviewRecord[]) 
     filename,
     artifactPath: response.headers.get("X-Review-Artifact-Path") ?? undefined
   };
+}
+
+export async function listCloudProjectReviews() {
+  const response = await fetch("/api/project-reviews", {
+    credentials: "same-origin",
+    cache: "no-store"
+  });
+
+  return parseJsonResponse<ProjectReviewLibraryResponse>(response);
+}
+
+export async function activateCloudProjectReview(reviewId: string) {
+  const response = await fetch("/api/project-reviews/activate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({ reviewId })
+  });
+
+  return parseJsonResponse<{
+    user: CloudProjectReviewUser;
+  }>(response);
 }

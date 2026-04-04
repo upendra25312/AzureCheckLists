@@ -51,6 +51,18 @@
       ]
     },
     {
+      "route": "/api/project-reviews",
+      "allowedRoles": [
+        "authenticated"
+      ]
+    },
+    {
+      "route": "/api/project-reviews/activate",
+      "allowedRoles": [
+        "authenticated"
+      ]
+    },
+    {
       "route": "/data/*",
       "headers": {
         "Cache-Control": "public, max-age=3600"

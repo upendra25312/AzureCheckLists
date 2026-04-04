@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AuthStatusChip } from "@/components/auth-status-chip";
 import { TrustBanner } from "@/components/trust-banner";
 import { STORAGE_KEYS } from "@/lib/review-storage";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
@@ -13,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Start Project Review" },
   { href: "/services", label: "Services" },
   { href: "/review-package", label: "Project review" },
+  { href: "/my-project-reviews", label: "My project reviews" },
   { href: "/data-health", label: "Data Health" },
   { href: "/explorer", label: "Advanced Tools" },
   { href: "/how-to-use", label: "How to use" }
@@ -81,6 +83,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
           </nav>
+          <AuthStatusChip />
           <button
             type="button"
             className="theme-toggle header-link"

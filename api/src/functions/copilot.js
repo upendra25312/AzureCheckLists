@@ -1,12 +1,7 @@
 const { app } = require("@azure/functions");
 const { getClientPrincipal, jsonResponse } = require("../shared/auth");
-const {
-  NOTES_CONTAINER_NAME,
-  buildProjectReviewStateBlobName,
-  getContainerClient,
-  readJsonBlob
-} = require("../shared/storage");
 const { normalizeCopilotContext } = require("../shared/project-review-state");
+const { loadProjectReviewState } = require("../shared/project-review-store");
 const { runCopilot } = require("../shared/copilot");
 
 async function loadSavedCopilotContext(request) {
@@ -16,9 +11,7 @@ async function loadSavedCopilotContext(request) {
     return null;
   }
 
-  const containerClient = await getContainerClient(NOTES_CONTAINER_NAME);
-  const blobName = buildProjectReviewStateBlobName(principal.userId);
-  const document = await readJsonBlob(containerClient, blobName);
+  const document = await loadProjectReviewState(principal);
 
   return normalizeCopilotContext(document?.copilotContext);
 }

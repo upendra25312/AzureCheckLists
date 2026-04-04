@@ -27,6 +27,7 @@ type HealthPayload = {
   copilotDeployment?: string | null;
   copilotEndpoint?: string | null;
   storageConfigured: boolean;
+  tableStorageConfigured?: boolean;
   refreshSchedule: string;
   manualRefreshEnabled: boolean;
   warmServiceIndexUrl?: string | null;
@@ -178,6 +179,10 @@ export function DataHealthView() {
               <article className="trace-card">
                 <strong>Blob storage</strong>
                 <p>{payload.storageConfigured ? "Configured" : "Missing"}</p>
+              </article>
+              <article className="trace-card">
+                <strong>Table storage</strong>
+                <p>{payload.tableStorageConfigured ? "Configured" : "Missing"}</p>
               </article>
             </div>
 

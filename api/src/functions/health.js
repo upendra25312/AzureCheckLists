@@ -31,6 +31,9 @@ async function handleHealth() {
         storageConfigured: Boolean(
           process.env.AZURE_STORAGE_CONNECTION_STRING || process.env.AzureWebJobsStorage
         ),
+        tableStorageConfigured: Boolean(
+          process.env.AZURE_STORAGE_CONNECTION_STRING || process.env.AzureWebJobsStorage
+        ),
         refreshSchedule: COMMERCIAL_REFRESH_SCHEDULE,
         manualRefreshEnabled: refreshState.manualRefreshEnabled,
         warmServiceIndexUrl: refreshState.warmServiceIndexUrl,
@@ -59,6 +62,9 @@ async function handleHealth() {
         copilotDeployment: copilot.deployment ?? null,
         copilotEndpoint: toVisibleEndpoint(copilot.endpoint),
         storageConfigured: Boolean(
+          process.env.AZURE_STORAGE_CONNECTION_STRING || process.env.AzureWebJobsStorage
+        ),
+        tableStorageConfigured: Boolean(
           process.env.AZURE_STORAGE_CONNECTION_STRING || process.env.AzureWebJobsStorage
         ),
         refreshSchedule: COMMERCIAL_REFRESH_SCHEDULE,

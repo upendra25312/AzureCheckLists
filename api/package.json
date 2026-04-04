@@ -4,6 +4,7 @@
   "private": true,
   "main": "src/functions/*.js",
   "dependencies": {
+    "@azure/data-tables": "^13.3.2",
     "@azure/functions": "^4.7.3",
     "@azure/storage-blob": "^12.28.0"
   }

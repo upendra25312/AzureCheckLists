@@ -1,13 +1,7 @@
 const { app } = require("@azure/functions");
 const { jsonResponse, requireAuthenticated } = require("../shared/auth");
-const {
-  NOTES_CONTAINER_NAME,
-  buildNotesBlobName,
-  getContainerClient,
-  readJsonBlob,
-  uploadJsonBlob
-} = require("../shared/storage");
 const { toReviewDocument } = require("../shared/review-records");
+const { loadReviewRecords, saveReviewRecords } = require("../shared/project-review-store");
 
 app.http("review-records-get", {
   route: "review-records",
@@ -21,11 +15,7 @@ app.http("review-records-get", {
     }
 
     try {
-      const containerClient = await getContainerClient(NOTES_CONTAINER_NAME);
-      const blobName = buildNotesBlobName(principal.userId);
-      const document =
-        (await readJsonBlob(containerClient, blobName)) ??
-        toReviewDocument([]);
+      const document = await loadReviewRecords(principal);
 
       return jsonResponse(200, document, {
         "Cache-Control": "no-store"
@@ -52,10 +42,7 @@ app.http("review-records-save", {
     try {
       const body = await request.json();
       const document = toReviewDocument(body?.records);
-      const containerClient = await getContainerClient(NOTES_CONTAINER_NAME);
-      const blobName = buildNotesBlobName(principal.userId);
-
-      await uploadJsonBlob(containerClient, blobName, document);
+      await saveReviewRecords(principal, document, body?.reviewId);
 
       return jsonResponse(200, document, {
         "Cache-Control": "no-store"

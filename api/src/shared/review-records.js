@@ -7,6 +7,9 @@ function normalizeReview(record) {
 
   return {
     reviewState: isNonEmptyString(review.reviewState) ? review.reviewState : "Not Reviewed",
+    packageDecision: isNonEmptyString(review.packageDecision)
+      ? review.packageDecision
+      : "Needs Review",
     comments: isNonEmptyString(review.comments) ? review.comments.trim() : "",
     owner: isNonEmptyString(review.owner) ? review.owner.trim() : "",
     dueDate: isNonEmptyString(review.dueDate) ? review.dueDate.trim() : "",
@@ -79,6 +82,7 @@ function toReviewCsv(document) {
     "serviceCanonical",
     "text",
     "reviewState",
+    "packageDecision",
     "owner",
     "dueDate",
     "comments",
@@ -105,6 +109,7 @@ function toReviewCsv(document) {
         record.serviceCanonical,
         record.text,
         record.review.reviewState,
+        record.review.packageDecision,
         record.review.owner,
         record.review.dueDate,
         record.review.comments,

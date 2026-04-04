@@ -9,6 +9,7 @@ import type {
   StaticWebAppClientPrincipal
 } from "@/types";
 import {
+  buildLoginUrl,
   buildStructuredReviewRecords,
   downloadCloudReviewCsv,
   fetchClientPrincipal,
@@ -32,14 +33,6 @@ type ReviewCloudControlsProps = {
 };
 
 type BusyAction = "load" | "save" | "download" | null;
-
-function getLoginUrl() {
-  if (typeof window === "undefined") {
-    return "/.auth/login/aad";
-  }
-
-  return `/.auth/login/aad?post_login_redirect_uri=${encodeURIComponent(window.location.href)}`;
-}
 
 export function ReviewCloudControls({
   items,
@@ -109,7 +102,7 @@ export function ReviewCloudControls({
     try {
       setBusyAction("save");
       const [document] = await Promise.all([
-        saveCloudReviewRecords(structuredRecords),
+        saveCloudReviewRecords(structuredRecords, activePackage?.id),
         saveCloudProjectReviewState(activePackage, copilotContext)
       ]);
 
@@ -165,8 +158,8 @@ export function ReviewCloudControls({
           artifact for the current review.
         </p>
         <div className="button-row">
-          <a href={getLoginUrl()} className="primary-button">
-            Sign in with Microsoft Entra ID
+          <a href={buildLoginUrl("aad")} className="primary-button">
+            Continue with Microsoft
           </a>
           {continueHref ? (
             <a href={continueHref} className="ghost-button">
@@ -174,6 +167,10 @@ export function ReviewCloudControls({
             </a>
           ) : null}
         </div>
+        <p className="microcopy">
+          Google sign-in is queued for the next auth pass once the live Static Web App has Google
+          OAuth provider settings configured.
+        </p>
       </section>
     );
   }

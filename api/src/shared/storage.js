@@ -85,6 +85,10 @@ function buildProjectReviewStateBlobName(userId) {
   return `${sanitizePathSegment(userId)}/project-review-state.json`;
 }
 
+function buildProjectReviewBlobName(userId, reviewId) {
+  return `${sanitizePathSegment(userId)}/project-reviews/${sanitizePathSegment(reviewId)}.json`;
+}
+
 function buildArtifactBlobName(userId, filename) {
   return `${sanitizePathSegment(userId)}/${filename}`;
 }
@@ -95,6 +99,7 @@ module.exports = {
   NOTES_CONTAINER_NAME,
   buildArtifactBlobName,
   buildNotesBlobName,
+  buildProjectReviewBlobName,
   buildProjectReviewStateBlobName,
   getContainerClient,
   readJsonBlob,

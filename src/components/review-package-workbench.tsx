@@ -18,6 +18,13 @@ import {
 } from "@/lib/service-regional-fit";
 import { buildServicePricingRequest, loadServicePricingBatch } from "@/lib/service-pricing";
 import {
+  activateCloudProjectReview,
+  fetchClientPrincipal,
+  loadCloudProjectReviewState,
+  loadCloudReviewRecords,
+  structuredRecordsToReviewMap
+} from "@/lib/review-cloud";
+import {
   createReviewPackage,
   deletePackage,
   loadActivePackageId,
@@ -327,8 +334,13 @@ function createUniquePackageName(name: string, existingPackages: ReviewPackage[]
   return `${baseName} (${suffix})`;
 }
 
-export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
+export function ReviewPackageWorkbench({
+  index
+}: {
+  index: ServiceIndex;
+}) {
   const [items, setItems] = useState<ChecklistItem[] | null>(null);
+  const [requestedCloudReviewId, setRequestedCloudReviewId] = useState<string | null>(null);
   const [packages, setPackages] = useState<ReviewPackage[]>([]);
   const [activePackageId, setActivePackageId] = useState<string | null>(null);
   const [reviews, setReviews] = useState<Record<string, ReviewDraft>>({});
@@ -344,6 +356,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
   const [pricingError, setPricingError] = useState<string | null>(null);
   const [packageActionMessage, setPackageActionMessage] = useState<string | null>(null);
   const [packageActionTone, setPackageActionTone] = useState<PackageActionTone>("neutral");
+  const [cloudRestoreAttempted, setCloudRestoreAttempted] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -373,6 +386,95 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const search = new URLSearchParams(window.location.search);
+    setRequestedCloudReviewId(search.get("cloudReviewId"));
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    if (cloudRestoreAttempted) {
+      return () => {
+        active = false;
+      };
+    }
+
+    if (!requestedCloudReviewId && packages.length > 0) {
+      setCloudRestoreAttempted(true);
+      return () => {
+        active = false;
+      };
+    }
+
+    async function restoreFromCloud() {
+      try {
+        const principal = await fetchClientPrincipal();
+
+        if (!active || !principal) {
+          if (active) {
+            setCloudRestoreAttempted(true);
+          }
+          return;
+        }
+
+        if (requestedCloudReviewId) {
+          await activateCloudProjectReview(requestedCloudReviewId);
+        }
+
+        const [recordsDocument, stateDocument] = await Promise.all([
+          loadCloudReviewRecords(),
+          loadCloudProjectReviewState()
+        ]);
+
+        if (!active) {
+          return;
+        }
+
+        handleRestoreCloudState({
+          activePackage: stateDocument.activePackage,
+          reviews: structuredRecordsToReviewMap(recordsDocument.records)
+        });
+
+        if (stateDocument.activePackage) {
+          setPackageActionTone("success");
+          setPackageActionMessage(
+            requestedCloudReviewId
+              ? `Loaded "${stateDocument.activePackage.name}" from Azure and made it the active project review.`
+              : `Restored "${stateDocument.activePackage.name}" from Azure for this signed-in user.`
+          );
+        }
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+
+        if (requestedCloudReviewId) {
+          setPackageActionTone("neutral");
+          setPackageActionMessage(
+            error instanceof Error
+              ? error.message
+              : "Unable to restore the selected cloud-backed project review."
+          );
+        }
+      } finally {
+        if (active) {
+          setCloudRestoreAttempted(true);
+        }
+      }
+    }
+
+    void restoreFromCloud();
+
+    return () => {
+      active = false;
+    };
+  }, [cloudRestoreAttempted, packages.length, requestedCloudReviewId]);
 
   const activePackage = useMemo(
     () => packages.find((entry) => entry.id === activePackageId) ?? null,
