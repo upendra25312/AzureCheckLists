@@ -12,6 +12,10 @@ import {
   downloadCsv,
   downloadText
 } from "@/lib/export";
+import {
+  buildServiceRegionalFitRequest,
+  loadServiceRegionalFitBatch
+} from "@/lib/service-regional-fit";
 import { buildServicePricingRequest, loadServicePricingBatch } from "@/lib/service-pricing";
 import {
   createReviewPackage,
@@ -27,6 +31,7 @@ import type {
   ReviewDraft,
   ReviewPackage,
   ReviewPackageAudience,
+  ServiceRegionalFit,
   ServiceIndex,
   ServicePricing
 } from "@/types";
@@ -56,6 +61,194 @@ function formatRetailPrice(price: number | undefined, currencyCode = "USD") {
     currency: currencyCode,
     maximumFractionDigits: 6
   }).format(price);
+}
+
+function normalizeRegionName(value: string) {
+  return value.trim().toLowerCase();
+}
+
+type MatrixChipTone = "good" | "warning" | "danger" | "neutral";
+
+type MatrixChip = {
+  label: string;
+  tone: MatrixChipTone;
+};
+
+function createMatrixChip(label: string, tone: MatrixChipTone): MatrixChip {
+  return {
+    label,
+    tone
+  };
+}
+
+function buildRegionFitMatrix(
+  regionalFit: ServiceRegionalFit | undefined,
+  fallbackMapped: boolean | undefined,
+  targetRegions: string[]
+) {
+  if (!regionalFit && !fallbackMapped) {
+    return {
+      chips: [createMatrixChip("Mapping pending", "neutral")],
+      summary: "Official regional availability is not mapped for this service yet."
+    };
+  }
+
+  if (!regionalFit) {
+    return {
+      chips: [createMatrixChip("Loading live availability", "neutral")],
+      summary: "The project review is asking the dedicated backend for current regional availability."
+    };
+  }
+
+  if (!regionalFit.mapped) {
+    return {
+      chips: [createMatrixChip("Mapping pending", "neutral")],
+      summary:
+        regionalFit.notes[0] ??
+        "Official regional availability could not be mapped cleanly for this service."
+    };
+  }
+
+  if (targetRegions.length > 0) {
+    const chips = targetRegions.map((targetRegion) => {
+      const normalizedTarget = normalizeRegionName(targetRegion);
+      const availableRegion = regionalFit.regions.find(
+        (region) => normalizeRegionName(region.regionName) === normalizedTarget
+      );
+
+      if (availableRegion) {
+        if (availableRegion.accessState === "ReservedAccess") {
+          return createMatrixChip(`${targetRegion} · Restricted`, "warning");
+        }
+
+        if (availableRegion.accessState === "EarlyAccess") {
+          return createMatrixChip(`${targetRegion} · Early access`, "warning");
+        }
+
+        if (
+          availableRegion.availabilityState === "Preview" ||
+          availableRegion.skuStates.some((entry) => entry.state === "Preview")
+        ) {
+          return createMatrixChip(`${targetRegion} · Preview`, "warning");
+        }
+
+        if (
+          availableRegion.availabilityState === "Retiring" ||
+          availableRegion.skuStates.some((entry) => entry.state === "Retiring")
+        ) {
+          return createMatrixChip(`${targetRegion} · Retiring`, "warning");
+        }
+
+        return createMatrixChip(`${targetRegion} · Available`, "good");
+      }
+
+      const unavailableRegion = regionalFit.unavailableRegions.find(
+        (region) => normalizeRegionName(region.regionName) === normalizedTarget
+      );
+
+      if (unavailableRegion) {
+        if (unavailableRegion.accessState === "ReservedAccess") {
+          return createMatrixChip(`${targetRegion} · Restricted region`, "warning");
+        }
+
+        if (unavailableRegion.accessState === "EarlyAccess") {
+          return createMatrixChip(`${targetRegion} · Early access`, "warning");
+        }
+
+        return createMatrixChip(`${targetRegion} · Unavailable`, "danger");
+      }
+
+      if (regionalFit.isGlobalService) {
+        return createMatrixChip(`${targetRegion} · Global service`, "neutral");
+      }
+
+      return createMatrixChip(`${targetRegion} · Not in feed`, "danger");
+    });
+
+    const accountedForCount = chips.filter((chip) => !chip.label.endsWith("Not in feed")).length;
+
+    return {
+      chips,
+      summary: regionalFit.isGlobalService
+        ? "This service is treated as global or non-regional for at least part of its Microsoft offering."
+        : `${accountedForCount.toLocaleString()} of ${targetRegions.length.toLocaleString()} target regions are accounted for in the current availability data.`
+    };
+  }
+
+  const chips: MatrixChip[] = [];
+
+  if (regionalFit.isGlobalService) {
+    chips.push(createMatrixChip("Global service", "neutral"));
+  }
+
+  if (regionalFit.availableRegionCount > 0) {
+    chips.push(createMatrixChip(`${regionalFit.availableRegionCount.toLocaleString()} available`, "good"));
+  }
+
+  if (regionalFit.restrictedRegionCount > 0) {
+    chips.push(
+      createMatrixChip(`${regionalFit.restrictedRegionCount.toLocaleString()} restricted`, "warning")
+    );
+  }
+
+  if (regionalFit.previewRegionCount > 0) {
+    chips.push(createMatrixChip(`${regionalFit.previewRegionCount.toLocaleString()} preview`, "warning"));
+  }
+
+  if (regionalFit.unavailableRegionCount > 0) {
+    chips.push(
+      createMatrixChip(`${regionalFit.unavailableRegionCount.toLocaleString()} unavailable`, "danger")
+    );
+  }
+
+  return {
+    chips: chips.length > 0 ? chips : [createMatrixChip("Availability ready", "good")],
+    summary: "Open the service view when you need the full per-region detail."
+  };
+}
+
+function buildCostFitMatrix(
+  pricing: ServicePricing | undefined,
+  loading: boolean,
+  error: string | null
+) {
+  if (!pricing) {
+    return {
+      chips: [createMatrixChip(loading ? "Loading pricing" : "Pricing pending", "neutral")],
+      summary: error
+        ? error
+        : "The project review is loading current retail pricing for this service."
+    };
+  }
+
+  if (!pricing.mapped) {
+    return {
+      chips: [createMatrixChip("Pricing pending", "neutral")],
+      summary:
+        pricing.notes[0] ?? "Microsoft does not currently publish a clean standalone pricing mapping for this service."
+    };
+  }
+
+  const chips = [
+    createMatrixChip(
+      `Starts at ${formatRetailPrice(pricing.startsAtRetailPrice, pricing.currencyCode)}`,
+      "good"
+    ),
+    createMatrixChip(`${pricing.skuCount.toLocaleString()} SKUs`, "neutral")
+  ];
+
+  if (pricing.targetRegionMatchCount > 0) {
+    chips.push(
+      createMatrixChip(`${pricing.targetRegionMatchCount.toLocaleString()} target matches`, "good")
+    );
+  } else {
+    chips.push(createMatrixChip("No target-region match yet", "warning"));
+  }
+
+  return {
+    chips,
+    summary: `${pricing.billingLocationCount.toLocaleString()} billing locations and ${pricing.meterCount.toLocaleString()} pricing meters are currently published for this service.`
+  };
 }
 
 function matchesPackageService(
@@ -101,6 +294,9 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
   const [form, setForm] = useState<PackageFormState>(createFormState());
   const [includeNotApplicable, setIncludeNotApplicable] = useState(true);
   const [includeNeedsReview, setIncludeNeedsReview] = useState(false);
+  const [serviceRegionalFits, setServiceRegionalFits] = useState<Record<string, ServiceRegionalFit>>({});
+  const [regionalFitLoading, setRegionalFitLoading] = useState(false);
+  const [regionalFitError, setRegionalFitError] = useState<string | null>(null);
   const [servicePricing, setServicePricing] = useState<Record<string, ServicePricing>>({});
   const [pricingLoading, setPricingLoading] = useState(false);
   const [pricingError, setPricingError] = useState<string | null>(null);
@@ -224,11 +420,16 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
     },
     {
       step: "03",
+      title: "Review the region, cost, and checklist matrix",
+      copy: "Confirm regional fit, pricing readiness, and checklist progress service by service before jumping into detail."
+    },
+    {
+      step: "04",
       title: "Open service pages and write project notes",
       copy: "From each selected service, open findings, mark them as included or not applicable, and capture your comments."
     },
     {
-      step: "04",
+      step: "05",
       title: "Download the design notes and pricing snapshot",
       copy: "Export only the selected services and their project-specific notes in the format that suits the audience."
     }
@@ -257,6 +458,9 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
           notApplicableCount: serviceItems.filter(
             (item) => (reviews[item.guid]?.packageDecision ?? "Needs Review") === "Not Applicable"
           ).length,
+          excludedCount: serviceItems.filter(
+            (item) => (reviews[item.guid]?.packageDecision ?? "Needs Review") === "Exclude"
+          ).length,
           pendingCount: serviceItems.filter(
             (item) => (reviews[item.guid]?.packageDecision ?? "Needs Review") === "Needs Review"
           ).length
@@ -264,6 +468,55 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
       }),
     [packageItems, reviews, selectedServices]
   );
+
+  useEffect(() => {
+    let active = true;
+
+    if (!activePackage || selectedServices.length === 0) {
+      setServiceRegionalFits({});
+      setRegionalFitLoading(false);
+      setRegionalFitError(null);
+      return;
+    }
+
+    setRegionalFitLoading(true);
+    setRegionalFitError(null);
+
+    loadServiceRegionalFitBatch(
+      selectedServices.map((service) => buildServiceRegionalFitRequest(service))
+    )
+      .then((regionalFits) => {
+        if (!active) {
+          return;
+        }
+
+        setServiceRegionalFits(
+          regionalFits.reduce<Record<string, ServiceRegionalFit>>((accumulator, entry) => {
+            if (entry.serviceSlug) {
+              accumulator[entry.serviceSlug] = entry;
+            }
+            return accumulator;
+          }, {})
+        );
+        setRegionalFitLoading(false);
+      })
+      .catch((nextError) => {
+        if (!active) {
+          return;
+        }
+
+        setRegionalFitLoading(false);
+        setRegionalFitError(
+          nextError instanceof Error
+            ? nextError.message
+            : "Unable to load live regional availability."
+        );
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [activePackage, selectedServices]);
 
   useEffect(() => {
     let active = true;
@@ -309,6 +562,51 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
       active = false;
     };
   }, [activePackage, selectedServices]);
+
+  const matrixRows = useMemo(
+    () =>
+      selectedServiceProgress.map((entry) => {
+        const liveRegionalFit = serviceRegionalFits[entry.service.slug];
+        const regionFit = buildRegionFitMatrix(
+          liveRegionalFit,
+          entry.service.regionalFitSummary?.mapped,
+          activePackage?.targetRegions ?? []
+        );
+        const costFit = buildCostFitMatrix(
+          servicePricing[entry.service.slug],
+          pricingLoading,
+          pricingError
+        );
+        const checklistChips: MatrixChip[] = [
+          createMatrixChip(`${entry.includedCount.toLocaleString()} included`, "good"),
+          createMatrixChip(`${entry.notApplicableCount.toLocaleString()} not applicable`, "warning"),
+          createMatrixChip(`${entry.pendingCount.toLocaleString()} pending`, "neutral")
+        ];
+
+        if (entry.excludedCount > 0) {
+          checklistChips.push(
+            createMatrixChip(`${entry.excludedCount.toLocaleString()} excluded`, "danger")
+          );
+        }
+
+        return {
+          ...entry,
+          regionFit,
+          costFit,
+          checklistChips,
+          checklistSummary:
+            `${entry.itemCount.toLocaleString()} findings across ${entry.service.familyCount.toLocaleString()} families are currently tied to this service in the active project review.`
+        };
+      }),
+    [
+      activePackage?.targetRegions,
+      pricingError,
+      pricingLoading,
+      selectedServiceProgress,
+      servicePricing,
+      serviceRegionalFits
+    ]
+  );
 
   function refreshPackages(nextPackages: ReviewPackage[], nextActiveId: string | null) {
     setPackages(nextPackages);
@@ -510,10 +808,11 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
         <div className="section-head">
           <div>
             <p className="eyebrow">How to use this page</p>
-            <h2 className="section-title">Follow the same four steps every time you build a customer review artifact.</h2>
+            <h2 className="section-title">Follow the same five steps every time you build a customer review artifact.</h2>
             <p className="section-copy">
               The goal of this page is to make the workflow obvious: create the review, add services,
-              write notes on the selected service pages, and then export only what belongs to the design.
+              check the matrix, write notes on the selected service pages, and then export only what
+              belongs to the design.
             </p>
           </div>
         </div>
@@ -737,6 +1036,143 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
         <div className="section-head">
           <div>
             <p className="eyebrow">Step 3</p>
+            <h2 className="section-title">See region fit, cost fit, and checklist progress in one matrix.</h2>
+            <p className="section-copy">
+              This is the quickest place to confirm whether each selected service is region-ready,
+              commercially understood, and review-ready before you open the detailed service page.
+            </p>
+          </div>
+        </div>
+
+        <div className="traceability-grid">
+          <article className="trace-card">
+            <strong>Selected services</strong>
+            <p>{selectedServices.length.toLocaleString()}</p>
+          </article>
+          <article className="trace-card">
+            <strong>Availability ready</strong>
+            <p>
+              {Object.keys(serviceRegionalFits).length.toLocaleString()}
+              {regionalFitLoading ? " · refreshing" : ""}
+            </p>
+          </article>
+          <article className="trace-card">
+            <strong>Pricing ready</strong>
+            <p>
+              {pricingSnapshots.length.toLocaleString()}
+              {pricingLoading ? " · refreshing" : ""}
+            </p>
+          </article>
+          <article className="trace-card">
+            <strong>Target regions</strong>
+            <p>{activePackage?.targetRegions.join(", ") || "Not captured yet"}</p>
+          </article>
+        </div>
+
+        {regionalFitError ? (
+          <section className="filter-card">
+            <p className="eyebrow">Availability source</p>
+            <h3>The live availability refresh did not complete for the matrix.</h3>
+            <p className="microcopy">
+              {regionalFitError} The matrix will keep using the service-level mapping summary until
+              the dedicated backend responds again.
+            </p>
+          </section>
+        ) : null}
+
+        {matrixRows.length > 0 ? (
+          <div className="project-review-matrix">
+            <div className="project-review-matrix-head">
+              <span>Service</span>
+              <span>Region fit</span>
+              <span>Cost fit</span>
+              <span>Checklist progress</span>
+              <span>Action</span>
+            </div>
+            {matrixRows.map((row) => (
+              <article className="project-review-matrix-row" key={row.service.slug}>
+                <div className="project-review-matrix-cell project-review-matrix-service">
+                  <p className="eyebrow">Service</p>
+                  <h3>{row.service.service}</h3>
+                  <p className="microcopy">{row.service.description}</p>
+                  <div className="chip-row">
+                    <span className="chip">{row.service.familyCount.toLocaleString()} families</span>
+                    <span className="chip">{row.itemCount.toLocaleString()} findings</span>
+                  </div>
+                </div>
+
+                <div className="project-review-matrix-cell">
+                  <p className="eyebrow">Region fit</p>
+                  <div className="chip-row">
+                    {row.regionFit.chips.map((chip) => (
+                      <span
+                        className={`matrix-chip matrix-chip-${chip.tone}`}
+                        key={`${row.service.slug}-${chip.label}`}
+                      >
+                        {chip.label}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="microcopy">{row.regionFit.summary}</p>
+                </div>
+
+                <div className="project-review-matrix-cell">
+                  <p className="eyebrow">Cost fit</p>
+                  <div className="chip-row">
+                    {row.costFit.chips.map((chip) => (
+                      <span
+                        className={`matrix-chip matrix-chip-${chip.tone}`}
+                        key={`${row.service.slug}-${chip.label}`}
+                      >
+                        {chip.label}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="microcopy">{row.costFit.summary}</p>
+                </div>
+
+                <div className="project-review-matrix-cell">
+                  <p className="eyebrow">Checklist progress</p>
+                  <div className="chip-row">
+                    {row.checklistChips.map((chip) => (
+                      <span
+                        className={`matrix-chip matrix-chip-${chip.tone}`}
+                        key={`${row.service.slug}-${chip.label}`}
+                      >
+                        {chip.label}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="microcopy">{row.checklistSummary}</p>
+                </div>
+
+                <div className="project-review-matrix-cell project-review-matrix-actions">
+                  <Link href={`/services/${row.service.slug}`} className="secondary-button">
+                    Open service review
+                  </Link>
+                  <Link href="/review-package" className="muted-link">
+                    Keep project review open
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <section className="filter-card">
+            <p className="eyebrow">No services selected yet</p>
+            <h3>Add services first so the matrix can show region fit, cost fit, and checklist progress.</h3>
+            <p className="microcopy">
+              Once a service is added, this section becomes the fastest way to see whether the
+              current project is ready for deeper review and export.
+            </p>
+          </section>
+        )}
+      </section>
+
+      <section className="surface-panel editorial-section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Step 4</p>
             <h2 className="section-title">Open the selected service pages and write project-specific notes.</h2>
             <p className="section-copy">
               This is where the real review happens. Open a selected service, review findings, and
@@ -758,7 +1194,9 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
                 </div>
                 <p className="microcopy">
                   {entry.includedCount.toLocaleString()} included, {entry.notApplicableCount.toLocaleString()} not applicable,
-                  and {entry.pendingCount.toLocaleString()} still waiting for a project decision.
+                  {entry.excludedCount > 0
+                    ? ` ${entry.excludedCount.toLocaleString()} excluded,`
+                    : ""} and {entry.pendingCount.toLocaleString()} still waiting for a project decision.
                 </p>
                 <div className="chip-row">
                   <span className="chip">{entry.service.familyCount.toLocaleString()} families</span>
@@ -787,7 +1225,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
       <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Step 4</p>
+            <p className="eyebrow">Step 5</p>
             <h2 className="section-title">Download only the scoped services and their project notes.</h2>
             <p className="section-copy">
               CSV works well for spreadsheets and action tracking. Markdown and text are better for

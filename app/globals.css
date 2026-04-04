@@ -1500,7 +1500,8 @@ button.chip:hover {
 .proof-spotlight,
 .workflow-lane-card,
 .workflow-output-card,
-.workflow-output-mini {
+.workflow-output-mini,
+.project-review-matrix-row {
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
@@ -1522,7 +1523,8 @@ button.chip:hover {
 .proof-spotlight:hover,
 .workflow-lane-card:hover,
 .workflow-output-card:hover,
-.workflow-output-mini:hover {
+.workflow-output-mini:hover,
+.project-review-matrix-row:hover {
   transform: translateY(-2px);
   border-color: var(--border-strong);
   box-shadow: 0 18px 36px rgba(13, 24, 38, 0.08);
@@ -1573,6 +1575,113 @@ button.chip:hover {
 
 .service-selection-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.project-review-matrix {
+  display: grid;
+  gap: 12px;
+}
+
+.project-review-matrix-head,
+.project-review-matrix-row {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 1.2fr)
+    minmax(220px, 1.1fr)
+    minmax(220px, 1.1fr)
+    minmax(220px, 1.1fr)
+    minmax(180px, 0.8fr);
+  gap: 14px;
+}
+
+.project-review-matrix-head {
+  padding: 0 6px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.project-review-matrix-row {
+  padding: 22px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, rgba(15, 95, 126, 0.04), rgba(255, 255, 255, 0.52)),
+    rgba(255, 255, 255, 0.74);
+}
+
+[data-theme="dark"] .project-review-matrix-row {
+  background:
+    linear-gradient(180deg, rgba(103, 185, 212, 0.04), rgba(12, 24, 36, 0.5)),
+    rgba(12, 24, 36, 0.62);
+}
+
+.project-review-matrix-cell {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.project-review-matrix-cell h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.3;
+}
+
+.project-review-matrix-cell .microcopy {
+  margin: 0;
+}
+
+.project-review-matrix-service {
+  gap: 10px;
+}
+
+.project-review-matrix-actions {
+  justify-items: start;
+}
+
+.matrix-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.62);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+[data-theme="dark"] .matrix-chip {
+  background: rgba(12, 24, 36, 0.58);
+}
+
+.matrix-chip-good {
+  border-color: rgba(26, 127, 87, 0.28);
+  background: rgba(26, 127, 87, 0.1);
+  color: var(--success);
+}
+
+.matrix-chip-warning {
+  border-color: rgba(183, 116, 23, 0.28);
+  background: rgba(183, 116, 23, 0.12);
+  color: var(--warning);
+}
+
+.matrix-chip-danger {
+  border-color: rgba(187, 58, 43, 0.28);
+  background: rgba(187, 58, 43, 0.12);
+  color: var(--danger);
+}
+
+.matrix-chip-neutral {
+  border-color: rgba(15, 95, 126, 0.18);
+  background: rgba(15, 95, 126, 0.08);
+  color: var(--brand);
 }
 
 .package-card,
@@ -1723,11 +1832,16 @@ button.chip:hover {
   .decision-cue-grid,
   .workflow-lane-grid,
   .workflow-output-grid,
+  .project-review-matrix-row,
   .package-header-grid,
   .package-stats-grid,
   .service-selection-grid,
   .package-context-grid {
     grid-template-columns: 1fr;
+  }
+
+  .project-review-matrix-head {
+    display: none;
   }
 }
 
