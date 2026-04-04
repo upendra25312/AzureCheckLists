@@ -75,7 +75,9 @@ export function ProjectReviewCopilot({
           <p className="section-copy">
             This copilot is grounded on the active project review, selected services, target regions,
             pricing summaries, and recorded notes. It is useful for summaries and rationale, but it
-            does not know customer-specific discounts or data outside this review.
+            does not know customer-specific discounts or data outside this review. When you save the
+            active review to Azure after sign-in, the backend can restore this context automatically
+            in later sessions.
           </p>
         </div>
       </div>

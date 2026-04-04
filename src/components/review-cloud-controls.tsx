@@ -1,12 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { ChecklistItem, ReviewDraft, StaticWebAppClientPrincipal } from "@/types";
+import type {
+  ChecklistItem,
+  ProjectReviewCopilotContext,
+  ReviewDraft,
+  ReviewPackage,
+  StaticWebAppClientPrincipal
+} from "@/types";
 import {
   buildStructuredReviewRecords,
   downloadCloudReviewCsv,
   fetchClientPrincipal,
+  loadCloudProjectReviewState,
   loadCloudReviewRecords,
+  saveCloudProjectReviewState,
   saveCloudReviewRecords,
   structuredRecordsToReviewMap
 } from "@/lib/review-cloud";
@@ -14,7 +22,12 @@ import {
 type ReviewCloudControlsProps = {
   items: ChecklistItem[];
   reviews: Record<string, ReviewDraft>;
-  onReplaceReviews: (reviews: Record<string, ReviewDraft>) => void;
+  activePackage: ReviewPackage | null;
+  copilotContext: ProjectReviewCopilotContext | null;
+  onRestoreCloudState: (input: {
+    activePackage: ReviewPackage | null;
+    reviews: Record<string, ReviewDraft>;
+  }) => void;
   continueHref?: string;
 };
 
@@ -31,7 +44,9 @@ function getLoginUrl() {
 export function ReviewCloudControls({
   items,
   reviews,
-  onReplaceReviews,
+  activePackage,
+  copilotContext,
+  onRestoreCloudState,
   continueHref
 }: ReviewCloudControlsProps) {
   const [principal, setPrincipal] = useState<StaticWebAppClientPrincipal | null>(null);
@@ -68,13 +83,20 @@ export function ReviewCloudControls({
   async function loadFromAzure() {
     try {
       setBusyAction("load");
-      const document = await loadCloudReviewRecords();
+      const [recordsDocument, stateDocument] = await Promise.all([
+        loadCloudReviewRecords(),
+        loadCloudProjectReviewState()
+      ]);
+      const restoredReviews = structuredRecordsToReviewMap(recordsDocument.records);
 
-      onReplaceReviews(structuredRecordsToReviewMap(document.records));
+      onRestoreCloudState({
+        activePackage: stateDocument.activePackage,
+        reviews: restoredReviews
+      });
       setStatusMessage(
-        document.recordCount > 0
-          ? `Loaded ${document.recordCount.toLocaleString()} saved review records from Azure Storage.`
-          : "No saved Azure review records were found for this signed-in user."
+        stateDocument.activePackage || recordsDocument.recordCount > 0
+          ? `Loaded ${recordsDocument.recordCount.toLocaleString()} saved review records and the active project review context from Azure Storage.`
+          : "No saved Azure review records or active project review context were found for this signed-in user."
       );
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "Unable to load saved review records.");
@@ -86,10 +108,13 @@ export function ReviewCloudControls({
   async function saveToAzure() {
     try {
       setBusyAction("save");
-      const document = await saveCloudReviewRecords(structuredRecords);
+      const [document] = await Promise.all([
+        saveCloudReviewRecords(structuredRecords),
+        saveCloudProjectReviewState(activePackage, copilotContext)
+      ]);
 
       setStatusMessage(
-        `Saved ${document.recordCount.toLocaleString()} structured review records to Azure Storage.`
+        `Saved ${document.recordCount.toLocaleString()} structured review records and the current project review context to Azure Storage.`
       );
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "Unable to save review records.");
@@ -136,7 +161,8 @@ export function ReviewCloudControls({
         <p className="microcopy">
           You can keep browsing services, writing notes, and downloading local project-review
           exports without signing in. Use Microsoft Entra ID only when you want Azure-backed save,
-          reload, and a cloud-generated CSV artifact for the current review.
+          reload, automatic copilot context restore in later sessions, and a cloud-generated CSV
+          artifact for the current review.
         </p>
         <div className="button-row">
           <a href={getLoginUrl()} className="primary-button">
@@ -161,7 +187,8 @@ export function ReviewCloudControls({
           <p className="microcopy">
             Signed in as {principal.userDetails || principal.userId}. This keeps the current
             project-review notes in Azure Storage and lets you generate a cloud-backed CSV artifact
-            only when you ask for it.
+            only when you ask for it. It also lets the backend restore the active project-review
+            context automatically for later copilot sessions.
           </p>
         </div>
         <div className="chip-row">

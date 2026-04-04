@@ -1,7 +1,10 @@
 import type {
   ChecklistItem,
+  ProjectReviewCopilotContext,
+  ProjectReviewStateDocument,
   ReviewDraft,
   ReviewRecordDocument,
+  ReviewPackage,
   StaticWebAppClientPrincipal,
   StructuredReviewRecord
 } from "@/types";
@@ -126,6 +129,34 @@ export async function saveCloudReviewRecords(records: StructuredReviewRecord[]) 
   });
 
   return parseJsonResponse<ReviewRecordDocument>(response);
+}
+
+export async function loadCloudProjectReviewState() {
+  const response = await fetch("/api/project-review-state", {
+    credentials: "same-origin",
+    cache: "no-store"
+  });
+
+  return parseJsonResponse<ProjectReviewStateDocument>(response);
+}
+
+export async function saveCloudProjectReviewState(
+  activePackage: ReviewPackage | null,
+  copilotContext: ProjectReviewCopilotContext | null
+) {
+  const response = await fetch("/api/project-review-state", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({
+      activePackage,
+      copilotContext
+    })
+  });
+
+  return parseJsonResponse<ProjectReviewStateDocument>(response);
 }
 
 function getFilenameFromDisposition(value: string | null) {

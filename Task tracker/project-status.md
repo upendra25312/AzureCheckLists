@@ -14,6 +14,7 @@ Last updated: April 4, 2026
 | Checklist note-taking per project with comments, owner, due date, evidence | Completed | Engineering | High | Add more guided note templates later |
 | Scoped exports for selected services only (`CSV`, `Markdown`, `Text`) | Completed | Engineering | High | Add richer export formatting if needed |
 | Public login and sign-in UX for save/export and personalized project review | Partially Complete | Engineering / UX | High | Add an explicit sign-in entry experience, clearer save/load messaging, and role-aware user guidance |
+| Automatic active project-review context retrieval for signed-in copilot sessions | Completed | Engineering / AI | High | Keep the Azure-saved active review state in sync so the backend can resolve copilot context automatically for signed-in users |
 | Region + Cost + Checklist matrix in project review | Completed | Product / Engineering | High | Improve scanability and inline editing further |
 | Service-level assumptions (`planned region`, `preferred SKU`, `sizing note`) | Completed | Engineering | Medium | Add suggested values from live pricing/region data |
 | Regional availability support, including restricted-region handling like `UAE Central` | Completed | Engineering / Cloud | High | Keep validating mappings and status clarity |
@@ -57,6 +58,7 @@ Last updated: April 4, 2026
 | M1 | Project-scoped review workspace | Completed | Green | Done | Core solution/package concept is live |
 | M1 | Scoped exports for selected services only | Completed | Green | Done | `CSV`, `Markdown`, and `Text` flow is in place |
 | M1 | Public login and sign-in UX for save/export and personalized review | Partially Complete | Amber | Short term | Sign-in exists in parts of the app, but the entry experience and guidance are still weak |
+| M3 | Automatic active project-review context retrieval for signed-in copilot sessions | Completed | Green | Done | Signed-in users can save the active review state to Azure and let the backend resolve copilot context automatically |
 | M1 | Region + Cost + Checklist matrix | Completed | Green | Done | Live in project review workflow |
 | M1 | Service assumptions in review matrix | Completed | Green | Done | Planned region, preferred SKU, sizing note are available |
 | M2 | Regional availability integration | Completed | Green | Done | Includes restricted-region handling like `UAE Central` |

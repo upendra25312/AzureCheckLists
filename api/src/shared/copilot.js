@@ -134,7 +134,7 @@ function buildCopilotMessages(question, context) {
   ];
 }
 
-async function runCopilot(question, context) {
+async function runCopilot(question, context, options = {}) {
   const configuration = getCopilotConfiguration();
 
   if (!configuration.configured) {
@@ -181,7 +181,7 @@ async function runCopilot(question, context) {
     generatedAt: new Date().toISOString(),
     modelName: configuration.modelName,
     modelDeployment: configuration.deployment,
-    groundingMode: "project-review-context",
+    groundingMode: options.groundingMode ?? "project-review-context",
     sources: sanitizedContext.sources
   };
 }

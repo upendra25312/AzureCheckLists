@@ -398,7 +398,8 @@ export type ProjectReviewCopilotContext = {
 
 export type CopilotRequest = {
   question: string;
-  context: ProjectReviewCopilotContext;
+  context?: ProjectReviewCopilotContext;
+  useSavedContext?: boolean;
 };
 
 export type CopilotResponse = {
@@ -406,8 +407,15 @@ export type CopilotResponse = {
   generatedAt: string;
   modelName: string;
   modelDeployment: string;
-  groundingMode: "project-review-context";
+  groundingMode: "project-review-context" | "saved-project-review-context";
   sources: CopilotSource[];
+};
+
+export type ProjectReviewStateDocument = {
+  schemaVersion: 1;
+  updatedAt: string;
+  activePackage: ReviewPackage | null;
+  copilotContext: ProjectReviewCopilotContext | null;
 };
 
 export type AdminCopilotScope = {

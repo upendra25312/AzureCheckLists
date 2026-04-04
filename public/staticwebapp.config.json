@@ -45,6 +45,12 @@
       ]
     },
     {
+      "route": "/api/project-review-state",
+      "allowedRoles": [
+        "authenticated"
+      ]
+    },
+    {
       "route": "/data/*",
       "headers": {
         "Cache-Control": "public, max-age=3600"

@@ -24,6 +24,9 @@ import {
   loadPackages,
   loadScopedReviews,
   saveActivePackageId,
+  savePackageReviews,
+  savePackages,
+  saveReviews,
   upsertPackage
 } from "@/lib/review-storage";
 import { ProjectReviewCopilot } from "@/components/project-review-copilot";
@@ -766,6 +769,42 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
     const nextActivePackage = nextPackages.find((entry) => entry.id === nextActiveId);
 
     setForm(createFormState(nextActivePackage));
+  }
+
+  function handleRestoreCloudState(input: {
+    activePackage: ReviewPackage | null;
+    reviews: Record<string, ReviewDraft>;
+  }) {
+    const { activePackage: restoredPackage, reviews: restoredReviews } = input;
+
+    if (!restoredPackage) {
+      saveReviews(restoredReviews);
+      setReviews(restoredReviews);
+      setPackageActionTone("success");
+      setPackageActionMessage(
+        "Loaded saved review records from Azure, but no active project review package was stored there."
+      );
+      return;
+    }
+
+    const currentPackages = loadPackages();
+    const existingIndex = currentPackages.findIndex((entry) => entry.id === restoredPackage.id);
+    const nextPackages = [...currentPackages];
+
+    if (existingIndex === -1) {
+      nextPackages.unshift(restoredPackage);
+    } else {
+      nextPackages.splice(existingIndex, 1, restoredPackage);
+    }
+
+    savePackages(nextPackages);
+    savePackageReviews(restoredPackage.id, restoredReviews);
+    setReviews(restoredReviews);
+    refreshPackages(nextPackages, restoredPackage.id);
+    setPackageActionTone("success");
+    setPackageActionMessage(
+      `Loaded "${restoredPackage.name}" from Azure and made it the active project review.`
+    );
   }
 
   function handleCreatePackage() {
@@ -1592,7 +1631,9 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
           <ReviewCloudControls
             items={packageItems}
             reviews={reviews}
-            onReplaceReviews={setReviews}
+            activePackage={activePackage}
+            copilotContext={copilotContext}
+            onRestoreCloudState={handleRestoreCloudState}
             continueHref="#project-review-local-exports"
           />
         ) : (
