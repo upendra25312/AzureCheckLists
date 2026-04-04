@@ -79,7 +79,7 @@ button {
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.62;
 }
 
 pre {
@@ -394,6 +394,12 @@ button.chip[aria-pressed="true"] {
   color: #ffffff;
 }
 
+.primary-button:disabled {
+  background: linear-gradient(135deg, rgba(86, 101, 117, 0.85), rgba(122, 136, 151, 0.85));
+  color: rgba(255, 255, 255, 0.9);
+  box-shadow: none;
+}
+
 .ghost-button {
   background: transparent;
 }
@@ -406,6 +412,14 @@ button.chip[aria-pressed="true"] {
 button.chip:hover {
   transform: translateY(-1px);
   border-color: var(--border-strong);
+}
+
+.primary-button:disabled:hover,
+.secondary-button:disabled:hover,
+.ghost-button:disabled:hover,
+button.chip:disabled:hover {
+  transform: none;
+  border-color: var(--border);
 }
 
 .hero-panel,

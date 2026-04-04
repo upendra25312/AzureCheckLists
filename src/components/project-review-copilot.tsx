@@ -108,9 +108,13 @@ export function ProjectReviewCopilot({
                 placeholder="Ask about regional blockers, pricing drivers, export readiness, or ask for a leadership-style summary of this review."
               />
             </label>
+            <p className="microcopy">
+              Type a question first, or click one of the suggested prompts below to run the
+              copilot.
+            </p>
             <div className="button-row">
               <button type="submit" className="primary-button" disabled={loading || !question.trim()}>
-                {loading ? "Generating..." : "Ask copilot"}
+                {loading ? "Generating..." : question.trim() ? "Ask copilot" : "Type a question first"}
               </button>
             </div>
           </form>
