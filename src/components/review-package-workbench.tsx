@@ -1220,6 +1220,10 @@ export function ReviewPackageWorkbench({
                   placeholder="Contoso edge review"
                 />
               </label>
+              <p className="microcopy">
+                Rename project review: update the name above, then click <strong>Save review
+                details</strong>.
+              </p>
 
               <label>
                 <span className="microcopy">Audience</span>
