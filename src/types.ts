@@ -350,6 +350,66 @@ export type ReviewPackage = {
   updatedAt: string;
 };
 
+export type CopilotSource = {
+  label: string;
+  url?: string;
+  note?: string;
+};
+
+export type ProjectReviewCopilotServiceContext = {
+  serviceSlug: string;
+  serviceName: string;
+  description: string;
+  plannedRegion?: string;
+  preferredSku?: string;
+  sizingNote?: string;
+  itemCount: number;
+  includedCount: number;
+  notApplicableCount: number;
+  excludedCount: number;
+  pendingCount: number;
+  regionFitSummary: string;
+  costFitSummary: string;
+};
+
+export type ProjectReviewCopilotFindingContext = {
+  guid: string;
+  serviceName: string;
+  finding: string;
+  severity?: "High" | "Medium" | "Low";
+  decision: PackageDecision;
+  comments?: string;
+  owner?: string;
+  dueDate?: string;
+};
+
+export type ProjectReviewCopilotContext = {
+  review: {
+    id: string;
+    name: string;
+    audience: ReviewPackageAudience;
+    businessScope: string;
+    targetRegions: string[];
+  };
+  services: ProjectReviewCopilotServiceContext[];
+  findings: ProjectReviewCopilotFindingContext[];
+  sources: CopilotSource[];
+};
+
+export type CopilotRequest = {
+  question: string;
+  context: ProjectReviewCopilotContext;
+};
+
+export type CopilotResponse = {
+  answer: string;
+  generatedAt: string;
+  modelName: string;
+  modelDeployment: string;
+  groundingMode: "project-review-context";
+  sources: CopilotSource[];
+};
+
 export type StructuredReviewRecord = {
   guid: string;
   technology: string;

@@ -22,6 +22,10 @@ type HealthPayload = {
   backendMode: string;
   functionAppName?: string;
   applicationInsightsConfigured: boolean;
+  copilotConfigured: boolean;
+  copilotModelName?: string | null;
+  copilotDeployment?: string | null;
+  copilotEndpoint?: string | null;
   storageConfigured: boolean;
   refreshSchedule: string;
   manualRefreshEnabled: boolean;
@@ -118,6 +122,15 @@ export function DataHealthView() {
               <p>Timer-trigger schedule used by the commercial-data refresh job.</p>
             </article>
             <article className="hero-metric-card">
+              <span>Copilot model</span>
+              <strong>{payload.copilotConfigured ? payload.copilotModelName ?? "Configured" : "Not configured"}</strong>
+              <p>
+                {payload.copilotConfigured
+                  ? payload.copilotDeployment ?? "Deployment name not published"
+                  : "Azure OpenAI is not yet wired into the dedicated backend."}
+              </p>
+            </article>
+            <article className="hero-metric-card">
               <span>Last checked</span>
               <strong>{formatDate(payload.checkedAt)}</strong>
               <p>Latest backend health read from the Function App.</p>
@@ -157,6 +170,10 @@ export function DataHealthView() {
               <article className="trace-card">
                 <strong>Application Insights</strong>
                 <p>{payload.applicationInsightsConfigured ? "Enabled" : "Missing"}</p>
+              </article>
+              <article className="trace-card">
+                <strong>Project review copilot</strong>
+                <p>{payload.copilotConfigured ? "Configured" : "Not configured"}</p>
               </article>
               <article className="trace-card">
                 <strong>Blob storage</strong>
@@ -225,6 +242,10 @@ export function DataHealthView() {
               <article className="trace-card">
                 <strong>Last pricing service</strong>
                 <p>{payload.pricing?.lastServiceSlug ?? "Not refreshed yet"}</p>
+              </article>
+              <article className="trace-card">
+                <strong>Copilot endpoint</strong>
+                <p>{payload.copilotEndpoint ?? "Not configured"}</p>
               </article>
               <article className="trace-card">
                 <strong>Health endpoint</strong>

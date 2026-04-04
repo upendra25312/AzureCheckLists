@@ -120,6 +120,11 @@ The public UI is local-first and does not require sign-in. The dedicated backend
 - `AZURE_COMMERCIAL_WARM_SERVICE_INDEX_URL`
 - `AZURE_COMMERCIAL_WARM_SERVICE_LIMIT`
 - `AZURE_COMMERCIAL_REFRESH_KEY` for the optional admin refresh endpoint
+- `AZURE_OPENAI_ENDPOINT`
+- `AZURE_OPENAI_API_KEY`
+- `AZURE_OPENAI_DEPLOYMENT`
+- `AZURE_OPENAI_MODEL_NAME`
+- `AZURE_OPENAI_API_VERSION`
 
 Recommended defaults:
 
@@ -139,9 +144,10 @@ The dedicated backend stores structured review records as JSON in Blob Storage, 
 - Review state edits stay in `localStorage` by default and can optionally be saved to Azure Blob Storage through the dedicated Function App.
 - Live data routes are served from the dedicated backend:
   - `/api/availability`
-  - `/api/pricing`
-  - `/api/health`
-  - `/api/refresh` for optional admin-triggered cache warm-up
+- `/api/pricing`
+- `/api/health`
+- `/api/copilot`
+- `/api/refresh` for optional admin-triggered cache warm-up
 
 See [docs/architecture.md](./docs/architecture.md) for the deployment and migration model.
 See [docs/project-package-commercial-fit.md](./docs/project-package-commercial-fit.md) for the combined package workflow and the planned regional plus pricing extension.

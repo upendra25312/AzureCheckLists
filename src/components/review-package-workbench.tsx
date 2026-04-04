@@ -26,8 +26,10 @@ import {
   saveActivePackageId,
   upsertPackage
 } from "@/lib/review-storage";
+import { ProjectReviewCopilot } from "@/components/project-review-copilot";
 import type {
   ChecklistItem,
+  ProjectReviewCopilotContext,
   ReviewDraft,
   ReviewPackage,
   ReviewPackageAudience,
@@ -621,6 +623,105 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
       serviceRegionalFits
     ]
   );
+  const copilotContext = useMemo<ProjectReviewCopilotContext | null>(() => {
+    if (!activePackage || matrixRows.length === 0) {
+      return null;
+    }
+
+    const firstRegionalFit = Object.values(serviceRegionalFits).find(Boolean);
+    const firstPricingSnapshot = pricingSnapshots.find(Boolean);
+    const findings = packageItems
+      .filter((item) => {
+        const review = reviews[item.guid];
+
+        if (!review) {
+          return false;
+        }
+
+        return Boolean(
+          review.packageDecision !== "Needs Review" ||
+            review.comments.trim() ||
+            review.evidenceLinks.length > 0 ||
+            review.owner.trim() ||
+            review.dueDate.trim()
+        );
+      })
+      .slice(0, 40)
+      .map((item) => {
+        const review = reviews[item.guid]!;
+
+        return {
+          guid: item.guid,
+          serviceName: item.serviceCanonical ?? item.service ?? "Unmapped service",
+          finding: item.text,
+          severity: item.severity,
+          decision: review.packageDecision,
+          comments: review.comments || undefined,
+          owner: review.owner || undefined,
+          dueDate: review.dueDate || undefined
+        };
+      });
+
+    return {
+      review: {
+        id: activePackage.id,
+        name: activePackage.name,
+        audience: activePackage.audience,
+        businessScope: activePackage.businessScope,
+        targetRegions: activePackage.targetRegions
+      },
+      services: matrixRows.map((row) => {
+        const assumption = getServiceAssumption(activePackage, row.service.slug);
+
+        return {
+          serviceSlug: row.service.slug,
+          serviceName: row.service.service,
+          description: row.service.description,
+          plannedRegion: assumption.plannedRegion || undefined,
+          preferredSku: assumption.preferredSku || undefined,
+          sizingNote: assumption.sizingNote || undefined,
+          itemCount: row.itemCount,
+          includedCount: row.includedCount,
+          notApplicableCount: row.notApplicableCount,
+          excludedCount: row.excludedCount,
+          pendingCount: row.pendingCount,
+          regionFitSummary: row.regionFit.summary,
+          costFitSummary: row.costFit.summary
+        };
+      }),
+      findings,
+      sources: [
+        {
+          label: "Project review context",
+          note: "Selected services, target regions, service assumptions, checklist decisions, and recorded notes from the active browser session."
+        },
+        firstRegionalFit?.availabilitySourceUrl
+          ? {
+              label: "Azure Product Availability by Region",
+              url: firstRegionalFit.availabilitySourceUrl
+            }
+          : null,
+        firstRegionalFit?.regionsSourceUrl
+          ? {
+              label: "Azure regions list",
+              url: firstRegionalFit.regionsSourceUrl
+            }
+          : null,
+        firstPricingSnapshot?.sourceUrl
+          ? {
+              label: "Azure Retail Prices API",
+              url: firstPricingSnapshot.sourceUrl
+            }
+          : null,
+        firstPricingSnapshot?.calculatorUrl
+          ? {
+              label: "Azure Pricing Calculator",
+              url: firstPricingSnapshot.calculatorUrl
+            }
+          : null
+      ].filter(Boolean) as ProjectReviewCopilotContext["sources"]
+    };
+  }, [activePackage, matrixRows, packageItems, pricingSnapshots, reviews, serviceRegionalFits]);
 
   function refreshPackages(nextPackages: ReviewPackage[], nextActiveId: string | null) {
     setPackages(nextPackages);
@@ -1268,10 +1369,12 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
         )}
       </section>
 
+      {copilotContext ? <ProjectReviewCopilot context={copilotContext} /> : null}
+
       <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Step 4</p>
+            <p className="eyebrow">Step 5</p>
             <h2 className="section-title">Open the selected service pages and write project-specific notes.</h2>
             <p className="section-copy">
               This is where the real review happens. Open a selected service, review findings, and
@@ -1324,7 +1427,7 @@ export function ReviewPackageWorkbench({ index }: { index: ServiceIndex }) {
       <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Step 5</p>
+            <p className="eyebrow">Step 6</p>
             <h2 className="section-title">Download only the scoped services and their project notes.</h2>
             <p className="section-copy">
               CSV works well for spreadsheets and action tracking. Markdown and text are better for

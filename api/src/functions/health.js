@@ -4,9 +4,11 @@ const {
   COMMERCIAL_REFRESH_SCHEDULE,
   readRefreshState
 } = require("../shared/commercial-cache");
+const { getCopilotConfiguration, toVisibleEndpoint } = require("../shared/copilot");
 
 async function handleHealth() {
   const checkedAt = new Date().toISOString();
+  const copilot = getCopilotConfiguration();
 
   try {
     const refreshState = await readRefreshState();
@@ -22,6 +24,10 @@ async function handleHealth() {
           process.env.APPLICATIONINSIGHTS_CONNECTION_STRING ||
             process.env.APPINSIGHTS_INSTRUMENTATIONKEY
         ),
+        copilotConfigured: copilot.configured,
+        copilotModelName: copilot.modelName,
+        copilotDeployment: copilot.deployment ?? null,
+        copilotEndpoint: toVisibleEndpoint(copilot.endpoint),
         storageConfigured: Boolean(
           process.env.AZURE_STORAGE_CONNECTION_STRING || process.env.AzureWebJobsStorage
         ),
@@ -48,6 +54,10 @@ async function handleHealth() {
           process.env.APPLICATIONINSIGHTS_CONNECTION_STRING ||
             process.env.APPINSIGHTS_INSTRUMENTATIONKEY
         ),
+        copilotConfigured: copilot.configured,
+        copilotModelName: copilot.modelName,
+        copilotDeployment: copilot.deployment ?? null,
+        copilotEndpoint: toVisibleEndpoint(copilot.endpoint),
         storageConfigured: Boolean(
           process.env.AZURE_STORAGE_CONNECTION_STRING || process.env.AzureWebJobsStorage
         ),
