@@ -1,0 +1,32 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AZURE_STORAGE_CONNECTION_STRING": "UseDevelopmentStorage=true",
+    "AZURE_STORAGE_REVIEW_CONTAINER_NAME": "review-notes",
+    "AZURE_STORAGE_REVIEW_ARTIFACT_CONTAINER_NAME": "review-artifacts",
+    "AZURE_STORAGE_COMMERCIAL_CACHE_CONTAINER_NAME": "commercial-data-cache",
+    "AZURE_STORAGE_REVIEW_USER_TABLE_NAME": "reviewusers",
+    "AZURE_STORAGE_PROJECT_REVIEW_TABLE_NAME": "projectreviews",
+    "AZURE_COMMERCIAL_REFRESH_SCHEDULE": "0 0 7 * * 1",
+    "AZURE_COMMERCIAL_CACHE_TTL_HOURS": "168",
+    "AZURE_AVAILABILITY_CACHE_TTL_HOURS": "168",
+    "AZURE_PRICING_CACHE_TTL_HOURS": "168",
+    "AZURE_COMMERCIAL_WARM_SERVICE_INDEX_URL": "",
+    "AZURE_COMMERCIAL_WARM_SERVICE_LIMIT": "0",
+    "AZURE_COMMERCIAL_REFRESH_KEY": "",
+    "AZURE_OPENAI_ENDPOINT": "",
+    "AZURE_OPENAI_API_KEY": "",
+    "AZURE_OPENAI_DEPLOYMENT": "",
+    "AZURE_OPENAI_MODEL_NAME": "gpt-4.1-mini",
+    "AZURE_OPENAI_API_VERSION": "2024-10-21",
+    "ADMIN_ALLOWED_RESOURCE_GROUP": "Azure-Review-Checklists-RG",
+    "ADMIN_STATIC_WEB_APP_NAME": "azure-review-checklists",
+    "ADMIN_FUNCTION_APP_NAME": "azure-review-checklists-api",
+    "ADMIN_OPENAI_RESOURCE_NAME": "",
+    "ADMIN_OPENAI_DEPLOYMENT": "",
+    "ADMIN_SCOPE_REGION": "Central US",
+    "AZURE_MCP_SERVER_URL": ""
+  }
+}
