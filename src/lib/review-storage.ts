@@ -45,7 +45,9 @@ export function createEmptyServiceAssumption(): ReviewServiceAssumption {
   return {
     plannedRegion: "",
     preferredSku: "",
-    sizingNote: ""
+    sizingNote: "",
+    estimateInputMode: "defaults",
+    estimateInputs: {}
   };
 }
 
@@ -58,7 +60,10 @@ function normalizeServiceAssumptions(
       {
         plannedRegion: value.plannedRegion ?? "",
         preferredSku: value.preferredSku ?? "",
-        sizingNote: value.sizingNote ?? ""
+        sizingNote: value.sizingNote ?? "",
+        estimateProfileVersion: value.estimateProfileVersion,
+        estimateInputMode: value.estimateInputMode ?? "defaults",
+        estimateInputs: value.estimateInputs ?? {}
       }
     ])
   ) as Record<string, ReviewServiceAssumption>;

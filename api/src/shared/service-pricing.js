@@ -195,6 +195,23 @@ const MANUAL_QUERY_MAP = {
     ],
     notes: ["Retail pricing is published under Azure OpenAI product rows in the Foundry model family."]
   },
+  "azure-sql-database": {
+    queries: [
+      {
+        field: "serviceName",
+        operator: "contains",
+        value: "SQL Database",
+        source: "manual"
+      },
+      {
+        field: "productName",
+        operator: "contains",
+        value: "SQL Database",
+        source: "manual"
+      }
+    ],
+    notes: ["Retail pricing is published under SQL Database compute and elastic-pool product families in the retail price feed."]
+  },
   "azure-private-dns": {
     queries: [
       {

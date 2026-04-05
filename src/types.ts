@@ -329,18 +329,55 @@ export type MonthlyEstimateMode =
   | "recurring-base-only"
   | "not-modeled";
 
+export type EstimateInputMode = "defaults" | "custom";
+export type MonthlyEstimateCoverage = "profiled" | "base-only" | "not-modeled";
+export type ReviewServiceEstimateInputValue = string | number | boolean;
+export type ReviewServiceEstimateInputs = Record<string, ReviewServiceEstimateInputValue>;
+export type ServiceEstimateInputKind = "number" | "select" | "boolean";
+
+export type ServiceEstimateInputOption = {
+  label: string;
+  value: string;
+};
+
+export type ServiceEstimateInputDefinition = {
+  key: string;
+  label: string;
+  description: string;
+  kind: ServiceEstimateInputKind;
+  unit?: string;
+  min?: number;
+  step?: number;
+  defaultValue: ReviewServiceEstimateInputValue;
+  options?: ServiceEstimateInputOption[];
+};
+
+export type ServiceEstimateProfile = {
+  serviceSlug: string;
+  label: string;
+  description: string;
+  version: string;
+  coverage: MonthlyEstimateCoverage;
+  mode: MonthlyEstimateMode;
+  inputDefinitions: ServiceEstimateInputDefinition[];
+};
+
 export type ServiceMonthlyEstimateComponent = {
   label: string;
   meterName: string;
+  meterId?: string;
   skuName: string;
   location: string;
   unitOfMeasure: string;
   quantity: number;
+  hourlyCost: number;
   monthlyCost: number;
+  formulaKey?: string;
 };
 
 export type ServiceMonthlySkuEstimate = {
   skuName: string;
+  hourlyCost: number;
   monthlyCost: number;
   assumptions: string[];
   notes: string[];
@@ -354,11 +391,16 @@ export type ServiceMonthlyEstimate = {
   supported: boolean;
   mode: MonthlyEstimateMode;
   currencyCode: string;
+  profileVersion?: string;
+  coverage: MonthlyEstimateCoverage;
   notes: string[];
   assumptions: string[];
   targetScopeApplied: boolean;
+  selectedInputMode: EstimateInputMode;
+  selectedInputs: ReviewServiceEstimateInputs;
   skuEstimates: ServiceMonthlySkuEstimate[];
   selectedSkuName?: string;
+  selectedHourlyCost?: number;
   selectedMonthlyCost?: number;
 };
 
@@ -376,6 +418,9 @@ export type ReviewServiceAssumption = {
   plannedRegion: string;
   preferredSku: string;
   sizingNote: string;
+  estimateProfileVersion?: string;
+  estimateInputMode?: EstimateInputMode;
+  estimateInputs?: ReviewServiceEstimateInputs;
 };
 
 export type ReviewPackage = {

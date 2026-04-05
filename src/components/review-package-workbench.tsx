@@ -17,6 +17,10 @@ import {
   downloadCsv,
   downloadText
 } from "@/lib/export";
+import {
+  getServiceEstimateProfile,
+  resolveEstimateInputs
+} from "@/lib/monthly-estimate-profiles";
 import { buildServiceMonthlyEstimate } from "@/lib/monthly-estimate";
 import {
   buildServiceRegionalFitRequest,
@@ -32,9 +36,11 @@ import {
   fetchClientPrincipal,
   loadCloudProjectReviewState,
   loadCloudReviewRecords,
+  saveCloudProjectReviewState,
   structuredRecordsToReviewMap
 } from "@/lib/review-cloud";
 import {
+  createEmptyServiceAssumption,
   createEmptyReview,
   createReviewPackage,
   deletePackage,
@@ -57,6 +63,7 @@ import type {
   ReviewDraft,
   ReviewPackage,
   ReviewPackageAudience,
+  ReviewServiceEstimateInputValue,
   ServiceRegionalFit,
   ServiceRegionalFitSummary,
   ServiceIndex,
@@ -90,6 +97,18 @@ function formatRetailPrice(price: number | undefined, currencyCode = "USD") {
     style: "currency",
     currency: currencyCode,
     maximumFractionDigits: 6
+  }).format(price);
+}
+
+function formatEstimatePrice(price: number | undefined, currencyCode = "USD") {
+  if (price === undefined || Number.isNaN(price)) {
+    return "Not modeled";
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currencyCode,
+    maximumFractionDigits: 2
   }).format(price);
 }
 
@@ -486,13 +505,7 @@ function getServiceAssumption(
   reviewPackage: ReviewPackage | null,
   serviceSlug: string
 ): ReviewServiceAssumption {
-  return (
-    reviewPackage?.serviceAssumptions[serviceSlug] ?? {
-      plannedRegion: "",
-      preferredSku: "",
-      sizingNote: ""
-    }
-  );
+  return reviewPackage?.serviceAssumptions[serviceSlug] ?? createEmptyServiceAssumption();
 }
 
 function resolvePackageName(name: string) {
@@ -747,6 +760,10 @@ export function ReviewPackageWorkbench({
   const supportedMonthlyEstimates = monthlyEstimates.filter((estimate) => estimate.supported);
   const totalMonthlyEstimate = supportedMonthlyEstimates.reduce(
     (accumulator, estimate) => accumulator + (estimate.selectedMonthlyCost ?? 0),
+    0
+  );
+  const totalHourlyEstimate = supportedMonthlyEstimates.reduce(
+    (accumulator, estimate) => accumulator + (estimate.selectedHourlyCost ?? 0),
     0
   );
   const projectReviewSteps = [
@@ -1249,10 +1266,31 @@ export function ReviewPackageWorkbench({
     return savedPackage;
   }
 
-  function handleSavePackageDetails() {
+  async function handleSavePackageDetails() {
     const savedPackage = persistActivePackageFormState();
 
     if (!savedPackage) {
+      return;
+    }
+
+    try {
+      const principal = await fetchClientPrincipal();
+
+      if (principal) {
+        await saveCloudProjectReviewState(savedPackage, copilotContext);
+        setPackageActionTone("success");
+        setPackageActionMessage(
+          `Saved the project review details for "${savedPackage.name}" locally and updated the Azure-backed review summary.`
+        );
+        return;
+      }
+    } catch (error) {
+      setPackageActionTone("neutral");
+      setPackageActionMessage(
+        error instanceof Error
+          ? `${error.message} The project review details were still saved locally for "${savedPackage.name}".`
+          : `Saved the project review details for "${savedPackage.name}" locally, but the Azure-backed review summary could not be updated.`
+      );
       return;
     }
 
@@ -1308,10 +1346,14 @@ export function ReviewPackageWorkbench({
       ...current,
       ...patch
     };
+    const nextEstimateInputMode = nextAssumption.estimateInputMode ?? "defaults";
+    const nextEstimateInputs = nextAssumption.estimateInputs ?? {};
     const shouldRemove =
       !nextAssumption.plannedRegion.trim() &&
       !nextAssumption.preferredSku.trim() &&
-      !nextAssumption.sizingNote.trim();
+      !nextAssumption.sizingNote.trim() &&
+      nextEstimateInputMode === "defaults" &&
+      Object.keys(nextEstimateInputs).length === 0;
     const nextServiceAssumptions = {
       ...activePackage.serviceAssumptions
     };
@@ -1338,6 +1380,40 @@ export function ReviewPackageWorkbench({
 
       nextPackages.splice(existingIndex, 1, saved);
       return nextPackages;
+    });
+  }
+
+  function updateServiceEstimateInput(
+    serviceSlug: string,
+    key: string,
+    value: ReviewServiceEstimateInputValue
+  ) {
+    const profile = getServiceEstimateProfile(serviceSlug);
+    const assumption = getServiceAssumption(activePackage, serviceSlug);
+    const defaultInputs = resolveEstimateInputs(profile, undefined);
+    const nextEstimateInputs = {
+      ...(assumption.estimateInputs ?? {}),
+      [key]: value
+    };
+
+    if (defaultInputs[key] === value) {
+      delete nextEstimateInputs[key];
+    }
+
+    updateServiceAssumption(serviceSlug, {
+      estimateProfileVersion: profile?.version,
+      estimateInputMode: "custom",
+      estimateInputs: nextEstimateInputs
+    });
+  }
+
+  function updateServiceEstimateInputMode(serviceSlug: string, mode: "defaults" | "custom") {
+    const profile = getServiceEstimateProfile(serviceSlug);
+
+    updateServiceAssumption(serviceSlug, {
+      estimateProfileVersion: profile?.version,
+      estimateInputMode: mode,
+      estimateInputs: mode === "defaults" ? {} : getServiceAssumption(activePackage, serviceSlug).estimateInputs ?? {}
     });
   }
 
@@ -2107,6 +2183,111 @@ export function ReviewPackageWorkbench({
                         placeholder="Capture rough sizing, expected scale, customer constraints, or estimate assumptions for this service."
                       />
                     </label>
+                    {(() => {
+                      const estimateProfile = getServiceEstimateProfile(row.service.slug);
+                      const assumption = getServiceAssumption(activePackage, row.service.slug);
+                      const resolvedInputs = resolveEstimateInputs(estimateProfile, assumption);
+
+                      if (!estimateProfile || estimateProfile.inputDefinitions.length === 0) {
+                        return null;
+                      }
+
+                      return (
+                        <>
+                          <label>
+                            <span className="microcopy">Estimate input mode</span>
+                            <select
+                              className="field-input"
+                              value={assumption.estimateInputMode ?? "defaults"}
+                              onChange={(event) =>
+                                updateServiceEstimateInputMode(
+                                  row.service.slug,
+                                  event.target.value as "defaults" | "custom"
+                                )
+                              }
+                            >
+                              <option value="defaults">Use profile defaults</option>
+                              <option value="custom">Customize estimate inputs</option>
+                            </select>
+                          </label>
+                          {estimateProfile.inputDefinitions.map((definition) => {
+                            const inputId = `${row.service.slug}-${definition.key}`;
+                            const currentValue = resolvedInputs[definition.key] ?? definition.defaultValue;
+
+                            if (definition.kind === "boolean") {
+                              return (
+                                <label key={inputId}>
+                                  <span className="microcopy">{definition.label}</span>
+                                  <input
+                                    className="field-input"
+                                    type="checkbox"
+                                    checked={Boolean(currentValue)}
+                                    onChange={(event) =>
+                                      updateServiceEstimateInput(
+                                        row.service.slug,
+                                        definition.key,
+                                        event.target.checked
+                                      )
+                                    }
+                                  />
+                                  <span className="microcopy">{definition.description}</span>
+                                </label>
+                              );
+                            }
+
+                            if (definition.kind === "select") {
+                              return (
+                                <label key={inputId}>
+                                  <span className="microcopy">{definition.label}</span>
+                                  <select
+                                    className="field-input"
+                                    value={String(currentValue)}
+                                    onChange={(event) =>
+                                      updateServiceEstimateInput(
+                                        row.service.slug,
+                                        definition.key,
+                                        event.target.value
+                                      )
+                                    }
+                                  >
+                                    {(definition.options ?? []).map((option) => (
+                                      <option key={`${inputId}-${option.value}`} value={option.value}>
+                                        {option.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <span className="microcopy">{definition.description}</span>
+                                </label>
+                              );
+                            }
+
+                            return (
+                              <label key={inputId}>
+                                <span className="microcopy">
+                                  {definition.label}
+                                  {definition.unit ? ` · ${definition.unit}` : ""}
+                                </span>
+                                <input
+                                  className="field-input"
+                                  type="number"
+                                  min={definition.min}
+                                  step={definition.step}
+                                  value={Number(currentValue)}
+                                  onChange={(event) =>
+                                    updateServiceEstimateInput(
+                                      row.service.slug,
+                                      definition.key,
+                                      Number(event.target.value)
+                                    )
+                                  }
+                                />
+                                <span className="microcopy">{definition.description}</span>
+                              </label>
+                            );
+                          })}
+                        </>
+                      );
+                    })()}
                   </div>
                   <button
                     type="button"
@@ -2560,10 +2741,19 @@ export function ReviewPackageWorkbench({
                 <p>Selected services with a modeled monthly estimate from the current retail rows.</p>
               </article>
               <article className="hero-metric-card">
+                <span>Estimated hourly total</span>
+                <strong>
+                  {supportedMonthlyEstimates.length > 0
+                    ? formatEstimatePrice(totalHourlyEstimate, supportedMonthlyEstimates[0]?.currencyCode ?? "USD")
+                    : "Not modeled"}
+                </strong>
+                <p>Average hourly view derived from the selected service estimates in this review.</p>
+              </article>
+              <article className="hero-metric-card">
                 <span>Estimated monthly total</span>
                 <strong>
                   {supportedMonthlyEstimates.length > 0
-                    ? formatRetailPrice(totalMonthlyEstimate, supportedMonthlyEstimates[0]?.currencyCode ?? "USD")
+                    ? formatEstimatePrice(totalMonthlyEstimate, supportedMonthlyEstimates[0]?.currencyCode ?? "USD")
                     : "Not modeled"}
                 </strong>
                 <p>Sum of the selected per-service estimates currently chosen for this review.</p>
@@ -2605,19 +2795,19 @@ export function ReviewPackageWorkbench({
 
           <article className="leadership-brief package-card">
             <p className="eyebrow">Estimate guidance</p>
-            <h2 className="leadership-title">Use this for first-pass monthly costing, not final commercial sign-off.</h2>
+            <h2 className="leadership-title">Use this as a Microsoft retail baseline, not as an official Azure Pricing Calculator result.</h2>
             <div className="leadership-list">
               <article>
                 <strong>Still Microsoft-sourced</strong>
-                <p>The unit prices still come from Microsoft’s retail feed. The monthly layer adds default quantity assumptions on top.</p>
+                <p>The prices shown here come from the Microsoft Azure Retail Prices API. The site adds product-owned hourly and monthly estimate assumptions on top of those retail meters.</p>
               </article>
               <article>
-                <strong>Preferred SKU stays optional</strong>
-                <p>If no preferred SKU is entered, the estimate keeps all published SKUs and chooses the lowest modeled one for the project total.</p>
+                <strong>Calculator parity is not implied</strong>
+                <p>This is not fetched from an Azure Pricing Calculator API. If someone needs a Microsoft calculator worksheet, they still need to open the Azure Pricing Calculator separately and configure it manually.</p>
               </article>
               <article>
-                <strong>Refine with sizing later</strong>
-                <p>Sizing notes are not required for the first pass. Add them later when you want a customer-specific estimate.</p>
+                <strong>Refine with structured inputs</strong>
+                <p>Preferred SKU, region, and estimate inputs let you tighten the estimate without turning this review experience into a full pricing portal.</p>
               </article>
             </div>
           </article>
@@ -2643,15 +2833,17 @@ export function ReviewPackageWorkbench({
                     <h3>{estimate.serviceName}</h3>
                   </div>
                   <span className="chip">
-                    {estimate.supported ? estimate.mode.replaceAll("-", " ") : "Not modeled"}
+                    {estimate.supported
+                      ? `${estimate.coverage.replaceAll("-", " ")} · ${estimate.mode.replaceAll("-", " ")}`
+                      : "Not modeled"}
                   </span>
                 </div>
                 <p className="microcopy">
                   {estimate.supported
-                    ? `${estimate.selectedSkuName ?? "Selected SKU"} is currently contributing ${formatRetailPrice(
-                        estimate.selectedMonthlyCost,
+                    ? `${estimate.selectedSkuName ?? "Selected SKU"} is currently contributing ${formatEstimatePrice(
+                        estimate.selectedHourlyCost,
                         estimate.currencyCode
-                      )} to the project’s monthly total.`
+                      )} per hour and ${formatEstimatePrice(estimate.selectedMonthlyCost, estimate.currencyCode)} per month.`
                     : estimate.notes[0] ?? "A monthly estimate is not modeled for this service yet."}
                 </p>
                 {estimate.assumptions.length > 0 ? (
@@ -2667,9 +2859,41 @@ export function ReviewPackageWorkbench({
                   <div className="chip-row">
                     {estimate.skuEstimates.slice(0, 4).map((skuEstimate) => (
                       <span className="chip" key={`${estimate.serviceSlug}-${skuEstimate.skuName}`}>
-                        {skuEstimate.skuName}: {formatRetailPrice(skuEstimate.monthlyCost, estimate.currencyCode)}
+                        {skuEstimate.skuName}: {formatEstimatePrice(skuEstimate.hourlyCost, estimate.currencyCode)}/hour · {formatEstimatePrice(skuEstimate.monthlyCost, estimate.currencyCode)}/month
                       </span>
                     ))}
+                  </div>
+                ) : null}
+                {estimate.supported ? (
+                  <div className="chip-row">
+                    <span className="chip">Profile {estimate.profileVersion ?? "n/a"}</span>
+                    <span className="chip">Input mode {estimate.selectedInputMode}</span>
+                    <span className="chip">Retail API source</span>
+                  </div>
+                ) : null}
+                {estimate.supported && estimate.selectedInputs ? (
+                  <div className="chip-row">
+                    {Object.entries(estimate.selectedInputs)
+                      .slice(0, 3)
+                      .map(([key, value]) => (
+                        <span className="chip" key={`${estimate.serviceSlug}-${key}`}>
+                          {key}: {String(value)}
+                        </span>
+                      ))}
+                  </div>
+                ) : null}
+                {estimate.supported && estimate.selectedSkuName ? (
+                  <div className="traceability-grid">
+                    {(estimate.skuEstimates.find((entry) => entry.skuName === estimate.selectedSkuName)?.components ?? [])
+                      .slice(0, 4)
+                      .map((component) => (
+                        <article className="trace-card" key={`${estimate.serviceSlug}-${component.label}-${component.meterId ?? component.meterName}`}>
+                          <strong>{component.label}</strong>
+                          <p>{formatEstimatePrice(component.hourlyCost, estimate.currencyCode)}/hour</p>
+                          <p>{formatEstimatePrice(component.monthlyCost, estimate.currencyCode)}/month</p>
+                          <p className="microcopy">{component.location} · {component.meterName}</p>
+                        </article>
+                      ))}
                   </div>
                 ) : null}
                 {estimate.notes.length > 0 ? (

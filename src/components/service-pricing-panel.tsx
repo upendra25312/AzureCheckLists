@@ -17,6 +17,18 @@ function formatRetailPrice(price: number | undefined, currencyCode: string) {
   }).format(price);
 }
 
+function formatEstimatePrice(price: number | undefined, currencyCode: string) {
+  if (price === undefined || Number.isNaN(price)) {
+    return "Not modeled";
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currencyCode,
+    maximumFractionDigits: 2
+  }).format(price);
+}
+
 function findBaseMonthlyRow(pricing: ServicePricing | null, targetRegions: string[]) {
   if (!pricing) {
     return null;
@@ -75,6 +87,7 @@ export function ServicePricingPanel({
   const [error, setError] = useState<string | null>(null);
   const [scope, setScope] = useState<"all" | "target">(targetRegions.length > 0 ? "target" : "all");
   const [search, setSearch] = useState("");
+  const [view, setView] = useState<"retail" | "estimate">("retail");
 
   useEffect(() => {
     let active = true;
@@ -148,7 +161,9 @@ export function ServicePricingPanel({
             {
               plannedRegion: "",
               preferredSku: "",
-              sizingNote: ""
+              sizingNote: "",
+              estimateInputMode: "defaults",
+              estimateInputs: {}
             },
             targetRegions
           )
@@ -250,14 +265,30 @@ export function ServicePricingPanel({
       <div className="section-head">
         <div>
           <p className="eyebrow">Commercial fit</p>
-          <h2 className="section-title">See the current public retail pricing by SKU, meter, and billing location.</h2>
+          <h2 className="section-title">Use Microsoft retail pricing directly, or switch to a calculator-aligned estimate view.</h2>
           <p className="section-copy">
-            This view is designed for pre-sales, solution architects, and sales teams who need list
-            pricing visibility while scoping a service. Regional filters follow the active project review when present.
+            This page uses Microsoft’s Azure Retail Prices API as the source of truth. The estimate view adds site-owned assumptions on top of those published retail meters. It does not call an official Azure Pricing Calculator API.
           </p>
         </div>
+      </div>
+
+      <div className="button-row">
+        <button
+          type="button"
+          className={view === "retail" ? "secondary-button" : "ghost-button"}
+          onClick={() => setView("retail")}
+        >
+          Retail Meter View
+        </button>
+        <button
+          type="button"
+          className={view === "estimate" ? "secondary-button" : "ghost-button"}
+          onClick={() => setView("estimate")}
+        >
+          Monthly Estimate View
+        </button>
         {targetRegions.length > 0 ? (
-          <div className="button-row">
+          <>
             <button
               type="button"
               className={scope === "target" ? "secondary-button" : "ghost-button"}
@@ -272,46 +303,71 @@ export function ServicePricingPanel({
             >
               All pricing rows
             </button>
-          </div>
+          </>
         ) : null}
       </div>
 
-      <div className="hero-metrics-row">
-        <article className="hero-metric-card">
-          <span>{pricing.startsAtTargetRetailPrice !== undefined ? "Lowest scoped meter" : "Lowest published meter"}</span>
-          <strong>{formatRetailPrice(highlightedStartingPrice, pricing.currencyCode)}</strong>
-          <p>
-            This is the lowest published retail meter row in the current pricing scope. It is not a monthly Azure Pricing Calculator estimate.
-          </p>
-        </article>
-        <article className="hero-metric-card">
-          <span>Base monthly fee</span>
-          <strong>{baseMonthlyRow ? formatRetailPrice(baseMonthlyRow.retailPrice, baseMonthlyRow.currencyCode) : "Not isolated"}</strong>
-          <p>
-            {baseMonthlyRow
-              ? `${baseMonthlyRow.meterName} from the retail feed. The calculator can still add traffic, requests, domains, and other usage assumptions on top.`
-              : "No clear recurring base-fee meter was isolated for this service."}
-          </p>
-        </article>
-        <article className="hero-metric-card">
-          <span>Target-region matches</span>
-          <strong>{pricing.targetRegionMatchCount.toLocaleString()}</strong>
-          <p>Pricing locations that match the active project review target regions.</p>
-        </article>
-        <article className="hero-metric-card">
-          <span>Default monthly estimate</span>
-          <strong>
-            {monthlyEstimate?.supported
-              ? formatRetailPrice(monthlyEstimate.selectedMonthlyCost, monthlyEstimate.currencyCode)
-              : "Not modeled"}
-          </strong>
-          <p>
-            {monthlyEstimate?.supported
-              ? `${monthlyEstimate.selectedSkuName ?? "Selected SKU"} uses calculator-style defaults or recurring-base assumptions for a first-pass monthly view.`
-              : "This service does not yet have a modeled monthly estimate; use the raw retail meters below or the Azure Pricing Calculator for manual refinement."}
-          </p>
-        </article>
-      </div>
+      {view === "retail" ? (
+        <div className="hero-metrics-row">
+          <article className="hero-metric-card">
+            <span>{pricing.startsAtTargetRetailPrice !== undefined ? "Lowest scoped meter" : "Lowest published meter"}</span>
+            <strong>{formatRetailPrice(highlightedStartingPrice, pricing.currencyCode)}</strong>
+            <p>
+              This is the lowest published retail meter row in the current pricing scope. It is not a monthly Azure Pricing Calculator estimate.
+            </p>
+          </article>
+          <article className="hero-metric-card">
+            <span>Base monthly fee</span>
+            <strong>{baseMonthlyRow ? formatRetailPrice(baseMonthlyRow.retailPrice, baseMonthlyRow.currencyCode) : "Not isolated"}</strong>
+            <p>
+              {baseMonthlyRow
+                ? `${baseMonthlyRow.meterName} from the retail feed. Use this as a baseline recurring meter, not as a full calculator total.`
+                : "No clear recurring base-fee meter was isolated for this service."}
+            </p>
+          </article>
+          <article className="hero-metric-card">
+            <span>Target-region matches</span>
+            <strong>{pricing.targetRegionMatchCount.toLocaleString()}</strong>
+            <p>Pricing locations that match the active project review target regions.</p>
+          </article>
+          <article className="hero-metric-card">
+            <span>Default monthly estimate</span>
+            <strong>
+              {monthlyEstimate?.supported
+                ? formatEstimatePrice(monthlyEstimate.selectedMonthlyCost, monthlyEstimate.currencyCode)
+                : "Not modeled"}
+            </strong>
+            <p>
+              {monthlyEstimate?.supported
+                ? `${monthlyEstimate.selectedSkuName ?? "Selected SKU"} is available in the estimate view using Microsoft retail pricing plus site assumptions.`
+                : "This service does not yet have a modeled estimate; use the raw retail meters below or build a manual worksheet in the Azure Pricing Calculator."}
+            </p>
+          </article>
+        </div>
+      ) : (
+        <div className="hero-metrics-row">
+          <article className="hero-metric-card">
+            <span>Selected hourly estimate</span>
+            <strong>{formatEstimatePrice(monthlyEstimate?.selectedHourlyCost, monthlyEstimate?.currencyCode ?? pricing.currencyCode)}</strong>
+            <p>Average hourly view derived from the selected estimate profile and scoped retail rows.</p>
+          </article>
+          <article className="hero-metric-card">
+            <span>Selected monthly estimate</span>
+            <strong>{formatEstimatePrice(monthlyEstimate?.selectedMonthlyCost, monthlyEstimate?.currencyCode ?? pricing.currencyCode)}</strong>
+            <p>Calculated from Microsoft retail meters. This is not fetched from an Azure Pricing Calculator API.</p>
+          </article>
+          <article className="hero-metric-card">
+            <span>Estimate coverage</span>
+            <strong>{monthlyEstimate?.coverage?.replaceAll("-", " ") ?? "Not modeled"}</strong>
+            <p>{monthlyEstimate?.selectedSkuName ? `Selected SKU ${monthlyEstimate.selectedSkuName}` : "No estimate profile could be resolved for this service."}</p>
+          </article>
+          <article className="hero-metric-card">
+            <span>Profile version</span>
+            <strong>{monthlyEstimate?.profileVersion ?? "n/a"}</strong>
+            <p>Retail meters are Microsoft-sourced. Estimate defaults on this page are product-owned assumptions.</p>
+          </article>
+        </div>
+      )}
 
       <div className="traceability-grid">
         <article className="trace-card">
@@ -370,7 +426,7 @@ export function ServicePricingPanel({
         <h3>Use retail pricing as the customer-facing baseline, then refine with quantity assumptions.</h3>
         <p className="microcopy">{pricing.priceDisclaimer}</p>
         <p className="microcopy">
-          The Azure Pricing Calculator can show a higher monthly figure because it layers base fees and default traffic or request assumptions on top of the raw meter prices.
+          The Azure Pricing Calculator can show a different figure because it layers Microsoft-owned configuration assumptions on top of the same published retail price source. This page only uses the Azure Retail Prices API plus site-owned estimate defaults.
         </p>
         {pricing.notes.length > 0 ? (
           <div className="chip-row">
@@ -383,57 +439,94 @@ export function ServicePricingPanel({
         ) : null}
       </div>
 
-      <div className="filter-card workspace-toolbar">
-        <div className="workspace-toolbar-main">
-          <input
-            className="search-input"
-            type="search"
-            placeholder="Search pricing rows by location, SKU, product, or meter"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-          <p className="microcopy">
-            {scope === "target" && targetRegions.length > 0
-              ? `Target-region scope uses ${targetRegions.join(", ")} and also includes matching billing-zone or global meters when Microsoft prices a service that way.`
-              : "All published pricing rows are shown, including zone-based billing rows for global services."}
-          </p>
-        </div>
-      </div>
-
-      {filteredRows.length > 0 ? (
-        <article className="list-card review-list-card">
-          <div className="item-list">
-            {filteredRows.slice(0, 200).map((row) => (
-              <div className="item-row" key={`${row.meterId}-${row.location}-${row.tierMinimumUnits}-${row.retailPrice}`}>
-                <div>
-                  <div className="item-topline">
-                    <span className="pill">{row.locationKind}</span>
-                    {row.skuName ? <span className="pill">{row.skuName}</span> : null}
-                    {row.armRegionName ? <span className="pill">{row.armRegionName}</span> : null}
-                    {matchesPricingTargetRegion(
-                      row.armRegionName,
-                      row.location,
-                      targetRegions,
-                      pricing.targetPricingLocations,
-                      row.locationKind
-                    ) ? (
-                      <span className="pill">Target region match</span>
-                    ) : null}
-                  </div>
-                  <p className="item-text">{row.location || "No published billing location"}</p>
-                  <p className="item-description">
-                    {row.productName} · {row.meterName} · {formatRetailPrice(row.retailPrice, row.currencyCode)} per{" "}
-                    {row.unitOfMeasure}
-                    {row.tierMinimumUnits > 0
-                      ? ` after ${row.tierMinimumUnits.toLocaleString()} units`
-                      : ""}
-                  </p>
-                </div>
-              </div>
-            ))}
+      {view === "retail" ? (
+        <>
+          <div className="filter-card workspace-toolbar">
+            <div className="workspace-toolbar-main">
+              <input
+                className="search-input"
+                type="search"
+                placeholder="Search pricing rows by location, SKU, product, or meter"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+              <p className="microcopy">
+                {scope === "target" && targetRegions.length > 0
+                  ? `Target-region scope uses ${targetRegions.join(", ")} and also includes matching billing-zone or global meters when Microsoft prices a service that way.`
+                  : "All published pricing rows are shown, including zone-based billing rows for global services."}
+              </p>
+            </div>
           </div>
-        </article>
+
+          {filteredRows.length > 0 ? (
+            <article className="list-card review-list-card">
+              <div className="item-list">
+                {filteredRows.slice(0, 200).map((row) => (
+                  <div className="item-row" key={`${row.meterId}-${row.location}-${row.tierMinimumUnits}-${row.retailPrice}`}>
+                    <div>
+                      <div className="item-topline">
+                        <span className="pill">{row.locationKind}</span>
+                        {row.skuName ? <span className="pill">{row.skuName}</span> : null}
+                        {row.armRegionName ? <span className="pill">{row.armRegionName}</span> : null}
+                        {matchesPricingTargetRegion(
+                          row.armRegionName,
+                          row.location,
+                          targetRegions,
+                          pricing.targetPricingLocations,
+                          row.locationKind
+                        ) ? (
+                          <span className="pill">Target region match</span>
+                        ) : null}
+                      </div>
+                      <p className="item-text">{row.location || "No published billing location"}</p>
+                      <p className="item-description">
+                        {row.productName} · {row.meterName} · {formatRetailPrice(row.retailPrice, row.currencyCode)} per{" "}
+                        {row.unitOfMeasure}
+                        {row.tierMinimumUnits > 0
+                          ? ` after ${row.tierMinimumUnits.toLocaleString()} units`
+                          : ""}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </article>
+          ) : null}
+        </>
       ) : (
+        <div className="traceability-grid">
+          {monthlyEstimate?.supported && monthlyEstimate.selectedSkuName
+            ? (monthlyEstimate.skuEstimates.find((entry) => entry.skuName === monthlyEstimate.selectedSkuName)?.components ?? []).map((component) => (
+                <article className="trace-card" key={`${component.meterId ?? component.meterName}-${component.label}`}>
+                  <strong>{component.label}</strong>
+                  <p>{formatEstimatePrice(component.hourlyCost, monthlyEstimate.currencyCode)}/hour</p>
+                  <p>{formatEstimatePrice(component.monthlyCost, monthlyEstimate.currencyCode)}/month</p>
+                  <p className="microcopy">{component.location} · {component.meterName}</p>
+                </article>
+              ))
+            : null}
+          <article className="trace-card">
+            <strong>Estimate input mode</strong>
+            <p>{monthlyEstimate?.selectedInputMode ?? "defaults"}</p>
+          </article>
+          <article className="trace-card">
+            <strong>Selected inputs</strong>
+            <p>
+              {monthlyEstimate && Object.keys(monthlyEstimate.selectedInputs).length > 0
+                ? Object.entries(monthlyEstimate.selectedInputs)
+                    .map(([key, value]) => `${key}: ${String(value)}`)
+                    .join(" | ")
+                : "Profile defaults are in use."}
+            </p>
+          </article>
+          <article className="trace-card">
+            <strong>Retail source disclosure</strong>
+            <p>Prices are sourced from the Azure Retail Prices API. For the Azure Pricing Calculator, use Microsoft’s calculator separately.</p>
+          </article>
+        </div>
+      )}
+
+      {view === "retail" && filteredRows.length === 0 ? (
         <section className="filter-card">
           <p className="eyebrow">No pricing rows in view</p>
           <h3>Broaden the pricing filter to see more SKU and meter rows.</h3>
@@ -442,9 +535,9 @@ export function ServicePricingPanel({
             retail billing locations published for the service.
           </p>
         </section>
-      )}
+      ) : null}
 
-      {filteredRows.length > 200 ? (
+      {view === "retail" && filteredRows.length > 200 ? (
         <section className="filter-card">
           <p className="eyebrow">Result cap</p>
           <h3>Showing the first 200 pricing rows for readability.</h3>

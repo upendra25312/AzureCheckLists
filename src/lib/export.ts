@@ -140,6 +140,27 @@ function formatEstimateLine(price: number | undefined, currencyCode: string) {
   }).format(price);
 }
 
+function serializeEstimateInputs(estimate: ServiceMonthlyEstimate) {
+  return Object.entries(estimate.selectedInputs)
+    .map(([key, value]) => `${key}=${value}`)
+    .join(" | ");
+}
+
+function buildComponentBreakdown(estimate: ServiceMonthlyEstimate, skuName: string) {
+  const skuEstimate = estimate.skuEstimates.find((entry) => entry.skuName === skuName);
+
+  if (!skuEstimate) {
+    return "";
+  }
+
+  return skuEstimate.components
+    .map(
+      (component) =>
+        `${component.label}: ${formatEstimateLine(component.hourlyCost, estimate.currencyCode)}/hour and ${formatEstimateLine(component.monthlyCost, estimate.currencyCode)}/month (${component.quantity} x ${component.meterName})`
+    )
+    .join(" | ");
+}
+
 export function buildExportRows(items: ChecklistItem[], reviews: Record<string, ReviewDraft>) {
   return items.map((item) => {
     const review = formatReview(item, reviews);
@@ -573,14 +594,21 @@ export function buildPackageMonthlyEstimateRows(
           preferredSku: assumption.preferredSku,
           sizingNote: assumption.sizingNote,
           estimateMode: estimate.mode,
+          estimateProfileVersion: estimate.profileVersion ?? "",
+          estimateCoverage: estimate.coverage,
+          estimateInputMode: estimate.selectedInputMode,
+          selectedInputs: serializeEstimateInputs(estimate),
           supported: "No",
           selectedSku: "",
+          selectedHourlyEstimate: "",
           monthlyEstimate: "",
           skuName: "",
+          skuHourlyEstimate: "",
           skuMonthlyEstimate: "",
           assumptions: estimate.assumptions.join(" | "),
           notes: estimate.notes.join(" | "),
-          components: ""
+          componentCount: 0,
+          componentBreakdown: ""
         });
 
         return;
@@ -598,19 +626,21 @@ export function buildPackageMonthlyEstimateRows(
           preferredSku: assumption.preferredSku,
           sizingNote: assumption.sizingNote,
           estimateMode: estimate.mode,
+          estimateProfileVersion: estimate.profileVersion ?? "",
+          estimateCoverage: estimate.coverage,
+          estimateInputMode: estimate.selectedInputMode,
+          selectedInputs: serializeEstimateInputs(estimate),
           supported: "Yes",
           selectedSku: estimate.selectedSkuName === skuEstimate.skuName ? "Yes" : "No",
+          selectedHourlyEstimate: estimate.selectedHourlyCost ?? "",
           monthlyEstimate: estimate.selectedMonthlyCost ?? "",
           skuName: skuEstimate.skuName,
+          skuHourlyEstimate: skuEstimate.hourlyCost,
           skuMonthlyEstimate: skuEstimate.monthlyCost,
           assumptions: skuEstimate.assumptions.join(" | "),
           notes: [...estimate.notes, ...skuEstimate.notes].join(" | "),
-          components: skuEstimate.components
-            .map(
-              (component) =>
-                `${component.label}: ${formatEstimateLine(component.monthlyCost, estimate.currencyCode)} (${component.quantity} x ${component.meterName})`
-            )
-            .join(" | ")
+          componentCount: skuEstimate.components.length,
+          componentBreakdown: buildComponentBreakdown(estimate, skuEstimate.skuName)
         });
       });
     });
@@ -631,6 +661,10 @@ export function buildPackageMonthlyEstimateMarkdown(
     (accumulator, estimate) => accumulator + (estimate.selectedMonthlyCost ?? 0),
     0
   );
+  const totalHourlyEstimate = scopedEstimates.reduce(
+    (accumulator, estimate) => accumulator + (estimate.selectedHourlyCost ?? 0),
+    0
+  );
   const supportedCount = scopedEstimates.filter((estimate) => estimate.supported).length;
 
   const sections = scopedEstimates.map((estimate) => {
@@ -643,7 +677,13 @@ export function buildPackageMonthlyEstimateMarkdown(
     }
 
     lines.push(`- Monthly estimate mode: ${estimate.mode}`);
+    lines.push(`- Estimate coverage: ${estimate.coverage}`);
+    lines.push(`- Estimate profile version: ${estimate.profileVersion ?? "Not set"}`);
+    lines.push(`- Input mode: ${estimate.selectedInputMode}`);
     lines.push(`- Estimate supported: ${estimate.supported ? "Yes" : "No"}`);
+    lines.push(
+      `- Selected hourly estimate: ${formatEstimateLine(estimate.selectedHourlyCost, estimate.currencyCode)}`
+    );
     lines.push(
       `- Selected estimate: ${formatEstimateLine(estimate.selectedMonthlyCost, estimate.currencyCode)}`
     );
@@ -652,6 +692,9 @@ export function buildPackageMonthlyEstimateMarkdown(
     }
     if (estimate.assumptions.length > 0) {
       lines.push(`- Assumptions: ${estimate.assumptions.join(" | ")}`);
+    }
+    if (serializeEstimateInputs(estimate)) {
+      lines.push(`- Selected inputs: ${serializeEstimateInputs(estimate)}`);
     }
     if (estimate.notes.length > 0) {
       lines.push(`- Notes: ${estimate.notes.join(" | ")}`);
@@ -664,14 +707,21 @@ export function buildPackageMonthlyEstimateMarkdown(
       return lines.join("\n");
     }
 
-    lines.push("| SKU | Selected | Monthly estimate | Assumptions |");
-    lines.push("| --- | --- | --- | --- |");
+    lines.push("| SKU | Selected | Hourly estimate | Monthly estimate | Assumptions |");
+    lines.push("| --- | --- | --- | --- | --- |");
     estimate.skuEstimates.forEach((skuEstimate) => {
       lines.push(
-        `| ${skuEstimate.skuName} | ${estimate.selectedSkuName === skuEstimate.skuName ? "Yes" : "No"} | ${formatEstimateLine(skuEstimate.monthlyCost, estimate.currencyCode)} | ${skuEstimate.assumptions.join(" / ")} |`
+        `| ${skuEstimate.skuName} | ${estimate.selectedSkuName === skuEstimate.skuName ? "Yes" : "No"} | ${formatEstimateLine(skuEstimate.hourlyCost, estimate.currencyCode)} | ${formatEstimateLine(skuEstimate.monthlyCost, estimate.currencyCode)} | ${skuEstimate.assumptions.join(" / ")} |`
       );
     });
     lines.push("");
+
+    const selectedBreakdown = buildComponentBreakdown(estimate, estimate.selectedSkuName ?? "");
+
+    if (selectedBreakdown) {
+      lines.push(`Selected SKU component breakdown: ${selectedBreakdown}`);
+      lines.push("");
+    }
 
     return lines.join("\n");
   });
@@ -684,6 +734,7 @@ export function buildPackageMonthlyEstimateMarkdown(
     `- Target regions: ${reviewPackage.targetRegions.join(", ") || "Not captured"}`,
     `- Services in scope: ${scopedEstimates.map((estimate) => estimate.serviceName).join(", ") || "None selected"}`,
     `- Estimate supported: ${supportedCount.toLocaleString()} of ${scopedEstimates.length.toLocaleString()} selected services`,
+    `- Estimated hourly total: ${formatEstimateLine(totalHourlyEstimate, scopedEstimates[0]?.currencyCode ?? "USD")}`,
     `- Estimated monthly total: ${formatEstimateLine(totalMonthlyEstimate, scopedEstimates[0]?.currencyCode ?? "USD")}`,
     `- Exported at: ${new Date().toISOString()}`,
     "",
@@ -704,12 +755,17 @@ export function buildPackageMonthlyEstimateText(
     (accumulator, estimate) => accumulator + (estimate.selectedMonthlyCost ?? 0),
     0
   );
+  const totalHourlyEstimate = scopedEstimates.reduce(
+    (accumulator, estimate) => accumulator + (estimate.selectedHourlyCost ?? 0),
+    0
+  );
 
   const lines = [
     `${reviewPackage.name} monthly estimate`,
     `Audience: ${reviewPackage.audience}`,
     `Business scope: ${reviewPackage.businessScope || "Not captured"}`,
     `Target regions: ${reviewPackage.targetRegions.join(", ") || "Not captured"}`,
+    `Estimated hourly total: ${formatEstimateLine(totalHourlyEstimate, scopedEstimates[0]?.currencyCode ?? "USD")}`,
     `Estimated monthly total: ${formatEstimateLine(totalMonthlyEstimate, scopedEstimates[0]?.currencyCode ?? "USD")}`,
     `Exported at: ${new Date().toISOString()}`,
     ""
@@ -722,10 +778,17 @@ export function buildPackageMonthlyEstimateText(
     if (assumption.preferredSku.trim()) lines.push(`Preferred SKU: ${assumption.preferredSku.trim()}`);
     if (assumption.sizingNote.trim()) lines.push(`Sizing note: ${assumption.sizingNote.trim()}`);
     lines.push(`Estimate mode: ${estimate.mode}`);
+    lines.push(`Estimate coverage: ${estimate.coverage}`);
+    lines.push(`Estimate profile version: ${estimate.profileVersion ?? "Not set"}`);
+    lines.push(`Input mode: ${estimate.selectedInputMode}`);
     lines.push(`Estimate supported: ${estimate.supported ? "Yes" : "No"}`);
+    lines.push(`Selected hourly estimate: ${formatEstimateLine(estimate.selectedHourlyCost, estimate.currencyCode)}`);
     lines.push(`Selected estimate: ${formatEstimateLine(estimate.selectedMonthlyCost, estimate.currencyCode)}`);
     if (estimate.selectedSkuName) {
       lines.push(`Selected SKU: ${estimate.selectedSkuName}`);
+    }
+    if (serializeEstimateInputs(estimate)) {
+      lines.push(`Selected inputs: ${serializeEstimateInputs(estimate)}`);
     }
     if (estimate.assumptions.length > 0) {
       lines.push(`Assumptions: ${estimate.assumptions.join(" | ")}`);
@@ -735,9 +798,13 @@ export function buildPackageMonthlyEstimateText(
     }
     estimate.skuEstimates.forEach((skuEstimate) => {
       lines.push(
-        `SKU estimate: ${skuEstimate.skuName} = ${formatEstimateLine(skuEstimate.monthlyCost, estimate.currencyCode)}`
+        `SKU estimate: ${skuEstimate.skuName} = ${formatEstimateLine(skuEstimate.hourlyCost, estimate.currencyCode)}/hour and ${formatEstimateLine(skuEstimate.monthlyCost, estimate.currencyCode)}/month`
       );
     });
+    const selectedBreakdown = buildComponentBreakdown(estimate, estimate.selectedSkuName ?? "");
+    if (selectedBreakdown) {
+      lines.push(`Component breakdown: ${selectedBreakdown}`);
+    }
     lines.push("");
   });
 
