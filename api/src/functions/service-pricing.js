@@ -26,6 +26,7 @@ function buildPricingFallback(service, message) {
     regionCount: 0,
     billingLocationCount: 0,
     targetRegionMatchCount: 0,
+    targetPricingLocations: [],
     rows: []
   };
 }

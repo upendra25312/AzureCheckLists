@@ -16,6 +16,48 @@ const { getAvailabilityDataset } = require("./availability-service");
 
 const MAX_PAGES_PER_QUERY = 25;
 const MAX_ITEMS_PER_QUERY = 4000;
+const TARGET_PRICING_ZONE_RULES = [
+  {
+    zone: "Zone 1",
+    aliases: ["North America"],
+    match: /(north america|united states|canada|mexico|puerto rico)/
+  },
+  {
+    zone: "Zone 2",
+    aliases: ["Asia Pacific"],
+    match: /(asia pacific|asia|pacific|east asia|southeast asia|japan|hong kong|taiwan|new zealand)/
+  },
+  {
+    zone: "Zone 3",
+    aliases: ["South America"],
+    match: /(south america|brazil|chile)/
+  },
+  {
+    zone: "Zone 4",
+    aliases: ["Australia"],
+    match: /(australia)/
+  },
+  {
+    zone: "Zone 5",
+    aliases: ["India"],
+    match: /(india)/
+  },
+  {
+    zone: "Zone 6",
+    aliases: ["Europe"],
+    match: /(europe|united kingdom|uk|ireland|france|germany|sweden|norway|switzerland|netherlands|italy|spain|poland|finland|denmark|belgium|austria)/
+  },
+  {
+    zone: "Zone 7",
+    aliases: ["Middle East and Africa"],
+    match: /(middle east|africa|united arab emirates|uae|qatar|saudi|saudi arabia|israel|kuwait|oman|bahrain|egypt|south africa)/
+  },
+  {
+    zone: "Zone 8",
+    aliases: ["Korea"],
+    match: /(korea)/
+  }
+];
 
 const MANUAL_QUERY_MAP = {
   "api-management": {
@@ -444,6 +486,56 @@ function matchesTargetRegion(row, targetRegions) {
   });
 }
 
+function resolveTargetPricingLocations(targetRegions, publicRegionMap) {
+  const locations = new Set();
+
+  for (const targetRegion of targetRegions ?? []) {
+    const normalizedTarget = normalizeKey(targetRegion);
+    const region = publicRegionMap.get(normalizedTarget);
+    const geographyKey = normalizeKey(region?.geographyName ?? targetRegion);
+
+    locations.add(targetRegion);
+
+    for (const rule of TARGET_PRICING_ZONE_RULES) {
+      if (!rule.match.test(geographyKey)) {
+        continue;
+      }
+
+      locations.add(rule.zone);
+      rule.aliases.forEach((alias) => locations.add(alias));
+    }
+  }
+
+  return [...locations];
+}
+
+function matchesTargetPricingLocation(row, targetPricingLocations) {
+  if (!targetPricingLocations || targetPricingLocations.length === 0) {
+    return false;
+  }
+
+  const armRegionKey = normalizeKey(row.armRegionName);
+  const locationKey = normalizeKey(row.location);
+
+  return targetPricingLocations.some((targetLocation) => {
+    const targetKey = normalizeKey(targetLocation);
+
+    return targetKey === armRegionKey || targetKey === locationKey;
+  });
+}
+
+function matchesTargetPricingScope(row, targetRegions, targetPricingLocations) {
+  if (matchesTargetRegion(row, targetRegions)) {
+    return true;
+  }
+
+  if (matchesTargetPricingLocation(row, targetPricingLocations)) {
+    return true;
+  }
+
+  return row.locationKind === "Global" && (targetRegions.length > 0 || targetPricingLocations.length > 0);
+}
+
 function buildPricingBase(service, rows, query, notes) {
   const meterCount = new Set(rows.map((row) => row.meterId || `${row.meterName}|${row.skuName}`)).size;
   const skuCount = new Set(rows.map((row) => row.skuName || row.armSkuName).filter(Boolean)).size;
@@ -479,23 +571,33 @@ function buildPricingBase(service, rows, query, notes) {
     regionCount,
     billingLocationCount,
     targetRegionMatchCount: 0,
+    targetPricingLocations: [],
     startsAtRetailPrice: retailPrices.length > 0 ? Math.min(...retailPrices) : undefined,
     query,
     rows
   };
 }
 
-function applyTargetRegionsToPricing(basePricing, targetRegions = []) {
+function applyTargetRegionsToPricing(basePricing, targetRegions = [], publicRegionMap) {
+  const targetPricingLocations = resolveTargetPricingLocations(targetRegions, publicRegionMap);
+  const targetScopedRows = basePricing.rows.filter((row) =>
+    matchesTargetPricingScope(row, targetRegions, targetPricingLocations)
+  );
   const targetRegionMatchCount = new Set(
-    basePricing.rows
-      .filter((row) => matchesTargetRegion(row, targetRegions))
-      .map((row) => normalizeKey(row.armRegionName || row.location))
+    targetScopedRows
+      .map((row) => normalizeKey(row.armRegionName || row.location || row.locationKind))
       .filter(Boolean)
   ).size;
+  const targetRetailPrices = targetScopedRows
+    .map((row) => row.retailPrice)
+    .filter((price) => price > 0);
 
   return {
     ...basePricing,
-    targetRegionMatchCount
+    targetRegionMatchCount,
+    targetPricingLocations,
+    startsAtTargetRetailPrice:
+      targetRetailPrices.length > 0 ? Math.min(...targetRetailPrices) : undefined
   };
 }
 
@@ -535,6 +637,9 @@ async function fetchLiveServicePricingBase(service) {
 async function getServicePricing(service, options = {}) {
   const { forceRefresh = false, refreshedBy = "request", targetRegions = [] } = options;
   let cachedSnapshot = null;
+  const { dataset: availabilityDataset } = await getAvailabilityDataset({
+    refreshedBy: "pricing"
+  });
 
   try {
     cachedSnapshot = await readPricingSnapshot(service);
@@ -544,7 +649,7 @@ async function getServicePricing(service, options = {}) {
 
   if (!forceRefresh && cachedSnapshot && isSnapshotFresh(cachedSnapshot, PRICING_CACHE_TTL_HOURS)) {
     return withPricingDataSource(
-      applyTargetRegionsToPricing(cachedSnapshot.payload, targetRegions),
+      applyTargetRegionsToPricing(cachedSnapshot.payload, targetRegions, availabilityDataset.publicRegionMap),
       "cache",
       cachedSnapshot.cachedAt
     );
@@ -567,7 +672,7 @@ async function getServicePricing(service, options = {}) {
     });
 
     return withPricingDataSource(
-      applyTargetRegionsToPricing(pricingBase, targetRegions),
+      applyTargetRegionsToPricing(pricingBase, targetRegions, availabilityDataset.publicRegionMap),
       "live",
       snapshot.cachedAt
     );
@@ -589,7 +694,7 @@ async function getServicePricing(service, options = {}) {
 
     if (cachedSnapshot) {
       return withPricingDataSource(
-        applyTargetRegionsToPricing(cachedSnapshot.payload, targetRegions),
+        applyTargetRegionsToPricing(cachedSnapshot.payload, targetRegions, availabilityDataset.publicRegionMap),
         "stale-cache",
         cachedSnapshot.cachedAt,
         message

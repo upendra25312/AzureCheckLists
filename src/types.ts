@@ -307,7 +307,9 @@ export type ServicePricingSummary = {
   regionCount: number;
   billingLocationCount: number;
   targetRegionMatchCount: number;
+  targetPricingLocations: string[];
   startsAtRetailPrice?: number;
+  startsAtTargetRetailPrice?: number;
   query?: ServicePricingQuery;
   dataSource?: CommercialDataSourceInfo;
 };

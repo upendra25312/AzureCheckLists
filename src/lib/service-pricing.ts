@@ -6,7 +6,7 @@ import type {
   ServiceSummary
 } from "@/types";
 
-const SERVICE_PRICING_CACHE_PREFIX = "azure-review-dashboard.service-pricing.v2";
+const SERVICE_PRICING_CACHE_PREFIX = "azure-review-dashboard.service-pricing.v3";
 const SERVICE_PRICING_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const SERVICE_PRICING_BATCH_SIZE = 20;
 const SERVICE_PRICING_SOURCE_URL = "https://prices.azure.com/api/retail/prices";
@@ -192,6 +192,7 @@ function buildPricingFallback(
     regionCount: 0,
     billingLocationCount: 0,
     targetRegionMatchCount: 0,
+    targetPricingLocations: [],
     rows: []
   };
 }
@@ -216,20 +217,44 @@ export function buildServicePricingRequest(
 export function matchesPricingTargetRegion(
   armRegionName: string,
   location: string,
-  targetRegions: string[]
+  targetRegions: string[],
+  targetPricingLocations: string[] = [],
+  locationKind?: string
 ) {
-  if (targetRegions.length === 0) {
+  if (targetRegions.length === 0 && targetPricingLocations.length === 0) {
     return false;
   }
 
   const normalizedArmRegion = normalizeRegionName(armRegionName);
   const normalizedLocation = normalizeRegionName(location);
 
-  return targetRegions.some((targetRegion) => {
+  const matchesTargetRegion = targetRegions.some((targetRegion) => {
     const normalizedTarget = normalizeRegionName(targetRegion);
 
     return normalizedTarget === normalizedArmRegion || normalizedTarget === normalizedLocation;
   });
+
+  if (matchesTargetRegion) {
+    return true;
+  }
+
+  const matchesBillingLocation = targetPricingLocations.some((targetLocation) => {
+    const normalizedTargetLocation = normalizeRegionName(targetLocation);
+
+    return (
+      normalizedTargetLocation === normalizedArmRegion ||
+      normalizedTargetLocation === normalizedLocation
+    );
+  });
+
+  if (matchesBillingLocation) {
+    return true;
+  }
+
+  return (
+    locationKind === "Global" &&
+    (targetRegions.length > 0 || targetPricingLocations.length > 0)
+  );
 }
 
 export async function loadServicePricingBatch(requests: ServicePricingRequest[]) {

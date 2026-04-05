@@ -16,6 +16,50 @@ function formatRetailPrice(price: number | undefined, currencyCode: string) {
   }).format(price);
 }
 
+function findBaseMonthlyRow(pricing: ServicePricing | null, targetRegions: string[]) {
+  if (!pricing) {
+    return null;
+  }
+
+  const scopedRows =
+    targetRegions.length > 0
+      ? pricing.rows.filter(
+          (row) =>
+            matchesPricingTargetRegion(
+              row.armRegionName,
+              row.location,
+              targetRegions,
+              pricing.targetPricingLocations,
+              row.locationKind
+            ) || row.locationKind === "Global"
+        )
+      : pricing.rows;
+
+  const baseRow =
+    scopedRows.find(
+      (row) => /base/i.test(row.meterName) && /month/i.test(row.unitOfMeasure)
+    ) ??
+    scopedRows.find(
+      (row) =>
+        /base|included routing rules/i.test(row.meterName) &&
+        (/month/i.test(row.unitOfMeasure) || /hour/i.test(row.unitOfMeasure))
+    );
+
+  if (!baseRow) {
+    return null;
+  }
+
+  if (/hour/i.test(baseRow.unitOfMeasure)) {
+    return {
+      ...baseRow,
+      retailPrice: baseRow.retailPrice * 730,
+      unitOfMeasure: "Estimated month"
+    };
+  }
+
+  return baseRow;
+}
+
 export function ServicePricingPanel({
   service,
   regionalFit,
@@ -80,10 +124,23 @@ export function ServicePricingPanel({
 
     return pricing.rows.filter(
       (row) =>
-        matchesPricingTargetRegion(row.armRegionName, row.location, targetRegions) ||
+        matchesPricingTargetRegion(
+          row.armRegionName,
+          row.location,
+          targetRegions,
+          pricing.targetPricingLocations,
+          row.locationKind
+        ) ||
         row.locationKind !== "Region"
     );
   }, [pricing, scope, targetRegions]);
+
+  const baseMonthlyRow = useMemo(
+    () => findBaseMonthlyRow(pricing, targetRegions),
+    [pricing, targetRegions]
+  );
+  const highlightedStartingPrice =
+    pricing?.startsAtTargetRetailPrice ?? pricing?.startsAtRetailPrice;
 
   const filteredRows = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -205,14 +262,20 @@ export function ServicePricingPanel({
 
       <div className="hero-metrics-row">
         <article className="hero-metric-card">
-          <span>Starting price</span>
-          <strong>{formatRetailPrice(pricing.startsAtRetailPrice, pricing.currencyCode)}</strong>
-          <p>Lowest published retail row currently returned for this service in Microsoft’s pricing feed.</p>
+          <span>{pricing.startsAtTargetRetailPrice !== undefined ? "Lowest scoped meter" : "Lowest published meter"}</span>
+          <strong>{formatRetailPrice(highlightedStartingPrice, pricing.currencyCode)}</strong>
+          <p>
+            This is the lowest published retail meter row in the current pricing scope. It is not a monthly Azure Pricing Calculator estimate.
+          </p>
         </article>
         <article className="hero-metric-card">
-          <span>SKUs published</span>
-          <strong>{pricing.skuCount.toLocaleString()}</strong>
-          <p>Distinct SKUs seen in the retail feed for this service.</p>
+          <span>Base monthly fee</span>
+          <strong>{baseMonthlyRow ? formatRetailPrice(baseMonthlyRow.retailPrice, baseMonthlyRow.currencyCode) : "Not isolated"}</strong>
+          <p>
+            {baseMonthlyRow
+              ? `${baseMonthlyRow.meterName} from the retail feed. The calculator can still add traffic, requests, domains, and other usage assumptions on top.`
+              : "No clear recurring base-fee meter was isolated for this service."}
+          </p>
         </article>
         <article className="hero-metric-card">
           <span>Target-region matches</span>
@@ -244,10 +307,9 @@ export function ServicePricingPanel({
             <a href={pricing.sourceUrl} target="_blank" rel="noreferrer" className="muted-link">
               Azure Retail Prices API
             </a>
-            {" · "}
-            <a href={pricing.calculatorUrl} target="_blank" rel="noreferrer" className="muted-link">
-              Azure Pricing Calculator
-            </a>
+          </p>
+          <p className="microcopy">
+            Live values on this page come from the retail prices feed. The calculator is linked below only for monthly estimate refinement.
           </p>
         </article>
       </div>
@@ -278,6 +340,9 @@ export function ServicePricingPanel({
         <p className="eyebrow">Pricing note</p>
         <h3>Use retail pricing as the customer-facing baseline, then refine with quantity assumptions.</h3>
         <p className="microcopy">{pricing.priceDisclaimer}</p>
+        <p className="microcopy">
+          The Azure Pricing Calculator can show a higher monthly figure because it layers base fees and default traffic or request assumptions on top of the raw meter prices.
+        </p>
         {pricing.notes.length > 0 ? (
           <div className="chip-row">
             {pricing.notes.map((note) => (
@@ -300,7 +365,7 @@ export function ServicePricingPanel({
           />
           <p className="microcopy">
             {scope === "target" && targetRegions.length > 0
-              ? `Target-region scope uses ${targetRegions.join(", ")} and still keeps zone-based or global meters visible when they can apply broadly.`
+              ? `Target-region scope uses ${targetRegions.join(", ")} and also includes matching billing-zone or global meters when Microsoft prices a service that way.`
               : "All published pricing rows are shown, including zone-based billing rows for global services."}
           </p>
         </div>
@@ -316,7 +381,13 @@ export function ServicePricingPanel({
                     <span className="pill">{row.locationKind}</span>
                     {row.skuName ? <span className="pill">{row.skuName}</span> : null}
                     {row.armRegionName ? <span className="pill">{row.armRegionName}</span> : null}
-                    {matchesPricingTargetRegion(row.armRegionName, row.location, targetRegions) ? (
+                    {matchesPricingTargetRegion(
+                      row.armRegionName,
+                      row.location,
+                      targetRegions,
+                      pricing.targetPricingLocations,
+                      row.locationKind
+                    ) ? (
                       <span className="pill">Target region match</span>
                     ) : null}
                   </div>

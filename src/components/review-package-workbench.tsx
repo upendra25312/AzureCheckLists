@@ -285,10 +285,13 @@ function buildCostFitMatrix(
   const preferredSku = assumption.preferredSku.trim();
   const sizingNote = assumption.sizingNote.trim();
   const chips = [
-    createMatrixChip(
-      `Starts at ${formatRetailPrice(pricing.startsAtRetailPrice, pricing.currencyCode)}`,
-      "good"
-    ),
+      createMatrixChip(
+        `Lowest meter ${formatRetailPrice(
+          pricing.startsAtTargetRetailPrice ?? pricing.startsAtRetailPrice,
+          pricing.currencyCode
+        )}`,
+        "good"
+      ),
     createMatrixChip(
       preferredSku || `${pricing.skuCount.toLocaleString()} published SKUs`,
       preferredSku ? "good" : "neutral"
@@ -309,9 +312,12 @@ function buildCostFitMatrix(
       preferredSku
         ? `Preferred SKU "${preferredSku}" is captured as the design assumption, while the pricing snapshot still keeps all published SKU rows available for comparison.`
         : "No preferred SKU is set yet, so the pricing snapshot uses all published SKU rows for this service.",
+      pricing.startsAtTargetRetailPrice !== undefined
+        ? "The highlighted value is the lowest target-scope retail meter row, not a monthly calculator estimate."
+        : "The highlighted value is the lowest published retail meter row, not a monthly calculator estimate.",
       targetRegions.length > 0
         ? pricing.targetRegionMatchCount > 0
-          ? `Published retail rows currently line up with ${pricing.targetRegionMatchCount.toLocaleString()} selected target region${pricing.targetRegionMatchCount === 1 ? "" : "s"}.`
+          ? `Published retail rows currently line up with ${pricing.targetRegionMatchCount.toLocaleString()} selected target scope location${pricing.targetRegionMatchCount === 1 ? "" : "s"}, including billing zones when Microsoft prices a service that way.`
           : "No direct selected-region retail row is published yet, so this remains the broader Microsoft retail snapshot."
         : "No target region is captured yet, so the pricing snapshot is not region-filtered.",
       sizingNote
@@ -383,7 +389,13 @@ function formatPricingDrilldownRows(
   const targetMatchedRows =
     targetRegions.length > 0
       ? pricing.rows.filter((row) =>
-          matchesPricingTargetRegion(row.armRegionName, row.location, targetRegions)
+          matchesPricingTargetRegion(
+            row.armRegionName,
+            row.location,
+            targetRegions,
+            pricing.targetPricingLocations,
+            row.locationKind
+          )
         )
       : [];
   const scopedRows = targetMatchedRows.length > 0 ? targetMatchedRows : pricing.rows;
@@ -410,7 +422,7 @@ function formatPricingDrilldownRows(
       ? `Preferred SKU "${preferredSku}" is saved as a design assumption, but the drilldown still shows all published SKU rows for comparison.`
       : "No preferred SKU is set, so the drilldown includes all published SKU rows.",
     targetMatchedRows.length > 0
-      ? `${targetMatchedRows.length.toLocaleString()} retail row${targetMatchedRows.length === 1 ? "" : "s"} currently match the selected target region${targetRegions.length === 1 ? "" : "s"}.`
+      ? `${targetMatchedRows.length.toLocaleString()} retail row${targetMatchedRows.length === 1 ? "" : "s"} currently match the selected target scope, including billing zones when Microsoft prices a service that way.`
       : targetRegions.length > 0
         ? "No direct selected-region retail rows are published yet, so this drilldown falls back to the broader Microsoft retail snapshot."
         : "No target region is captured yet, so this drilldown shows the broader Microsoft retail snapshot.",
@@ -710,7 +722,7 @@ export function ReviewPackageWorkbench({
   const mappedPricingCount = pricingSnapshots.filter((pricing) => pricing.mapped).length;
   const pricingReady = selectedServices.length > 0 && pricingSnapshots.length === selectedServices.length;
   const startingRetailPrice = pricingSnapshots
-    .map((pricing) => pricing.startsAtRetailPrice)
+    .map((pricing) => pricing.startsAtTargetRetailPrice ?? pricing.startsAtRetailPrice)
     .filter((price) => price !== undefined) as number[];
   const projectReviewSteps = [
     {
@@ -2337,14 +2349,14 @@ export function ReviewPackageWorkbench({
                 <p>Selected services with a current retail pricing query match.</p>
               </article>
               <article className="hero-metric-card">
-                <span>Starting retail row</span>
-                <strong>
-                  {startingRetailPrice.length > 0
-                    ? formatRetailPrice(Math.min(...startingRetailPrice), pricingSnapshots[0]?.currencyCode ?? "USD")
-                    : "Not published"}
-                </strong>
-                <p>Lowest retail row across the scoped services in this project review.</p>
-              </article>
+                  <span>Lowest scoped meter</span>
+                  <strong>
+                    {startingRetailPrice.length > 0
+                      ? formatRetailPrice(Math.min(...startingRetailPrice), pricingSnapshots[0]?.currencyCode ?? "USD")
+                      : "Not published"}
+                  </strong>
+                  <p>Lowest target-scope retail meter across the selected services. This is not a monthly calculator estimate.</p>
+                </article>
               <article className="hero-metric-card">
                 <span>Target regions</span>
                 <strong>{activePackage?.targetRegions.length.toLocaleString() ?? "0"}</strong>
@@ -2435,9 +2447,13 @@ export function ReviewPackageWorkbench({
                     : "No retail pricing mapping is published for this service yet in the current project review workflow."}
                 </p>
                 <div className="chip-row">
-                  <span className="chip">
-                    Starts at {formatRetailPrice(pricing.startsAtRetailPrice, pricing.currencyCode)}
-                  </span>
+                    <span className="chip">
+                      Lowest meter{" "}
+                      {formatRetailPrice(
+                        pricing.startsAtTargetRetailPrice ?? pricing.startsAtRetailPrice,
+                        pricing.currencyCode
+                      )}
+                    </span>
                   {pricing.query ? (
                     <span className="chip">
                       {pricing.query.field} {pricing.query.operator} {pricing.query.value}

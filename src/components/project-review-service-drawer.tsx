@@ -204,7 +204,13 @@ export function ProjectReviewServiceDrawer({
 
     return row.pricing.rows.filter(
       (pricingRow) =>
-        matchesPricingTargetRegion(pricingRow.armRegionName, pricingRow.location, targetRegions) ||
+        matchesPricingTargetRegion(
+          pricingRow.armRegionName,
+          pricingRow.location,
+          targetRegions,
+          row.pricing?.targetPricingLocations,
+          pricingRow.locationKind
+        ) ||
         pricingRow.locationKind !== "Region"
     );
   }, [pricingScope, row.pricing, targetRegions]);

@@ -313,8 +313,11 @@ export function buildPackagePricingRows(
   servicePricing: ServicePricing[]
 ): Array<Record<string, string | number>> {
   const rows: Array<Record<string, string | number>> = [];
+  const scopedServiceSlugs = new Set(reviewPackage.selectedServiceSlugs);
 
-  servicePricing.forEach((pricing) => {
+  servicePricing
+    .filter((pricing) => scopedServiceSlugs.has(pricing.serviceSlug))
+    .forEach((pricing) => {
     const assumption = getServiceAssumption(reviewPackage, pricing.serviceSlug);
 
     if (!pricing.mapped || pricing.rows.length === 0) {
@@ -388,7 +391,9 @@ export function buildPackagePricingRows(
         targetRegionMatch: matchesPricingTargetRegion(
           row.armRegionName,
           row.location,
-          reviewPackage.targetRegions
+          reviewPackage.targetRegions,
+          pricing.targetPricingLocations,
+          row.locationKind
         )
           ? "Yes"
           : "No"
@@ -403,8 +408,10 @@ export function buildPackagePricingMarkdown(
   reviewPackage: ReviewPackage,
   servicePricing: ServicePricing[]
 ) {
+  const scopedServiceSlugs = new Set(reviewPackage.selectedServiceSlugs);
   const sections = servicePricing
     .slice()
+    .filter((pricing) => scopedServiceSlugs.has(pricing.serviceSlug))
     .sort((left, right) => left.serviceName.localeCompare(right.serviceName))
     .map((pricing) => {
       const lines = [`## ${pricing.serviceName}`, ""];
@@ -420,7 +427,12 @@ export function buildPackagePricingMarkdown(
       lines.push(`- Deployment regions with prices: ${pricing.regionCount.toLocaleString()}`);
       lines.push(`- SKUs published: ${pricing.skuCount.toLocaleString()}`);
       lines.push(`- Meters published: ${pricing.meterCount.toLocaleString()}`);
-      lines.push(`- Starting retail price: ${formatPricingLine(pricing.startsAtRetailPrice, pricing.currencyCode)}`);
+      lines.push(
+        `- Lowest scoped meter: ${formatPricingLine(
+          pricing.startsAtTargetRetailPrice ?? pricing.startsAtRetailPrice,
+          pricing.currencyCode
+        )}`
+      );
       lines.push(
         `- Target-region matches: ${pricing.targetRegionMatchCount.toLocaleString()}`
       );
@@ -457,7 +469,7 @@ export function buildPackagePricingMarkdown(
     `- Audience: ${reviewPackage.audience}`,
     `- Business scope: ${reviewPackage.businessScope || "Not captured"}`,
     `- Target regions: ${reviewPackage.targetRegions.join(", ") || "Not captured"}`,
-    `- Services in scope: ${servicePricing.map((pricing) => pricing.serviceName).join(", ") || "None selected"}`,
+    `- Services in scope: ${servicePricing.filter((pricing) => scopedServiceSlugs.has(pricing.serviceSlug)).map((pricing) => pricing.serviceName).join(", ") || "None selected"}`,
     `- Exported at: ${new Date().toISOString()}`,
     "",
     ...sections
@@ -465,6 +477,7 @@ export function buildPackagePricingMarkdown(
 }
 
 export function buildPackagePricingText(reviewPackage: ReviewPackage, servicePricing: ServicePricing[]) {
+  const scopedServiceSlugs = new Set(reviewPackage.selectedServiceSlugs);
   const lines = [
     `${reviewPackage.name} commercial snapshot`,
     `Audience: ${reviewPackage.audience}`,
@@ -476,6 +489,7 @@ export function buildPackagePricingText(reviewPackage: ReviewPackage, servicePri
 
   servicePricing
     .slice()
+    .filter((pricing) => scopedServiceSlugs.has(pricing.serviceSlug))
     .sort((left, right) => left.serviceName.localeCompare(right.serviceName))
     .forEach((pricing) => {
       const assumption = getServiceAssumption(reviewPackage, pricing.serviceSlug);
@@ -489,7 +503,10 @@ export function buildPackagePricingText(reviewPackage: ReviewPackage, servicePri
         `Query used: ${pricing.query ? `${pricing.query.field} ${pricing.query.operator} ${pricing.query.value}` : "No query matched"}`
       );
       lines.push(
-        `Starting retail price: ${formatPricingLine(pricing.startsAtRetailPrice, pricing.currencyCode)}`
+        `Lowest scoped meter: ${formatPricingLine(
+          pricing.startsAtTargetRetailPrice ?? pricing.startsAtRetailPrice,
+          pricing.currencyCode
+        )}`
       );
       lines.push(`Billing locations published: ${pricing.billingLocationCount.toLocaleString()}`);
       lines.push(`Deployment regions with prices: ${pricing.regionCount.toLocaleString()}`);
