@@ -324,6 +324,44 @@ export type ServicePricingResponse = {
   services: ServicePricing[];
 };
 
+export type MonthlyEstimateMode =
+  | "calculator-defaults"
+  | "recurring-base-only"
+  | "not-modeled";
+
+export type ServiceMonthlyEstimateComponent = {
+  label: string;
+  meterName: string;
+  skuName: string;
+  location: string;
+  unitOfMeasure: string;
+  quantity: number;
+  monthlyCost: number;
+};
+
+export type ServiceMonthlySkuEstimate = {
+  skuName: string;
+  monthlyCost: number;
+  assumptions: string[];
+  notes: string[];
+  components: ServiceMonthlyEstimateComponent[];
+  isPreferred: boolean;
+};
+
+export type ServiceMonthlyEstimate = {
+  serviceSlug: string;
+  serviceName: string;
+  supported: boolean;
+  mode: MonthlyEstimateMode;
+  currencyCode: string;
+  notes: string[];
+  assumptions: string[];
+  targetScopeApplied: boolean;
+  skuEstimates: ServiceMonthlySkuEstimate[];
+  selectedSkuName?: string;
+  selectedMonthlyCost?: number;
+};
+
 export type ReviewDraft = {
   reviewState: ReviewState;
   packageDecision: PackageDecision;

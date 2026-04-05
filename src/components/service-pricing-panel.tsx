@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { buildServiceMonthlyEstimate } from "@/lib/monthly-estimate";
 import { buildServicePricingRequest, loadServicePricingBatch, matchesPricingTargetRegion } from "@/lib/service-pricing";
 import type { ServicePricing, ServiceRegionalFitSummary, ServiceSummary } from "@/types";
 
@@ -137,6 +138,21 @@ export function ServicePricingPanel({
 
   const baseMonthlyRow = useMemo(
     () => findBaseMonthlyRow(pricing, targetRegions),
+    [pricing, targetRegions]
+  );
+  const monthlyEstimate = useMemo(
+    () =>
+      pricing
+        ? buildServiceMonthlyEstimate(
+            pricing,
+            {
+              plannedRegion: "",
+              preferredSku: "",
+              sizingNote: ""
+            },
+            targetRegions
+          )
+        : null,
     [pricing, targetRegions]
   );
   const highlightedStartingPrice =
@@ -281,6 +297,19 @@ export function ServicePricingPanel({
           <span>Target-region matches</span>
           <strong>{pricing.targetRegionMatchCount.toLocaleString()}</strong>
           <p>Pricing locations that match the active project review target regions.</p>
+        </article>
+        <article className="hero-metric-card">
+          <span>Default monthly estimate</span>
+          <strong>
+            {monthlyEstimate?.supported
+              ? formatRetailPrice(monthlyEstimate.selectedMonthlyCost, monthlyEstimate.currencyCode)
+              : "Not modeled"}
+          </strong>
+          <p>
+            {monthlyEstimate?.supported
+              ? `${monthlyEstimate.selectedSkuName ?? "Selected SKU"} uses calculator-style defaults or recurring-base assumptions for a first-pass monthly view.`
+              : "This service does not yet have a modeled monthly estimate; use the raw retail meters below or the Azure Pricing Calculator for manual refinement."}
+          </p>
         </article>
       </div>
 

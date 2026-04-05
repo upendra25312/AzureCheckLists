@@ -5,15 +5,19 @@ import { useEffect, useMemo, useState } from "react";
 import {
   buildPackageExportRows,
   buildLeadershipSummaryMarkdown,
+  buildPackageMonthlyEstimateMarkdown,
+  buildPackageMonthlyEstimateRows,
   buildPackageMarkdown,
   buildPackagePricingMarkdown,
   buildPackagePricingRows,
   buildPackagePricingText,
+  buildPackageMonthlyEstimateText,
   buildRegionalRiskRows,
   buildPackageText,
   downloadCsv,
   downloadText
 } from "@/lib/export";
+import { buildServiceMonthlyEstimate } from "@/lib/monthly-estimate";
 import {
   buildServiceRegionalFitRequest,
   loadServiceRegionalFitBatch
@@ -57,6 +61,7 @@ import type {
   ServiceRegionalFitSummary,
   ServiceIndex,
   ReviewServiceAssumption,
+  ServiceMonthlyEstimate,
   ServicePricing,
   ServicePricingRow
 } from "@/types";
@@ -719,11 +724,31 @@ export function ReviewPackageWorkbench({
         .filter(Boolean) as ServicePricing[],
     [selectedServices, servicePricing]
   );
+  const monthlyEstimates = useMemo(
+    () =>
+      selectedServices
+        .map((service) =>
+          buildServiceMonthlyEstimate(
+            servicePricing[service.slug],
+            getServiceAssumption(activePackage, service.slug),
+            activePackage?.targetRegions ?? []
+          )
+        )
+        .filter(Boolean) as ServiceMonthlyEstimate[],
+    [activePackage, selectedServices, servicePricing]
+  );
   const mappedPricingCount = pricingSnapshots.filter((pricing) => pricing.mapped).length;
   const pricingReady = selectedServices.length > 0 && pricingSnapshots.length === selectedServices.length;
+  const monthlyEstimateReady =
+    selectedServices.length > 0 && monthlyEstimates.length === selectedServices.length;
   const startingRetailPrice = pricingSnapshots
     .map((pricing) => pricing.startsAtTargetRetailPrice ?? pricing.startsAtRetailPrice)
     .filter((price) => price !== undefined) as number[];
+  const supportedMonthlyEstimates = monthlyEstimates.filter((estimate) => estimate.supported);
+  const totalMonthlyEstimate = supportedMonthlyEstimates.reduce(
+    (accumulator, estimate) => accumulator + (estimate.selectedMonthlyCost ?? 0),
+    0
+  );
   const projectReviewSteps = [
     {
       step: "01",
@@ -1419,6 +1444,40 @@ export function ReviewPackageWorkbench({
     downloadText(
       `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}-pricing.txt`,
       buildPackagePricingText(activePackage, pricingSnapshots)
+    );
+  }
+
+  function exportPackageMonthlyEstimateCsv() {
+    if (!activePackage) {
+      return;
+    }
+
+    downloadCsv(
+      `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}-monthly-estimate.csv`,
+      buildPackageMonthlyEstimateRows(activePackage, monthlyEstimates)
+    );
+  }
+
+  function exportPackageMonthlyEstimateMarkdown() {
+    if (!activePackage) {
+      return;
+    }
+
+    downloadText(
+      `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}-monthly-estimate.md`,
+      buildPackageMonthlyEstimateMarkdown(activePackage, monthlyEstimates),
+      "text/markdown;charset=utf-8"
+    );
+  }
+
+  function exportPackageMonthlyEstimateText() {
+    if (!activePackage) {
+      return;
+    }
+
+    downloadText(
+      `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}-monthly-estimate.txt`,
+      buildPackageMonthlyEstimateText(activePackage, monthlyEstimates)
     );
   }
 
@@ -2325,8 +2384,8 @@ export function ReviewPackageWorkbench({
       <section className="surface-panel editorial-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Commercial snapshot</p>
-            <h2 className="section-title">Export pricing only for the services included in this project review.</h2>
+            <p className="eyebrow">Retail meter snapshot</p>
+            <h2 className="section-title">Export retail-meter pricing only for the services included in this project review.</h2>
             <p className="section-copy">
               This commercial view follows the selected services and target regions from the active
               project review, so pre-sales and solution teams can carry a focused retail pricing snapshot
@@ -2465,6 +2524,159 @@ export function ReviewPackageWorkbench({
                 ) : null}
                 <div className="button-row">
                   <Link href={`/services/${pricing.serviceSlug}`} className="muted-link">
+                    Open service view
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : null}
+      </section>
+
+      <section className="surface-panel editorial-section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Monthly estimate</p>
+            <h2 className="section-title">Estimate the project’s monthly cost with calculator-style defaults.</h2>
+            <p className="section-copy">
+              This view stays scoped to the selected services in the active project review. It keeps
+              the retail feed as the source of unit prices, then layers default monthly assumptions on
+              top so you can compare likely first-pass monthly totals without leaving the review.
+            </p>
+          </div>
+        </div>
+
+        <div className="package-header-grid">
+          <article className="filter-card package-card">
+            <div className="package-stats-grid">
+              <article className="hero-metric-card">
+                <span>Selected services</span>
+                <strong>{selectedServices.length.toLocaleString()}</strong>
+                <p>Only services in this project review are included in the monthly estimate.</p>
+              </article>
+              <article className="hero-metric-card">
+                <span>Estimate supported</span>
+                <strong>{supportedMonthlyEstimates.length.toLocaleString()}</strong>
+                <p>Selected services with a modeled monthly estimate from the current retail rows.</p>
+              </article>
+              <article className="hero-metric-card">
+                <span>Estimated monthly total</span>
+                <strong>
+                  {supportedMonthlyEstimates.length > 0
+                    ? formatRetailPrice(totalMonthlyEstimate, supportedMonthlyEstimates[0]?.currencyCode ?? "USD")
+                    : "Not modeled"}
+                </strong>
+                <p>Sum of the selected per-service estimates currently chosen for this review.</p>
+              </article>
+              <article className="hero-metric-card">
+                <span>Need richer assumptions</span>
+                <strong>{(monthlyEstimates.length - supportedMonthlyEstimates.length).toLocaleString()}</strong>
+                <p>Services that still need deeper service-specific estimate modeling.</p>
+              </article>
+            </div>
+
+            <div className="button-row">
+              <button
+                type="button"
+                className="primary-button"
+                disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
+                onClick={exportPackageMonthlyEstimateCsv}
+              >
+                Download estimate CSV
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
+                onClick={exportPackageMonthlyEstimateMarkdown}
+              >
+                Download estimate Markdown
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
+                onClick={exportPackageMonthlyEstimateText}
+              >
+                Download estimate text
+              </button>
+            </div>
+          </article>
+
+          <article className="leadership-brief package-card">
+            <p className="eyebrow">Estimate guidance</p>
+            <h2 className="leadership-title">Use this for first-pass monthly costing, not final commercial sign-off.</h2>
+            <div className="leadership-list">
+              <article>
+                <strong>Still Microsoft-sourced</strong>
+                <p>The unit prices still come from Microsoft’s retail feed. The monthly layer adds default quantity assumptions on top.</p>
+              </article>
+              <article>
+                <strong>Preferred SKU stays optional</strong>
+                <p>If no preferred SKU is entered, the estimate keeps all published SKUs and chooses the lowest modeled one for the project total.</p>
+              </article>
+              <article>
+                <strong>Refine with sizing later</strong>
+                <p>Sizing notes are not required for the first pass. Add them later when you want a customer-specific estimate.</p>
+              </article>
+            </div>
+          </article>
+        </div>
+
+        {pricingLoading ? (
+          <section className="filter-card">
+            <p className="eyebrow">Monthly estimate</p>
+            <h3>Loading the retail rows needed for the monthly estimate.</h3>
+            <p className="microcopy">
+              The estimate view appears after the scoped retail pricing snapshot finishes loading.
+            </p>
+          </section>
+        ) : null}
+
+        {!pricingLoading && monthlyEstimates.length > 0 ? (
+          <div className="service-selection-grid">
+            {monthlyEstimates.map((estimate) => (
+              <article className="future-card service-selection-card" key={`estimate-${estimate.serviceSlug}`}>
+                <div className="section-head">
+                  <div>
+                    <p className="eyebrow">Monthly estimate</p>
+                    <h3>{estimate.serviceName}</h3>
+                  </div>
+                  <span className="chip">
+                    {estimate.supported ? estimate.mode.replaceAll("-", " ") : "Not modeled"}
+                  </span>
+                </div>
+                <p className="microcopy">
+                  {estimate.supported
+                    ? `${estimate.selectedSkuName ?? "Selected SKU"} is currently contributing ${formatRetailPrice(
+                        estimate.selectedMonthlyCost,
+                        estimate.currencyCode
+                      )} to the project’s monthly total.`
+                    : estimate.notes[0] ?? "A monthly estimate is not modeled for this service yet."}
+                </p>
+                {estimate.assumptions.length > 0 ? (
+                  <div className="chip-row">
+                    {estimate.assumptions.slice(0, 3).map((assumption) => (
+                      <span className="chip" key={`${estimate.serviceSlug}-${assumption}`}>
+                        {assumption}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                {estimate.skuEstimates.length > 0 ? (
+                  <div className="chip-row">
+                    {estimate.skuEstimates.slice(0, 4).map((skuEstimate) => (
+                      <span className="chip" key={`${estimate.serviceSlug}-${skuEstimate.skuName}`}>
+                        {skuEstimate.skuName}: {formatRetailPrice(skuEstimate.monthlyCost, estimate.currencyCode)}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                {estimate.notes.length > 0 ? (
+                  <p className="microcopy">{estimate.notes.join(" ")}</p>
+                ) : null}
+                <div className="button-row">
+                  <Link href={`/services/${estimate.serviceSlug}`} className="muted-link">
                     Open service view
                   </Link>
                 </div>

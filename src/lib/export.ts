@@ -4,6 +4,7 @@ import type {
   ReviewDraft,
   ReviewPackage,
   ReviewServiceAssumption,
+  ServiceMonthlyEstimate,
   ServicePricing
 } from "@/types";
 
@@ -124,6 +125,18 @@ function formatPricingLine(price: number | undefined, currencyCode: string) {
     style: "currency",
     currency: currencyCode,
     maximumFractionDigits: 6
+  }).format(price);
+}
+
+function formatEstimateLine(price: number | undefined, currencyCode: string) {
+  if (price === undefined || Number.isNaN(price)) {
+    return "Not modeled";
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currencyCode,
+    maximumFractionDigits: 2
   }).format(price);
 }
 
@@ -532,6 +545,201 @@ export function buildPackagePricingText(reviewPackage: ReviewPackage, servicePri
 
       lines.push("");
     });
+
+  return lines.join("\n");
+}
+
+export function buildPackageMonthlyEstimateRows(
+  reviewPackage: ReviewPackage,
+  monthlyEstimates: ServiceMonthlyEstimate[]
+): Array<Record<string, string | number>> {
+  const scopedServiceSlugs = new Set(reviewPackage.selectedServiceSlugs);
+  const rows: Array<Record<string, string | number>> = [];
+
+  monthlyEstimates
+    .filter((estimate) => scopedServiceSlugs.has(estimate.serviceSlug))
+    .forEach((estimate) => {
+      const assumption = getServiceAssumption(reviewPackage, estimate.serviceSlug);
+
+      if (!estimate.supported || estimate.skuEstimates.length === 0) {
+        rows.push({
+          projectReviewName: reviewPackage.name,
+          audience: reviewPackage.audience,
+          businessScope: reviewPackage.businessScope,
+          targetRegions: reviewPackage.targetRegions.join(" | "),
+          service: estimate.serviceName,
+          serviceSlug: estimate.serviceSlug,
+          plannedRegion: assumption.plannedRegion,
+          preferredSku: assumption.preferredSku,
+          sizingNote: assumption.sizingNote,
+          estimateMode: estimate.mode,
+          supported: "No",
+          selectedSku: "",
+          monthlyEstimate: "",
+          skuName: "",
+          skuMonthlyEstimate: "",
+          assumptions: estimate.assumptions.join(" | "),
+          notes: estimate.notes.join(" | "),
+          components: ""
+        });
+
+        return;
+      }
+
+      estimate.skuEstimates.forEach((skuEstimate) => {
+        rows.push({
+          projectReviewName: reviewPackage.name,
+          audience: reviewPackage.audience,
+          businessScope: reviewPackage.businessScope,
+          targetRegions: reviewPackage.targetRegions.join(" | "),
+          service: estimate.serviceName,
+          serviceSlug: estimate.serviceSlug,
+          plannedRegion: assumption.plannedRegion,
+          preferredSku: assumption.preferredSku,
+          sizingNote: assumption.sizingNote,
+          estimateMode: estimate.mode,
+          supported: "Yes",
+          selectedSku: estimate.selectedSkuName === skuEstimate.skuName ? "Yes" : "No",
+          monthlyEstimate: estimate.selectedMonthlyCost ?? "",
+          skuName: skuEstimate.skuName,
+          skuMonthlyEstimate: skuEstimate.monthlyCost,
+          assumptions: skuEstimate.assumptions.join(" | "),
+          notes: [...estimate.notes, ...skuEstimate.notes].join(" | "),
+          components: skuEstimate.components
+            .map(
+              (component) =>
+                `${component.label}: ${formatEstimateLine(component.monthlyCost, estimate.currencyCode)} (${component.quantity} x ${component.meterName})`
+            )
+            .join(" | ")
+        });
+      });
+    });
+
+  return rows;
+}
+
+export function buildPackageMonthlyEstimateMarkdown(
+  reviewPackage: ReviewPackage,
+  monthlyEstimates: ServiceMonthlyEstimate[]
+) {
+  const scopedServiceSlugs = new Set(reviewPackage.selectedServiceSlugs);
+  const scopedEstimates = monthlyEstimates
+    .slice()
+    .filter((estimate) => scopedServiceSlugs.has(estimate.serviceSlug))
+    .sort((left, right) => left.serviceName.localeCompare(right.serviceName));
+  const totalMonthlyEstimate = scopedEstimates.reduce(
+    (accumulator, estimate) => accumulator + (estimate.selectedMonthlyCost ?? 0),
+    0
+  );
+  const supportedCount = scopedEstimates.filter((estimate) => estimate.supported).length;
+
+  const sections = scopedEstimates.map((estimate) => {
+    const assumption = getServiceAssumption(reviewPackage, estimate.serviceSlug);
+    const lines = [`## ${estimate.serviceName}`, ""];
+
+    pushServiceAssumptionLines(lines, assumption);
+    if (hasServiceAssumption(assumption)) {
+      lines.push("");
+    }
+
+    lines.push(`- Monthly estimate mode: ${estimate.mode}`);
+    lines.push(`- Estimate supported: ${estimate.supported ? "Yes" : "No"}`);
+    lines.push(
+      `- Selected estimate: ${formatEstimateLine(estimate.selectedMonthlyCost, estimate.currencyCode)}`
+    );
+    if (estimate.selectedSkuName) {
+      lines.push(`- Selected SKU: ${estimate.selectedSkuName}`);
+    }
+    if (estimate.assumptions.length > 0) {
+      lines.push(`- Assumptions: ${estimate.assumptions.join(" | ")}`);
+    }
+    if (estimate.notes.length > 0) {
+      lines.push(`- Notes: ${estimate.notes.join(" | ")}`);
+    }
+    lines.push("");
+
+    if (estimate.skuEstimates.length === 0) {
+      lines.push("No monthly estimate could be modeled yet for this service.");
+      lines.push("");
+      return lines.join("\n");
+    }
+
+    lines.push("| SKU | Selected | Monthly estimate | Assumptions |");
+    lines.push("| --- | --- | --- | --- |");
+    estimate.skuEstimates.forEach((skuEstimate) => {
+      lines.push(
+        `| ${skuEstimate.skuName} | ${estimate.selectedSkuName === skuEstimate.skuName ? "Yes" : "No"} | ${formatEstimateLine(skuEstimate.monthlyCost, estimate.currencyCode)} | ${skuEstimate.assumptions.join(" / ")} |`
+      );
+    });
+    lines.push("");
+
+    return lines.join("\n");
+  });
+
+  return [
+    `# ${reviewPackage.name} monthly estimate`,
+    "",
+    `- Audience: ${reviewPackage.audience}`,
+    `- Business scope: ${reviewPackage.businessScope || "Not captured"}`,
+    `- Target regions: ${reviewPackage.targetRegions.join(", ") || "Not captured"}`,
+    `- Services in scope: ${scopedEstimates.map((estimate) => estimate.serviceName).join(", ") || "None selected"}`,
+    `- Estimate supported: ${supportedCount.toLocaleString()} of ${scopedEstimates.length.toLocaleString()} selected services`,
+    `- Estimated monthly total: ${formatEstimateLine(totalMonthlyEstimate, scopedEstimates[0]?.currencyCode ?? "USD")}`,
+    `- Exported at: ${new Date().toISOString()}`,
+    "",
+    ...sections
+  ].join("\n");
+}
+
+export function buildPackageMonthlyEstimateText(
+  reviewPackage: ReviewPackage,
+  monthlyEstimates: ServiceMonthlyEstimate[]
+) {
+  const scopedServiceSlugs = new Set(reviewPackage.selectedServiceSlugs);
+  const scopedEstimates = monthlyEstimates
+    .slice()
+    .filter((estimate) => scopedServiceSlugs.has(estimate.serviceSlug))
+    .sort((left, right) => left.serviceName.localeCompare(right.serviceName));
+  const totalMonthlyEstimate = scopedEstimates.reduce(
+    (accumulator, estimate) => accumulator + (estimate.selectedMonthlyCost ?? 0),
+    0
+  );
+
+  const lines = [
+    `${reviewPackage.name} monthly estimate`,
+    `Audience: ${reviewPackage.audience}`,
+    `Business scope: ${reviewPackage.businessScope || "Not captured"}`,
+    `Target regions: ${reviewPackage.targetRegions.join(", ") || "Not captured"}`,
+    `Estimated monthly total: ${formatEstimateLine(totalMonthlyEstimate, scopedEstimates[0]?.currencyCode ?? "USD")}`,
+    `Exported at: ${new Date().toISOString()}`,
+    ""
+  ];
+
+  scopedEstimates.forEach((estimate) => {
+    const assumption = getServiceAssumption(reviewPackage, estimate.serviceSlug);
+    lines.push(`Service: ${estimate.serviceName}`);
+    if (assumption.plannedRegion.trim()) lines.push(`Planned region: ${assumption.plannedRegion.trim()}`);
+    if (assumption.preferredSku.trim()) lines.push(`Preferred SKU: ${assumption.preferredSku.trim()}`);
+    if (assumption.sizingNote.trim()) lines.push(`Sizing note: ${assumption.sizingNote.trim()}`);
+    lines.push(`Estimate mode: ${estimate.mode}`);
+    lines.push(`Estimate supported: ${estimate.supported ? "Yes" : "No"}`);
+    lines.push(`Selected estimate: ${formatEstimateLine(estimate.selectedMonthlyCost, estimate.currencyCode)}`);
+    if (estimate.selectedSkuName) {
+      lines.push(`Selected SKU: ${estimate.selectedSkuName}`);
+    }
+    if (estimate.assumptions.length > 0) {
+      lines.push(`Assumptions: ${estimate.assumptions.join(" | ")}`);
+    }
+    if (estimate.notes.length > 0) {
+      lines.push(`Notes: ${estimate.notes.join(" | ")}`);
+    }
+    estimate.skuEstimates.forEach((skuEstimate) => {
+      lines.push(
+        `SKU estimate: ${skuEstimate.skuName} = ${formatEstimateLine(skuEstimate.monthlyCost, estimate.currencyCode)}`
+      );
+    });
+    lines.push("");
+  });
 
   return lines.join("\n");
 }
