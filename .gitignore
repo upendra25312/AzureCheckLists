@@ -2,6 +2,8 @@ node_modules/
 .next/
 out/
 output/
+playwright-report/
+test-results/
 public/data/
 source-repo/
 .DS_Store

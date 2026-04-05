@@ -10,7 +10,8 @@
     "dev": "npm run generate:data && next dev",
     "generate:data": "node tools/generate-data.mjs",
     "build": "npm run generate:data && next build",
-    "start": "next start"
+    "start": "next start",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "next": "^15.0.0",
@@ -18,6 +19,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
