@@ -10,8 +10,9 @@ import type {
   StaticWebAppClientPrincipal,
   StructuredReviewRecord
 } from "@/types";
+import { readBackendErrorMessage } from "@/lib/backend-error";
 
-export type AuthProvider = "aad" | "google";
+export type AuthProvider = "aad";
 
 type AuthMeResponse =
   | {
@@ -90,17 +91,21 @@ function parseClientPrincipal(payload: AuthMeResponse) {
 }
 
 export async function fetchClientPrincipal() {
-  const response = await fetch("/.auth/me", {
-    credentials: "same-origin",
-    cache: "no-store"
-  });
+  try {
+    const response = await fetch("/.auth/me", {
+      credentials: "same-origin",
+      cache: "no-store"
+    });
 
-  if (!response.ok) {
+    if (!response.ok) {
+      return null;
+    }
+
+    const payload = (await response.json()) as AuthMeResponse;
+    return parseClientPrincipal(payload);
+  } catch {
     return null;
   }
-
-  const payload = (await response.json()) as AuthMeResponse;
-  return parseClientPrincipal(payload);
 }
 
 export function buildLoginUrl(provider: AuthProvider, redirectUri?: string) {
@@ -113,7 +118,10 @@ export function buildLoginUrl(provider: AuthProvider, redirectUri?: string) {
 
 async function parseJsonResponse<T>(response: Response) {
   if (!response.ok) {
-    const message = await response.text();
+    const message = await readBackendErrorMessage(
+      response,
+      `Request failed with status ${response.status}`
+    );
 
     throw new Error(message || `Request failed with status ${response.status}`);
   }
@@ -215,7 +223,10 @@ export async function downloadCloudReviewCsv(
   });
 
   if (!response.ok) {
-    const message = await response.text();
+    const message = await readBackendErrorMessage(
+      response,
+      `Request failed with status ${response.status}`
+    );
 
     throw new Error(message || `Request failed with status ${response.status}`);
   }
@@ -244,6 +255,66 @@ export async function listCloudProjectReviews() {
 
 export async function activateCloudProjectReview(reviewId: string) {
   const response = await fetch("/api/project-reviews/activate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({ reviewId })
+  });
+
+  return parseJsonResponse<{
+    user: CloudProjectReviewUser;
+  }>(response);
+}
+
+export async function archiveCloudProjectReview(reviewId: string, archived = true) {
+  const response = await fetch("/api/project-reviews/archive", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({ reviewId, archived })
+  });
+
+  return parseJsonResponse<{
+    user: CloudProjectReviewUser;
+  }>(response);
+}
+
+export async function deleteCloudProjectReview(reviewId: string) {
+  const response = await fetch("/api/project-reviews/delete", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({ reviewId, deleted: true })
+  });
+
+  return parseJsonResponse<{
+    user: CloudProjectReviewUser;
+  }>(response);
+}
+
+export async function restoreDeletedCloudProjectReview(reviewId: string) {
+  const response = await fetch("/api/project-reviews/delete", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({ reviewId, deleted: false })
+  });
+
+  return parseJsonResponse<{
+    user: CloudProjectReviewUser;
+  }>(response);
+}
+
+export async function purgeCloudProjectReview(reviewId: string) {
+  const response = await fetch("/api/project-reviews/purge", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"

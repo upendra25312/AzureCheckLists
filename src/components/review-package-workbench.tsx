@@ -512,6 +512,26 @@ function resolvePackageName(name: string) {
   return name.trim() || "Untitled project review";
 }
 
+function shouldShowSetupDetails(reviewPackage: ReviewPackage | null | undefined) {
+  if (!reviewPackage) {
+    return false;
+  }
+
+  return (
+    reviewPackage.audience !== "Cloud Architect" ||
+    reviewPackage.targetRegions.length > 0 ||
+    reviewPackage.businessScope.trim().length > 0
+  );
+}
+
+function resolveStageExpanded(
+  expansion: Record<string, boolean>,
+  stageId: string,
+  complete: boolean
+) {
+  return expansion[stageId] ?? !complete;
+}
+
 export function ReviewPackageWorkbench({
   index
 }: {
@@ -536,6 +556,8 @@ export function ReviewPackageWorkbench({
   const [pricingError, setPricingError] = useState<string | null>(null);
   const [expandedPricingServices, setExpandedPricingServices] = useState<string[]>([]);
   const [showOnlyScopedServices, setShowOnlyScopedServices] = useState(true);
+  const [showSetupDetails, setShowSetupDetails] = useState(false);
+  const [stageExpansion, setStageExpansion] = useState<Record<string, boolean>>({});
   const [packageActionMessage, setPackageActionMessage] = useState<string | null>(null);
   const [packageActionTone, setPackageActionTone] = useState<PackageActionTone>("neutral");
   const [cloudRestoreAttempted, setCloudRestoreAttempted] = useState(false);
@@ -563,6 +585,7 @@ export function ReviewPackageWorkbench({
     const nextActivePackage = storedPackages.find((entry) => entry.id === nextActivePackageId);
 
     setForm(createFormState(nextActivePackage));
+    setShowSetupDetails(shouldShowSetupDetails(nextActivePackage));
 
     return () => {
       active = false;
@@ -708,6 +731,92 @@ export function ReviewPackageWorkbench({
       index.services.filter((service) => activePackage?.selectedServiceSlugs.includes(service.slug) ?? false),
     [activePackage?.selectedServiceSlugs, index.services]
   );
+  const starterServices = useMemo(
+    () =>
+      index.services
+        .filter((service) => !(activePackage?.selectedServiceSlugs.includes(service.slug) ?? false))
+        .sort(
+          (left, right) =>
+            right.familyCount - left.familyCount ||
+            right.itemCount - left.itemCount ||
+            left.service.localeCompare(right.service)
+        )
+        .slice(0, 6),
+    [activePackage?.selectedServiceSlugs, index.services]
+  );
+  const starterBundles = useMemo(() => {
+    const serviceByName = new Map(index.services.map((service) => [service.service, service]));
+
+    return [
+      {
+        title: "Edge web baseline",
+        description:
+          "Front Door, App Service, Storage, and Key Vault for an internet-facing app review.",
+        bestFor: "Public web apps and pre-sales web landing zones",
+        watchFor: "Add network controls later if the workload cannot stay internet-facing.",
+        nextMoves: ["Add monitoring and diagnostics", "Add identity and access boundaries", "Decide whether WAF or private ingress is required"],
+        services: [
+          serviceByName.get("Azure Front Door"),
+          serviceByName.get("Azure App Service"),
+          serviceByName.get("Azure Storage Account"),
+          serviceByName.get("Azure Key Vault")
+        ].filter(Boolean),
+        followUpServices: [
+          serviceByName.get("Azure Monitor"),
+          serviceByName.get("Microsoft Entra ID"),
+          serviceByName.get("Azure Web Application Firewall")
+        ].filter(Boolean)
+      },
+      {
+        title: "Private ingress baseline",
+        description:
+          "Application Gateway, Virtual Network, Key Vault, and Storage for a controlled ingress pattern.",
+        bestFor: "Private entry points and network-controlled application tiers",
+        watchFor: "Usually expands with identity, monitoring, and outbound controls.",
+        nextMoves: ["Add outbound connectivity controls", "Add monitoring and diagnostics", "Decide where identity and secrets terminate"],
+        services: [
+          serviceByName.get("Azure Application Gateway"),
+          serviceByName.get("Azure Virtual Network"),
+          serviceByName.get("Azure Key Vault"),
+          serviceByName.get("Azure Storage Account")
+        ].filter(Boolean),
+        followUpServices: [
+          serviceByName.get("Azure Monitor"),
+          serviceByName.get("Microsoft Entra ID"),
+          serviceByName.get("Azure Firewall")
+        ].filter(Boolean)
+      },
+      {
+        title: "AKS delivery baseline",
+        description:
+          "AKS, Container Registry, Key Vault, and Virtual Network for a container platform review.",
+        bestFor: "Container platform reviews and platform engineering conversations",
+        watchFor: "Expect follow-up scope around ingress, observability, and policy controls.",
+        nextMoves: ["Add ingress and traffic management", "Add observability and logging", "Add policy, registry, and secret rotation controls"],
+        services: [
+          serviceByName.get("Azure Kubernetes Service (AKS)"),
+          serviceByName.get("Azure Container Registry"),
+          serviceByName.get("Azure Key Vault"),
+          serviceByName.get("Azure Virtual Network")
+        ].filter(Boolean),
+        followUpServices: [
+          serviceByName.get("Azure Monitor"),
+          serviceByName.get("Azure Application Gateway"),
+          serviceByName.get("Azure Policy")
+        ].filter(Boolean)
+      }
+    ]
+      .map((bundle) => ({
+        ...bundle,
+        services: bundle.services.filter(
+          (service): service is (typeof index.services)[number] => Boolean(service)
+        ),
+        followUpServices: bundle.followUpServices.filter(
+          (service): service is (typeof index.services)[number] => Boolean(service)
+        )
+      }))
+      .filter((bundle) => bundle.services.length >= 2);
+  }, [index.services]);
   const packageItems = useMemo(() => {
     if (!items || !activePackage) {
       return [];
@@ -766,41 +875,23 @@ export function ReviewPackageWorkbench({
     (accumulator, estimate) => accumulator + (estimate.selectedHourlyCost ?? 0),
     0
   );
-  const projectReviewSteps = [
+  const reviewedDecisionCount = includedCount + notApplicableCount + excludedCount;
+  const allScopedFindingsResolved = packageItems.length > 0 && pendingCount === 0;
+  const quickStartSteps = [
     {
       step: "01",
-      title: "Create the project review",
-      copy: "Name the project, audience, target regions, and scope so every note stays tied to one solution."
+      title: "Create the review shell",
+      copy: "Name the solution, audience, target regions, and business scope. You only need enough context to anchor the rest of the workspace."
     },
     {
       step: "02",
-      title: "Add the Azure services in scope",
-      copy: "Keep only the components that actually belong to this design so the export stays focused."
+      title: "Add only the in-scope services",
+      copy: "Select the Azure services that actually belong to this design. Everything else can stay out until it proves necessary."
     },
     {
       step: "03",
-      title: "Ask the project review copilot",
-      copy: "Use the scoped copilot early when you want a fast summary of blockers, pricing caveats, review gaps, or leadership-ready wording."
-    },
-    {
-      step: "04",
-      title: "Review the region, cost, and checklist matrix",
-      copy: "Confirm regional fit, pricing readiness, and checklist progress service by service before jumping into detail."
-    },
-    {
-      step: "05",
-      title: "Open service pages and write project notes",
-      copy: "From each selected service, open findings, mark them as included or not applicable, and capture your comments."
-    },
-    {
-      step: "06",
-      title: "Download the design notes and pricing snapshot",
-      copy: "Export only the selected services and their project-specific notes in the format that suits the audience."
-    },
-    {
-      step: "07",
-      title: "Sign in only when you want Azure-backed save and reuse",
-      copy: "Browsing and local exports stay open. Sign in later when you want to save this project review to Azure and resume it from another session."
+      title: "Use the matrix, copilot, and exports when ready",
+      copy: "Once the scope is stable, use the matrix for region and pricing checks, ask scoped questions, and export only what belongs to the design."
     }
   ];
   const selectedServiceProgress = useMemo(
@@ -838,6 +929,188 @@ export function ReviewPackageWorkbench({
       }),
     [packageItems, reviews, selectedServices]
   );
+  const signalFollowUp = useMemo(() => {
+    const servicesNeedingDecisions = [...selectedServiceProgress]
+      .filter((entry) => entry.pendingCount > 0)
+      .sort(
+        (left, right) =>
+          right.pendingCount - left.pendingCount ||
+          right.itemCount - left.itemCount ||
+          left.service.service.localeCompare(right.service.service)
+      );
+
+    return {
+      servicesNeedingDecisions,
+      servicesReadyForExportCount: selectedServiceProgress.filter(
+        (entry) => entry.itemCount > 0 && entry.pendingCount === 0
+      ).length,
+      nextServiceNames: servicesNeedingDecisions.slice(0, 3).map((entry) => entry.service.service)
+    };
+  }, [selectedServiceProgress]);
+  const activeStarterBundle = useMemo(() => {
+    if (selectedServiceSlugSet.size === 0) {
+      return null;
+    }
+
+    const rankedBundles = starterBundles
+      .map((bundle) => {
+        const overlapCount = bundle.services.filter((service) => selectedServiceSlugSet.has(service.slug)).length;
+
+        return {
+          ...bundle,
+          overlapCount
+        };
+      })
+      .filter((bundle) => bundle.overlapCount >= Math.min(2, bundle.services.length))
+      .sort(
+        (left, right) =>
+          right.overlapCount - left.overlapCount ||
+          right.services.length - left.services.length ||
+          left.title.localeCompare(right.title)
+      );
+
+    return rankedBundles[0] ?? null;
+  }, [selectedServiceSlugSet, starterBundles]);
+  const nextScopeServiceSuggestions = useMemo(() => {
+    if (!activeStarterBundle) {
+      return [];
+    }
+
+    return activeStarterBundle.followUpServices.filter(
+      (service) => !selectedServiceSlugSet.has(service.slug)
+    );
+  }, [activeStarterBundle, selectedServiceSlugSet]);
+  const workspaceStages = useMemo(() => {
+    const stages = [
+      {
+        id: "project-review-setup",
+        label: "Setup",
+        title: "Create the review shell",
+        detail: activePackage
+          ? `${activePackage.name} is active.`
+          : "Create an active review before anything else unlocks.",
+        complete: Boolean(activePackage),
+        available: true,
+        optional: false
+      },
+      {
+        id: "project-review-scope",
+        label: "Scope",
+        title: "Choose in-scope services",
+        detail:
+          selectedServices.length > 0
+            ? `${selectedServices.length.toLocaleString()} services are currently in scope.`
+            : "Keep the service boundary honest before reviewing deeper signals.",
+        complete: selectedServices.length > 0,
+        available: Boolean(activePackage),
+        optional: false
+      },
+      {
+        id: "project-review-signals",
+        label: "Signals",
+        title: "Review readiness, region fit, and notes",
+        detail:
+          allScopedFindingsResolved
+            ? `${packageItems.length.toLocaleString()} scoped findings now have explicit review decisions.`
+            : reviewedDecisionCount > 0
+            ? `${reviewedDecisionCount.toLocaleString()} findings already have a project decision, but ${pendingCount.toLocaleString()} are still pending.`
+            : "Use the matrix and service notes to turn scope into an actual review posture.",
+        complete: allScopedFindingsResolved,
+        available: selectedServices.length > 0,
+        optional: false
+      },
+      {
+        id: "project-review-local-exports",
+        label: "Outputs",
+        title: "Generate scoped exports",
+        detail:
+          packageItems.length > 0
+            ? allScopedFindingsResolved
+              ? `${packageItems.length.toLocaleString()} scoped findings are fully ready for export.`
+              : reviewedDecisionCount > 0
+              ? `${reviewedDecisionCount.toLocaleString()} findings are decided for export, but ${pendingCount.toLocaleString()} are still pending.`
+              : `${packageItems.length.toLocaleString()} scoped findings are available, but the review still needs explicit decisions.`
+            : "Exports unlock after services enter scope.",
+        complete: allScopedFindingsResolved,
+        available: selectedServices.length > 0,
+        optional: false
+      },
+      {
+        id: "project-review-cloud-continuity",
+        label: "Continuity",
+        title: "Save or resume later",
+        detail: activePackage
+          ? "Azure-backed continuity is available, but still optional."
+          : "Create a review first if you want to save it to Azure later.",
+        complete: false,
+        available: Boolean(activePackage),
+        optional: true
+      }
+    ];
+
+    let assignedCurrent = false;
+
+    return stages.map((stage) => {
+      if (stage.complete) {
+        return {
+          ...stage,
+          status: "completed" as const
+        };
+      }
+
+      if (stage.optional && stage.available) {
+        return {
+          ...stage,
+          status: "optional" as const
+        };
+      }
+
+      if (!assignedCurrent && stage.available) {
+        assignedCurrent = true;
+        return {
+          ...stage,
+          status: "current" as const
+        };
+      }
+
+      return {
+        ...stage,
+        status: "upcoming" as const
+      };
+    });
+  }, [activePackage, allScopedFindingsResolved, packageItems.length, pendingCount, reviewedDecisionCount, selectedServices.length]);
+  const setupStageExpanded = resolveStageExpanded(
+    stageExpansion,
+    "project-review-setup",
+    Boolean(activePackage)
+  );
+  const scopeStageExpanded = resolveStageExpanded(
+    stageExpansion,
+    "project-review-scope",
+    selectedServices.length > 0
+  );
+  const signalsStageExpanded = resolveStageExpanded(
+    stageExpansion,
+    "project-review-signals",
+    allScopedFindingsResolved
+  );
+  const outputsStageExpanded = resolveStageExpanded(
+    stageExpansion,
+    "project-review-local-exports",
+    allScopedFindingsResolved
+  );
+  const continuityStageExpanded = resolveStageExpanded(
+    stageExpansion,
+    "project-review-cloud-continuity",
+    false
+  );
+
+  function toggleStageExpansion(stageId: string, complete: boolean) {
+    setStageExpansion((current) => ({
+      ...current,
+      [stageId]: !(current[stageId] ?? !complete)
+    }));
+  }
 
   useEffect(() => {
     let active = true;
@@ -1050,6 +1323,82 @@ export function ReviewPackageWorkbench({
       availableServices
     };
   }, [matrixRows]);
+  const exportPreviewCards = useMemo(
+    () => [
+      {
+        title: "Checklist CSV",
+        audience: "Implementation tracking",
+        summary:
+          packageItems.length > 0
+            ? `${packageItems.length.toLocaleString()} scoped findings can be exported for action tracking and spreadsheet review.`
+            : "Becomes useful once the review contains scoped findings and explicit decisions.",
+        bullets: [
+          `${includedCount.toLocaleString()} included items`,
+          `${notApplicableCount.toLocaleString()} not applicable items`,
+          includeNeedsReview ? "Pending-review items included" : "Pending-review items hidden by default"
+        ]
+      },
+      {
+        title: "Design Markdown",
+        audience: "Architecture and pre-sales handoff",
+        summary: activePackage
+          ? `${activePackage.name} can be turned into a reusable narrative artifact with scoped notes and review context.`
+          : "Becomes useful after the review shell exists and services are in scope.",
+        bullets: [
+          selectedServices.length > 0
+            ? `${selectedServices.length.toLocaleString()} selected services in scope`
+            : "No services selected yet",
+          activePackage?.targetRegions.length
+            ? `${activePackage.targetRegions.length.toLocaleString()} target regions captured`
+            : "No target regions captured yet",
+          activePackage?.businessScope.trim()
+            ? "Business scope captured"
+            : "Business scope still optional"
+        ]
+      },
+      {
+        title: "Leadership summary",
+        audience: "Decision brief",
+        summary:
+          matrixRows.length > 0
+            ? "Summarizes blockers, caveats, pricing posture, and next decisions for leadership readers."
+            : "Unlocks after the review has enough service scope to summarize risks credibly.",
+        bullets: [
+          `${regionalRiskSummary.blockedServices.length.toLocaleString()} blocked or restricted services`,
+          `${regionalRiskSummary.caveatServices.length.toLocaleString()} caveat services`,
+          `${mappedPricingCount.toLocaleString()} services with pricing mapped`
+        ]
+      },
+      {
+        title: "Regional risk CSV",
+        audience: "Risk and readiness review",
+        summary:
+          selectedServices.length > 0
+            ? "Creates a focused handoff of blocked, caveated, global, and fully available services."
+            : "Unlocks after services are added to the review.",
+        bullets: [
+          `${regionalRiskSummary.availableServices.length.toLocaleString()} available without caveat`,
+          `${regionalRiskSummary.globalServices.length.toLocaleString()} global services`,
+          includeNotApplicable ? "Not-applicable rationale preserved" : "Not-applicable items omitted"
+        ]
+      }
+    ],
+    [
+      activePackage,
+      includeNeedsReview,
+      includeNotApplicable,
+      includedCount,
+      mappedPricingCount,
+      matrixRows.length,
+      notApplicableCount,
+      packageItems.length,
+      regionalRiskSummary.availableServices.length,
+      regionalRiskSummary.blockedServices.length,
+      regionalRiskSummary.caveatServices.length,
+      regionalRiskSummary.globalServices.length,
+      selectedServices.length
+    ]
+  );
   const copilotContext = useMemo<ProjectReviewCopilotContext | null>(() => {
     if (!activePackage || matrixRows.length === 0) {
       return null;
@@ -1183,6 +1532,7 @@ export function ReviewPackageWorkbench({
     const nextActivePackage = nextPackages.find((entry) => entry.id === nextActiveId);
 
     setForm(createFormState(nextActivePackage));
+    setShowSetupDetails(shouldShowSetupDetails(nextActivePackage));
   }
 
   function handleRestoreCloudState(input: {
@@ -1331,6 +1681,59 @@ export function ReviewPackageWorkbench({
     });
 
     refreshPackages(loadPackages(), activePackage.id);
+  }
+
+  function addServicesToReview(
+    serviceSlugs: string[],
+    sourceLabel: string,
+    successMessage: string
+  ) {
+    if (!activePackage || serviceSlugs.length === 0) {
+      return;
+    }
+
+    const nextSelectedServiceSlugs = Array.from(
+      new Set([...activePackage.selectedServiceSlugs, ...serviceSlugs])
+    );
+    const addedCount = nextSelectedServiceSlugs.length - activePackage.selectedServiceSlugs.length;
+
+    if (addedCount === 0) {
+      setPackageActionTone("neutral");
+      setPackageActionMessage(`Everything from ${sourceLabel} is already in the current review scope.`);
+      return;
+    }
+
+    upsertPackage({
+      ...activePackage,
+      selectedServiceSlugs: nextSelectedServiceSlugs
+    });
+
+    refreshPackages(loadPackages(), activePackage.id);
+    setPackageActionTone("success");
+    setPackageActionMessage(successMessage.replace("{count}", addedCount.toLocaleString()));
+  }
+
+  function addStarterBundle(serviceSlugs: string[], bundleTitle: string) {
+    addServicesToReview(
+      serviceSlugs,
+      bundleTitle,
+      `Added {count} starter services from ${bundleTitle}.`
+    );
+  }
+
+  function clearReviewScope() {
+    if (!activePackage || activePackage.selectedServiceSlugs.length === 0) {
+      return;
+    }
+
+    upsertPackage({
+      ...activePackage,
+      selectedServiceSlugs: []
+    });
+
+    refreshPackages(loadPackages(), activePackage.id);
+    setPackageActionTone("neutral");
+    setPackageActionMessage("Cleared the current review scope so you can reseed it with a different baseline.");
   }
 
   function updateServiceAssumption(
@@ -1629,41 +2032,40 @@ export function ReviewPackageWorkbench({
         <div className="editorial-hero-layout">
           <div className="editorial-hero-copy">
             <p className="eyebrow">Project review</p>
-            <h1 className="hero-title">Create one project review, then keep every note tied to that solution.</h1>
+            <h1 className="hero-title">Start one project review and keep the scope tight.</h1>
             <p className="hero-copy">
-              Start with the customer or workload, add only the Azure services that belong to it,
-              review the relevant findings, and export design notes and pricing that stay scoped to
-              that single project.
+              Create the review first, add only the Azure services that belong to this solution,
+              then use the rest of the workspace to pressure-test that exact scope.
             </p>
             <p className="hero-note">
-              This is the clearest workflow for cloud architects, pre-sales, sales architects, and
-              senior reviewers who need a project-ready artifact instead of the full source catalog.
+              New users do not need to learn the whole product first. Start with Step 1 below and
+              treat sign-in, cloud save, and deeper exports as optional later moves.
             </p>
             <div className="hero-actions">
+              <a href="#project-review-setup" className="primary-button">
+                Start this review
+              </a>
               <Link href="/services" className="secondary-button">
                 Browse services
-              </Link>
-              <Link href="/explorer" className="ghost-button">
-                Open explorer
               </Link>
             </div>
           </div>
 
           <aside className="leadership-brief">
-            <p className="eyebrow">Why this matters</p>
-            <h2 className="leadership-title">One project review, one project story.</h2>
+            <p className="eyebrow">Start here</p>
+            <h2 className="leadership-title">Most users only need three moves.</h2>
             <div className="leadership-list">
               <article>
-                <strong>Scoped services</strong>
-                <p>Keep only the Azure services that belong to the current solution in the review.</p>
+                <strong>Define the review</strong>
+                <p>Capture the project name, audience, regions, and scope before touching detailed findings.</p>
               </article>
               <article>
-                <strong>Project-specific notes</strong>
-                <p>Record why a finding is included, not applicable, excluded, or still pending review.</p>
+                <strong>Choose the services</strong>
+                <p>Keep the service list honest so pricing, copilot answers, and exports stay relevant.</p>
               </article>
               <article>
-                <strong>Commercial fit</strong>
-                <p>Regional availability and public retail pricing now follow the same project review scope and target regions.</p>
+                <strong>Review and export</strong>
+                <p>Use the matrix, service notes, and export tools after the scope is stable. Cloud save is optional.</p>
               </article>
             </div>
           </aside>
@@ -1673,18 +2075,21 @@ export function ReviewPackageWorkbench({
       <section className="surface-panel editorial-section executive-brief-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">How to use this page</p>
-            <h2 className="section-title">Follow the same seven steps when you want a reusable customer review artifact.</h2>
+            <p className="eyebrow">Quick start</p>
+            <h2 className="section-title">If this is your first visit, start with these three moves.</h2>
             <p className="section-copy">
-              The goal of this page is to make the workflow obvious: create the review, add services,
-              check the matrix, ask for scoped summaries, write notes on the selected service pages,
-              export only what belongs to the design, and sign in only when you want Azure-backed
-              save and reuse.
+              You do not need to master the full workspace before it becomes useful. Create the
+              review, add the services in scope, and then use the matrix, copilot, and exports only
+              when the design is ready for them.
             </p>
+          </div>
+          <div className="chip-row">
+            <span className="chip">Cloud save is optional</span>
+            <span className="chip">Explorer stays secondary</span>
           </div>
         </div>
         <div className="start-here-grid">
-          {projectReviewSteps.map((step) => (
+          {quickStartSteps.map((step) => (
             <article className="path-card" key={step.step}>
               <div className="path-card-topline">
                 <span className="path-card-number">{step.step}</span>
@@ -1696,18 +2101,59 @@ export function ReviewPackageWorkbench({
         </div>
       </section>
 
-      <section className="surface-panel editorial-section">
+      <div className="review-workspace-shell">
+        <aside className="review-progress-rail">
+          <section className="surface-panel review-progress-card">
+            <p className="eyebrow">Review stages</p>
+            <h2 className="review-progress-title">Keep the workflow oriented as the page grows.</h2>
+            <p className="microcopy">
+              This rail stays focused on the current review path: setup, scope, signals, outputs,
+              and optional continuity.
+            </p>
+            <div className="review-progress-list">
+              {workspaceStages.map((stage, index) => (
+                <a className="review-progress-item" href={`#${stage.id}`} key={stage.id}>
+                  <div className="review-progress-item-head">
+                    <span className="review-progress-step">0{index + 1}</span>
+                    <span className={`review-progress-pill review-progress-pill-${stage.status}`}>
+                      {stage.status}
+                    </span>
+                  </div>
+                  <strong>{stage.title}</strong>
+                  <p>{stage.detail}</p>
+                </a>
+              ))}
+            </div>
+          </section>
+        </aside>
+
+        <div className="review-workspace-flow">
+      <section className="surface-panel editorial-section" id="project-review-setup">
         <div className="section-head">
           <div>
             <p className="eyebrow">Step 1</p>
             <h2 className="section-title">Create or activate the project review that should receive notes.</h2>
             <p className="section-copy">
-              Notes entered on service and explorer pages are scoped to the active project review.
-              If no review is active, the app falls back to local-only general notes.
+              Start with the project review name. Audience, regions, and business scope can be added
+              now or later once the review shell exists.
             </p>
+          </div>
+          <div className="chip-row">
+            <span className="chip">Only the name is required to start</span>
+            <span className="chip">Cloud save stays optional</span>
+          </div>
+          <div className="button-row review-stage-head-actions">
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => toggleStageExpansion("project-review-setup", Boolean(activePackage))}
+            >
+              {setupStageExpanded ? "Collapse stage" : "Expand stage"}
+            </button>
           </div>
         </div>
 
+        {setupStageExpanded ? (
         <div className="package-header-grid">
           <article className="filter-card package-card">
             <div className="filter-grid">
@@ -1736,54 +2182,61 @@ export function ReviewPackageWorkbench({
                   placeholder="Contoso edge review"
                 />
               </label>
-              <p className="microcopy">
-                Rename project review: update the name above, then click <strong>Save review
-                details</strong>.
-              </p>
+              {showSetupDetails ? (
+                <>
+                  <p className="microcopy" style={{ gridColumn: "1 / -1" }}>
+                    Rename project review: update the name above, then click <strong>Save review details</strong>.
+                  </p>
 
-              <label>
-                <span className="microcopy">Audience</span>
-                <select
-                  className="field-select"
-                  value={form.audience}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      audience: event.target.value as ReviewPackageAudience
-                    }))
-                  }
-                >
-                  {AUDIENCES.map((audience) => (
-                    <option key={audience} value={audience}>
-                      {audience}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  <label>
+                    <span className="microcopy">Audience</span>
+                    <select
+                      className="field-select"
+                      value={form.audience}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          audience: event.target.value as ReviewPackageAudience
+                        }))
+                      }
+                    >
+                      {AUDIENCES.map((audience) => (
+                        <option key={audience} value={audience}>
+                          {audience}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-              <label>
-                <span className="microcopy">Target regions</span>
-                <input
-                  className="field-input"
-                  value={form.targetRegions}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, targetRegions: event.target.value }))
-                  }
-                  placeholder="East US, West Europe, UAE Central"
-                />
-              </label>
+                  <label>
+                    <span className="microcopy">Target regions</span>
+                    <input
+                      className="field-input"
+                      value={form.targetRegions}
+                      onChange={(event) =>
+                        setForm((current) => ({ ...current, targetRegions: event.target.value }))
+                      }
+                      placeholder="East US, West Europe, UAE Central"
+                    />
+                  </label>
 
-              <label>
-                <span className="microcopy">Business scope</span>
-                <textarea
-                  className="field-textarea"
-                  value={form.businessScope}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, businessScope: event.target.value }))
-                  }
-                  placeholder="Capture the project scope, constraints, and customer assumptions."
-                />
-              </label>
+                  <label>
+                    <span className="microcopy">Business scope</span>
+                    <textarea
+                      className="field-textarea"
+                      value={form.businessScope}
+                      onChange={(event) =>
+                        setForm((current) => ({ ...current, businessScope: event.target.value }))
+                      }
+                      placeholder="Capture the project scope, constraints, and customer assumptions."
+                    />
+                  </label>
+                </>
+              ) : (
+                <p className="microcopy" style={{ gridColumn: "1 / -1" }}>
+                  Audience, target regions, and business scope are optional for the first pass. Add them when you are ready to tighten the review.
+                </p>
+              )}
             </div>
 
             <div className="button-row">
@@ -1805,6 +2258,13 @@ export function ReviewPackageWorkbench({
                 disabled={!activePackage}
               >
                 Delete review
+              </button>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => setShowSetupDetails((current) => !current)}
+              >
+                {showSetupDetails ? "Hide optional setup fields" : "Show optional setup fields"}
               </button>
             </div>
 
@@ -1845,59 +2305,127 @@ export function ReviewPackageWorkbench({
             </div>
           </article>
         </div>
+        ) : (
+          <section className="filter-card review-stage-summary">
+            <p className="eyebrow">Stage summary</p>
+            <h3>
+              {activePackage
+                ? `${activePackage.name} is active and ready for service scoping.`
+                : "Create a project review to unlock the rest of the workspace."}
+            </h3>
+            <p className="microcopy">
+              {activePackage
+                ? `${selectedServices.length.toLocaleString()} services are currently in scope, and ${pendingCount.toLocaleString()} findings still need review decisions.`
+                : "Only the review name is required to start. Audience, regions, and scope can stay optional until later."}
+            </p>
+          </section>
+        )}
       </section>
 
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel editorial-section" id="project-review-scope">
         <div className="section-head">
           <div>
             <p className="eyebrow">Step 2</p>
             <h2 className="section-title">Choose only the Azure services that belong to this solution.</h2>
             <p className="section-copy">
-              Start with the solution scope, then toggle services in or out of the project review.
-              You can still review the full catalog from the service and explorer pages.
+              Once a review exists, add only the Azure services that truly belong to this design.
+              Until then, keep this step locked so the scope does not sprawl too early.
             </p>
           </div>
           <div className="chip-row">
-            <span className="chip">{visibleReviewServices.length.toLocaleString()} visible services</span>
+            <span className="chip">{activePackage ? visibleReviewServices.length.toLocaleString() : 0} visible services</span>
             {activePackage ? (
               <span className="chip">{selectedServices.length.toLocaleString()} services in this review</span>
             ) : null}
           </div>
+          <div className="button-row review-stage-head-actions">
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => toggleStageExpansion("project-review-scope", selectedServices.length > 0)}
+            >
+              {scopeStageExpanded ? "Collapse stage" : "Expand stage"}
+            </button>
+          </div>
         </div>
 
-        <div className="filter-card workspace-toolbar">
-          <div className="workspace-toolbar-main">
-            <input
-              className="search-input"
-              type="search"
-              value={serviceSearch}
-              placeholder="Search services to add into the project review"
-              onChange={(event) => setServiceSearch(event.target.value)}
-            />
+        {!scopeStageExpanded ? (
+          <section className="filter-card review-stage-summary">
+            <p className="eyebrow">Stage summary</p>
+            <h3>
+              {selectedServices.length > 0
+                ? `${selectedServices.length.toLocaleString()} services are in scope for this review.`
+                : activePackage
+                  ? "No services are in scope yet."
+                  : "The service picker is still locked."}
+            </h3>
             <p className="microcopy">
-              Service selection should reflect the actual solution scope, not every adjacent service
-              that appears in the source repository.
+              {selectedServices.length > 0
+                ? "Keep the list tight so pricing, copilot answers, and exports stay aligned to the actual architecture."
+                : activePackage
+                  ? "Open the stage again when you are ready to add the Azure services that truly belong to the design."
+                  : "Create the review shell first, then this step unlocks automatically."}
             </p>
-          </div>
-          {activePackage ? (
-            <div className="workspace-toolbar-side">
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => setShowOnlyScopedServices((current) => !current)}
-              >
-                {showOnlyScopedServices
-                  ? "Browse full catalog"
-                  : "Show only services in this review"}
-              </button>
-              <p className="microcopy">
-                {showOnlyScopedServices
-                  ? "Only the services already selected for this project review are shown below."
-                  : "The full service catalog is visible. Services outside this review stay clearly marked."}
-              </p>
+          </section>
+        ) : !activePackage ? (
+          <section className="filter-card">
+            <p className="eyebrow">Create the review first</p>
+            <h3>The service picker unlocks after Step 1 creates the review shell.</h3>
+            <p className="microcopy">
+              This keeps the first pass focused on one solution. If you want to browse broadly before
+              scoping the review, use the services directory instead of selecting services here yet.
+            </p>
+            <div className="button-row">
+              <a href="#project-review-setup" className="primary-button">
+                Go back to Step 1
+              </a>
+              <Link href="/services" className="ghost-button">
+                Browse services
+              </Link>
             </div>
-          ) : null}
-        </div>
+          </section>
+        ) : (
+          <>
+            <div className="filter-card workspace-toolbar">
+              <div className="workspace-toolbar-main">
+                <input
+                  className="search-input"
+                  type="search"
+                  value={serviceSearch}
+                  placeholder="Search services to add into the project review"
+                  onChange={(event) => setServiceSearch(event.target.value)}
+                />
+                <p className="microcopy">
+                  Service selection should reflect the actual solution scope, not every adjacent service
+                  that appears in the source repository.
+                </p>
+              </div>
+              <div className="workspace-toolbar-side">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setShowOnlyScopedServices((current) => !current)}
+                >
+                  {showOnlyScopedServices
+                    ? "Browse full catalog"
+                    : "Show only services in this review"}
+                </button>
+                <p className="microcopy">
+                  {showOnlyScopedServices
+                    ? "Only the services already selected for this project review are shown below."
+                    : "The full service catalog is visible. Services outside this review stay clearly marked."}
+                </p>
+                {activePackage.selectedServiceSlugs.length > 0 ? (
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={clearReviewScope}
+                  >
+                    Clear current scope
+                  </button>
+                ) : null}
+              </div>
+            </div>
 
         {visibleReviewServices.length > 0 ? (
           <div className="service-selection-grid">
@@ -1950,6 +2478,94 @@ export function ReviewPackageWorkbench({
                   : "Switch to the full catalog to add services, then this view will stay scoped to what is actually in the review."
                 : "Try a different search term to find the service you want to add."}
             </p>
+            {activePackage && showOnlyScopedServices && !activePackage.selectedServiceSlugs.length ? (
+              <>
+                <section className="filter-card review-stage-handoff-card">
+                  <p className="eyebrow">Fast start</p>
+                  <h3>Add one likely foundation service first, then keep the review scoped from there.</h3>
+                  <p className="microcopy">
+                    These are high-coverage services from the current catalog. Pick one to get the
+                    review moving, or switch to the full catalog if your architecture starts elsewhere.
+                  </p>
+                </section>
+                {starterBundles.length > 0 ? (
+                  <div className="starter-bundle-grid">
+                    {starterBundles.map((bundle) => (
+                      <article className="future-card starter-bundle-card" key={bundle.title}>
+                        <p className="eyebrow">Starter bundle</p>
+                        <h3>{bundle.title}</h3>
+                        <p>{bundle.description}</p>
+                        <div className="starter-bundle-copy-block">
+                          <strong>Best for</strong>
+                          <p>{bundle.bestFor}</p>
+                        </div>
+                        <div className="starter-bundle-copy-block">
+                          <strong>Watch for</strong>
+                          <p>{bundle.watchFor}</p>
+                        </div>
+                        <div className="chip-row compact-chip-row">
+                          <span className="chip">
+                            {bundle.services.length.toLocaleString()} services
+                          </span>
+                          <span className="chip">One-click starting point</span>
+                        </div>
+                        <div className="starter-bundle-list">
+                          {bundle.services.map((service) => (
+                            <span className="chip" key={`${bundle.title}-${service.slug}`}>
+                              {service.service}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="button-row">
+                          <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={() =>
+                              addStarterBundle(
+                                bundle.services.map((service) => service.slug),
+                                bundle.title
+                              )
+                            }
+                          >
+                            Add bundle to review
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="service-selection-grid">
+                  {starterServices.map((service) => (
+                    <article className="future-card service-selection-card" key={service.slug}>
+                      <div className="section-head">
+                        <div>
+                          <p className="eyebrow">Starter service</p>
+                          <h3>{service.service}</h3>
+                        </div>
+                        <span className="chip">{service.familyCount.toLocaleString()} families</span>
+                      </div>
+                      <p className="microcopy">{service.description}</p>
+                      <div className="chip-row compact-chip-row">
+                        <span className="chip">{service.itemCount.toLocaleString()} findings</span>
+                        <span className="chip">High-coverage starting point</span>
+                      </div>
+                      <div className="button-row">
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() => toggleServiceSelection(service.slug)}
+                        >
+                          Add to review
+                        </button>
+                        <Link href={`/services/${service.slug}`} className="muted-link">
+                          Open service review
+                        </Link>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </>
+            ) : null}
             {activePackage && showOnlyScopedServices ? (
               <div className="button-row">
                 <button
@@ -1963,22 +2579,35 @@ export function ReviewPackageWorkbench({
             ) : null}
           </section>
         )}
+          </>
+        )}
       </section>
 
       {copilotContext ? <ProjectReviewCopilot context={copilotContext} /> : null}
 
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel editorial-section" id="project-review-signals">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Step 4</p>
+            <p className="eyebrow">Step 3</p>
             <h2 className="section-title">See region fit, cost fit, and checklist progress in one matrix.</h2>
             <p className="section-copy">
               This is the quickest place to confirm whether each selected service is region-ready,
               commercially understood, and review-ready before you open the detailed service page.
             </p>
           </div>
+          <div className="button-row review-stage-head-actions">
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => toggleStageExpansion("project-review-signals", reviewedDecisionCount > 0)}
+            >
+              {signalsStageExpanded ? "Collapse stage" : "Expand stage"}
+            </button>
+          </div>
         </div>
 
+        {signalsStageExpanded ? (
+          <>
         <div className="traceability-grid">
           <article className="trace-card">
             <strong>Selected services</strong>
@@ -2143,158 +2772,35 @@ export function ReviewPackageWorkbench({
 
                 <div className="project-review-matrix-cell project-review-matrix-actions">
                   <p className="eyebrow">Design assumptions</p>
-                  <div className="matrix-assumption-grid">
-                    <label>
-                      <span className="microcopy">Planned region</span>
-                      <input
-                        className="field-input"
-                        value={getServiceAssumption(activePackage, row.service.slug).plannedRegion}
-                        onChange={(event) =>
-                          updateServiceAssumption(row.service.slug, {
-                            plannedRegion: event.target.value
-                          })
-                        }
-                        placeholder={activePackage?.targetRegions[0] ?? "East US"}
-                      />
-                    </label>
-                    <label>
-                      <span className="microcopy">Preferred SKU</span>
-                      <input
-                        className="field-input"
-                        value={getServiceAssumption(activePackage, row.service.slug).preferredSku}
-                        onChange={(event) =>
-                          updateServiceAssumption(row.service.slug, {
-                            preferredSku: event.target.value
-                          })
-                        }
-                        placeholder="Standard v2, Premium, P1v3, S1"
-                      />
-                    </label>
-                    <label>
-                      <span className="microcopy">Sizing note</span>
-                      <textarea
-                        className="field-textarea matrix-textarea"
-                        value={getServiceAssumption(activePackage, row.service.slug).sizingNote}
-                        onChange={(event) =>
-                          updateServiceAssumption(row.service.slug, {
-                            sizingNote: event.target.value
-                          })
-                        }
-                        placeholder="Capture rough sizing, expected scale, customer constraints, or estimate assumptions for this service."
-                      />
-                    </label>
-                    {(() => {
-                      const estimateProfile = getServiceEstimateProfile(row.service.slug);
-                      const assumption = getServiceAssumption(activePackage, row.service.slug);
-                      const resolvedInputs = resolveEstimateInputs(estimateProfile, assumption);
+                  {(() => {
+                    const assumption = getServiceAssumption(activePackage, row.service.slug);
+                    const assumptionChips = [
+                      assumption.plannedRegion ? `Region: ${assumption.plannedRegion}` : null,
+                      assumption.preferredSku ? `SKU: ${assumption.preferredSku}` : null,
+                      assumption.sizingNote ? "Sizing note captured" : null,
+                      assumption.estimateInputMode === "custom" ? "Custom estimate inputs" : null
+                    ].filter((value): value is string => Boolean(value));
 
-                      if (!estimateProfile || estimateProfile.inputDefinitions.length === 0) {
-                        return null;
-                      }
-
-                      return (
-                        <>
-                          <label>
-                            <span className="microcopy">Estimate input mode</span>
-                            <select
-                              className="field-input"
-                              value={assumption.estimateInputMode ?? "defaults"}
-                              onChange={(event) =>
-                                updateServiceEstimateInputMode(
-                                  row.service.slug,
-                                  event.target.value as "defaults" | "custom"
-                                )
-                              }
-                            >
-                              <option value="defaults">Use profile defaults</option>
-                              <option value="custom">Customize estimate inputs</option>
-                            </select>
-                          </label>
-                          {estimateProfile.inputDefinitions.map((definition) => {
-                            const inputId = `${row.service.slug}-${definition.key}`;
-                            const currentValue = resolvedInputs[definition.key] ?? definition.defaultValue;
-
-                            if (definition.kind === "boolean") {
-                              return (
-                                <label key={inputId}>
-                                  <span className="microcopy">{definition.label}</span>
-                                  <input
-                                    className="field-input"
-                                    type="checkbox"
-                                    checked={Boolean(currentValue)}
-                                    onChange={(event) =>
-                                      updateServiceEstimateInput(
-                                        row.service.slug,
-                                        definition.key,
-                                        event.target.checked
-                                      )
-                                    }
-                                  />
-                                  <span className="microcopy">{definition.description}</span>
-                                </label>
-                              );
-                            }
-
-                            if (definition.kind === "select") {
-                              return (
-                                <label key={inputId}>
-                                  <span className="microcopy">{definition.label}</span>
-                                  <select
-                                    className="field-input"
-                                    value={String(currentValue)}
-                                    onChange={(event) =>
-                                      updateServiceEstimateInput(
-                                        row.service.slug,
-                                        definition.key,
-                                        event.target.value
-                                      )
-                                    }
-                                  >
-                                    {(definition.options ?? []).map((option) => (
-                                      <option key={`${inputId}-${option.value}`} value={option.value}>
-                                        {option.label}
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <span className="microcopy">{definition.description}</span>
-                                </label>
-                              );
-                            }
-
-                            return (
-                              <label key={inputId}>
-                                <span className="microcopy">
-                                  {definition.label}
-                                  {definition.unit ? ` · ${definition.unit}` : ""}
-                                </span>
-                                <input
-                                  className="field-input"
-                                  type="number"
-                                  min={definition.min}
-                                  step={definition.step}
-                                  value={Number(currentValue)}
-                                  onChange={(event) =>
-                                    updateServiceEstimateInput(
-                                      row.service.slug,
-                                      definition.key,
-                                      Number(event.target.value)
-                                    )
-                                  }
-                                />
-                                <span className="microcopy">{definition.description}</span>
-                              </label>
-                            );
-                          })}
-                        </>
-                      );
-                    })()}
-                  </div>
+                    return assumptionChips.length > 0 ? (
+                      <div className="chip-row compact-chip-row">
+                        {assumptionChips.map((chip) => (
+                          <span className="chip" key={`${row.service.slug}-${chip}`}>
+                            {chip}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="microcopy">
+                        No service-specific assumptions captured yet. Open details when you want to record region, SKU, sizing, or estimate inputs.
+                      </p>
+                    );
+                  })()}
                   <button
                     type="button"
                     className="primary-button"
                     onClick={() => handleOpenServiceDrawer(row.service.slug)}
                   >
-                    Open details
+                    Open details and assumptions
                   </button>
                   <Link href={`/services/${row.service.slug}`} className="secondary-button">
                     Open service review
@@ -2372,12 +2878,28 @@ export function ReviewPackageWorkbench({
             </p>
           </section>
         )}
+          </>
+        ) : (
+          <section className="filter-card review-stage-summary">
+            <p className="eyebrow">Stage summary</p>
+            <h3>
+              {reviewedDecisionCount > 0
+                ? `${reviewedDecisionCount.toLocaleString()} findings already have explicit project decisions.`
+                : "Signals are waiting for service scope and review decisions."}
+            </h3>
+            <p className="microcopy">
+              {reviewedDecisionCount > 0
+                ? `${selectedServices.length.toLocaleString()} selected services are contributing to the current review posture.`
+                : "Expand this stage when you want to inspect region fit, pricing posture, and checklist readiness together."}
+            </p>
+          </section>
+        )}
       </section>
 
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel editorial-section" id="project-review-service-notes">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Step 5</p>
+            <p className="eyebrow">Continue Step 3</p>
             <h2 className="section-title">Open the selected service pages and write project-specific notes.</h2>
             <p className="section-copy">
               This is where the real review happens. Open a selected service, review findings, and
@@ -2387,34 +2909,112 @@ export function ReviewPackageWorkbench({
         </div>
 
         {selectedServiceProgress.length > 0 ? (
-          <div className="service-selection-grid">
-            {selectedServiceProgress.map((entry) => (
-              <article className="future-card service-selection-card" key={entry.service.slug}>
-                <div className="section-head">
-                  <div>
-                    <p className="eyebrow">Service review</p>
-                    <h3>{entry.service.service}</h3>
+          <>
+            <section className="filter-card review-stage-handoff-card">
+              <p className="eyebrow">Stage 3 handoff</p>
+              <h3>Use the matrix to spot pressure points, then clear the services still carrying pending findings.</h3>
+              <p className="microcopy">
+                {signalFollowUp.servicesNeedingDecisions.length > 0
+                  ? `Start with ${signalFollowUp.nextServiceNames.join(", ")}. These services still have unresolved findings or notes that need an explicit project decision.`
+                  : "Every selected service already has an explicit decision state. Reopen a service only if the design assumptions, regions, or exclusions changed."}
+              </p>
+              <div className="chip-row compact-chip-row">
+                <span className="chip">
+                  {selectedServiceProgress.length.toLocaleString()} services selected
+                </span>
+                <span className="chip">
+                  {signalFollowUp.servicesNeedingDecisions.length.toLocaleString()} services still need decisions
+                </span>
+                <span className="chip">
+                  {signalFollowUp.servicesReadyForExportCount.toLocaleString()} services ready for export
+                </span>
+              </div>
+              {activeStarterBundle ? (
+                <div className="review-next-scope-block">
+                  <p className="eyebrow">Likely next scope after {activeStarterBundle.title}</p>
+                  <p className="microcopy">
+                    {activeStarterBundle.bestFor}. {activeStarterBundle.watchFor}
+                  </p>
+                  <div className="chip-row compact-chip-row">
+                    {activeStarterBundle.nextMoves.map((entry) => (
+                      <span className="chip" key={`${activeStarterBundle.title}-${entry}`}>
+                        {entry}
+                      </span>
+                    ))}
                   </div>
-                  <span className="chip">{entry.itemCount.toLocaleString()} findings</span>
+                  {nextScopeServiceSuggestions.length > 0 ? (
+                    <>
+                      <p className="microcopy">
+                        Add the most likely follow-up services now if this baseline is turning into a fuller review.
+                      </p>
+                      <div className="review-next-scope-actions">
+                        {nextScopeServiceSuggestions.map((service) => (
+                          <button
+                            type="button"
+                            className="secondary-button review-next-scope-action"
+                            key={`${activeStarterBundle.title}-${service.slug}`}
+                            onClick={() =>
+                              addServicesToReview(
+                                [service.slug],
+                                `${activeStarterBundle.title} follow-up suggestions`,
+                                `Added {count} suggested follow-up service from ${activeStarterBundle.title}.`
+                              )
+                            }
+                          >
+                            Add {service.service}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="microcopy">
+                      The likely follow-up services for this starter bundle are already in scope.
+                    </p>
+                  )}
                 </div>
-                <p className="microcopy">
-                  {entry.includedCount.toLocaleString()} included, {entry.notApplicableCount.toLocaleString()} not applicable,
-                  {entry.excludedCount > 0
-                    ? ` ${entry.excludedCount.toLocaleString()} excluded,`
-                    : ""} and {entry.pendingCount.toLocaleString()} still waiting for a project decision.
-                </p>
-                <div className="chip-row">
-                  <span className="chip">{entry.service.familyCount.toLocaleString()} families</span>
-                  <span className="chip">{entry.service.itemCount.toLocaleString()} total service findings</span>
-                </div>
-                <div className="button-row">
-                  <Link href={`/services/${entry.service.slug}`} className="secondary-button">
-                    Open service review
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
+              ) : null}
+            </section>
+
+            <div className="service-selection-grid">
+              {selectedServiceProgress.map((entry) => (
+                <article className="future-card service-selection-card" key={entry.service.slug}>
+                  <div className="section-head">
+                    <div>
+                      <p className="eyebrow">
+                        {entry.pendingCount > 0 ? "Needs review attention" : "Decisions captured"}
+                      </p>
+                      <h3>{entry.service.service}</h3>
+                    </div>
+                    <span className="chip">{entry.itemCount.toLocaleString()} findings</span>
+                  </div>
+                  <p className="microcopy">
+                    {entry.includedCount.toLocaleString()} included, {entry.notApplicableCount.toLocaleString()} not applicable,
+                    {entry.excludedCount > 0
+                      ? ` ${entry.excludedCount.toLocaleString()} excluded,`
+                      : ""} and {entry.pendingCount.toLocaleString()} still waiting for a project decision.
+                  </p>
+                  <div className="chip-row">
+                    <span
+                      className={`matrix-chip ${
+                        entry.pendingCount > 0 ? "matrix-chip-warning" : "matrix-chip-good"
+                      }`}
+                    >
+                      {entry.pendingCount > 0
+                        ? `${entry.pendingCount.toLocaleString()} pending`
+                        : "Ready for export"}
+                    </span>
+                    <span className="chip">{entry.service.familyCount.toLocaleString()} families</span>
+                    <span className="chip">{entry.service.itemCount.toLocaleString()} total service findings</span>
+                  </div>
+                  <div className="button-row">
+                    <Link href={`/services/${entry.service.slug}`} className="secondary-button">
+                      Open service review
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </>
         ) : (
           <section className="filter-card">
             <p className="eyebrow">No services selected yet</p>
@@ -2430,7 +3030,7 @@ export function ReviewPackageWorkbench({
       <section id="project-review-local-exports" className="surface-panel editorial-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Step 6</p>
+            <p className="eyebrow">Step 4</p>
             <h2 className="section-title">Download only the scoped services and their project notes.</h2>
             <p className="section-copy">
               CSV works well for spreadsheets and action tracking. Markdown and text are better for
@@ -2438,109 +3038,198 @@ export function ReviewPackageWorkbench({
               without sign-in because they are generated directly in your browser.
             </p>
           </div>
-        </div>
-
-        <div className="package-header-grid">
-          <article className="filter-card package-card">
-            <div className="filter-grid">
-              <label className="package-option">
-                <input
-                  type="checkbox"
-                  checked={includeNotApplicable}
-                  onChange={(event) => setIncludeNotApplicable(event.target.checked)}
-                />
-                <span className="microcopy">Include `Not Applicable` findings with rationale</span>
-              </label>
-              <label className="package-option">
-                <input
-                  type="checkbox"
-                  checked={includeNeedsReview}
-                  onChange={(event) => setIncludeNeedsReview(event.target.checked)}
-                />
-                <span className="microcopy">Include `Needs Review` items in the handoff</span>
-              </label>
-            </div>
-            <div className="button-row">
-              <button
-                type="button"
-                className="primary-button"
-                disabled={!activePackage || packageItems.length === 0}
-                onClick={exportPackageCsv}
-              >
-                Download checklist CSV
-              </button>
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={!activePackage || packageItems.length === 0}
-                onClick={exportPackageMarkdown}
-              >
-                Download design Markdown
-              </button>
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={!activePackage || packageItems.length === 0}
-                onClick={exportPackageText}
-              >
-                Download plain text notes
-              </button>
-            </div>
-            <div className="button-row">
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={!activePackage || matrixRows.length === 0}
-                onClick={exportLeadershipSummaryMarkdown}
-              >
-                Download leadership summary
-              </button>
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={!activePackage || matrixRows.length === 0}
-                onClick={exportRegionalRiskCsv}
-              >
-                Download regional risk CSV
-              </button>
-            </div>
-          </article>
-
-          <article className="leadership-brief package-card">
-            <p className="eyebrow">Project review guidance</p>
-            <h2 className="leadership-title">Notes, regional fit, and pricing now share the same project scope.</h2>
-            <div className="leadership-list">
-              <article>
-                <strong>Target regions</strong>
-                <p>Project review target regions now drive the default filter for service availability, restrictions, and pricing emphasis.</p>
-              </article>
-              <article>
-                <strong>Pricing baseline</strong>
-                <p>Use the commercial snapshot as the list-price baseline before moving into customer-specific usage and discount assumptions. Preferred SKU and sizing notes refine the estimate later, but they are not required to fetch the first-pass retail snapshot.</p>
-              </article>
-              <article>
-                <strong>Commercial handoff</strong>
-                <p>Export review notes separately from the pricing snapshot so each audience gets the level of detail they need.</p>
-              </article>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section className="surface-panel editorial-section">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Azure-backed save and reuse</p>
-            <h2 className="section-title">Keep the review open to everyone, then sign in only when you want cloud-backed continuity.</h2>
-            <p className="section-copy">
-              This is the sign-in boundary for normal project-review users. It is separate from the
-              future admin login. Use it to save the current review to Azure Storage, reload it in a
-              later session, and generate an Azure-backed CSV for the current project scope.
-            </p>
+          <div className="button-row review-stage-head-actions">
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() =>
+                toggleStageExpansion(
+                  "project-review-local-exports",
+                  packageItems.length > 0 && reviewedDecisionCount > 0
+                )
+              }
+            >
+              {outputsStageExpanded ? "Collapse stage" : "Expand stage"}
+            </button>
           </div>
         </div>
 
-        {activePackage ? (
+        {!outputsStageExpanded ? (
+          <section className="filter-card review-stage-summary">
+            <p className="eyebrow">Stage summary</p>
+            <h3>
+              {packageItems.length > 0
+                ? reviewedDecisionCount > 0
+                  ? `${reviewedDecisionCount.toLocaleString()} reviewed findings are ready for export.`
+                  : `${packageItems.length.toLocaleString()} scoped findings can be exported, but they still need review decisions.`
+                : "Exports will appear after services enter scope."}
+            </h3>
+            <p className="microcopy">
+              {packageItems.length > 0
+                ? reviewedDecisionCount > 0
+                  ? "Open this stage again when you need checklist CSV, design notes, leadership summary, or regional risk output."
+                  : `${pendingCount.toLocaleString()} scoped findings are still pending, so treat the exports as a draft until the review posture is more explicit.`
+                : "This stage stays quiet until the review contains real service scope and findings."}
+            </p>
+          </section>
+        ) : selectedServices.length > 0 ? (
+          <>
+          <div className="package-context-grid export-preview-grid">
+            {exportPreviewCards.map((card) => (
+              <article className="future-card export-preview-card" key={card.title}>
+                <p className="eyebrow">{card.audience}</p>
+                <h3>{card.title}</h3>
+                <p>{card.summary}</p>
+                <div className="chip-row compact-chip-row">
+                  {card.bullets.map((bullet) => (
+                    <span className="chip" key={`${card.title}-${bullet}`}>
+                      {bullet}
+                    </span>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="package-header-grid">
+            <article className="filter-card package-card">
+              <div className="filter-grid">
+                <label className="package-option">
+                  <input
+                    type="checkbox"
+                    checked={includeNotApplicable}
+                    onChange={(event) => setIncludeNotApplicable(event.target.checked)}
+                  />
+                  <span className="microcopy">Include `Not Applicable` findings with rationale</span>
+                </label>
+                <label className="package-option">
+                  <input
+                    type="checkbox"
+                    checked={includeNeedsReview}
+                    onChange={(event) => setIncludeNeedsReview(event.target.checked)}
+                  />
+                  <span className="microcopy">Include `Needs Review` items in the handoff</span>
+                </label>
+              </div>
+              <div className="button-row">
+                <button
+                  type="button"
+                  className="primary-button"
+                  disabled={!activePackage || packageItems.length === 0}
+                  onClick={exportPackageCsv}
+                >
+                  Download checklist CSV
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={!activePackage || packageItems.length === 0}
+                  onClick={exportPackageMarkdown}
+                >
+                  Download design Markdown
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={!activePackage || packageItems.length === 0}
+                  onClick={exportPackageText}
+                >
+                  Download plain text notes
+                </button>
+              </div>
+              <div className="button-row">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={!activePackage || matrixRows.length === 0}
+                  onClick={exportLeadershipSummaryMarkdown}
+                >
+                  Download leadership summary
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={!activePackage || matrixRows.length === 0}
+                  onClick={exportRegionalRiskCsv}
+                >
+                  Download regional risk CSV
+                </button>
+              </div>
+            </article>
+
+            <article className="leadership-brief package-card">
+              <p className="eyebrow">Project review guidance</p>
+              <h2 className="leadership-title">Notes, regional fit, and pricing now share the same project scope.</h2>
+              <div className="leadership-list">
+                <article>
+                  <strong>Target regions</strong>
+                  <p>Project review target regions now drive the default filter for service availability, restrictions, and pricing emphasis.</p>
+                </article>
+                <article>
+                  <strong>Pricing baseline</strong>
+                  <p>Use the commercial snapshot as the list-price baseline before moving into customer-specific usage and discount assumptions. Preferred SKU and sizing notes refine the estimate later, but they are not required to fetch the first-pass retail snapshot.</p>
+                </article>
+                <article>
+                  <strong>Commercial handoff</strong>
+                  <p>Export review notes separately from the pricing snapshot so each audience gets the level of detail they need.</p>
+                </article>
+              </div>
+            </article>
+          </div>
+          </>
+        ) : (
+          <section className="filter-card">
+            <p className="eyebrow">Exports unlock later</p>
+            <h3>Add services to the review before generating scoped exports.</h3>
+            <p className="microcopy">
+              Once services are in scope, this section unlocks checklist exports, leadership summaries,
+              and regional risk handoff artifacts for that exact design.
+            </p>
+          </section>
+        )}
+      </section>
+
+      <section className="surface-panel editorial-section" id="project-review-cloud-continuity">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Optional cloud continuity</p>
+            <h2 className="section-title">Sign in only when you want to keep this review beyond the current browser.</h2>
+            <p className="section-copy">
+              This is a normal project-review feature, not an admin boundary. Use it when you want
+              Azure-backed save, reload, or a cloud-generated CSV. If not, the local-first workflow
+              still works without sign-in.
+            </p>
+          </div>
+          <div className="chip-row">
+            <span className="chip">Local-first by default</span>
+            <span className="chip">Admin login stays separate</span>
+          </div>
+          <div className="button-row review-stage-head-actions">
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => toggleStageExpansion("project-review-cloud-continuity", false)}
+            >
+              {continuityStageExpanded ? "Collapse stage" : "Expand stage"}
+            </button>
+          </div>
+        </div>
+
+        {!continuityStageExpanded ? (
+          <section className="filter-card review-stage-summary">
+            <p className="eyebrow">Stage summary</p>
+            <h3>
+              {activePackage
+                ? "Azure-backed continuity is available whenever you want it."
+                : "Cloud continuity stays locked until a review exists."}
+            </h3>
+            <p className="microcopy">
+              {activePackage
+                ? "This stage is intentionally optional. Keep the workflow local-first until you actually need save, restore, or a cloud-generated CSV."
+                : "Create the review shell first, then sign in later only if you need continuity across sessions."}
+            </p>
+          </section>
+        ) : activePackage ? (
           <ReviewCloudControls
             items={packageItems}
             reviews={reviews}
@@ -2552,7 +3241,7 @@ export function ReviewPackageWorkbench({
           />
         ) : (
           <section className="filter-card cloud-sync-card">
-            <p className="eyebrow">Step 7</p>
+            <p className="eyebrow">Optional next step</p>
             <h3>Create a project review first, then sign in when you want to save it to Azure.</h3>
             <p className="microcopy">
               The Azure-backed save flow only applies after a project review exists. You can keep
@@ -2562,7 +3251,7 @@ export function ReviewPackageWorkbench({
         )}
       </section>
 
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel editorial-section" id="project-review-pricing">
         <div className="section-head">
           <div>
             <p className="eyebrow">Retail meter snapshot</p>
@@ -2575,146 +3264,159 @@ export function ReviewPackageWorkbench({
           </div>
         </div>
 
-        <div className="package-header-grid">
-          <article className="filter-card package-card">
-            <div className="package-stats-grid">
-              <article className="hero-metric-card">
-                <span>Selected services</span>
-                <strong>{selectedServices.length.toLocaleString()}</strong>
-                <p>Only these services are queried for pricing.</p>
+        {selectedServices.length > 0 ? (
+          <>
+            <div className="package-header-grid">
+              <article className="filter-card package-card">
+                <div className="package-stats-grid">
+                  <article className="hero-metric-card">
+                    <span>Selected services</span>
+                    <strong>{selectedServices.length.toLocaleString()}</strong>
+                    <p>Only these services are queried for pricing.</p>
+                  </article>
+                  <article className="hero-metric-card">
+                    <span>Pricing mapped</span>
+                    <strong>{mappedPricingCount.toLocaleString()}</strong>
+                    <p>Selected services with a current retail pricing query match.</p>
+                  </article>
+                  <article className="hero-metric-card">
+                      <span>Lowest scoped meter</span>
+                      <strong>
+                        {startingRetailPrice.length > 0
+                          ? formatRetailPrice(Math.min(...startingRetailPrice), pricingSnapshots[0]?.currencyCode ?? "USD")
+                          : "Not published"}
+                      </strong>
+                      <p>Lowest target-scope retail meter across the selected services. This is not a monthly calculator estimate.</p>
+                    </article>
+                  <article className="hero-metric-card">
+                    <span>Target regions</span>
+                    <strong>{activePackage?.targetRegions.length.toLocaleString() ?? "0"}</strong>
+                    <p>These regions are used to highlight region-matched pricing rows.</p>
+                  </article>
+                </div>
+
+                <div className="button-row">
+                  <button
+                    type="button"
+                    className="primary-button"
+                    disabled={!activePackage || !pricingReady || pricingLoading}
+                    onClick={exportPackagePricingCsv}
+                  >
+                    Download pricing CSV
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={!activePackage || !pricingReady || pricingLoading}
+                    onClick={exportPackagePricingMarkdown}
+                  >
+                    Download pricing Markdown
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={!activePackage || !pricingReady || pricingLoading}
+                    onClick={exportPackagePricingText}
+                  >
+                    Download pricing text
+                  </button>
+                </div>
               </article>
-              <article className="hero-metric-card">
-                <span>Pricing mapped</span>
-                <strong>{mappedPricingCount.toLocaleString()}</strong>
-                <p>Selected services with a current retail pricing query match.</p>
-              </article>
-              <article className="hero-metric-card">
-                  <span>Lowest scoped meter</span>
-                  <strong>
-                    {startingRetailPrice.length > 0
-                      ? formatRetailPrice(Math.min(...startingRetailPrice), pricingSnapshots[0]?.currencyCode ?? "USD")
-                      : "Not published"}
-                  </strong>
-                  <p>Lowest target-scope retail meter across the selected services. This is not a monthly calculator estimate.</p>
-                </article>
-              <article className="hero-metric-card">
-                <span>Target regions</span>
-                <strong>{activePackage?.targetRegions.length.toLocaleString() ?? "0"}</strong>
-                <p>These regions are used to highlight region-matched pricing rows.</p>
+
+              <article className="leadership-brief package-card">
+                <p className="eyebrow">Commercial guidance</p>
+                <h2 className="leadership-title">Use list pricing for the first draft, then model quantity and agreement changes.</h2>
+                <div className="leadership-list">
+                  <article>
+                    <strong>Retail baseline</strong>
+                    <p>The project review snapshot uses Microsoft public retail pricing so the numbers are sourced and repeatable.</p>
+                  </article>
+                  <article>
+                    <strong>Target-region bias</strong>
+                    <p>Pricing queries stay global, but the project review highlights rows that line up with the target deployment regions.</p>
+                  </article>
+                  <article>
+                    <strong>Refine later</strong>
+                    <p>Use the Azure Pricing Calculator after sign-in to layer usage assumptions, discounts, and negotiated terms.</p>
+                  </article>
+                </div>
               </article>
             </div>
 
-            <div className="button-row">
-              <button
-                type="button"
-                className="primary-button"
-                disabled={!activePackage || !pricingReady || pricingLoading}
-                onClick={exportPackagePricingCsv}
-              >
-                Download pricing CSV
-              </button>
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={!activePackage || !pricingReady || pricingLoading}
-                onClick={exportPackagePricingMarkdown}
-              >
-                Download pricing Markdown
-              </button>
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={!activePackage || !pricingReady || pricingLoading}
-                onClick={exportPackagePricingText}
-              >
-                Download pricing text
-              </button>
-            </div>
-          </article>
+            {pricingLoading ? (
+              <section className="filter-card">
+                <p className="eyebrow">Pricing load</p>
+                <h3>Loading retail pricing for the selected services.</h3>
+                <p className="microcopy">
+                  The project review is querying Microsoft’s Azure Retail Prices API for every service in scope.
+                </p>
+              </section>
+            ) : null}
 
-          <article className="leadership-brief package-card">
-            <p className="eyebrow">Commercial guidance</p>
-            <h2 className="leadership-title">Use list pricing for the first draft, then model quantity and agreement changes.</h2>
-            <div className="leadership-list">
-              <article>
-                <strong>Retail baseline</strong>
-                <p>The project review snapshot uses Microsoft public retail pricing so the numbers are sourced and repeatable.</p>
-              </article>
-              <article>
-                <strong>Target-region bias</strong>
-                <p>Pricing queries stay global, but the project review highlights rows that line up with the target deployment regions.</p>
-              </article>
-              <article>
-                <strong>Refine later</strong>
-                <p>Use the Azure Pricing Calculator after sign-in to layer usage assumptions, discounts, and negotiated terms.</p>
-              </article>
-            </div>
-          </article>
-        </div>
+            {pricingError ? (
+              <section className="filter-card">
+                <p className="eyebrow">Pricing load</p>
+                <h3>Pricing could not be loaded right now.</h3>
+                <p className="microcopy">{pricingError}</p>
+              </section>
+            ) : null}
 
-        {pricingLoading ? (
+            {!pricingLoading && !pricingError && pricingSnapshots.length > 0 ? (
+              <div className="service-selection-grid">
+                {pricingSnapshots.map((pricing) => (
+                  <article className="future-card service-selection-card" key={pricing.serviceSlug}>
+                    <div className="section-head">
+                      <div>
+                        <p className="eyebrow">Commercial fit</p>
+                        <h3>{pricing.serviceName}</h3>
+                      </div>
+                      <span className="chip">{pricing.mapped ? "Pricing mapped" : "Pricing pending"}</span>
+                    </div>
+                    <p className="microcopy">
+                      {pricing.mapped
+                        ? `${pricing.skuCount.toLocaleString()} SKUs, ${pricing.billingLocationCount.toLocaleString()} billing locations, and ${pricing.targetRegionMatchCount.toLocaleString()} target-region matches are currently published.`
+                        : "No retail pricing mapping is published for this service yet in the current project review workflow."}
+                    </p>
+                    <div className="chip-row">
+                        <span className="chip">
+                          Lowest meter{" "}
+                          {formatRetailPrice(
+                            pricing.startsAtTargetRetailPrice ?? pricing.startsAtRetailPrice,
+                            pricing.currencyCode
+                          )}
+                        </span>
+                      {pricing.query ? (
+                        <span className="chip">
+                          {pricing.query.field} {pricing.query.operator} {pricing.query.value}
+                        </span>
+                      ) : null}
+                    </div>
+                    {pricing.notes.length > 0 ? (
+                      <p className="microcopy">{pricing.notes.join(" ")}</p>
+                    ) : null}
+                    <div className="button-row">
+                      <Link href={`/services/${pricing.serviceSlug}`} className="muted-link">
+                        Open service view
+                      </Link>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+          </>
+        ) : (
           <section className="filter-card">
-            <p className="eyebrow">Pricing load</p>
-            <h3>Loading retail pricing for the selected services.</h3>
+            <p className="eyebrow">Pricing appears after scoping</p>
+            <h3>Select services first to load a focused retail snapshot.</h3>
             <p className="microcopy">
-              The project review is querying Microsoft’s Azure Retail Prices API for every service in scope.
+              This section stays quiet until the review has services in scope. After that, it loads only
+              the matching retail rows and export options for the current design.
             </p>
           </section>
-        ) : null}
-
-        {pricingError ? (
-          <section className="filter-card">
-            <p className="eyebrow">Pricing load</p>
-            <h3>Pricing could not be loaded right now.</h3>
-            <p className="microcopy">{pricingError}</p>
-          </section>
-        ) : null}
-
-        {!pricingLoading && !pricingError && pricingSnapshots.length > 0 ? (
-          <div className="service-selection-grid">
-            {pricingSnapshots.map((pricing) => (
-              <article className="future-card service-selection-card" key={pricing.serviceSlug}>
-                <div className="section-head">
-                  <div>
-                    <p className="eyebrow">Commercial fit</p>
-                    <h3>{pricing.serviceName}</h3>
-                  </div>
-                  <span className="chip">{pricing.mapped ? "Pricing mapped" : "Pricing pending"}</span>
-                </div>
-                <p className="microcopy">
-                  {pricing.mapped
-                    ? `${pricing.skuCount.toLocaleString()} SKUs, ${pricing.billingLocationCount.toLocaleString()} billing locations, and ${pricing.targetRegionMatchCount.toLocaleString()} target-region matches are currently published.`
-                    : "No retail pricing mapping is published for this service yet in the current project review workflow."}
-                </p>
-                <div className="chip-row">
-                    <span className="chip">
-                      Lowest meter{" "}
-                      {formatRetailPrice(
-                        pricing.startsAtTargetRetailPrice ?? pricing.startsAtRetailPrice,
-                        pricing.currencyCode
-                      )}
-                    </span>
-                  {pricing.query ? (
-                    <span className="chip">
-                      {pricing.query.field} {pricing.query.operator} {pricing.query.value}
-                    </span>
-                  ) : null}
-                </div>
-                {pricing.notes.length > 0 ? (
-                  <p className="microcopy">{pricing.notes.join(" ")}</p>
-                ) : null}
-                <div className="button-row">
-                  <Link href={`/services/${pricing.serviceSlug}`} className="muted-link">
-                    Open service view
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : null}
+        )}
       </section>
 
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel editorial-section" id="project-review-estimates">
         <div className="section-head">
           <div>
             <p className="eyebrow">Monthly estimate</p>
@@ -2727,187 +3429,200 @@ export function ReviewPackageWorkbench({
           </div>
         </div>
 
-        <div className="package-header-grid">
-          <article className="filter-card package-card">
-            <div className="package-stats-grid">
-              <article className="hero-metric-card">
-                <span>Selected services</span>
-                <strong>{selectedServices.length.toLocaleString()}</strong>
-                <p>Only services in this project review are included in the monthly estimate.</p>
+        {selectedServices.length > 0 ? (
+          <>
+            <div className="package-header-grid">
+              <article className="filter-card package-card">
+                <div className="package-stats-grid">
+                  <article className="hero-metric-card">
+                    <span>Selected services</span>
+                    <strong>{selectedServices.length.toLocaleString()}</strong>
+                    <p>Only services in this project review are included in the monthly estimate.</p>
+                  </article>
+                  <article className="hero-metric-card">
+                    <span>Estimate supported</span>
+                    <strong>{supportedMonthlyEstimates.length.toLocaleString()}</strong>
+                    <p>Selected services with a modeled monthly estimate from the current retail rows.</p>
+                  </article>
+                  <article className="hero-metric-card">
+                    <span>Estimated hourly total</span>
+                    <strong>
+                      {supportedMonthlyEstimates.length > 0
+                        ? formatEstimatePrice(totalHourlyEstimate, supportedMonthlyEstimates[0]?.currencyCode ?? "USD")
+                        : "Not modeled"}
+                    </strong>
+                    <p>Average hourly view derived from the selected service estimates in this review.</p>
+                  </article>
+                  <article className="hero-metric-card">
+                    <span>Estimated monthly total</span>
+                    <strong>
+                      {supportedMonthlyEstimates.length > 0
+                        ? formatEstimatePrice(totalMonthlyEstimate, supportedMonthlyEstimates[0]?.currencyCode ?? "USD")
+                        : "Not modeled"}
+                    </strong>
+                    <p>Sum of the selected per-service estimates currently chosen for this review.</p>
+                  </article>
+                  <article className="hero-metric-card">
+                    <span>Need richer assumptions</span>
+                    <strong>{(monthlyEstimates.length - supportedMonthlyEstimates.length).toLocaleString()}</strong>
+                    <p>Services that still need deeper service-specific estimate modeling.</p>
+                  </article>
+                </div>
+
+                <div className="button-row">
+                  <button
+                    type="button"
+                    className="primary-button"
+                    disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
+                    onClick={exportPackageMonthlyEstimateCsv}
+                  >
+                    Download estimate CSV
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
+                    onClick={exportPackageMonthlyEstimateMarkdown}
+                  >
+                    Download estimate Markdown
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
+                    onClick={exportPackageMonthlyEstimateText}
+                  >
+                    Download estimate text
+                  </button>
+                </div>
               </article>
-              <article className="hero-metric-card">
-                <span>Estimate supported</span>
-                <strong>{supportedMonthlyEstimates.length.toLocaleString()}</strong>
-                <p>Selected services with a modeled monthly estimate from the current retail rows.</p>
-              </article>
-              <article className="hero-metric-card">
-                <span>Estimated hourly total</span>
-                <strong>
-                  {supportedMonthlyEstimates.length > 0
-                    ? formatEstimatePrice(totalHourlyEstimate, supportedMonthlyEstimates[0]?.currencyCode ?? "USD")
-                    : "Not modeled"}
-                </strong>
-                <p>Average hourly view derived from the selected service estimates in this review.</p>
-              </article>
-              <article className="hero-metric-card">
-                <span>Estimated monthly total</span>
-                <strong>
-                  {supportedMonthlyEstimates.length > 0
-                    ? formatEstimatePrice(totalMonthlyEstimate, supportedMonthlyEstimates[0]?.currencyCode ?? "USD")
-                    : "Not modeled"}
-                </strong>
-                <p>Sum of the selected per-service estimates currently chosen for this review.</p>
-              </article>
-              <article className="hero-metric-card">
-                <span>Need richer assumptions</span>
-                <strong>{(monthlyEstimates.length - supportedMonthlyEstimates.length).toLocaleString()}</strong>
-                <p>Services that still need deeper service-specific estimate modeling.</p>
+
+              <article className="leadership-brief package-card">
+                <p className="eyebrow">Estimate guidance</p>
+                <h2 className="leadership-title">Use this as a Microsoft retail baseline, not as an official Azure Pricing Calculator result.</h2>
+                <div className="leadership-list">
+                  <article>
+                    <strong>Still Microsoft-sourced</strong>
+                    <p>The prices shown here come from the Microsoft Azure Retail Prices API. The site adds product-owned hourly and monthly estimate assumptions on top of those retail meters.</p>
+                  </article>
+                  <article>
+                    <strong>Calculator parity is not implied</strong>
+                    <p>This is not fetched from an Azure Pricing Calculator API. If someone needs a Microsoft calculator worksheet, they still need to open the Azure Pricing Calculator separately and configure it manually.</p>
+                  </article>
+                  <article>
+                    <strong>Refine with structured inputs</strong>
+                    <p>Preferred SKU, region, and estimate inputs let you tighten the estimate without turning this review experience into a full pricing portal.</p>
+                  </article>
+                </div>
               </article>
             </div>
 
-            <div className="button-row">
-              <button
-                type="button"
-                className="primary-button"
-                disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
-                onClick={exportPackageMonthlyEstimateCsv}
-              >
-                Download estimate CSV
-              </button>
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
-                onClick={exportPackageMonthlyEstimateMarkdown}
-              >
-                Download estimate Markdown
-              </button>
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
-                onClick={exportPackageMonthlyEstimateText}
-              >
-                Download estimate text
-              </button>
-            </div>
-          </article>
+            {pricingLoading ? (
+              <section className="filter-card">
+                <p className="eyebrow">Monthly estimate</p>
+                <h3>Loading the retail rows needed for the monthly estimate.</h3>
+                <p className="microcopy">
+                  The estimate view appears after the scoped retail pricing snapshot finishes loading.
+                </p>
+              </section>
+            ) : null}
 
-          <article className="leadership-brief package-card">
-            <p className="eyebrow">Estimate guidance</p>
-            <h2 className="leadership-title">Use this as a Microsoft retail baseline, not as an official Azure Pricing Calculator result.</h2>
-            <div className="leadership-list">
-              <article>
-                <strong>Still Microsoft-sourced</strong>
-                <p>The prices shown here come from the Microsoft Azure Retail Prices API. The site adds product-owned hourly and monthly estimate assumptions on top of those retail meters.</p>
-              </article>
-              <article>
-                <strong>Calculator parity is not implied</strong>
-                <p>This is not fetched from an Azure Pricing Calculator API. If someone needs a Microsoft calculator worksheet, they still need to open the Azure Pricing Calculator separately and configure it manually.</p>
-              </article>
-              <article>
-                <strong>Refine with structured inputs</strong>
-                <p>Preferred SKU, region, and estimate inputs let you tighten the estimate without turning this review experience into a full pricing portal.</p>
-              </article>
-            </div>
-          </article>
-        </div>
-
-        {pricingLoading ? (
+            {!pricingLoading && monthlyEstimates.length > 0 ? (
+              <div className="service-selection-grid">
+                {monthlyEstimates.map((estimate) => (
+                  <article className="future-card service-selection-card" key={`estimate-${estimate.serviceSlug}`}>
+                    <div className="section-head">
+                      <div>
+                        <p className="eyebrow">Monthly estimate</p>
+                        <h3>{estimate.serviceName}</h3>
+                      </div>
+                      <span className="chip">
+                        {estimate.supported
+                          ? `${estimate.coverage.replaceAll("-", " ")} · ${estimate.mode.replaceAll("-", " ")}`
+                          : "Not modeled"}
+                      </span>
+                    </div>
+                    <p className="microcopy">
+                      {estimate.supported
+                        ? `${estimate.selectedSkuName ?? "Selected SKU"} is currently contributing ${formatEstimatePrice(
+                            estimate.selectedHourlyCost,
+                            estimate.currencyCode
+                          )} per hour and ${formatEstimatePrice(estimate.selectedMonthlyCost, estimate.currencyCode)} per month.`
+                        : estimate.notes[0] ?? "A monthly estimate is not modeled for this service yet."}
+                    </p>
+                    {estimate.assumptions.length > 0 ? (
+                      <div className="chip-row">
+                        {estimate.assumptions.slice(0, 3).map((assumption) => (
+                          <span className="chip" key={`${estimate.serviceSlug}-${assumption}`}>
+                            {assumption}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                    {estimate.skuEstimates.length > 0 ? (
+                      <div className="chip-row">
+                        {estimate.skuEstimates.slice(0, 4).map((skuEstimate) => (
+                          <span className="chip" key={`${estimate.serviceSlug}-${skuEstimate.skuName}`}>
+                            {skuEstimate.skuName}: {formatEstimatePrice(skuEstimate.hourlyCost, estimate.currencyCode)}/hour · {formatEstimatePrice(skuEstimate.monthlyCost, estimate.currencyCode)}/month
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                    {estimate.supported ? (
+                      <div className="chip-row">
+                        <span className="chip">Profile {estimate.profileVersion ?? "n/a"}</span>
+                        <span className="chip">Input mode {estimate.selectedInputMode}</span>
+                        <span className="chip">Retail API source</span>
+                      </div>
+                    ) : null}
+                    {estimate.supported && estimate.selectedInputs ? (
+                      <div className="chip-row">
+                        {Object.entries(estimate.selectedInputs)
+                          .slice(0, 3)
+                          .map(([key, value]) => (
+                            <span className="chip" key={`${estimate.serviceSlug}-${key}`}>
+                              {key}: {String(value)}
+                            </span>
+                          ))}
+                      </div>
+                    ) : null}
+                    {estimate.supported && estimate.selectedSkuName ? (
+                      <div className="traceability-grid">
+                        {(estimate.skuEstimates.find((entry) => entry.skuName === estimate.selectedSkuName)?.components ?? [])
+                          .slice(0, 4)
+                          .map((component) => (
+                            <article className="trace-card" key={`${estimate.serviceSlug}-${component.label}-${component.meterId ?? component.meterName}`}>
+                              <strong>{component.label}</strong>
+                              <p>{formatEstimatePrice(component.hourlyCost, estimate.currencyCode)}/hour</p>
+                              <p>{formatEstimatePrice(component.monthlyCost, estimate.currencyCode)}/month</p>
+                              <p className="microcopy">{component.location} · {component.meterName}</p>
+                            </article>
+                          ))}
+                      </div>
+                    ) : null}
+                    {estimate.notes.length > 0 ? (
+                      <p className="microcopy">{estimate.notes.join(" ")}</p>
+                    ) : null}
+                    <div className="button-row">
+                      <Link href={`/services/${estimate.serviceSlug}`} className="muted-link">
+                        Open service view
+                      </Link>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+          </>
+        ) : (
           <section className="filter-card">
-            <p className="eyebrow">Monthly estimate</p>
-            <h3>Loading the retail rows needed for the monthly estimate.</h3>
+            <p className="eyebrow">Estimate appears after pricing scope exists</p>
+            <h3>Build the service list first, then use monthly estimates for first-pass cost direction.</h3>
             <p className="microcopy">
-              The estimate view appears after the scoped retail pricing snapshot finishes loading.
+              Monthly estimates stay hidden until the review has scoped services. That keeps early work
+              focused on architecture and fit before cost modeling details appear.
             </p>
           </section>
-        ) : null}
-
-        {!pricingLoading && monthlyEstimates.length > 0 ? (
-          <div className="service-selection-grid">
-            {monthlyEstimates.map((estimate) => (
-              <article className="future-card service-selection-card" key={`estimate-${estimate.serviceSlug}`}>
-                <div className="section-head">
-                  <div>
-                    <p className="eyebrow">Monthly estimate</p>
-                    <h3>{estimate.serviceName}</h3>
-                  </div>
-                  <span className="chip">
-                    {estimate.supported
-                      ? `${estimate.coverage.replaceAll("-", " ")} · ${estimate.mode.replaceAll("-", " ")}`
-                      : "Not modeled"}
-                  </span>
-                </div>
-                <p className="microcopy">
-                  {estimate.supported
-                    ? `${estimate.selectedSkuName ?? "Selected SKU"} is currently contributing ${formatEstimatePrice(
-                        estimate.selectedHourlyCost,
-                        estimate.currencyCode
-                      )} per hour and ${formatEstimatePrice(estimate.selectedMonthlyCost, estimate.currencyCode)} per month.`
-                    : estimate.notes[0] ?? "A monthly estimate is not modeled for this service yet."}
-                </p>
-                {estimate.assumptions.length > 0 ? (
-                  <div className="chip-row">
-                    {estimate.assumptions.slice(0, 3).map((assumption) => (
-                      <span className="chip" key={`${estimate.serviceSlug}-${assumption}`}>
-                        {assumption}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-                {estimate.skuEstimates.length > 0 ? (
-                  <div className="chip-row">
-                    {estimate.skuEstimates.slice(0, 4).map((skuEstimate) => (
-                      <span className="chip" key={`${estimate.serviceSlug}-${skuEstimate.skuName}`}>
-                        {skuEstimate.skuName}: {formatEstimatePrice(skuEstimate.hourlyCost, estimate.currencyCode)}/hour · {formatEstimatePrice(skuEstimate.monthlyCost, estimate.currencyCode)}/month
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-                {estimate.supported ? (
-                  <div className="chip-row">
-                    <span className="chip">Profile {estimate.profileVersion ?? "n/a"}</span>
-                    <span className="chip">Input mode {estimate.selectedInputMode}</span>
-                    <span className="chip">Retail API source</span>
-                  </div>
-                ) : null}
-                {estimate.supported && estimate.selectedInputs ? (
-                  <div className="chip-row">
-                    {Object.entries(estimate.selectedInputs)
-                      .slice(0, 3)
-                      .map(([key, value]) => (
-                        <span className="chip" key={`${estimate.serviceSlug}-${key}`}>
-                          {key}: {String(value)}
-                        </span>
-                      ))}
-                  </div>
-                ) : null}
-                {estimate.supported && estimate.selectedSkuName ? (
-                  <div className="traceability-grid">
-                    {(estimate.skuEstimates.find((entry) => entry.skuName === estimate.selectedSkuName)?.components ?? [])
-                      .slice(0, 4)
-                      .map((component) => (
-                        <article className="trace-card" key={`${estimate.serviceSlug}-${component.label}-${component.meterId ?? component.meterName}`}>
-                          <strong>{component.label}</strong>
-                          <p>{formatEstimatePrice(component.hourlyCost, estimate.currencyCode)}/hour</p>
-                          <p>{formatEstimatePrice(component.monthlyCost, estimate.currencyCode)}/month</p>
-                          <p className="microcopy">{component.location} · {component.meterName}</p>
-                        </article>
-                      ))}
-                  </div>
-                ) : null}
-                {estimate.notes.length > 0 ? (
-                  <p className="microcopy">{estimate.notes.join(" ")}</p>
-                ) : null}
-                <div className="button-row">
-                  <Link href={`/services/${estimate.serviceSlug}`} className="muted-link">
-                    Open service view
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : null}
+        )}
       </section>
 
       {selectedServiceDrawerRow ? (
@@ -2923,6 +3638,8 @@ export function ReviewPackageWorkbench({
           onClose={() => setSelectedServiceDrawerSlug(null)}
           onOpenItem={handleOpenMatrixFinding}
           onUpdateServiceAssumption={updateServiceAssumption}
+          onUpdateServiceEstimateInput={updateServiceEstimateInput}
+          onUpdateServiceEstimateInputMode={updateServiceEstimateInputMode}
         />
       ) : null}
 
@@ -2935,6 +3652,8 @@ export function ReviewPackageWorkbench({
           activePackageName={activePackage?.name ?? null}
         />
       ) : null}
+        </div>
+      </div>
     </main>
   );
 }

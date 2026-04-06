@@ -10,8 +10,12 @@
     "dev": "npm run generate:data && next dev",
     "generate:data": "node tools/generate-data.mjs",
     "build": "npm run generate:data && next build",
+    "serve:export": "node scripts/serve-export.mjs",
     "start": "next start",
-    "test:e2e": "playwright test"
+    "test:api": "npm --prefix api test",
+    "test:e2e": "playwright test",
+    "test:e2e:review-cloud": "playwright test tests/e2e/review-cloud.spec.ts --workers=1 --reporter=line",
+    "test:e2e:admin-copilot": "playwright test tests/e2e/admin-copilot.spec.ts --workers=1 --reporter=line"
   },
   "dependencies": {
     "next": "^15.0.0",
@@ -23,6 +27,7 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "serve": "^14.2.6",
     "typescript": "^5.0.0"
   }
 }

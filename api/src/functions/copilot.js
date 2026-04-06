@@ -16,6 +16,18 @@ async function loadSavedCopilotContext(request) {
   return normalizeCopilotContext(document?.copilotContext);
 }
 
+function normalizeMode(value) {
+  switch (String(value ?? "").trim()) {
+    case "service-review":
+      return "service-review";
+    case "leadership-summary":
+      return "leadership-summary";
+    case "project-review":
+    default:
+      return "project-review";
+  }
+}
+
 app.http("copilot", {
   route: "copilot",
   methods: ["POST"],
@@ -24,6 +36,7 @@ app.http("copilot", {
     try {
       const body = await request.json();
       const question = String(body?.question ?? "").trim();
+      const mode = normalizeMode(body?.mode);
       const explicitContext = body?.context;
 
       if (!question) {
@@ -48,6 +61,7 @@ app.http("copilot", {
       }
 
       const payload = await runCopilot(question, context, {
+        mode,
         groundingMode
       });
 

@@ -3,13 +3,61 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { runProjectReviewCopilot } from "@/lib/copilot";
-import type { CopilotResponse, ProjectReviewCopilotContext } from "@/types";
+import type { CopilotMode, CopilotResponse, ProjectReviewCopilotContext } from "@/types";
 
-const SUGGESTED_PROMPTS = [
-  "Summarize the biggest regional blockers across the selected services.",
-  "Summarize pricing drivers and public retail pricing caveats for this review.",
-  "Draft a leadership summary for this project review.",
-  "Which selected services still need checklist decisions before export?"
+const COPILOT_MODES: Array<{
+  value: CopilotMode;
+  label: string;
+  title: string;
+  description: string;
+  placeholder: string;
+  prompts: string[];
+}> = [
+  {
+    value: "project-review",
+    label: "Project review",
+    title: "Ask a scoped architecture or pre-sales question.",
+    description:
+      "Use the full review context to summarize blockers, pricing signals, export readiness, and cross-service tradeoffs.",
+    placeholder:
+      "Ask about regional blockers, pricing drivers, export readiness, or ask for a scoped summary of this review.",
+    prompts: [
+      "Summarize the biggest regional blockers across the selected services.",
+      "Summarize pricing drivers and public retail pricing caveats for this review.",
+      "Which selected services still need checklist decisions before export?",
+      "What are the biggest decision risks still unresolved in this review?"
+    ]
+  },
+  {
+    value: "service-review",
+    label: "Service review",
+    title: "Ask for a service-by-service review.",
+    description:
+      "Get a service-centric answer that calls out region fit, pricing posture, checklist gaps, and notable findings per service.",
+    placeholder:
+      "Ask for a service-by-service breakdown, a specific service comparison, or the riskiest services in scope.",
+    prompts: [
+      "Which selected services look riskiest from a regional fit perspective, and why?",
+      "Give me a service-by-service checkpoint on pricing caveats and sizing assumptions.",
+      "Which services are closest to review-ready, and which still have the biggest checklist gaps?",
+      "Compare the top service-specific blockers that would slow architecture sign-off."
+    ]
+  },
+  {
+    value: "leadership-summary",
+    label: "Leadership summary",
+    title: "Ask for an executive-ready brief.",
+    description:
+      "Generate a concise leadership view focused on recommendation, risk, commercial caveats, and next decisions.",
+    placeholder:
+      "Ask for an executive summary, top risks, commercial cautions, or the next leadership decisions needed.",
+    prompts: [
+      "Draft a leadership summary for this project review.",
+      "What should leadership know before approving this architecture direction?",
+      "Summarize the top commercial and regional risks in executive language.",
+      "What are the next three decisions leadership should force to keep this review moving?"
+    ]
+  }
 ];
 
 function formatDate(value: string) {
@@ -38,15 +86,22 @@ function classifyRegionSignal(signal: string) {
   return null;
 }
 
+function getModeDefinition(mode: CopilotMode) {
+  return COPILOT_MODES.find((entry) => entry.value === mode) ?? COPILOT_MODES[0];
+}
+
 export function ProjectReviewCopilot({
   context
 }: {
   context: ProjectReviewCopilotContext;
 }) {
+  const [mode, setMode] = useState<CopilotMode>("project-review");
   const [question, setQuestion] = useState("");
+  const [submittedQuestion, setSubmittedQuestion] = useState("");
   const [response, setResponse] = useState<CopilotResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const modeDefinition = useMemo(() => getModeDefinition(mode), [mode]);
 
   const sourceList = useMemo(
     () =>
@@ -108,10 +163,12 @@ export function ProjectReviewCopilot({
     try {
       const nextResponse = await runProjectReviewCopilot({
         question: trimmed,
+        mode,
         context
       });
 
       setResponse(nextResponse);
+      setSubmittedQuestion(trimmed);
       setQuestion(trimmed);
     } catch (nextError) {
       setError(
@@ -126,8 +183,8 @@ export function ProjectReviewCopilot({
     <section className="surface-panel editorial-section">
       <div className="section-head">
         <div>
-          <p className="eyebrow">Step 3</p>
-          <h2 className="section-title">Ask CoPilot early for a scoped summary, pricing explanation, or leadership-ready answer.</h2>
+          <p className="eyebrow">Optional inside Step 3</p>
+          <h2 className="section-title">Use CoPilot for a scoped summary, pricing explanation, or leadership-ready answer.</h2>
           <p className="section-copy">
             This copilot is grounded on the active project review, selected services, target regions,
             pricing summaries, and recorded notes. It is useful for summaries and rationale, but it
@@ -143,9 +200,33 @@ export function ProjectReviewCopilot({
           <div className="copilot-card-head">
             <div>
               <p className="eyebrow">Project review copilot</p>
-              <h3>Ask a scoped architecture or pre-sales question.</h3>
+              <h3>{modeDefinition.title}</h3>
             </div>
             <span className="chip">{context.services.length.toLocaleString()} services in scope</span>
+          </div>
+
+          <div className="section-stack" style={{ gap: 12 }}>
+            <div>
+              <p className="microcopy">{modeDefinition.description}</p>
+            </div>
+            <div className="chip-row">
+              {COPILOT_MODES.map((entry) => (
+                <button
+                  key={entry.value}
+                  type="button"
+                  className="chip"
+                  aria-pressed={mode === entry.value}
+                  onClick={() => {
+                    setMode(entry.value);
+                    setResponse(null);
+                    setError(null);
+                  }}
+                  disabled={loading}
+                >
+                  {entry.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <form
@@ -161,7 +242,7 @@ export function ProjectReviewCopilot({
                 className="field-textarea copilot-textarea"
                 value={question}
                 onChange={(event) => setQuestion(event.target.value)}
-                placeholder="Ask about regional blockers, pricing drivers, export readiness, or ask for a leadership-style summary of this review."
+                placeholder={modeDefinition.placeholder}
               />
             </label>
             <p className="microcopy">
@@ -176,7 +257,7 @@ export function ProjectReviewCopilot({
           </form>
 
           <div className="copilot-suggestion-grid">
-            {SUGGESTED_PROMPTS.map((prompt) => (
+            {modeDefinition.prompts.map((prompt) => (
               <button
                 key={prompt}
                 type="button"
@@ -275,7 +356,7 @@ export function ProjectReviewCopilot({
             <div className="copilot-card-head">
               <div>
                 <p className="eyebrow">Latest answer</p>
-                <h3>{question}</h3>
+                <h3>{submittedQuestion}</h3>
               </div>
               <span className="chip">
                 {response.modelName} via {response.modelDeployment}
@@ -283,6 +364,10 @@ export function ProjectReviewCopilot({
             </div>
             <div className="copilot-answer">{response.answer}</div>
             <div className="traceability-grid">
+              <article className="trace-card">
+                <strong>Mode</strong>
+                <p>{getModeDefinition(response.mode).label}</p>
+              </article>
               <article className="trace-card">
                 <strong>Generated</strong>
                 <p>{formatDate(response.generatedAt)}</p>

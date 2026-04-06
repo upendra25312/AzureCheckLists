@@ -3,6 +3,7 @@ const {
   buildNotesBlobName,
   buildProjectReviewBlobName,
   buildProjectReviewStateBlobName,
+  deleteBlobIfExists,
   getContainerClient,
   readJsonBlob,
   sanitizePathSegment,
@@ -134,7 +135,11 @@ function toProjectReviewSummary(entity, activeReviewId) {
     createdAt: entity.createdAt,
     updatedAt: entity.updatedAt,
     lastSavedAt: entity.lastSavedAt,
-    isActive: entity.reviewId === activeReviewId
+    isActive: entity.reviewId === activeReviewId,
+    isArchived: Boolean(entity.archivedAt),
+    archivedAt: entity.archivedAt ?? null,
+    isDeleted: Boolean(entity.deletedAt),
+    deletedAt: entity.deletedAt ?? null
   };
 }
 
@@ -452,6 +457,18 @@ async function activateProjectReview(principal, reviewId) {
     throw error;
   }
 
+  if (entity.archivedAt) {
+    const error = new Error("Restore the archived project review before making it active again.");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  if (entity.deletedAt) {
+    const error = new Error("Restore the deleted project review before making it active again.");
+    error.statusCode = 409;
+    throw error;
+  }
+
   const profile = await upsertUserProfile(principal, {
     activeReviewId: reviewId
   });
@@ -468,8 +485,174 @@ async function activateProjectReview(principal, reviewId) {
   };
 }
 
+async function archiveProjectReview(principal, reviewId, archived) {
+  const client = await getTableClient(PROJECT_REVIEW_TABLE_NAME);
+  const entity = await getProjectReviewEntity(client, principal.userId, reviewId);
+
+  if (!entity) {
+    const error = new Error("The selected project review was not found in Azure Table Storage.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (entity.deletedAt) {
+    const error = new Error("Restore the deleted project review before changing its archive state.");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const nextArchivedAt = archived ? new Date().toISOString() : null;
+  await client.upsertEntity(
+    {
+      partitionKey: entity.partitionKey,
+      rowKey: entity.rowKey,
+      archivedAt: nextArchivedAt,
+      updatedAt: new Date().toISOString()
+    },
+    "Merge"
+  );
+
+  const profileClient = await getTableClient(USER_PROFILE_TABLE_NAME);
+  const profileEntity = await getUserProfileEntity(profileClient, principal.userId);
+  const shouldClearActiveReview = archived && profileEntity?.activeReviewId === reviewId;
+  const profile = await upsertUserProfile(
+    principal,
+    shouldClearActiveReview ? { activeReviewId: null } : {}
+  );
+
+  return {
+    user: {
+      userId: profile.userId,
+      email: profile.email,
+      displayName: profile.displayName,
+      provider: profile.provider,
+      activeReviewId: profile.activeReviewId
+    }
+  };
+}
+
+async function deleteProjectReview(principal, reviewId) {
+  const client = await getTableClient(PROJECT_REVIEW_TABLE_NAME);
+  const entity = await getProjectReviewEntity(client, principal.userId, reviewId);
+
+  if (!entity) {
+    const error = new Error("The selected project review was not found in Azure Table Storage.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const profileClient = await getTableClient(USER_PROFILE_TABLE_NAME);
+  const profileEntity = await getUserProfileEntity(profileClient, principal.userId);
+  const shouldClearActiveReview = profileEntity?.activeReviewId === reviewId;
+
+  await client.upsertEntity(
+    {
+      partitionKey: entity.partitionKey,
+      rowKey: entity.rowKey,
+      deletedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    "Merge"
+  );
+
+  const profile = await upsertUserProfile(
+    principal,
+    shouldClearActiveReview ? { activeReviewId: null } : {}
+  );
+
+  return {
+    user: {
+      userId: profile.userId,
+      email: profile.email,
+      displayName: profile.displayName,
+      provider: profile.provider,
+      activeReviewId: profile.activeReviewId
+    }
+  };
+}
+
+async function restoreDeletedProjectReview(principal, reviewId) {
+  const client = await getTableClient(PROJECT_REVIEW_TABLE_NAME);
+  const entity = await getProjectReviewEntity(client, principal.userId, reviewId);
+
+  if (!entity) {
+    const error = new Error("The selected project review was not found in Azure Table Storage.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  await client.upsertEntity(
+    {
+      partitionKey: entity.partitionKey,
+      rowKey: entity.rowKey,
+      deletedAt: null,
+      updatedAt: new Date().toISOString()
+    },
+    "Merge"
+  );
+
+  const profile = await upsertUserProfile(principal);
+
+  return {
+    user: {
+      userId: profile.userId,
+      email: profile.email,
+      displayName: profile.displayName,
+      provider: profile.provider,
+      activeReviewId: profile.activeReviewId
+    }
+  };
+}
+
+async function purgeProjectReview(principal, reviewId) {
+  const client = await getTableClient(PROJECT_REVIEW_TABLE_NAME);
+  const entity = await getProjectReviewEntity(client, principal.userId, reviewId);
+
+  if (!entity) {
+    const error = new Error("The selected project review was not found in Azure Table Storage.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (!entity.deletedAt) {
+    const error = new Error("Move the project review to deleted state before permanently removing it.");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const profileClient = await getTableClient(USER_PROFILE_TABLE_NAME);
+  const profileEntity = await getUserProfileEntity(profileClient, principal.userId);
+  const wasActiveReview = profileEntity?.activeReviewId === reviewId;
+
+  await client.deleteEntity(entity.partitionKey, entity.rowKey);
+
+  const containerClient = await getContainerClient(NOTES_CONTAINER_NAME);
+  await deleteBlobIfExists(containerClient, buildProjectReviewBlobName(principal.userId, reviewId));
+
+  await deleteBlobIfExists(containerClient, buildProjectReviewStateBlobName(principal.userId));
+
+  const profile = await upsertUserProfile(
+    principal,
+    wasActiveReview ? { activeReviewId: null } : {}
+  );
+
+  return {
+    user: {
+      userId: profile.userId,
+      email: profile.email,
+      displayName: profile.displayName,
+      provider: profile.provider,
+      activeReviewId: profile.activeReviewId
+    }
+  };
+}
+
 module.exports = {
   activateProjectReview,
+  archiveProjectReview,
+  deleteProjectReview,
+  purgeProjectReview,
+  restoreDeletedProjectReview,
   listProjectReviews,
   loadProjectReviewState,
   loadReviewRecords,

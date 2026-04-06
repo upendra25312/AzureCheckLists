@@ -5,6 +5,7 @@ import type {
   ServiceRegionalFitSummary,
   ServiceSummary
 } from "@/types";
+import { normalizeBackendThrownMessage, readBackendErrorMessage } from "@/lib/backend-error";
 
 const SERVICE_PRICING_CACHE_PREFIX = "azure-review-dashboard.service-pricing.v3";
 const SERVICE_PRICING_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
@@ -293,7 +294,7 @@ export async function loadServicePricingBatch(requests: ServicePricingRequest[])
         });
 
         if (!response.ok) {
-          const message = await response.text();
+          const message = await readBackendErrorMessage(response, "Unable to load service pricing.");
 
           throw new Error(message || `Unable to load service pricing. (${response.status})`);
         }
@@ -327,10 +328,12 @@ export async function loadServicePricingBatch(requests: ServicePricingRequest[])
           );
         });
       } catch (error) {
-        const message =
+        const message = normalizeBackendThrownMessage(
           error instanceof Error
             ? error.message
-            : "Unable to load service pricing for this selected service right now.";
+            : "Unable to load service pricing for this selected service right now.",
+          "Unable to load service pricing for this selected service right now."
+        );
 
         requestChunk.forEach((request) => {
           fallbackPayloads.set(

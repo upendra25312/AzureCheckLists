@@ -58,6 +58,56 @@ These remain future enhancements so the product stays honest as a review support
 npm run build
 ```
 
+## Local e2e testing
+
+The most reliable local Playwright path in this repo is to test the exported site instead of `next dev`.
+
+1. Build the static output:
+
+   ```powershell
+   npm run build
+   ```
+
+2. Start the export-aware local server on a fixed port:
+
+   ```powershell
+   npm run serve:export -- 3046
+   ```
+
+3. In another terminal, reuse that running server for Playwright:
+
+   ```powershell
+   $env:PORT=3046
+   $env:PW_REUSE_SERVER=1
+   npm run test:e2e:review-cloud
+   ```
+
+   Or for the admin diagnostics coverage:
+
+   ```powershell
+   $env:PORT=3046
+   $env:PW_REUSE_SERVER=1
+   npm run test:e2e:admin-copilot
+   ```
+
+Why this path is preferred:
+
+- it avoids stale `next dev` chunk and module state
+- it serves exported routes like `/review-package` through the same clean URLs used in production
+- it avoids the flaky Windows teardown path seen when Playwright tries to own the web server lifecycle itself
+
+## Local backend tests
+
+The dedicated Functions package now includes a small Node built-in test suite for backend lifecycle regressions.
+
+Run it from the repo root:
+
+```powershell
+npm run test:api
+```
+
+Current coverage includes the saved-review lifecycle edge case where an archived and then purged review must not resurface through the legacy Azure fallback state blob.
+
 Recommended Static Web Apps build settings:
 
 - App location: `/`
@@ -152,3 +202,44 @@ The dedicated backend stores structured review records as JSON in Blob Storage, 
 See [docs/architecture.md](./docs/architecture.md) for the deployment and migration model.
 See [docs/project-package-commercial-fit.md](./docs/project-package-commercial-fit.md) for the combined package workflow and the planned regional plus pricing extension.
 See [Architecture/README.md](./Architecture/README.md) for the architecture pack, diagrams, roadmap, and exact implementation design.
+
+## Admin role assignment
+
+The `/admin/copilot` route and `/api/admin*` APIs are protected by the `admin` role in `public/staticwebapp.config.json`.
+
+Important operational detail:
+
+- a normal signed-in user only has the built-in `anonymous` and `authenticated` roles
+- route protection returning `403` does not prove admin access is fully configured
+- an internal user must be explicitly granted the `admin` role in the target Static Web App before `/admin/copilot` can be validated end to end
+
+Recommended validation sequence:
+
+1. Sign in to the deployed site and confirm `/.auth/me` shows the expected account.
+2. Open `/admin/copilot` and confirm the route is blocked with `403` before role assignment.
+3. Assign the `admin` role to the internal user in the Static Web App.
+4. Sign out and sign back in.
+5. Re-open `/admin/copilot` and confirm the page loads and `/api/admin-copilot-health` returns `200`.
+
+Portal path:
+
+1. Open the target Static Web App in the Azure portal.
+2. Go to `Settings` > `Role Management`.
+3. Create an invitation for the internal Microsoft Entra account.
+4. Enter the custom role name `admin`.
+5. Have the recipient accept the invitation and sign in again.
+
+Azure CLI option:
+
+```powershell
+az staticwebapp users invite \
+   --name <static-web-app-name> \
+   --resource-group <resource-group-name> \
+   --authentication-provider AAD \
+   --user-details <admin-user-email> \
+   --roles admin \
+   --domain <static-web-app-domain> \
+   --invitation-expiration-in-hours 24
+```
+
+This role-assignment behavior matches Azure Static Web Apps role management guidance: signed-in users are only `authenticated` by default, and custom roles like `admin` must be granted explicitly.

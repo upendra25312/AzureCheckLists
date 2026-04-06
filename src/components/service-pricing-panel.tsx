@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { DataSourceStatusCard } from "@/components/data-source-status";
 import { buildServiceMonthlyEstimate } from "@/lib/monthly-estimate";
 import { buildServicePricingRequest, loadServicePricingBatch, matchesPricingTargetRegion } from "@/lib/service-pricing";
 import type { ServicePricing, ServiceRegionalFitSummary, ServiceSummary } from "@/types";
@@ -399,27 +400,12 @@ export function ServicePricingPanel({
         </article>
       </div>
 
-      <div className="filter-card">
-        <p className="eyebrow">Pricing source</p>
-        <h3>
-          {pricing.dataSource?.mode === "live"
-            ? "Using a fresh retail-pricing refresh."
-            : pricing.dataSource?.mode === "cache"
-              ? "Using the scheduled Azure Function pricing cache."
-              : pricing.dataSource?.mode === "stale-cache"
-                ? "Using stale cache because the live pricing refresh did not complete."
-                : "Using the Azure Function pricing backend."}
-        </h3>
-        <p className="microcopy">
-          {pricing.dataSource?.mode === "live" && pricing.dataSource.refreshedAt
-            ? `Microsoft retail pricing was refreshed at ${new Date(pricing.dataSource.refreshedAt).toLocaleString("en-US")}.`
-            : pricing.dataSource?.mode === "cache" && pricing.dataSource.refreshedAt
-              ? `The dedicated backend is serving cached pricing captured at ${new Date(pricing.dataSource.refreshedAt).toLocaleString("en-US")}.`
-              : pricing.dataSource?.mode === "stale-cache" && pricing.dataSource.refreshedAt
-                ? `${pricing.dataSource.lastError ?? "The live pricing refresh did not complete."} The panel stayed on the last successful cache from ${new Date(pricing.dataSource.refreshedAt).toLocaleString("en-US")}.`
-                : "The pricing panel is loading data through the dedicated backend."}
-        </p>
-      </div>
+      <DataSourceStatusCard
+        label="Pricing source"
+        dataSource={pricing.dataSource}
+        loadingSummary="The pricing panel is still resolving whether the dedicated backend can serve a fresh retail-pricing refresh or the scheduled cache."
+        fallbackSummary="The pricing panel stayed on the last successful cache so the commercial review can continue."
+      />
 
       <div className="filter-card">
         <p className="eyebrow">Pricing note</p>

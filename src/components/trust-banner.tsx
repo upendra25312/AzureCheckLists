@@ -24,6 +24,18 @@ export function TrustBanner() {
             <span>Built from Azure review checklist content with preserved traceability.</span>
           </div>
           <div className="trust-banner-item">
+            <strong>Public data states</strong>
+            <div className="trust-banner-legend">
+              <span className="data-source-status-pill data-source-status-pill-live">Live refresh</span>
+              <span className="data-source-status-pill data-source-status-pill-cache">Scheduled cache</span>
+              <span className="data-source-status-pill data-source-status-pill-fallback">Fallback cache</span>
+            </div>
+            <span>
+              Service pricing and regional-fit panels now show whether the backend used a fresh
+              Microsoft refresh, the scheduled cache, or a fallback cache after a refresh failure.
+            </span>
+          </div>
+          <div className="trust-banner-item">
             <strong>Default posture</strong>
             <span>
               GA-ready families first. Preview and deprecated content require explicit

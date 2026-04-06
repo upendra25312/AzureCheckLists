@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { DataSourceStatusCard } from "@/components/data-source-status";
 import { buildServiceRegionalFitRequest, loadServiceRegionalFitBatch } from "@/lib/service-regional-fit";
 import type { ServiceRegionalFit, ServiceSummary } from "@/types";
 
@@ -36,7 +37,7 @@ export function ServiceRegionalFitPanel({
   const resolvedRegionalFit =
     liveRegionalFit && (liveRegionalFit.mapped || !regionalFit) ? liveRegionalFit : regionalFit;
   const usingLiveRegionalFit = Boolean(liveRegionalFit && resolvedRegionalFit === liveRegionalFit);
-  const regionalDataSource = liveRegionalFit?.dataSource ?? resolvedRegionalFit?.dataSource;
+  const regionalDataSource = resolvedRegionalFit?.dataSource;
 
   useEffect(() => {
     if (targetRegions.length > 0) {
@@ -259,33 +260,20 @@ export function ServiceRegionalFitPanel({
         </article>
       </div>
 
-      <div className="filter-card">
-        <p className="eyebrow">Availability source</p>
-        <h3>
-          {regionalDataSource?.mode === "live"
-            ? "Using a fresh Microsoft availability refresh."
-            : regionalDataSource?.mode === "cache"
-              ? "Using the scheduled Azure Function cache."
-              : regionalDataSource?.mode === "stale-cache"
-                ? "Using stale cache because the live refresh did not complete."
-                : usingLiveRegionalFit
-                  ? "Using the dedicated backend availability feed."
-                  : "Using the generated availability snapshot."}
-        </h3>
-        <p className="microcopy">
-          {regionalDataSource?.mode === "live" && regionalDataSource.refreshedAt
-            ? `Microsoft availability was refreshed at ${new Date(regionalDataSource.refreshedAt).toLocaleString("en-US")}.`
-            : regionalDataSource?.mode === "cache" && regionalDataSource.refreshedAt
-              ? `The dedicated backend is serving the scheduled cache captured at ${new Date(regionalDataSource.refreshedAt).toLocaleString("en-US")}.`
-              : regionalDataSource?.mode === "stale-cache" && regionalDataSource.refreshedAt
-                ? `${regionalDataSource.lastError ?? "The live refresh did not complete."} The page stayed on the last successful cache from ${new Date(regionalDataSource.refreshedAt).toLocaleString("en-US")}.`
-                : liveError
-                  ? `${liveError} The page stayed on the generated snapshot so the service review could continue.`
-                  : liveRegionalFit && regionalFit
-                    ? "The backend returned a weaker match than the generated snapshot, so the page kept the snapshot until the mapping can be improved."
-                    : "The backend availability fetch is still loading. The generated snapshot remains visible until the live result arrives."}
-        </p>
-      </div>
+      <DataSourceStatusCard
+        label="Availability source"
+        dataSource={regionalDataSource}
+        loadingSummary={
+          liveError
+            ? `${liveError} The page stayed on the generated snapshot so the service review could continue.`
+            : liveRegionalFit && regionalFit
+              ? "The backend returned a weaker match than the generated snapshot, so the page kept the generated snapshot until the mapping can be improved."
+              : usingLiveRegionalFit
+                ? "The page is using the dedicated backend availability feed while the current source state settles."
+                : "The backend availability fetch is still loading. The generated snapshot remains visible until the live result arrives."
+        }
+        fallbackSummary="The page stayed on the last successful cache or generated snapshot so the service review could continue."
+      />
 
       {resolvedRegionalFit.notes.length > 0 ? (
         <div className="traceability-grid">

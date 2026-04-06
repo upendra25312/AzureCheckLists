@@ -145,11 +145,11 @@ export function ReviewCloudControls({
   if (!authResolved) {
     return (
       <section className="filter-card cloud-sync-card">
-        <p className="eyebrow">Azure-backed save and reuse</p>
-        <h3>Checking sign-in status for this project review.</h3>
+        <p className="eyebrow">Optional cloud save</p>
+        <h3>Checking whether Azure-backed save is available.</h3>
         <p className="microcopy">
-          Your local notes stay available in this browser either way. Sign-in is only needed when
-          you want Azure-backed save, reload, and cloud-generated CSV export.
+          Local notes stay in this browser either way. Sign-in is only needed for Azure-backed save,
+          reload, and cloud-generated CSV export.
         </p>
       </section>
     );
@@ -158,20 +158,16 @@ export function ReviewCloudControls({
   if (!principal) {
     return (
       <section className="filter-card cloud-sync-card">
-        <p className="eyebrow">Step 7</p>
-        <h3>Sign in to save and reuse this project review.</h3>
+        <p className="eyebrow">Optional cloud save</p>
+        <h3>Sign in only when you want to save this review to Azure.</h3>
         <p className="microcopy">
-          You can keep browsing services, writing notes, and downloading local project-review
-          exports without signing in. Use Microsoft Entra ID only when you want Azure-backed save,
-          reload, automatic copilot context restore in later sessions, and a cloud-generated CSV
-          artifact for the current review.
+          You can keep browsing services, writing notes, and downloading local exports without
+          signing in. Use sign-in only when you want Azure-backed save, reload, automatic copilot
+          context restore in later sessions, or a cloud-generated CSV artifact.
         </p>
         <div className="button-row">
           <a href={buildLoginUrl("aad")} className="primary-button">
             Continue with Microsoft
-          </a>
-          <a href={buildLoginUrl("google")} className="secondary-button">
-            Continue with Google
           </a>
           {continueHref ? (
             <a href={continueHref} className="ghost-button">
@@ -187,13 +183,12 @@ export function ReviewCloudControls({
     <section className="filter-card cloud-sync-card">
       <div className="section-head">
         <div>
-          <p className="eyebrow">Step 7</p>
-          <h3>Save this project review to Azure, then reload it later when needed.</h3>
+          <p className="eyebrow">Optional cloud save</p>
+          <h3>Keep this review in Azure when you need continuity across sessions.</h3>
           <p className="microcopy">
-            Signed in as {principal.userDetails || principal.userId}. This keeps the current
-            project-review notes in Azure Storage and lets you generate a cloud-backed CSV artifact
-            only when you ask for it. It also lets the backend restore the active project-review
-            context automatically for later copilot sessions.
+            Signed in as {principal.userDetails || principal.userId}. Save when you want this review
+            available on another device or in a later session. If not, the local workflow still
+            remains valid.
           </p>
         </div>
         <div className="chip-row">
@@ -216,7 +211,7 @@ export function ReviewCloudControls({
           onClick={saveToAzure}
           disabled={busyAction !== null}
         >
-          {busyAction === "save" ? "Saving..." : "Save project review"}
+          {busyAction === "save" ? "Saving..." : "Save to Azure"}
         </button>
         <button
           type="button"
@@ -224,7 +219,7 @@ export function ReviewCloudControls({
           onClick={downloadCsv}
           disabled={busyAction !== null}
         >
-          {busyAction === "download" ? "Preparing CSV..." : "Download Azure CSV"}
+          {busyAction === "download" ? "Preparing CSV..." : "Download cloud CSV"}
         </button>
         <a href="/.auth/logout" className="ghost-button">
           Sign out

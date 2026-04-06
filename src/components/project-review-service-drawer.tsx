@@ -2,9 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import {
+  getServiceEstimateProfile,
+  resolveEstimateInputs
+} from "@/lib/monthly-estimate-profiles";
 import { matchesPricingTargetRegion } from "@/lib/service-pricing";
 import type {
   ChecklistItem,
+  EstimateInputMode,
   ReviewDraft,
   ReviewServiceAssumption,
   ServicePricing,
@@ -56,6 +61,15 @@ type ProjectReviewServiceDrawerProps = {
   onUpdateServiceAssumption: (
     serviceSlug: string,
     next: Partial<ReviewServiceAssumption>
+  ) => void;
+  onUpdateServiceEstimateInput: (
+    serviceSlug: string,
+    key: string,
+    value: string | number | boolean
+  ) => void;
+  onUpdateServiceEstimateInputMode: (
+    serviceSlug: string,
+    mode: EstimateInputMode
   ) => void;
 };
 
@@ -178,7 +192,9 @@ export function ProjectReviewServiceDrawer({
   regionalFitError,
   onClose,
   onOpenItem,
-  onUpdateServiceAssumption
+  onUpdateServiceAssumption,
+  onUpdateServiceEstimateInput,
+  onUpdateServiceEstimateInputMode
 }: ProjectReviewServiceDrawerProps) {
   const [pricingScope, setPricingScope] = useState<"target" | "all">(
     targetRegions.length > 0 ? "target" : "all"
@@ -191,6 +207,11 @@ export function ProjectReviewServiceDrawer({
   const targetRegionChips = useMemo(
     () => targetRegions.map((targetRegion) => getTargetRegionStatus(targetRegion, row.regionalFit)),
     [row.regionalFit, targetRegions]
+  );
+  const estimateProfile = useMemo(() => getServiceEstimateProfile(row.service.slug), [row.service.slug]);
+  const resolvedEstimateInputs = useMemo(
+    () => resolveEstimateInputs(estimateProfile, row.serviceAssumption),
+    [estimateProfile, row.serviceAssumption]
   );
 
   const scopedPricingRows = useMemo(() => {
@@ -340,6 +361,108 @@ export function ProjectReviewServiceDrawer({
             </label>
           </div>
         </section>
+
+        {estimateProfile && estimateProfile.inputDefinitions.length > 0 ? (
+          <section className="drawer-section">
+            <h3>Estimate inputs</h3>
+            <p className="microcopy">
+              Monthly-estimate tuning lives here so the matrix stays scannable. Keep the profile defaults for the first pass, then switch to custom only when you need a tighter estimate.
+            </p>
+            <div className="matrix-assumption-grid service-drawer-assumptions">
+              <label>
+                <span className="microcopy">Estimate input mode</span>
+                <select
+                  className="field-input"
+                  value={row.serviceAssumption.estimateInputMode ?? "defaults"}
+                  onChange={(event) =>
+                    onUpdateServiceEstimateInputMode(
+                      row.service.slug,
+                      event.target.value as EstimateInputMode
+                    )
+                  }
+                >
+                  <option value="defaults">Use profile defaults</option>
+                  <option value="custom">Customize estimate inputs</option>
+                </select>
+              </label>
+              {estimateProfile.inputDefinitions.map((definition) => {
+                const inputId = `${row.service.slug}-${definition.key}`;
+                const currentValue = resolvedEstimateInputs[definition.key] ?? definition.defaultValue;
+
+                if (definition.kind === "boolean") {
+                  return (
+                    <label key={inputId}>
+                      <span className="microcopy">{definition.label}</span>
+                      <input
+                        className="field-input"
+                        type="checkbox"
+                        checked={Boolean(currentValue)}
+                        onChange={(event) =>
+                          onUpdateServiceEstimateInput(
+                            row.service.slug,
+                            definition.key,
+                            event.target.checked
+                          )
+                        }
+                      />
+                      <span className="microcopy">{definition.description}</span>
+                    </label>
+                  );
+                }
+
+                if (definition.kind === "select") {
+                  return (
+                    <label key={inputId}>
+                      <span className="microcopy">{definition.label}</span>
+                      <select
+                        className="field-input"
+                        value={String(currentValue)}
+                        onChange={(event) =>
+                          onUpdateServiceEstimateInput(
+                            row.service.slug,
+                            definition.key,
+                            event.target.value
+                          )
+                        }
+                      >
+                        {(definition.options ?? []).map((option) => (
+                          <option key={`${inputId}-${option.value}`} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="microcopy">{definition.description}</span>
+                    </label>
+                  );
+                }
+
+                return (
+                  <label key={inputId}>
+                    <span className="microcopy">
+                      {definition.label}
+                      {definition.unit ? ` · ${definition.unit}` : ""}
+                    </span>
+                    <input
+                      className="field-input"
+                      type="number"
+                      min={definition.min}
+                      step={definition.step}
+                      value={Number(currentValue)}
+                      onChange={(event) =>
+                        onUpdateServiceEstimateInput(
+                          row.service.slug,
+                          definition.key,
+                          Number(event.target.value)
+                        )
+                      }
+                    />
+                    <span className="microcopy">{definition.description}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
 
         <section className="drawer-section">
           <h3>Regional fit detail</h3>

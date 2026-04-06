@@ -21,6 +21,10 @@
   },
   "routes": [
     {
+      "route": "/.auth/login/google",
+      "statusCode": 404
+    },
+    {
       "route": "/admin*",
       "allowedRoles": [
         "admin"
@@ -58,6 +62,24 @@
     },
     {
       "route": "/api/project-reviews/activate",
+      "allowedRoles": [
+        "authenticated"
+      ]
+    },
+    {
+      "route": "/api/project-reviews/archive",
+      "allowedRoles": [
+        "authenticated"
+      ]
+    },
+    {
+      "route": "/api/project-reviews/delete",
+      "allowedRoles": [
+        "authenticated"
+      ]
+    },
+    {
+      "route": "/api/project-reviews/purge",
       "allowedRoles": [
         "authenticated"
       ]

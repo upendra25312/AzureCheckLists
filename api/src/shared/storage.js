@@ -77,6 +77,12 @@ async function uploadTextBlob(containerClient, blobName, body, contentType) {
   return blobClient;
 }
 
+async function deleteBlobIfExists(containerClient, blobName) {
+  const blobClient = containerClient.getBlobClient(blobName);
+
+  await blobClient.deleteIfExists();
+}
+
 function buildNotesBlobName(userId) {
   return `${sanitizePathSegment(userId)}/review-records.json`;
 }
@@ -101,6 +107,7 @@ module.exports = {
   buildNotesBlobName,
   buildProjectReviewBlobName,
   buildProjectReviewStateBlobName,
+  deleteBlobIfExists,
   getContainerClient,
   readJsonBlob,
   sanitizePathSegment,

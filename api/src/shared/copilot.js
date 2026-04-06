@@ -114,24 +114,60 @@ function sanitizeCopilotContext(context) {
   };
 }
 
-function buildCopilotMessages(question, context) {
+function buildModePrompt(mode) {
+  switch (mode) {
+    case "service-review":
+      return {
+        system:
+          "You are the Azure Checklists service review copilot. Answer only from the supplied project review context and source list. Organize the answer around the specific services implicated by the question. For each relevant service, call out regional blockers or caveats, pricing or sizing caveats, checklist readiness, and notable findings. Do not invent Azure pricing, region availability, contract discounts, checklist decisions, or service dependencies. If the context is insufficient, say so clearly.",
+        instructions: [
+          "Structure the answer service by service when multiple services are relevant.",
+          "For each relevant service, use the exact region-fit and cost-fit signals supplied in the context.",
+          "Call out pending checklist decisions or unresolved findings that would block service sign-off.",
+          "If the question names a service that is not in the supplied review, say that clearly."
+        ]
+      };
+    case "leadership-summary":
+      return {
+        system:
+          "You are the Azure Checklists leadership summary copilot. Answer only from the supplied project review context and source list. Write for senior decision-makers who need a concise recommendation, top risks, commercial caveats, and the next decisions required. Do not invent Azure pricing, region availability, contract discounts, checklist decisions, or service dependencies. If the context is insufficient, say so clearly.",
+        instructions: [
+          "Lead with the overall recommendation or decision posture.",
+          "Summarize the most material regional, commercial, and execution risks in plain language.",
+          "Keep the answer concise and executive-friendly, avoiding unnecessary low-level detail.",
+          "End with concrete next decisions or actions when the context supports them."
+        ]
+      };
+    case "project-review":
+    default:
+      return {
+        system:
+          "You are the Azure Checklists project review copilot. Answer only from the supplied project review context and source list. Do not invent Azure pricing, region availability, contract discounts, checklist decisions, or service dependencies. If the context is insufficient, say so clearly. Keep the answer concise, decision-oriented, and useful for architects, pre-sales teams, cloud engineers, and leadership readers when relevant. Prefer short sections and bullets only when helpful. Treat explicit region-fit signals such as Restricted, Restricted region, Early access, Preview, Retiring, Unavailable, and Not in feed as blockers or caveats, not as full regional coverage. Do not translate 'accounted for' into 'available/open/GA' unless the region-fit signals actually say Available or Global service.",
+        instructions: [
+          "Use only the provided project review data and listed sources.",
+          "Call out regional restrictions, pricing caveats, and pending checklist decisions when they matter.",
+          "When a service has region-fit signals, rely on those exact signal labels before summarizing availability.",
+          "Mention uncertainty explicitly if the supplied context does not answer part of the question."
+        ]
+      };
+  }
+}
+
+function buildCopilotMessages(question, context, mode) {
+  const prompt = buildModePrompt(mode);
+
   return [
     {
       role: "system",
-      content:
-        "You are the Azure Checklists project review copilot. Answer only from the supplied project review context and source list. Do not invent Azure pricing, region availability, contract discounts, checklist decisions, or service dependencies. If the context is insufficient, say so clearly. Keep the answer concise, decision-oriented, and useful for architects, pre-sales teams, cloud engineers, and leadership readers when relevant. Prefer short sections and bullets only when helpful. Treat explicit region-fit signals such as Restricted, Restricted region, Early access, Preview, Retiring, Unavailable, and Not in feed as blockers or caveats, not as full regional coverage. Do not translate 'accounted for' into 'available/open/GA' unless the region-fit signals actually say Available or Global service."
+      content: prompt.system
     },
     {
       role: "user",
       content: JSON.stringify(
         {
+          mode,
           task: question,
-          instructions: [
-            "Use only the provided project review data and listed sources.",
-            "Call out regional restrictions, pricing caveats, and pending checklist decisions when they matter.",
-            "When a service has region-fit signals, rely on those exact signal labels before summarizing availability.",
-            "Mention uncertainty explicitly if the supplied context does not answer part of the question."
-          ],
+          instructions: prompt.instructions,
           projectReview: context
         },
         null,
@@ -152,6 +188,10 @@ async function runCopilot(question, context, options = {}) {
 
   const sanitizedQuestion = truncate(question, 1200);
   const sanitizedContext = sanitizeCopilotContext(context);
+  const mode =
+    options.mode === "service-review" || options.mode === "leadership-summary"
+      ? options.mode
+      : "project-review";
   const response = await fetch(
     `${configuration.endpoint}/openai/deployments/${configuration.deployment}/chat/completions?api-version=${configuration.apiVersion}`,
     {
@@ -161,7 +201,7 @@ async function runCopilot(question, context, options = {}) {
         "api-key": configuration.apiKey
       },
       body: JSON.stringify({
-        messages: buildCopilotMessages(sanitizedQuestion, sanitizedContext),
+        messages: buildCopilotMessages(sanitizedQuestion, sanitizedContext, mode),
         temperature: 0.2,
         max_tokens: 900
       })
@@ -188,6 +228,7 @@ async function runCopilot(question, context, options = {}) {
     generatedAt: new Date().toISOString(),
     modelName: configuration.modelName,
     modelDeployment: configuration.deployment,
+    mode,
     groundingMode: options.groundingMode ?? "project-review-context",
     sources: sanitizedContext.sources
   };

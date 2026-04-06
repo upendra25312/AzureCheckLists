@@ -29,6 +29,7 @@ Public login exists to help users save and reuse project-review work. It should 
 
 - save project-review notes to Azure
 - reload earlier project-review work
+- search, archive, restore, and delete saved project reviews
 - export project-specific review artifacts
 - keep saved work tied to their signed-in identity
 
@@ -48,7 +49,7 @@ Prompt for sign-in only when the user attempts to:
 - save to Azure
 - load from Azure
 - download cloud-backed exports
-- access future `My Project Reviews` functionality
+- manage `My Project Reviews` in Azure
 
 ### Public login screen copy
 
@@ -188,6 +189,18 @@ Your account can use the project review features, but this admin area is restric
 - Make the admin boundary obvious.
 - Explain that this area is for internal platform management.
 - Do not mix admin actions into the normal project-review workflow.
+- Treat production validation as two separate checks:
+  - route protection returns `403` for non-admin users
+  - a specifically invited internal user with the `admin` role can load `/admin/copilot` and the protected admin API
+
+### Admin role assignment note
+
+Azure Static Web Apps does not give signed-in users the `admin` role automatically.
+
+- default signed-in users receive `anonymous` and `authenticated`
+- `/admin/copilot` remains blocked until an internal user is explicitly assigned the custom `admin` role
+- use Static Web App `Role Management` or `az staticwebapp users invite` to grant the role
+- after role assignment, the user should sign out and sign back in before re-testing
 
 ## Role Model
 

@@ -34,6 +34,44 @@ function formatDate(value?: string | null) {
   return new Date(value).toLocaleString("en-US");
 }
 
+function getFindingToneClass(severity: "info" | "warning" | "error") {
+  switch (severity) {
+    case "error":
+      return "matrix-chip matrix-chip-danger";
+    case "warning":
+      return "matrix-chip matrix-chip-warning";
+    case "info":
+    default:
+      return "matrix-chip matrix-chip-neutral";
+  }
+}
+
+function getConfigToneClass(status: "configured" | "defaulted" | "missing") {
+  switch (status) {
+    case "configured":
+      return "matrix-chip matrix-chip-good";
+    case "defaulted":
+      return "matrix-chip matrix-chip-neutral";
+    case "missing":
+    default:
+      return "matrix-chip matrix-chip-warning";
+  }
+}
+
+function getEvidenceToneClass(status: "healthy" | "warning" | "error" | "info") {
+  switch (status) {
+    case "healthy":
+      return "matrix-chip matrix-chip-good";
+    case "error":
+      return "matrix-chip matrix-chip-danger";
+    case "warning":
+      return "matrix-chip matrix-chip-warning";
+    case "info":
+    default:
+      return "matrix-chip matrix-chip-neutral";
+  }
+}
+
 export function AdminCopilot() {
   const [principal, setPrincipal] = useState<StaticWebAppClientPrincipal | null>(null);
   const [authResolved, setAuthResolved] = useState(false);
@@ -210,7 +248,7 @@ export function AdminCopilot() {
           <article className="hero-metric-card">
             <span>Prompt execution</span>
             <strong>{health?.capabilities.promptExecutionEnabled ? "Enabled" : "Coming next"}</strong>
-            <p>The next pass will wire Azure MCP-backed admin prompt execution.</p>
+                <p>Read-only diagnostics are live first; MCP-backed prompt execution stays disabled for now.</p>
           </article>
         </div>
       </section>
@@ -280,6 +318,10 @@ export function AdminCopilot() {
                 <p>{health.backend.refreshSchedule ?? "Not published"}</p>
               </article>
               <article className="trace-card">
+                <strong>Copilot endpoint</strong>
+                <p>{health.backend.copilotEndpoint ?? "Not published"}</p>
+              </article>
+              <article className="trace-card">
                 <strong>MCP server</strong>
                 <p>{health.capabilities.mcpServerConfigured ? "Configured" : "Not configured yet"}</p>
               </article>
@@ -307,6 +349,148 @@ export function AdminCopilot() {
                 <p>{health.capabilities.adminRouteProtected ? "Enabled" : "Missing"}</p>
               </article>
             </div>
+
+            <div className="traceability-grid">
+              <article className="trace-card">
+                <strong>Manual refresh</strong>
+                <p>{health.backend.manualRefreshEnabled ? "Enabled" : "Disabled"}</p>
+              </article>
+              <article className="trace-card">
+                <strong>Warm service source</strong>
+                <p>{health.backend.warmServiceIndexUrl ?? "Not configured"}</p>
+              </article>
+              <article className="trace-card">
+                <strong>Warm service limit</strong>
+                <p>{health.backend.warmServiceLimit?.toLocaleString() ?? "0"}</p>
+              </article>
+              <article className="trace-card">
+                <strong>Diagnostic findings</strong>
+                <p>{health.findings.length.toLocaleString()}</p>
+              </article>
+            </div>
+
+            <div className="traceability-grid">
+              <article className="trace-card">
+                <strong>Availability refresh</strong>
+                <p>{health.backend.availability?.lastSuccessfulRefreshAt ? formatDate(health.backend.availability.lastSuccessfulRefreshAt) : "No successful refresh yet"}</p>
+                <p className="microcopy">
+                  Mode: {health.backend.availability?.lastRefreshMode ?? "Not published"} · TTL {health.backend.availability?.ttlHours ?? 0}h
+                </p>
+              </article>
+              <article className="trace-card">
+                <strong>Availability expiry</strong>
+                <p>{formatDate(health.backend.availability?.expiresAt)}</p>
+                <p className="microcopy">
+                  Public regions: {health.backend.availability?.publicRegionCount?.toLocaleString() ?? "0"}
+                </p>
+              </article>
+              <article className="trace-card">
+                <strong>Pricing refresh</strong>
+                <p>{health.backend.pricing?.lastSuccessfulRefreshAt ? formatDate(health.backend.pricing.lastSuccessfulRefreshAt) : "No successful refresh yet"}</p>
+                <p className="microcopy">
+                  Mode: {health.backend.pricing?.lastRefreshMode ?? "Not published"} · TTL {health.backend.pricing?.ttlHours ?? 0}h
+                </p>
+              </article>
+              <article className="trace-card">
+                <strong>Last warmed pricing scope</strong>
+                <p>{health.backend.pricing?.lastServiceSlug ?? "Not published"}</p>
+                <p className="microcopy">
+                  Warm count: {health.backend.pricing?.lastWarmCount?.toLocaleString() ?? "0"}
+                </p>
+              </article>
+            </div>
+
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">Operational evidence</p>
+                <h2 className="section-title">See whether the backend looks fresh, observable, and ready right now.</h2>
+                <p className="section-copy">
+                  This section turns the current runtime and refresh state into operator-readable evidence instead of raw settings only.
+                </p>
+              </div>
+            </div>
+
+            <div className="service-selection-grid">
+              {(health.backend.evidence ?? []).map((entry) => (
+                <article className="future-card service-selection-card" key={entry.label}>
+                  <div className="chip-row compact-chip-row">
+                    <span className={getEvidenceToneClass(entry.status)}>{entry.status}</span>
+                  </div>
+                  <h3>{entry.label}</h3>
+                  <p>{entry.summary}</p>
+                  {entry.detail ? <p className="microcopy">{entry.detail}</p> : null}
+                </article>
+              ))}
+            </div>
+
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">Config inventory</p>
+                <h2 className="section-title">Inspect the runtime, storage, refresh, and copilot configuration that the backend can actually see.</h2>
+                <p className="section-copy">
+                  These entries are intentionally limited to visible configuration evidence. Secret values stay hidden.
+                </p>
+              </div>
+            </div>
+
+            <div className="service-selection-grid">
+              {[
+                {
+                  key: "runtime",
+                  title: "Runtime",
+                  entries: health.backend.runtime ?? []
+                },
+                {
+                  key: "storage",
+                  title: "Storage",
+                  entries: health.backend.storage ?? []
+                },
+                {
+                  key: "refresh",
+                  title: "Refresh",
+                  entries: health.backend.refresh ?? []
+                },
+                {
+                  key: "copilot",
+                  title: "Copilot",
+                  entries: health.backend.copilot ?? []
+                }
+              ].map((group) => (
+                <article className="future-card service-selection-card" key={group.key}>
+                  <p className="eyebrow">{group.title}</p>
+                  <div className="section-stack" style={{ gap: 12 }}>
+                    {group.entries.length > 0 ? (
+                      group.entries.map((entry) => (
+                        <div key={`${group.key}-${entry.label}`}>
+                          <div className="chip-row compact-chip-row">
+                            <span className={getConfigToneClass(entry.status)}>{entry.status}</span>
+                          </div>
+                          <strong>{entry.label}</strong>
+                          <p>{entry.value}</p>
+                          {entry.detail ? <p className="microcopy">{entry.detail}</p> : null}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="microcopy">No visible entries were returned for this category.</p>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {health.findings.length > 0 ? (
+              <div className="service-selection-grid">
+                {health.findings.map((finding) => (
+                  <article className="future-card service-selection-card" key={finding.id}>
+                    <div className="chip-row compact-chip-row">
+                      <span className={getFindingToneClass(finding.severity)}>{finding.severity}</span>
+                    </div>
+                    <h3>{finding.label}</h3>
+                    <p className="microcopy">{finding.detail}</p>
+                  </article>
+                ))}
+              </div>
+            ) : null}
 
             <div className="service-selection-grid">
               {health.notes.map((note) => (

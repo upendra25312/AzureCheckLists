@@ -10,8 +10,6 @@ function formatProvider(provider: string | undefined) {
     case "aad":
     case "azureactivedirectory":
       return "Microsoft";
-    case "google":
-      return "Google";
     default:
       return provider || "Account";
   }
@@ -63,9 +61,6 @@ export function AuthStatusChip() {
           <div className="auth-menu-actions">
             <a href={buildLoginUrl("aad")} className="primary-button">
               Continue with Microsoft
-            </a>
-            <a href={buildLoginUrl("google")} className="secondary-button">
-              Continue with Google
             </a>
             <Link href="/review-package" className="ghost-button">
               Keep working locally

@@ -4,6 +4,7 @@ import type {
   ServiceRegionalFitResponse,
   ServiceSummary
 } from "@/types";
+import { readBackendErrorMessage } from "@/lib/backend-error";
 
 const SERVICE_REGIONAL_FIT_CACHE_PREFIX = "azure-review-dashboard.service-regional-fit.v2";
 const SERVICE_REGIONAL_FIT_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
@@ -143,6 +144,36 @@ function writeCachedServiceRegionalFit(request: ServiceRegionalFitRequest, paylo
   }
 }
 
+function buildRegionalFitFallback(
+  request: ServiceRegionalFitRequest,
+  note: string
+): ServiceRegionalFit {
+  return {
+    serviceSlug: request.slug,
+    serviceName: request.service,
+    mapped: false,
+    matchedOfferingName: request.matchedOfferingName,
+    matchedServiceLabel: request.matchedServiceLabel,
+    matchedSkuHints: request.matchedSkuHints ?? [],
+    notes: [note],
+    publicRegionCount: 0,
+    availableRegionCount: 0,
+    unavailableRegionCount: 0,
+    restrictedRegionCount: 0,
+    earlyAccessRegionCount: 0,
+    previewRegionCount: 0,
+    retiringRegionCount: 0,
+    isGlobalService: false,
+    generatedAt: new Date().toISOString(),
+    availabilitySourceUrl:
+      "https://azure.microsoft.com/en-us/explore/global-infrastructure/products-by-region/table",
+    regionsSourceUrl: "https://learn.microsoft.com/en-us/azure/reliability/regions-list",
+    regions: [],
+    unavailableRegions: [],
+    globalSkuStates: []
+  };
+}
+
 export function buildServiceRegionalFitRequest(
   service: Pick<ServiceSummary, "slug" | "service" | "aliases" | "regionalFitSummary">
 ): ServiceRegionalFitRequest {
@@ -161,6 +192,7 @@ export async function loadServiceRegionalFitBatch(requests: ServiceRegionalFitRe
     (request, index) => requests.findIndex((entry) => entry.slug === request.slug) === index
   );
   const cachedPayloads = new Map<string, ServiceRegionalFit>();
+  const fallbackPayloads = new Map<string, ServiceRegionalFit>();
   const uncachedRequests: ServiceRegionalFitRequest[] = [];
 
   uniqueRequests.forEach((request) => {
@@ -187,12 +219,16 @@ export async function loadServiceRegionalFitBatch(requests: ServiceRegionalFitRe
     });
 
     if (!response.ok) {
-      const message = await response.text();
+      const message = await readBackendErrorMessage(
+        response,
+        "Unable to load live regional availability."
+      );
 
       throw new Error(message || `Unable to load live regional availability. (${response.status})`);
     }
 
     const payload = (await response.json()) as ServiceRegionalFitResponse;
+    const returnedSlugs = new Set<string>();
 
     payload.services.forEach((regionalFit) => {
       const request = uncachedRequests.find((entry) => entry.slug === regionalFit.serviceSlug);
@@ -201,12 +237,33 @@ export async function loadServiceRegionalFitBatch(requests: ServiceRegionalFitRe
         return;
       }
 
+      returnedSlugs.add(request.slug);
       writeCachedServiceRegionalFit(request, regionalFit);
       cachedPayloads.set(request.slug, regionalFit);
     });
+
+    uncachedRequests.forEach((request) => {
+      if (returnedSlugs.has(request.slug) || cachedPayloads.has(request.slug)) {
+        return;
+      }
+
+      fallbackPayloads.set(
+        request.slug,
+        buildRegionalFitFallback(
+          request,
+          "The availability request completed, but no regional-fit payload was returned for this selected service."
+        )
+      );
+    });
   }
 
-  return uniqueRequests
-    .map((request) => cachedPayloads.get(request.slug))
-    .filter(Boolean) as ServiceRegionalFit[];
+  return uniqueRequests.map(
+    (request) =>
+      cachedPayloads.get(request.slug) ??
+      fallbackPayloads.get(request.slug) ??
+      buildRegionalFitFallback(
+        request,
+        "No regional-fit payload is available for this selected service yet."
+      )
+  );
 }

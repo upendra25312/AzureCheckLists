@@ -483,8 +483,11 @@ export type ProjectReviewCopilotContext = {
   sources: CopilotSource[];
 };
 
+export type CopilotMode = "project-review" | "service-review" | "leadership-summary";
+
 export type CopilotRequest = {
   question: string;
+  mode?: CopilotMode;
   context?: ProjectReviewCopilotContext;
   useSavedContext?: boolean;
 };
@@ -494,6 +497,7 @@ export type CopilotResponse = {
   generatedAt: string;
   modelName: string;
   modelDeployment: string;
+  mode: CopilotMode;
   groundingMode: "project-review-context" | "saved-project-review-context";
   sources: CopilotSource[];
 };
@@ -522,6 +526,10 @@ export type SavedProjectReviewSummary = {
   updatedAt: string;
   lastSavedAt: string;
   isActive: boolean;
+  isArchived: boolean;
+  archivedAt?: string | null;
+  isDeleted: boolean;
+  deletedAt?: string | null;
 };
 
 export type CloudProjectReviewUser = {
@@ -546,6 +554,40 @@ export type AdminCopilotScope = {
   region?: string;
 };
 
+export type AdminCopilotDiagnosticFinding = {
+  id: string;
+  severity: "info" | "warning" | "error";
+  label: string;
+  detail: string;
+};
+
+export type AdminCopilotRefreshChannel = {
+  ok: boolean;
+  ttlHours: number;
+  lastSuccessfulRefreshAt?: string | null;
+  lastRefreshMode?: string | null;
+  sourceUrl?: string | null;
+  expiresAt?: string | null;
+  lastError?: string | null;
+  publicRegionCount?: number;
+  lastServiceSlug?: string | null;
+  lastWarmCount?: number;
+};
+
+export type AdminCopilotConfigEntry = {
+  label: string;
+  value: string;
+  status: "configured" | "defaulted" | "missing";
+  detail?: string;
+};
+
+export type AdminCopilotEvidenceEntry = {
+  label: string;
+  status: "healthy" | "warning" | "error" | "info";
+  summary: string;
+  detail?: string;
+};
+
 export type AdminCopilotHealthResponse = {
   status: string;
   checkedAt: string;
@@ -562,8 +604,20 @@ export type AdminCopilotHealthResponse = {
   backend: {
     functionAppName?: string | null;
     refreshSchedule?: string | null;
+    manualRefreshEnabled?: boolean;
+    warmServiceIndexUrl?: string | null;
+    warmServiceLimit?: number;
+    copilotEndpoint?: string | null;
+    availability?: AdminCopilotRefreshChannel;
+    pricing?: AdminCopilotRefreshChannel;
+    runtime?: AdminCopilotConfigEntry[];
+    storage?: AdminCopilotConfigEntry[];
+    refresh?: AdminCopilotConfigEntry[];
+    copilot?: AdminCopilotConfigEntry[];
+    evidence?: AdminCopilotEvidenceEntry[];
   };
   notes: string[];
+  findings: AdminCopilotDiagnosticFinding[];
 };
 
 export type AdminCopilotToolCall = {
