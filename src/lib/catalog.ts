@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import type {
   CatalogSummary,
+  ChecklistItem,
   ServiceIndex,
   ServicePayload,
   TechnologyIndex,
@@ -17,6 +18,16 @@ async function readJsonFile<T>(segments: string[]) {
 
 export async function readSummary() {
   return readJsonFile<CatalogSummary>(["public", "data", "summary.json"]);
+}
+
+export async function readCatalogItems() {
+  const payload = await readJsonFile<{ generatedAt: string; items: ChecklistItem[] }>([
+    "public",
+    "data",
+    "catalog.json"
+  ]);
+
+  return payload.items;
 }
 
 export async function readTechnologyIndex() {

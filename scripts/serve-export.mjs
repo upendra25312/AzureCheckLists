@@ -26,7 +26,8 @@ const contentTypes = new Map([
 ]);
 
 function safeJoin(rootPath, requestedPath) {
-  const resolvedPath = path.resolve(rootPath, `.${requestedPath}`);
+  const decodedPath = decodeURIComponent(requestedPath);
+  const resolvedPath = path.resolve(rootPath, `.${decodedPath}`);
 
   if (!resolvedPath.startsWith(rootPath)) {
     return null;

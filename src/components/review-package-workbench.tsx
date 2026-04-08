@@ -501,6 +501,48 @@ function createFormState(reviewPackage?: ReviewPackage): PackageFormState {
   };
 }
 
+function resolveRequestedAudience(value: string | null): ReviewPackageAudience | null {
+  if (!value) {
+    return null;
+  }
+
+  return AUDIENCES.includes(value as ReviewPackageAudience)
+    ? (value as ReviewPackageAudience)
+    : null;
+}
+
+function parseHomepagePackagePreset(search: URLSearchParams): PackageFormState | null {
+  const name = search.get("name")?.trim() ?? "";
+  const businessScope = search.get("businessScope")?.trim() ?? "";
+  const targetRegions = search.get("targetRegions")?.trim() ?? "";
+  const audience = resolveRequestedAudience(search.get("audience")) ?? "Cloud Architect";
+
+  if (!name && !businessScope && !targetRegions && !search.get("audience")) {
+    return null;
+  }
+
+  return {
+    name,
+    audience,
+    businessScope,
+    targetRegions
+  };
+}
+
+function clearHomepagePackagePresetSearch() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+
+  ["intent", "name", "businessScope", "targetRegions", "audience"].forEach((key) => {
+    url.searchParams.delete(key);
+  });
+
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
 function getServiceAssumption(
   reviewPackage: ReviewPackage | null,
   serviceSlug: string
@@ -561,6 +603,11 @@ export function ReviewPackageWorkbench({
   const [packageActionMessage, setPackageActionMessage] = useState<string | null>(null);
   const [packageActionTone, setPackageActionTone] = useState<PackageActionTone>("neutral");
   const [cloudRestoreAttempted, setCloudRestoreAttempted] = useState(false);
+  const [packagesHydrated, setPackagesHydrated] = useState(false);
+  const [requestedHomepagePackagePreset, setRequestedHomepagePackagePreset] =
+    useState<PackageFormState | null>(null);
+  const [requestedHomepageCreate, setRequestedHomepageCreate] = useState(false);
+  const [homepageCreateApplied, setHomepageCreateApplied] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -586,6 +633,7 @@ export function ReviewPackageWorkbench({
 
     setForm(createFormState(nextActivePackage));
     setShowSetupDetails(shouldShowSetupDetails(nextActivePackage));
+    setPackagesHydrated(true);
 
     return () => {
       active = false;
@@ -599,7 +647,29 @@ export function ReviewPackageWorkbench({
 
     const search = new URLSearchParams(window.location.search);
     setRequestedCloudReviewId(search.get("cloudReviewId"));
+    setRequestedHomepagePackagePreset(parseHomepagePackagePreset(search));
+    setRequestedHomepageCreate(search.get("intent") === "create");
   }, []);
+
+  useEffect(() => {
+    if (!requestedHomepagePackagePreset) {
+      return;
+    }
+
+    setForm((current) => ({
+      name: requestedHomepagePackagePreset.name || current.name,
+      audience: requestedHomepagePackagePreset.audience ?? current.audience,
+      businessScope: requestedHomepagePackagePreset.businessScope || current.businessScope,
+      targetRegions: requestedHomepagePackagePreset.targetRegions || current.targetRegions
+    }));
+    setShowSetupDetails(
+      (current) =>
+        current ||
+        requestedHomepagePackagePreset.audience !== "Cloud Architect" ||
+        requestedHomepagePackagePreset.businessScope.trim().length > 0 ||
+        requestedHomepagePackagePreset.targetRegions.trim().length > 0
+    );
+  }, [requestedHomepagePackagePreset]);
 
   useEffect(() => {
     let active = true;
@@ -1534,6 +1604,41 @@ export function ReviewPackageWorkbench({
     setForm(createFormState(nextActivePackage));
     setShowSetupDetails(shouldShowSetupDetails(nextActivePackage));
   }
+
+  useEffect(() => {
+    if (
+      !packagesHydrated ||
+      homepageCreateApplied ||
+      !requestedHomepageCreate ||
+      !requestedHomepagePackagePreset?.name.trim()
+    ) {
+      return;
+    }
+
+    const nextPackage = upsertPackage(
+      createReviewPackage({
+        name: resolvePackageName(requestedHomepagePackagePreset.name),
+        audience: requestedHomepagePackagePreset.audience,
+        businessScope: requestedHomepagePackagePreset.businessScope,
+        targetRegions: normalizeList(requestedHomepagePackagePreset.targetRegions)
+      })
+    );
+    const nextPackages = loadPackages();
+
+    refreshPackages(nextPackages, nextPackage.id);
+    setShowSetupDetails(true);
+    setPackageActionTone("success");
+    setPackageActionMessage(
+      `Created "${nextPackage.name}" from the homepage initializer and made it the active project review.`
+    );
+    setHomepageCreateApplied(true);
+    clearHomepagePackagePresetSearch();
+  }, [
+    homepageCreateApplied,
+    packagesHydrated,
+    requestedHomepageCreate,
+    requestedHomepagePackagePreset
+  ]);
 
   function handleRestoreCloudState(input: {
     activePackage: ReviewPackage | null;

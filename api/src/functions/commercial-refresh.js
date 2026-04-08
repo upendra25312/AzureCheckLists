@@ -129,30 +129,32 @@ function readRefreshKey(request) {
   );
 }
 
-app.timer("commercial-refresh-schedule", {
-  schedule: COMMERCIAL_REFRESH_SCHEDULE,
-  handler: async (_timer, context) => {
-    try {
-      const warmServices = await loadWarmServicesFromCatalog();
-      const summary = await refreshCommercialData({
-        refreshedBy: "timer",
-        refreshAvailability: true,
-        pricingServices: warmServices
-      });
+if (process.env.AZURE_COMMERCIAL_REFRESH_TIMER_ENABLED === "true") {
+  app.timer("commercial-refresh-schedule", {
+    schedule: COMMERCIAL_REFRESH_SCHEDULE,
+    handler: async (_timer, context) => {
+      try {
+        const warmServices = await loadWarmServicesFromCatalog();
+        const summary = await refreshCommercialData({
+          refreshedBy: "timer",
+          refreshAvailability: true,
+          pricingServices: warmServices
+        });
 
-      context.log(
-        `Commercial refresh completed. Availability refreshed and ${summary.pricing.refreshedCount} pricing cache entries warmed.`
-      );
-    } catch (error) {
-      context.error(
-        error instanceof Error
-          ? error.message
-          : "Commercial refresh timer failed."
-      );
-      throw error;
+        context.log(
+          `Commercial refresh completed. Availability refreshed and ${summary.pricing.refreshedCount} pricing cache entries warmed.`
+        );
+      } catch (error) {
+        context.error(
+          error instanceof Error
+            ? error.message
+            : "Commercial refresh timer failed."
+        );
+        throw error;
+      }
     }
-  }
-});
+  });
+}
 
 app.http("commercial-refresh", {
   route: "refresh",

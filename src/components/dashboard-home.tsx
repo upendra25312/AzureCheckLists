@@ -1,400 +1,441 @@
+import type { Route } from "next";
 import Link from "next/link";
-import type { CatalogSummary, ServiceIndex } from "@/types";
+import { HomepageServiceBrowser } from "@/components/homepage-service-browser";
+import { HomepageReviewInitializer } from "@/components/homepage-review-initializer";
+import type { HomepagePricingSnapshot } from "@/lib/homepage-pricing";
+import type { CatalogSummary, ChecklistItem, ServiceIndex, ServiceSummary } from "@/types";
+
+function HomeGlobeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        d="M3.5 10h13M10 3c1.8 2 2.8 4.3 2.8 7S11.8 15 10 17M10 3c-1.8 2-2.8 4.3-2.8 7S8.2 15 10 17"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.4"
+      />
+      <path
+        d="m15.5 16.8 2.1 2.1 3.4-4.2"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  );
+}
+
+function HomePricingIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M7 3h10l3 3v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path
+        d="M9 8h6M9 12h6M9 16h4M14.5 5.5V10"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M12 7.2c-.4-.5-1-.7-1.7-.7-1 0-1.7.5-1.7 1.3 0 2 3.7.8 3.7 3 0 .9-.8 1.5-1.9 1.5-.8 0-1.6-.3-2.1-.8M10.2 5.8v7"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.2"
+      />
+    </svg>
+  );
+}
+
+function HomeFindingsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M7 3h10l3 3v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path
+        d="m9 9 1.4 1.4L13 7.8M9 13h6M9 17h4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M17.7 16.2 21 22h-6.6l3.3-5.8Z"
+        fill="none"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.6"
+      />
+      <path d="M17.7 18.2v1.5M17.7 20.8h0" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+function HomeDocIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M7 3h8l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path
+        d="M15 3v4h4M9 12h6M9 16h4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M9.3 9.2 11 11l2.7-2.6"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
+}
+
+function HomeSheetIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M7 3h10a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path d="M9 7h6M9 11h6M9 15h6M9 19h6" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5" />
+      <path d="M12 3v18" fill="none" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
+function HomeSnapshotIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M7 3h10l3 3v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path d="M15 3v4h4M9 12h6M9 16h4" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5" />
+      <path
+        d="M9 8.2h4.7M15.2 8.2h0"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
+}
+
+function HomeContinuityIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M6 4h12a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path d="M8 4v5h8V4M9 14h6" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
+function truncateText(value: string, maxLength: number) {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength - 1).trimEnd()}...`;
+}
+
+function getFindingServiceLabel(item: ChecklistItem) {
+  const serviceLabel = item.serviceCanonical ?? item.service ?? "Service";
+
+  if (/kubernetes service/i.test(serviceLabel) || /AKS/i.test(serviceLabel)) {
+    return "AKS";
+  }
+
+  if (/API Management/i.test(serviceLabel)) {
+    return "APIM";
+  }
+
+  if (/App Service/i.test(serviceLabel)) {
+    return "App Service";
+  }
+
+  return serviceLabel;
+}
+
+function getFindingHref(item: ChecklistItem): Route {
+  if (item.serviceSlug) {
+    return `/services/${item.serviceSlug}` as Route;
+  }
+
+  if (item.technologySlug) {
+    return `/technologies/${item.technologySlug}` as Route;
+  }
+
+  return "/review-package";
+}
 
 export function DashboardHome({
   summary,
-  serviceIndex
+  serviceIndex,
+  featuredServices,
+  pricingSnapshot,
+  featuredFindings
 }: {
   summary: CatalogSummary;
   serviceIndex: ServiceIndex;
+  featuredServices: ServiceSummary[];
+  pricingSnapshot: HomepagePricingSnapshot;
+  featuredFindings: ChecklistItem[];
 }) {
   const generatedDate = new Date(summary.generatedAt).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric"
   });
-  const highSeverityMetric = summary.metrics.find(
-    (metric) => metric.label === "High-severity findings"
-  );
-  const featuredServices = serviceIndex.services.slice(0, 4);
-  const entrySteps = [
+  const pricingGeneratedDate = new Date(pricingSnapshot.generatedAt).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+  const fallbackFindings: ChecklistItem[] = [
     {
-      step: "01",
-      eyebrow: "Create the review",
-      title: "Start with the project name and a scoped problem statement.",
-      copy:
-        "The review becomes the working container for service choices, notes, region fit, pricing signals, and exportable artifacts.",
-      meta: "Make the project boundary clear before the service list grows.",
-      href: "/review-package" as const,
-      cta: "Start project review"
+      guid: "fallback-1",
+      technology: "",
+      technologySlug: "",
+      technologyStatus: "GA",
+      technologyMaturityBucket: "GA",
+      usageConfidence: "High",
+      technologyQualityScore: 100,
+      family: "",
+      sourceKind: "checklists",
+      text: "Use the review workspace to capture included findings and service-level decisions."
     },
     {
-      step: "02",
-      eyebrow: "Choose only the real architecture",
-      title: "Add the Azure services that genuinely belong to this solution.",
-      copy:
-        "Keep the workspace honest. Pricing, copilot answers, readiness checks, and exports all improve when the service list stays tight.",
-      meta: "The explorer stays available, but the project review should drive the flow.",
-      href: "/services" as const,
-      cta: "Browse services"
-    },
-    {
-      step: "03",
-      eyebrow: "Pressure-test and export",
-      title: "Use region fit, pricing, notes, and exports when the scope is stable.",
-      copy:
-        "The best output is not another generic summary. It is a reusable review pack with explicit signals, documented choices, and scoped artifacts.",
-      meta: "This is where the product should beat generic AI and discovery-first tools.",
-      href: "/review-package" as const,
-      cta: "Open the review workspace"
+      guid: "fallback-2",
+      technology: "",
+      technologySlug: "",
+      technologyStatus: "GA",
+      technologyMaturityBucket: "GA",
+      usageConfidence: "High",
+      technologyQualityScore: 100,
+      family: "",
+      sourceKind: "checklists",
+      text: "Record project-specific rationale before exporting the final review pack."
     }
   ];
-  const heroSignals = [
-    {
-      label: "Services ready",
-      value: serviceIndex.services.length.toLocaleString(),
-      detail: "Azure services already normalized into the review flow."
-    },
-    {
-      label: "High-severity findings",
-      value: highSeverityMetric?.value.toLocaleString() ?? "0",
-      detail: "Risks that should surface earlier while the architecture is still flexible."
-    },
-    {
-      label: "Source refresh",
-      value: generatedDate,
-      detail: "Catalog snapshot currently driving the homepage and service review surface."
-    }
-  ];
-  const decisionRoomArtifacts = [
-    {
-      title: "Scoped review shell",
-      copy:
-        "One place to hold the project name, business scope, target regions, and the exact service boundary under discussion."
-    },
-    {
-      title: "Decision signals",
-      copy:
-        "Regional blockers, retail pricing posture, checklist readiness, and notes tied to the same set of services."
-    },
-    {
-      title: "Reusable outputs",
-      copy:
-        "Checklist exports, design notes, pricing snapshots, and saved review continuity instead of one-off answers."
-    }
-  ];
-  const trustPillars = [
-    {
-      title: "Live source state stays visible",
-      copy:
-        "Pricing and regional-fit surfaces already expose whether the backend used a live refresh, scheduled cache, or fallback state."
-    },
-    {
-      title: "Evidence stays tied to the review boundary",
-      copy:
-        "Notes, findings, and signals stay attached to the selected solution rather than drifting into a generic research workspace."
-    },
-    {
-      title: "Human sign-off still matters",
-      copy:
-        "The product should shorten the review path, not hide uncertainty. Teams still need explicit technical and commercial judgment."
-    }
-  ];
-  const workflowLanes = [
-    {
-      step: "01",
-      eyebrow: "Signal 1",
-      title: "Check whether the service can actually run in the target architecture.",
-      copy:
-        "Availability, restricted-region handling, preview status, and global-service posture should appear before the design starts hardening around the wrong service.",
-      signals: ["Available", "Restricted", "Preview", "Global"],
-      note:
-        "Example: a target region like UAE Central may be restricted even when the service exists elsewhere."
-    },
-    {
-      step: "02",
-      eyebrow: "Signal 2",
-      title: "Use public retail pricing as the first commercial signal, not the last step.",
-      copy:
-        "The reviewer should see starting retail rows, published SKUs, and target-region matches inside the same review instead of switching tools too early.",
-      signals: ["Starting price", "SKU rows", "Meter detail", "Target-region match"],
-      note:
-        "Example: compare SKU and meter rows for API Management, AKS, or App Service before refining quantities in the pricing calculator."
-    },
-    {
-      step: "03",
-      eyebrow: "Signal 3",
-      title: "Document why the team accepts, rejects, or defers findings for this design.",
-      copy:
-        "Mark findings as included, not applicable, excluded, or still pending, then attach comments, evidence, owner, and due date to the same project review.",
-      signals: ["Include", "Not applicable", "Owner and due date", "Evidence links"],
-      note: `${summary.itemCount.toLocaleString()} normalized findings become much more usable once the service scope is narrowed to the real project.`
-    }
-  ];
-  const outputCards = [
+  const sampleFindings =
+    featuredFindings.length > 0 ? featuredFindings : fallbackFindings;
+  const artifacts = [
     {
       title: "Design notes",
-      copy: "Markdown or text that can be reused in architecture documentation and customer review packs."
+      copy: "Documentation for design packs.",
+      href: "/review-package#project-review-local-exports" as const,
+      icon: <HomeDocIcon />
     },
     {
       title: "Checklist CSV",
-      copy: "An action-friendly export with only the selected services and their project-specific finding decisions."
+      copy: "Actionable task list with findings.",
+      href: "/review-package#project-review-local-exports" as const,
+      icon: <HomeSheetIcon />
     },
     {
       title: "Pricing snapshot",
-      copy: "A scoped retail pricing export for the same services, regions, and commercial questions under review."
+      copy: "Scoped retail pricing summary.",
+      href: "/review-package#project-review-pricing" as const,
+      icon: <HomeSnapshotIcon />
     },
     {
-      title: "Saved review continuity",
-      copy: "Optional Azure-backed save and restore when the team needs to continue the same review later."
+      title: "Continuity file",
+      copy: "Save or restore to continue work.",
+      href: "/my-project-reviews" as const,
+      icon: <HomeContinuityIcon />
     }
   ];
 
   return (
-    <main className="section-stack">
-      <section className="hero-panel director-hero editorial-hero homepage-hero-panel">
-        <div className="editorial-hero-layout homepage-hero-layout">
-          <div className="editorial-hero-copy">
-            <div className="hero-kicker-row">
-              <span className="hero-kicker">Project-review first</span>
-              <span className="hero-kicker">Live source signals</span>
-              <span className="hero-kicker">Exportable outputs</span>
-            </div>
-            <p className="eyebrow">Azure Review Board</p>
-            <h1 className="hero-title homepage-hero-title">
-              Decide the Azure shape of a project before the design starts drifting.
-            </h1>
-            <p className="hero-copy">
-              Start with one project review, keep the service boundary honest, then use region fit,
-              pricing, checklist notes, and exports only for that exact solution.
-            </p>
-            <div className="homepage-hero-intent">
-              <strong>Built for decision quality, not catalog wandering.</strong>
-              <p>
-                The review workspace should help architects, pre-sales teams, engineers, and
-                leaders leave with a scoped artifact they can defend, reuse, and hand off.
-              </p>
-            </div>
-            <div className="hero-actions">
-              <Link href="/review-package" className="primary-button">
-                Start project review
-              </Link>
-              <Link href="/services" className="secondary-button">
-                Browse services
-              </Link>
-              <Link href="/explorer" className="ghost-button">
-                Use advanced tools later
-              </Link>
-            </div>
-            <div className="homepage-signal-strip">
-              {heroSignals.map((signal) => (
-                <article className="homepage-signal-card" key={signal.label}>
-                  <span>{signal.label}</span>
-                  <strong>{signal.value}</strong>
-                  <p>{signal.detail}</p>
-                </article>
-              ))}
-            </div>
-          </div>
+    <main className="home-reference-main">
+      <HomepageReviewInitializer />
 
-          <aside className="leadership-brief boardroom-brief homepage-decision-room">
+      <section className="home-card-grid" aria-label="Review workflow cards">
+        <article className="home-reference-card">
+          <div className="home-card-head">
             <div>
-              <p className="eyebrow">What the homepage should promise</p>
-              <h2 className="leadership-title">One review becomes the decision room for the project.</h2>
+              <h2>1. Validate Service &amp; Region Fit</h2>
+              <p>Check availability &amp; constraints</p>
             </div>
-            <div className="homepage-artifact-list">
-              {decisionRoomArtifacts.map((artifact) => (
-                <article className="homepage-artifact-card" key={artifact.title}>
-                  <strong>{artifact.title}</strong>
-                  <p>{artifact.copy}</p>
-                </article>
-              ))}
+            <div className="home-card-icon home-card-icon-region">
+              <HomeGlobeIcon />
             </div>
-            <div className="homepage-proof-grid">
-              <article className="boardroom-mini-card homepage-proof-card">
-                <strong>Explorer stays secondary</strong>
-                <p>
-                  Broad browsing is still available, but the product should keep pulling users back
-                  into one scoped review.
-                </p>
-              </article>
-              <article className="boardroom-mini-card homepage-proof-card">
-                <strong>Generated {generatedDate}</strong>
-                <p>
-                  The product stays grounded in current catalog data rather than purely narrative guidance.
-                </p>
-              </article>
-              <article className="boardroom-mini-card homepage-proof-card">
-                <strong>{summary.gaDefaultTechnologyCount.toLocaleString()} GA-ready families</strong>
-                <p>
-                  Mature baseline technologies already visible for faster first-pass architecture direction.
-                </p>
-              </article>
-              <article className="boardroom-mini-card homepage-proof-card">
-                <strong>Human review still required</strong>
-                <p>
-                  Signals and exports help teams move faster, but they do not replace architecture or commercial judgment.
-                </p>
-              </article>
-            </div>
-          </aside>
-        </div>
-      </section>
-
-      <section className="surface-panel editorial-section executive-brief-section">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Start</p>
-            <h2 className="section-title">Three moves should get a new user from zero to a usable review.</h2>
-            <p className="section-copy">
-              The homepage should not teach the whole platform. It should make the first path
-              obvious, reduce hesitation, and show what comes out the other end.
-            </p>
           </div>
-        </div>
-        <div className="start-here-grid">
-          {entrySteps.map((step) => (
-            <article className="path-card homepage-step-card" key={step.title}>
-              <div className="path-card-topline">
-                <span className="path-card-number">{step.step}</span>
+
+          <HomepageServiceBrowser services={serviceIndex.services} featuredServices={featuredServices} />
+
+          <p className="home-card-footer">
+            {serviceIndex.services.length.toLocaleString()} services normalized.
+          </p>
+        </article>
+
+        <article className="home-reference-card">
+          <div className="home-card-head">
+            <div>
+              <h2>2. Assess Retail Pricing Posture</h2>
+              <p>Review public SKU &amp; meter data</p>
+            </div>
+            <div className="home-card-icon home-card-icon-pricing">
+              <HomePricingIcon />
+            </div>
+          </div>
+
+          <div className="home-pricing-table">
+            <div className="home-pricing-row home-pricing-row-head">
+              <span>Service</span>
+              <span>Approx. Monthly</span>
+            </div>
+            {pricingSnapshot.rows.length > 0 ? (
+              pricingSnapshot.rows.map((row) => (
+                <div className="home-pricing-row" key={`${row.serviceSlug}-${row.skuName}-${row.location}`}>
+                  <div className="home-pricing-service">
+                    <strong>{row.serviceName}</strong>
+                    <span>
+                      {row.skuName} · {row.location}
+                    </span>
+                  </div>
+                  <div className="home-pricing-value">
+                    <strong>
+                      {row.approximateMonthlyPrice !== undefined
+                        ? new Intl.NumberFormat("en-US", {
+                            style: "currency",
+                            currency: row.currencyCode,
+                            maximumFractionDigits: 2
+                          }).format(row.approximateMonthlyPrice)
+                        : "See row details"}
+                    </strong>
+                    <span>
+                      {new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: row.currencyCode,
+                        maximumFractionDigits: 6
+                      }).format(row.retailPrice)}{" "}
+                      / {row.unitOfMeasure || "unit"}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="home-pricing-row">
+                <div className="home-pricing-service">
+                  <strong>Pricing snapshot unavailable</strong>
+                  <span>The static homepage could not refresh Microsoft retail rows during this build.</span>
+                </div>
+                <div className="home-pricing-value">
+                  <strong>Open review</strong>
+                </div>
               </div>
-              <p className="eyebrow">{step.eyebrow}</p>
-              <h3>{step.title}</h3>
-              <p>{step.copy}</p>
-              <p className="path-card-meta">{step.meta}</p>
-              <Link
-                href={step.href}
-                className={step.step === "01" ? "primary-button" : "secondary-button"}
-              >
-                {step.cta}
-              </Link>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="surface-panel editorial-section">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Trust</p>
-            <h2 className="section-title">The product should make evidence visible before anyone trusts the output.</h2>
-            <p className="section-copy">
-              This is where Azure Review Board should feel stronger than discovery-first or generic AI
-              experiences: the signal source, review boundary, and human decision posture all stay explicit.
-            </p>
+            )}
           </div>
-        </div>
-        <div className="proof-grid homepage-trust-grid">
-          {trustPillars.map((point) => (
-            <article className="proof-card homepage-trust-card" key={point.title}>
-              <h3>{point.title}</h3>
-              <p>{point.copy}</p>
-            </article>
-          ))}
-        </div>
-      </section>
 
-      <section className="surface-panel editorial-section">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Workflow</p>
-            <h2 className="section-title">Inside one scoped review, the key signals should line up in one sequence.</h2>
-            <p className="section-copy">
-              Reviewers should not need to stitch together region fit, pricing posture, checklist
-              decisions, and export readiness across disconnected pages.
-            </p>
-          </div>
-        </div>
+          <p className="home-pricing-note">
+            {pricingSnapshot.notes.join(" ")} Snapshot refreshed {pricingGeneratedDate}.{" "}
+            {pricingSnapshot.priceDisclaimer}
+          </p>
 
-        <div className="workflow-lane-grid">
-          {workflowLanes.map((lane) => (
-            <article className="workflow-lane-card" key={lane.title}>
-              <div className="path-card-topline">
-                <span className="path-card-number">{lane.step}</span>
-                <p className="eyebrow">{lane.eyebrow}</p>
-              </div>
-              <h3>{lane.title}</h3>
-              <p>{lane.copy}</p>
-              <div className="chip-row">
-                {lane.signals.map((signal) => (
-                  <span className="chip" key={signal}>
-                    {signal}
-                  </span>
-                ))}
-              </div>
-              <p className="workflow-lane-note">{lane.note}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+          <Link href="/review-package#project-review-pricing" className="home-card-button">
+            Open Scoped Pricing Review
+          </Link>
+        </article>
 
-      <section className="surface-panel editorial-section">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Outputs</p>
-            <h2 className="section-title">The end state should be a reusable review pack, not just a screen full of answers.</h2>
-            <p className="section-copy">
-              Exports and saved continuity are what make the review reusable across architecture,
-              pre-sales, delivery, and leadership conversations.
-            </p>
-          </div>
-        </div>
-
-        <div className="homepage-output-layout">
-          <article className="workflow-output-card homepage-output-card">
-            <p className="eyebrow">What teams take away</p>
-            <h3>One scoped artifact that can survive handoff, revision, and leadership review.</h3>
-            <p>
-              The best version of this product produces clarity: what is in scope, where the design
-              is blocked, what pricing signals are visible, and what still needs a human decision.
-            </p>
-            <div className="workflow-output-grid homepage-output-grid">
-              {outputCards.map((output) => (
-                <article className="workflow-output-mini homepage-output-mini" key={output.title}>
-                  <strong>{output.title}</strong>
-                  <p>{output.copy}</p>
-                </article>
-              ))}
+        <article className="home-reference-card">
+          <div className="home-card-head">
+            <div>
+              <h2>3. Audit Design Findings</h2>
+              <p>Document architecture decisions</p>
             </div>
-            <div className="button-row">
-              <Link href="/review-package" className="primary-button">
-                Start project review
-              </Link>
-              <Link href="/my-project-reviews" className="secondary-button">
-                Resume saved reviews
-              </Link>
+            <div className="home-card-icon home-card-icon-findings">
+              <HomeFindingsIcon />
             </div>
-          </article>
+          </div>
 
-          <article className="leadership-brief homepage-service-preview">
-            <p className="eyebrow">Services teams often pull into the first review</p>
-            <h3 className="leadership-title">Start from the project, but keep useful service entry points nearby.</h3>
-            <div className="homepage-service-list">
-              {featuredServices.map((service) => (
-                <Link
-                  href={`/services/${service.slug}`}
-                  className="homepage-service-card"
-                  key={service.slug}
-                >
-                  <strong>{service.service}</strong>
-                  <p>{service.description}</p>
+          <div className="home-findings-list">
+            {sampleFindings.slice(0, 2).map((finding, index) => (
+              <article className="home-finding-row" key={finding.guid}>
+                <div className="home-finding-copy">
+                  <strong>
+                    [{getFindingServiceLabel(finding)}] {truncateText(finding.text, 88)}
+                  </strong>
                   <span>
-                    {service.familyCount.toLocaleString()} families · {service.itemCount.toLocaleString()} findings
+                    SEVERITY: [{finding.severity ?? "Guidance"}] | FAMILY:{" "}
+                    {finding.technology || "Review guidance"}
                   </span>
+                </div>
+                <Link
+                  href={getFindingHref(finding)}
+                  className={`home-finding-action${index === 0 ? " home-finding-action-primary" : ""}`}
+                >
+                  Open
                 </Link>
-              ))}
-            </div>
-            <div className="button-row">
-              <Link href="/services" className="secondary-button">
-                Browse all services
-              </Link>
-              <Link href="/data-health" className="ghost-button">
-                Check live data health
-              </Link>
-            </div>
-          </article>
+              </article>
+            ))}
+          </div>
+
+          <p className="home-card-footer">
+            {summary.itemCount.toLocaleString()} normalized findings.
+          </p>
+        </article>
+      </section>
+
+      <section className="home-artifacts-panel">
+        <div className="home-artifacts-copy">
+          <h2>Export Scoped Artifacts</h2>
+          <p>
+            Create a reusable, consistent starting point built around practical Azure patterns.
+          </p>
+        </div>
+
+        <div className="home-artifacts-grid">
+          {artifacts.map((artifact) => (
+            <Link href={artifact.href} className="home-artifact-link" key={artifact.title}>
+              <div className="home-artifact-icon">{artifact.icon}</div>
+              <div>
+                <strong>{artifact.title}</strong>
+                <p>{artifact.copy}</p>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
+
+      <p className="home-data-footnote">
+        Grounded in live catalog data. Last source refresh: {generatedDate}.{" "}
+        <Link href="/data-health" className="home-data-footnote-link">
+          View Data Health Dashboard.
+        </Link>
+      </p>
     </main>
   );
 }
