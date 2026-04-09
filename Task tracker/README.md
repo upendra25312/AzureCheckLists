@@ -5,5 +5,6 @@ This folder contains the current execution tracker for the Azure Checklists webs
 - [Project Status](./project-status.md)
 - [Login UX Specification](./login-ux-spec.md)
 - [UI Redesign Backlog](./ui-redesign-backlog.md)
+- [Full-Site UI Theme Rollout Issue](./full-site-ui-theme-rollout-issue.md)
 
-Last updated: April 5, 2026
+Last updated: April 9, 2026
