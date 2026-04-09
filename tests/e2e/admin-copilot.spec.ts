@@ -36,7 +36,7 @@ const adminHealthPayload = {
   capabilities: {
     adminRouteProtected: true,
     adminApiReady: true,
-    promptExecutionEnabled: false,
+    promptExecutionEnabled: true,
     mcpServerConfigured: false,
     copilotConfigured: true,
     applicationInsightsConfigured: true,
@@ -161,6 +161,37 @@ const adminHealthPayload = {
   ]
 } as const;
 
+const adminPromptPayload = {
+  answer:
+    "The Azure Review Board platform is healthy overall. The linked Function App is configured, storage is available, and the Foundry-backed admin prompt path is responding for read-only diagnostics.",
+  generatedAt: "2026-04-05T20:10:00.000Z",
+  modelName: "gpt-4.1-mini",
+  modelDeployment: "azure-review-admin",
+  promptExecutionEnabled: true,
+  sources: [
+    {
+      label: "Admin health",
+      note: "Protected backend health payload"
+    },
+    {
+      label: "Function App",
+      url: "https://portal.azure.com/#@contoso.com/resource/subscriptions/mock/resourceGroups/Azure-Review-Checklists-RG/providers/Microsoft.Web/sites/azure-review-checklists-api"
+    }
+  ],
+  toolCalls: [
+    {
+      tool: "azure.resourceGraph.query",
+      status: "success",
+      detail: "Enumerated the platform resources in the scoped resource group."
+    },
+    {
+      tool: "azure.functionApp.config",
+      status: "success",
+      detail: "Validated the Function App app settings required by the admin shell."
+    }
+  ]
+} as const;
+
 test.describe("admin copilot access and diagnostics", () => {
   test("prompts signed-out users to sign in as admin", async ({ page }) => {
     await page.route("**/.auth/me", async (route) => {
@@ -184,7 +215,7 @@ test.describe("admin copilot access and diagnostics", () => {
     await expect(page.getByRole("link", { name: "Go to project review" })).toBeVisible();
   });
 
-  test("renders the admin config inventory for admin users", async ({ page }) => {
+  test("renders admin diagnostics and runs a protected prompt for admin users", async ({ page }) => {
     await page.route("**/.auth/me", async (route) => {
       await route.fulfill({ json: adminPrincipal });
     });
@@ -193,10 +224,41 @@ test.describe("admin copilot access and diagnostics", () => {
       await route.fulfill({ json: adminHealthPayload });
     });
 
+    await page.route("**/api/admin/copilot", async (route) => {
+      await expect(route.request().method()).toBe("POST");
+
+      const payload = route.request().postDataJSON() as {
+        question?: string;
+        scope?: {
+          resourceGroup?: string;
+          staticWebAppName?: string;
+          functionAppName?: string;
+          openAiResourceName?: string;
+          openAiDeployment?: string | null;
+          region?: string;
+        };
+      };
+
+      expect(payload.question).toBe("List the Azure resources supporting this website.");
+      expect(payload.scope).toEqual({
+        resourceGroup: "Azure-Review-Checklists-RG",
+        staticWebAppName: "azure-review-checklists",
+        functionAppName: "azure-review-checklists-api",
+        openAiResourceName: "azreviewchecklistsopenaicu01",
+        openAiDeployment: "gpt-4.1-mini",
+        region: "Central US"
+      });
+
+      await route.fulfill({ json: adminPromptPayload });
+    });
+
     await page.goto("/admin/copilot");
 
     await expect(page.getByRole("heading", { name: "Inspect the Azure platform behind the website before deeper admin tooling goes live." })).toBeVisible();
     await expect(page.getByRole("main").getByText("admin@contoso.com", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Ask the protected admin copilot about backend health, config drift, and Azure platform readiness." })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Run admin prompt" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "List the Azure resources supporting this website." })).toBeVisible();
     await expect(page.getByRole("heading", { name: "See whether the backend looks fresh, observable, and ready right now." })).toBeVisible();
     await expect(page.getByText("Refresh state document")).toBeVisible();
     await expect(page.getByText("Application Insights diagnostics")).toBeVisible();
@@ -208,5 +270,21 @@ test.describe("admin copilot access and diagnostics", () => {
     await expect(page.getByText("Manual refresh key")).toBeVisible();
     await expect(page.getByText("Azure OpenAI API key")).toBeVisible();
     await expect(page.getByText("Manual refresh is enabled")).toBeVisible();
+
+    await page.getByRole("button", { name: "List the Azure resources supporting this website." }).click();
+
+    const answerCard = page.locator("article").filter({ hasText: "Latest admin answer" }).first();
+
+    await expect(answerCard).toContainText("Latest admin answer");
+    await expect(answerCard).toContainText("List the Azure resources supporting this website.");
+    await expect(answerCard).toContainText("The Azure Review Board platform is healthy overall.");
+    await expect(answerCard).toContainText("Source count");
+    await expect(answerCard).toContainText("Tool calls");
+    await expect(answerCard).toContainText("Admin health");
+    await expect(answerCard).toContainText("Protected backend health payload");
+    await expect(answerCard.getByRole("link", { name: "https://portal.azure.com/#@contoso.com/resource/subscriptions/mock/resourceGroups/Azure-Review-Checklists-RG/providers/Microsoft.Web/sites/azure-review-checklists-api" })).toBeVisible();
+    await expect(answerCard.getByRole("heading", { name: "azure.resourceGraph.query" })).toBeVisible();
+    await expect(answerCard.getByRole("heading", { name: "azure.functionApp.config" })).toBeVisible();
+    await expect(answerCard).toContainText("Enumerated the platform resources in the scoped resource group.");
   });
 });
