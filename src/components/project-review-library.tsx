@@ -170,6 +170,33 @@ export function ProjectReviewLibrary() {
     };
   }, [payload?.reviews]);
 
+  const commandMetrics = [
+    {
+      label: "Active library",
+      value: reviewStateCounts.active.toLocaleString(),
+      detail: "Saved reviews ready to resume from the main workspace."
+    },
+    {
+      label: "Archived",
+      value: reviewStateCounts.archived.toLocaleString(),
+      detail: "Reviews kept in Azure but hidden from the active working set."
+    },
+    {
+      label: "Deleted",
+      value: reviewStateCounts.deleted.toLocaleString(),
+      detail: "Recoverable reviews waiting for restore or permanent purge."
+    },
+    {
+      label: "Account state",
+      value: payload?.user?.email ?? (principal ? principal.userDetails || "Signed in" : "Sign in required"),
+      detail: payload?.user?.activeReviewId
+        ? `Active saved review is ${payload.user.activeReviewId}.`
+        : principal
+          ? "Signed in, but no active Azure-backed review is set yet."
+          : "Sign in with Microsoft to load and manage saved project reviews."
+    }
+  ];
+
   async function openReview(review: SavedProjectReviewSummary) {
     try {
       setActivatingReviewId(review.id);
@@ -262,35 +289,58 @@ export function ProjectReviewLibrary() {
 
   return (
     <main className="section-stack">
-      <section className="surface-panel editorial-section">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">My project reviews</p>
-            <h1 className="section-title">Resume the Azure project reviews you already saved.</h1>
-            <p className="section-copy">
-              This list uses the low-cost Azure Table Storage review index for the signed-in user,
-              while detailed review payloads stay in Azure Storage for resume and copilot grounding.
-            </p>
-          </div>
-          <div className="button-row">
-            <Link href="/review-package" className="primary-button">
-              Open project review
-            </Link>
-          </div>
+      <section className="review-command-panel library-command-panel">
+        <div className="review-command-copy">
+          <p className="eyebrow">My project reviews</p>
+          <h1 className="review-command-title">Resume the Azure project reviews you already saved.</h1>
+          <p className="review-command-summary">
+            This board uses the signed-in user&apos;s Azure review index so you can reopen the exact
+            review shell, scope, and saved posture without rebuilding the project context from
+            scratch.
+          </p>
         </div>
 
-        {loading ? (
-          <section className="filter-card">
-            <p className="eyebrow">Loading</p>
-            <h3>Checking your sign-in state and saved project reviews.</h3>
-            <p className="microcopy">
-              Once you sign in, this page lists the project reviews saved against your account.
-            </p>
-          </section>
-        ) : null}
+        <div className="review-command-metrics">
+          {commandMetrics.map((metric) => (
+            <article className="review-command-metric" key={metric.label}>
+              <span>{metric.label}</span>
+              <strong>{metric.value}</strong>
+              <p>{metric.detail}</p>
+            </article>
+          ))}
+        </div>
 
-        {!loading && !principal ? (
-          <section className="filter-card">
+        <div className="review-command-band">
+          <div className="review-command-band-actions">
+            <Link href="/review-package" className="home-init-button review-command-button">
+              Open project review
+            </Link>
+            {!principal ? (
+              <a href={buildLoginUrl("aad")} className="secondary-button review-command-secondary">
+                Continue with Microsoft
+              </a>
+            ) : (
+              <a href="/.auth/logout" className="secondary-button review-command-secondary">
+                Sign out
+              </a>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {loading ? (
+        <section className="filter-card board-stage-panel library-state-card">
+          <p className="eyebrow">Loading</p>
+          <h3>Checking your sign-in state and saved project reviews.</h3>
+          <p className="microcopy">
+            Once you sign in, this page lists the project reviews saved against your account.
+          </p>
+        </section>
+      ) : null}
+
+      {!loading && !principal ? (
+        <section className="library-state-grid">
+          <section className="filter-card board-stage-panel library-state-card">
             <p className="eyebrow">Sign in</p>
             <h3>Sign in with Microsoft to see your saved project reviews.</h3>
             <p className="microcopy">
@@ -303,107 +353,121 @@ export function ProjectReviewLibrary() {
               </a>
             </div>
           </section>
-        ) : null}
+          <section className="filter-card board-stage-panel library-state-card">
+            <p className="eyebrow">What unlocks after sign-in</p>
+            <h3>Saved Azure-backed reviews become a working library instead of one browser session.</h3>
+            <p className="microcopy">
+              Resume active reviews, restore archived ones, recover deleted reviews before purge,
+              and reopen the exact project context in the scoped review workspace.
+            </p>
+          </section>
+        </section>
+      ) : null}
 
-        {!loading && payload?.user ? (
-          <section className="filter-card">
+      {!loading && payload?.user ? (
+        <section className="library-state-grid">
+          <section className="filter-card board-stage-panel library-state-card">
             <p className="eyebrow">Signed in identity</p>
             <h3>{payload.user.email}</h3>
             <p className="microcopy">
               Signed in with {formatProvider(payload.user.provider)}. The active saved review is{" "}
               {payload.user.activeReviewId ?? "not set"}.
             </p>
-            <div className="button-row">
-              <a href="/.auth/logout" className="ghost-button">
-                Sign out
-              </a>
+            <div className="chip-row board-summary-row">
+              <span className="chip">Provider {formatProvider(payload.user.provider)}</span>
+              <span className="chip">
+                Active review {payload.user.activeReviewId ?? "not set"}
+              </span>
             </div>
           </section>
-        ) : null}
 
-        {!loading && payload && payload.reviews.length === 0 ? (
-          <section className="filter-card">
-            <p className="eyebrow">No saved reviews yet</p>
-            <h3>Save your first project review from the main workspace.</h3>
+          <section className="filter-card board-stage-panel library-state-card">
+            <p className="eyebrow">Review lifecycle</p>
+            <h3>Archive hides a review from the active library. Delete moves it into a recoverable holding state.</h3>
             <p className="microcopy">
-              Once you save a review to Azure, it appears here so you can reopen it later without
-              rebuilding the full context.
+              Use archive for work you want to keep but pause. Use deleted when the review should
+              leave the main library. Permanently delete only after you are sure it should no longer
+              be recoverable.
             </p>
+            <div className="chip-row board-summary-row">
+              <span className="chip">Active {reviewStateCounts.active.toLocaleString()}</span>
+              <span className="chip">Archived {reviewStateCounts.archived.toLocaleString()}</span>
+              <span className="chip">Deleted {reviewStateCounts.deleted.toLocaleString()}</span>
+            </div>
           </section>
-        ) : null}
+        </section>
+      ) : null}
 
-        {!loading && payload && payload.reviews.length > 0 ? (
-          <>
-            <section className="filter-card workspace-toolbar board-toolbar-card">
-              <div className="workspace-toolbar-main">
-                <input
-                  className="search-input"
-                  type="search"
-                  placeholder="Search reviews by name, audience, scope, or target region"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-                <p className="microcopy">
-                  {filteredReviews.length.toLocaleString()} review
-                  {filteredReviews.length === 1 ? "" : "s"} shown from {payload.reviews.length.toLocaleString()} saved in Azure.
-                </p>
-              </div>
-              <div className="workspace-toolbar-side">
-                <label className="filter-field">
-                  <span className="microcopy">Filter</span>
-                  <select
-                    className="field-select"
-                    value={filterMode}
-                    onChange={(event) => setFilterMode(event.target.value as ReviewFilterMode)}
-                  >
-                    <option value="active">Active library</option>
-                    <option value="archived">Archived</option>
-                    <option value="deleted">Deleted</option>
-                    <option value="all">All reviews</option>
-                  </select>
-                </label>
-                <label className="filter-field">
-                  <span className="microcopy">Sort</span>
-                  <select
-                    className="field-select"
-                    value={sortMode}
-                    onChange={(event) => setSortMode(event.target.value as ReviewSortMode)}
-                  >
-                    <option value="updated-desc">Last updated</option>
-                    <option value="created-desc">Created date</option>
-                    <option value="pending-desc">Most pending items</option>
-                    <option value="name-asc">Name A-Z</option>
-                  </select>
-                </label>
-              </div>
-            </section>
+      {!loading && payload && payload.reviews.length === 0 ? (
+        <section className="filter-card board-stage-panel library-state-card">
+          <p className="eyebrow">No saved reviews yet</p>
+          <h3>Save your first project review from the main workspace.</h3>
+          <p className="microcopy">
+            Once you save a review to Azure, it appears here so you can reopen it later without
+            rebuilding the full context.
+          </p>
+        </section>
+      ) : null}
 
-            <section className="filter-card">
-              <p className="eyebrow">Review lifecycle</p>
-              <h3>Archive hides a review from the active library. Delete moves it into a recoverable holding state.</h3>
+      {!loading && payload && payload.reviews.length > 0 ? (
+        <>
+          <section className="filter-card workspace-toolbar board-toolbar-card">
+            <div className="workspace-toolbar-main">
+              <input
+                className="search-input"
+                type="search"
+                placeholder="Search reviews by name, audience, scope, or target region"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
               <p className="microcopy">
-                Use archive for work you want to keep but pause. Use deleted when the review should leave the main library. Permanently delete only after you are sure it should no longer be recoverable.
+                {filteredReviews.length.toLocaleString()} review
+                {filteredReviews.length === 1 ? "" : "s"} shown from {payload.reviews.length.toLocaleString()} saved in Azure.
               </p>
-              <div className="chip-row board-summary-row">
-                <span className="chip">Active {reviewStateCounts.active.toLocaleString()}</span>
-                <span className="chip">Archived {reviewStateCounts.archived.toLocaleString()}</span>
-                <span className="chip">Deleted {reviewStateCounts.deleted.toLocaleString()}</span>
-              </div>
+            </div>
+            <div className="workspace-toolbar-side">
+              <label className="filter-field">
+                <span className="microcopy">Filter</span>
+                <select
+                  className="field-select"
+                  value={filterMode}
+                  onChange={(event) => setFilterMode(event.target.value as ReviewFilterMode)}
+                >
+                  <option value="active">Active library</option>
+                  <option value="archived">Archived</option>
+                  <option value="deleted">Deleted</option>
+                  <option value="all">All reviews</option>
+                </select>
+              </label>
+              <label className="filter-field">
+                <span className="microcopy">Sort</span>
+                <select
+                  className="field-select"
+                  value={sortMode}
+                  onChange={(event) => setSortMode(event.target.value as ReviewSortMode)}
+                >
+                  <option value="updated-desc">Last updated</option>
+                  <option value="created-desc">Created date</option>
+                  <option value="pending-desc">Most pending items</option>
+                  <option value="name-asc">Name A-Z</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          {filteredReviews.length === 0 ? (
+            <section className="filter-card board-stage-panel library-state-card">
+              <p className="eyebrow">No matches</p>
+              <h3>No saved reviews match the current search or filter.</h3>
+              <p className="microcopy">
+                Clear the search term, switch the archive filter, or open the main workspace to save a new review.
+              </p>
             </section>
+          ) : null}
 
-            {filteredReviews.length === 0 ? (
-              <section className="filter-card">
-                <p className="eyebrow">No matches</p>
-                <h3>No saved reviews match the current search or filter.</h3>
-                <p className="microcopy">
-                  Clear the search term, switch the archive filter, or open the main workspace to save a new review.
-                </p>
-              </section>
-            ) : null}
-
-            <div className="service-selection-grid">
+          <section className="library-review-grid" aria-label="Saved project review library">
             {filteredReviews.map((review) => (
-              <article className="future-card service-selection-card" key={review.id}>
+              <article className="future-card service-selection-card library-review-card" key={review.id}>
                 <div className="section-head board-card-head">
                   <div className="board-card-head-copy">
                     <p className="eyebrow">
@@ -418,6 +482,20 @@ export function ProjectReviewLibrary() {
                     <h3>{review.name}</h3>
                   </div>
                   <span className="chip">{review.audience}</span>
+                </div>
+                <div className="library-review-stats">
+                  <article className="library-review-stat">
+                    <span>Services</span>
+                    <strong>{review.serviceCount.toLocaleString()}</strong>
+                  </article>
+                  <article className="library-review-stat">
+                    <span>Saved findings</span>
+                    <strong>{review.recordCount.toLocaleString()}</strong>
+                  </article>
+                  <article className="library-review-stat">
+                    <span>Pending</span>
+                    <strong>{review.pendingCount.toLocaleString()}</strong>
+                  </article>
                 </div>
                 <p className="microcopy">
                   {review.serviceCount.toLocaleString()} services,{" "}
@@ -569,18 +647,17 @@ export function ProjectReviewLibrary() {
                 ) : null}
               </article>
             ))}
-          </div>
-          </>
-        ) : null}
-
-        {error ? (
-          <section className="filter-card">
-            <p className="eyebrow">Project review library</p>
-            <h3>The saved project review list could not be loaded.</h3>
-            <p className="microcopy">{error}</p>
           </section>
-        ) : null}
-      </section>
+        </>
+      ) : null}
+
+      {error ? (
+        <section className="filter-card board-stage-panel library-state-card">
+          <p className="eyebrow">Project review library</p>
+          <h3>The saved project review list could not be loaded.</h3>
+          <p className="microcopy">{error}</p>
+        </section>
+      ) : null}
     </main>
   );
 }

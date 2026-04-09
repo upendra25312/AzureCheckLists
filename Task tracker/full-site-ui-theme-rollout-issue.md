@@ -174,7 +174,7 @@ Test and validate:
 
 ### Task 4: My Project Reviews migration
 
-Status: Ready
+Status: Completed
 Priority: P0
 
 Work:
@@ -188,6 +188,7 @@ Files likely touched:
 - `src/components/project-review-library.tsx`
 - `src/components/auth-status-chip.tsx`
 - `app/globals.css`
+- `tests/e2e/board-surfaces.spec.ts`
 
 Acceptance criteria:
 
@@ -456,3 +457,5 @@ Test and validate:
 - April 9, 2026: Task 2 validation passed with `npm run build` and targeted Playwright coverage for board surfaces, shared shell, admin copilot, and review-cloud flows.
 - April 9, 2026: Task 3 completed. The `/review-package` workspace now uses a board-style command panel, staged preview cards, and unified board-stage surfaces that visually align with the homepage while preserving the working review flow.
 - April 9, 2026: Task 3 validation passed with `npm run build`, targeted Playwright coverage including the new `review-workspace-shell` spec, and fresh desktop/mobile route screenshots.
+- April 9, 2026: Task 4 completed. `/my-project-reviews` now uses a board-style library shell with command metrics, signed-in lifecycle cards, and denser saved-review cards that keep resume/archive/delete actions in the same product family.
+- April 9, 2026: Task 4 validation passed with `npm run build`, targeted Playwright coverage for shared shell, board surfaces, and review-cloud flows, plus fresh desktop/mobile screenshots for the saved-review library route.

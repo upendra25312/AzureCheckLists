@@ -2596,6 +2596,68 @@ button.chip:disabled:hover {
   gap: 18px;
 }
 
+.library-command-panel .review-command-metric strong {
+  font-size: 1.02rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.library-state-grid,
+.library-review-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.library-state-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.library-review-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.library-state-card,
+.library-review-card {
+  align-content: start;
+}
+
+.library-review-card {
+  gap: 16px;
+}
+
+.library-review-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.library-review-stat {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(19, 35, 52, 0.1);
+  background: rgba(248, 250, 252, 0.94);
+}
+
+[data-theme="dark"] .library-review-stat {
+  background: rgba(18, 28, 40, 0.9);
+  border-color: rgba(237, 244, 251, 0.1);
+}
+
+.library-review-stat span {
+  color: var(--brand);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.library-review-stat strong {
+  font-size: 1.2rem;
+  line-height: 1.2;
+}
+
 .review-stage-preview-card {
   gap: 16px;
 }
@@ -4078,6 +4140,9 @@ button.chip:disabled:hover {
   .home-artifacts-grid,
   .review-command-metrics,
   .review-stage-preview-grid,
+  .library-state-grid,
+  .library-review-grid,
+  .library-review-stats,
   .package-context-grid,
   .service-drawer-metrics,
   .service-drawer-assumptions {

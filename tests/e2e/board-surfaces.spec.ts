@@ -112,11 +112,33 @@ test.describe("board surface styling smoke", () => {
     await page.goto("/my-project-reviews");
 
     await expect(page.getByRole("heading", { name: "Resume the Azure project reviews you already saved." })).toBeVisible();
+    await expect(page.locator(".library-command-panel")).toBeVisible();
+    await expect(page.locator(".library-state-card")).toHaveCount(2);
     await expect(page.getByRole("searchbox")).toBeVisible();
     await expect(page.getByRole("combobox").nth(0)).toBeVisible();
     await expect(page.getByRole("combobox").nth(1)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Contoso platform review" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Open this review" })).toBeVisible();
+    await expect(page.locator(".library-review-stat")).toHaveCount(3);
+  });
+
+  test("keeps the saved review library readable on mobile width", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    await page.route("**/.auth/me", async (route) => {
+      await route.fulfill({ json: signedInPrincipal });
+    });
+
+    await page.route("**/api/project-reviews", async (route) => {
+      await route.fulfill({ json: projectReviewLibraryPayload });
+    });
+
+    await page.goto("/my-project-reviews");
+
+    await expect(page.locator(".library-command-panel")).toBeVisible();
+    await expect(page.getByRole("searchbox")).toBeVisible();
+    await expect(page.locator(".library-review-card")).toBeVisible();
+    await expect(page.getByText("Signed in with Microsoft. The active saved review is review-001.")).toBeVisible();
   });
 
   test("keeps the data health dashboard readable on mobile width", async ({ page }) => {
