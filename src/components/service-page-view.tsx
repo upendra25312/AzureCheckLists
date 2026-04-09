@@ -210,7 +210,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
                   ? "Service already in review"
                   : "Service not yet in review"}
               </span>
-              <div className="button-row">
+              <div className="button-row board-action-row-compact">
                 <button
                   type="button"
                   className="secondary-button"

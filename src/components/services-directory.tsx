@@ -154,7 +154,7 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
           </div>
         </div>
 
-        <div className="filter-card workspace-toolbar">
+        <div className="filter-card workspace-toolbar board-toolbar-card">
           <div className="workspace-toolbar-main">
             <input
               className="search-input"
@@ -196,12 +196,12 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
           <div className="service-directory-grid">
             {filteredServices.map((service) => (
               <article className="service-directory-card" key={service.slug}>
-                <div className="section-head">
-                  <div>
+                <div className="section-head board-card-head">
+                  <div className="board-card-head-copy">
                     <p className="eyebrow">Azure service</p>
                     <h3 className="service-card-title">{service.service}</h3>
                   </div>
-                  <div className="chip-row">
+                  <div className="chip-row board-summary-row">
                     <span className="chip">{service.familyCount.toLocaleString()} families</span>
                     <span className="chip">{service.itemCount.toLocaleString()} findings</span>
                   </div>
@@ -210,7 +210,7 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
                 <p className="service-card-copy">{service.description}</p>
                 <p className="service-card-note">{service.whatThisMeans}</p>
 
-                <div className="service-card-meta">
+                <div className="service-card-meta board-summary-row">
                   {service.gaFamilyCount > 0 ? (
                     <span className="pill">{service.gaFamilyCount.toLocaleString()} GA-ready</span>
                   ) : null}
@@ -264,7 +264,7 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
                   </div>
                 </div>
 
-                <div className="button-row">
+                <div className="button-row board-action-row-compact">
                   <Link href={`/services/${service.slug}`} className="primary-button">
                     Open service view
                   </Link>

@@ -334,7 +334,7 @@ export function ProjectReviewLibrary() {
 
         {!loading && payload && payload.reviews.length > 0 ? (
           <>
-            <section className="filter-card workspace-toolbar">
+            <section className="filter-card workspace-toolbar board-toolbar-card">
               <div className="workspace-toolbar-main">
                 <input
                   className="search-input"
@@ -384,7 +384,7 @@ export function ProjectReviewLibrary() {
               <p className="microcopy">
                 Use archive for work you want to keep but pause. Use deleted when the review should leave the main library. Permanently delete only after you are sure it should no longer be recoverable.
               </p>
-              <div className="chip-row">
+              <div className="chip-row board-summary-row">
                 <span className="chip">Active {reviewStateCounts.active.toLocaleString()}</span>
                 <span className="chip">Archived {reviewStateCounts.archived.toLocaleString()}</span>
                 <span className="chip">Deleted {reviewStateCounts.deleted.toLocaleString()}</span>
@@ -404,8 +404,8 @@ export function ProjectReviewLibrary() {
             <div className="service-selection-grid">
             {filteredReviews.map((review) => (
               <article className="future-card service-selection-card" key={review.id}>
-                <div className="section-head">
-                  <div>
+                <div className="section-head board-card-head">
+                  <div className="board-card-head-copy">
                     <p className="eyebrow">
                       {review.isDeleted
                         ? "Deleted review"
@@ -424,7 +424,7 @@ export function ProjectReviewLibrary() {
                   {review.recordCount.toLocaleString()} saved findings, and{" "}
                   {review.pendingCount.toLocaleString()} items still pending.
                 </p>
-                <div className="chip-row">
+                <div className="chip-row board-summary-row">
                   {review.isDeleted ? (
                     <span className="chip">
                       Deleted {review.deletedAt ? formatDate(review.deletedAt) : "in Azure"}
@@ -441,7 +441,7 @@ export function ProjectReviewLibrary() {
                   <span className="chip">Updated {formatDate(review.updatedAt)}</span>
                 </div>
                 {review.businessScope ? <p className="microcopy">{review.businessScope}</p> : null}
-                <div className="button-row">
+                <div className="button-row board-action-row-compact">
                   {!review.isArchived && !review.isDeleted ? (
                     <button
                       type="button"
