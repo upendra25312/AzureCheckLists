@@ -69,7 +69,7 @@ Each task below must end with:
 
 ### Task 1: Shared shell and navigation foundation
 
-Status: Ready
+Status: Completed
 Priority: P0
 
 Work:
@@ -449,4 +449,5 @@ Test and validate:
 ## Progress Log
 
 - April 9, 2026: Issue created and ready for implementation.
-- April 9, 2026: Start with Task 1, then validate before moving on.
+- April 9, 2026: Task 1 completed. The site now uses one shared Azure Review Board shell across homepage, workflow, services, data health, and admin routes.
+- April 9, 2026: Task 1 validation passed with `npm run build` plus targeted Playwright coverage for shared shell, admin copilot, and review-cloud flows.
