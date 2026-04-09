@@ -141,7 +141,7 @@ Test and validate:
 
 ### Task 3: Review workspace shell migration
 
-Status: Ready
+Status: Completed
 Priority: P0
 
 Work:
@@ -157,6 +157,7 @@ Files likely touched:
 - `src/components/review-cloud-controls.tsx`
 - `src/components/project-review-copilot.tsx`
 - `app/globals.css`
+- `tests/e2e/review-workspace-shell.spec.ts`
 
 Acceptance criteria:
 
@@ -453,3 +454,5 @@ Test and validate:
 - April 9, 2026: Task 1 validation passed with `npm run build` plus targeted Playwright coverage for shared shell, admin copilot, and review-cloud flows.
 - April 9, 2026: Task 2 completed. Shared board-style panel, card, chip, button, toolbar, and form styling now applies across the main routes, with initial utility-class adoption in the services directory and saved-review library.
 - April 9, 2026: Task 2 validation passed with `npm run build` and targeted Playwright coverage for board surfaces, shared shell, admin copilot, and review-cloud flows.
+- April 9, 2026: Task 3 completed. The `/review-package` workspace now uses a board-style command panel, staged preview cards, and unified board-stage surfaces that visually align with the homepage while preserving the working review flow.
+- April 9, 2026: Task 3 validation passed with `npm run build`, targeted Playwright coverage including the new `review-workspace-shell` spec, and fresh desktop/mobile route screenshots.

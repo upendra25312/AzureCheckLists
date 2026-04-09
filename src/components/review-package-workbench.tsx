@@ -947,21 +947,39 @@ export function ReviewPackageWorkbench({
   );
   const reviewedDecisionCount = includedCount + notApplicableCount + excludedCount;
   const allScopedFindingsResolved = packageItems.length > 0 && pendingCount === 0;
-  const quickStartSteps = [
+  const reviewWorkspaceMetrics = [
     {
-      step: "01",
-      title: "Create the review shell",
-      copy: "Name the solution, audience, target regions, and business scope. You only need enough context to anchor the rest of the workspace."
+      label: "Active review",
+      value: activePackage?.name ?? "No active review",
+      detail: activePackage
+        ? `${activePackage.targetRegions.length.toLocaleString()} target region${activePackage.targetRegions.length === 1 ? "" : "s"} captured.`
+        : "Only the project review name is required to start."
     },
     {
-      step: "02",
-      title: "Add only the in-scope services",
-      copy: "Select the Azure services that actually belong to this design. Everything else can stay out until it proves necessary."
+      label: "Services in scope",
+      value: selectedServices.length.toLocaleString(),
+      detail:
+        selectedServices.length > 0
+          ? "Pricing, matrix, and exports stay aligned to this exact service boundary."
+          : "Add only the Azure services that truly belong to this architecture."
     },
     {
-      step: "03",
-      title: "Use the matrix, copilot, and exports when ready",
-      copy: "Once the scope is stable, use the matrix for region and pricing checks, ask scoped questions, and export only what belongs to the design."
+      label: "Decisions captured",
+      value: reviewedDecisionCount.toLocaleString(),
+      detail:
+        reviewedDecisionCount > 0
+          ? `${pendingCount.toLocaleString()} scoped finding${pendingCount === 1 ? "" : "s"} still waiting for a decision.`
+          : "The matrix and service notes become useful once services are in scope."
+    },
+    {
+      label: "Outputs posture",
+      value: allScopedFindingsResolved ? "Ready" : packageItems.length > 0 ? "Draft" : "Waiting",
+      detail:
+        allScopedFindingsResolved
+          ? "Scoped exports, pricing, and leadership output are ready to hand off."
+          : packageItems.length > 0
+            ? "Exports are available, but pending decisions still keep them in draft posture."
+            : "Exports unlock after the review contains real scoped services and findings."
     }
   ];
   const selectedServiceProgress = useMemo(
@@ -2133,82 +2151,67 @@ export function ReviewPackageWorkbench({
 
   return (
     <main className="section-stack">
-      <section className="hero-panel director-hero editorial-hero">
-        <div className="editorial-hero-layout">
-          <div className="editorial-hero-copy">
-            <p className="eyebrow">Project review</p>
-            <h1 className="hero-title">Start one project review and keep the scope tight.</h1>
-            <p className="hero-copy">
-              Create the review first, add only the Azure services that belong to this solution,
-              then use the rest of the workspace to pressure-test that exact scope.
-            </p>
-            <p className="hero-note">
-              New users do not need to learn the whole product first. Start with Step 1 below and
-              treat sign-in, cloud save, and deeper exports as optional later moves.
-            </p>
-            <div className="hero-actions">
-              <a href="#project-review-setup" className="primary-button">
-                Start this review
-              </a>
-              <Link href="/services" className="secondary-button">
-                Browse services
-              </Link>
-            </div>
-          </div>
-
-          <aside className="leadership-brief">
-            <p className="eyebrow">Start here</p>
-            <h2 className="leadership-title">Most users only need three moves.</h2>
-            <div className="leadership-list">
-              <article>
-                <strong>Define the review</strong>
-                <p>Capture the project name, audience, regions, and scope before touching detailed findings.</p>
-              </article>
-              <article>
-                <strong>Choose the services</strong>
-                <p>Keep the service list honest so pricing, copilot answers, and exports stay relevant.</p>
-              </article>
-              <article>
-                <strong>Review and export</strong>
-                <p>Use the matrix, service notes, and export tools after the scope is stable. Cloud save is optional.</p>
-              </article>
-            </div>
-          </aside>
+      <section className="review-command-panel">
+        <div className="review-command-copy">
+          <p className="eyebrow">Project review workspace</p>
+          <h1 className="review-command-title">START A STRUCTURED PROJECT REVIEW</h1>
+          <p className="review-command-summary">
+            Create the review shell first, keep the service boundary honest, then use the matrix,
+            copilot, pricing, and exports only for the architecture that is actually in scope.
+          </p>
         </div>
-      </section>
 
-      <section className="surface-panel editorial-section executive-brief-section">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Quick start</p>
-            <h2 className="section-title">If this is your first visit, start with these three moves.</h2>
-            <p className="section-copy">
-              You do not need to master the full workspace before it becomes useful. Create the
-              review, add the services in scope, and then use the matrix, copilot, and exports only
-              when the design is ready for them.
-            </p>
-          </div>
-          <div className="chip-row">
-            <span className="chip">Cloud save is optional</span>
-            <span className="chip">Explorer stays secondary</span>
-          </div>
-        </div>
-        <div className="start-here-grid">
-          {quickStartSteps.map((step) => (
-            <article className="path-card" key={step.step}>
-              <div className="path-card-topline">
-                <span className="path-card-number">{step.step}</span>
-              </div>
-              <h3>{step.title}</h3>
-              <p>{step.copy}</p>
+        <div className="review-command-metrics">
+          {reviewWorkspaceMetrics.map((metric) => (
+            <article className="review-command-metric" key={metric.label}>
+              <span>{metric.label}</span>
+              <strong>{metric.value}</strong>
+              <p>{metric.detail}</p>
             </article>
           ))}
         </div>
+
+        <div className="review-command-band">
+          <div className="review-command-band-actions">
+            <a href="#project-review-setup" className="home-init-button review-command-button">
+              Open setup stage
+            </a>
+            <Link href="/services" className="secondary-button review-command-secondary">
+              Browse services
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="review-stage-preview-grid" aria-label="Project review stage preview">
+        {workspaceStages
+          .filter((stage) => !stage.optional)
+          .slice(0, 3)
+          .map((stage, index) => (
+            <article className="home-reference-card review-stage-preview-card" key={stage.id}>
+              <div className="review-stage-preview-head">
+                <div>
+                  <p className="eyebrow">Step 0{index + 1}</p>
+                  <h2>{stage.title}</h2>
+                  <p>{stage.label}</p>
+                </div>
+                <span className={`review-progress-pill review-progress-pill-${stage.status}`}>
+                  {stage.status}
+                </span>
+              </div>
+              <p className="microcopy">{stage.detail}</p>
+              <div className="button-row">
+                <a href={`#${stage.id}`} className="home-finding-action home-finding-action-primary">
+                  Open stage
+                </a>
+              </div>
+            </article>
+          ))}
       </section>
 
       <div className="review-workspace-shell">
         <aside className="review-progress-rail">
-          <section className="surface-panel review-progress-card">
+          <section className="surface-panel review-progress-card board-toolbar-card">
             <p className="eyebrow">Review stages</p>
             <h2 className="review-progress-title">Keep the workflow oriented as the page grows.</h2>
             <p className="microcopy">
@@ -2233,7 +2236,7 @@ export function ReviewPackageWorkbench({
         </aside>
 
         <div className="review-workspace-flow">
-      <section className="surface-panel editorial-section" id="project-review-setup">
+      <section className="surface-panel board-stage-panel" id="project-review-setup">
         <div className="section-head">
           <div>
             <p className="eyebrow">Step 1</p>
@@ -2427,7 +2430,7 @@ export function ReviewPackageWorkbench({
         )}
       </section>
 
-      <section className="surface-panel editorial-section" id="project-review-scope">
+      <section className="surface-panel board-stage-panel" id="project-review-scope">
         <div className="section-head">
           <div>
             <p className="eyebrow">Step 2</p>
@@ -2491,7 +2494,7 @@ export function ReviewPackageWorkbench({
           </section>
         ) : (
           <>
-            <div className="filter-card workspace-toolbar">
+            <div className="filter-card workspace-toolbar board-toolbar-card">
               <div className="workspace-toolbar-main">
                 <input
                   className="search-input"
@@ -2690,7 +2693,7 @@ export function ReviewPackageWorkbench({
 
       {copilotContext ? <ProjectReviewCopilot context={copilotContext} /> : null}
 
-      <section className="surface-panel editorial-section" id="project-review-signals">
+      <section className="surface-panel board-stage-panel" id="project-review-signals">
         <div className="section-head">
           <div>
             <p className="eyebrow">Step 3</p>
@@ -3001,7 +3004,7 @@ export function ReviewPackageWorkbench({
         )}
       </section>
 
-      <section className="surface-panel editorial-section" id="project-review-service-notes">
+      <section className="surface-panel board-stage-panel" id="project-review-service-notes">
         <div className="section-head">
           <div>
             <p className="eyebrow">Continue Step 3</p>
@@ -3132,7 +3135,7 @@ export function ReviewPackageWorkbench({
         )}
       </section>
 
-      <section id="project-review-local-exports" className="surface-panel editorial-section">
+      <section id="project-review-local-exports" className="surface-panel board-stage-panel">
         <div className="section-head">
           <div>
             <p className="eyebrow">Step 4</p>
@@ -3294,7 +3297,7 @@ export function ReviewPackageWorkbench({
         )}
       </section>
 
-      <section className="surface-panel editorial-section" id="project-review-cloud-continuity">
+      <section className="surface-panel board-stage-panel" id="project-review-cloud-continuity">
         <div className="section-head">
           <div>
             <p className="eyebrow">Optional cloud continuity</p>
@@ -3356,7 +3359,7 @@ export function ReviewPackageWorkbench({
         )}
       </section>
 
-      <section className="surface-panel editorial-section" id="project-review-pricing">
+      <section className="surface-panel board-stage-panel" id="project-review-pricing">
         <div className="section-head">
           <div>
             <p className="eyebrow">Retail meter snapshot</p>
@@ -3521,7 +3524,7 @@ export function ReviewPackageWorkbench({
         )}
       </section>
 
-      <section className="surface-panel editorial-section" id="project-review-estimates">
+      <section className="surface-panel board-stage-panel" id="project-review-estimates">
         <div className="section-head">
           <div>
             <p className="eyebrow">Monthly estimate</p>

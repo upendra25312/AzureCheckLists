@@ -180,7 +180,7 @@ export function ProjectReviewCopilot({
   }
 
   return (
-    <section className="surface-panel editorial-section">
+    <section className="surface-panel board-stage-panel">
       <div className="section-head">
         <div>
           <p className="eyebrow">Optional inside Step 3</p>
