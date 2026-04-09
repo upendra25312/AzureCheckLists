@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { AdminCopilotHealthResponse, StaticWebAppClientPrincipal } from "@/types";
-import { loadAdminCopilotHealth } from "@/lib/admin-copilot";
+import type {
+  AdminCopilotHealthResponse,
+  AdminCopilotResponse,
+  StaticWebAppClientPrincipal
+} from "@/types";
+import { loadAdminCopilotHealth, runAdminCopilot } from "@/lib/admin-copilot";
 import { fetchClientPrincipal } from "@/lib/review-cloud";
 
 const SUGGESTED_ADMIN_PROMPTS = [
@@ -78,6 +82,11 @@ export function AdminCopilot() {
   const [health, setHealth] = useState<AdminCopilotHealthResponse | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
   const [healthLoading, setHealthLoading] = useState(false);
+  const [question, setQuestion] = useState("");
+  const [submittedQuestion, setSubmittedQuestion] = useState("");
+  const [response, setResponse] = useState<AdminCopilotResponse | null>(null);
+  const [responseError, setResponseError] = useState<string | null>(null);
+  const [responseLoading, setResponseLoading] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -137,6 +146,49 @@ export function AdminCopilot() {
     () => principal?.userDetails || principal?.userId || "Signed-in admin",
     [principal]
   );
+  const promptExecutionEnabled = health?.capabilities.promptExecutionEnabled ?? false;
+  const adminScope = useMemo(
+    () =>
+      health
+        ? {
+            resourceGroup: health.scope.resourceGroup,
+            staticWebAppName: health.scope.staticWebAppName,
+            functionAppName: health.scope.functionAppName,
+            openAiResourceName: health.scope.openAiResourceName,
+            openAiDeployment: health.scope.openAiDeployment,
+            region: health.scope.region
+          }
+        : undefined,
+    [health]
+  );
+
+  async function submit(nextQuestion: string) {
+    const trimmed = nextQuestion.trim();
+
+    if (!trimmed || !promptExecutionEnabled) {
+      return;
+    }
+
+    setResponseLoading(true);
+    setResponseError(null);
+
+    try {
+      const nextResponse = await runAdminCopilot({
+        question: trimmed,
+        scope: adminScope
+      });
+
+      setResponse(nextResponse);
+      setSubmittedQuestion(trimmed);
+      setQuestion(trimmed);
+    } catch (nextError) {
+      setResponseError(
+        nextError instanceof Error ? nextError.message : "Unable to run the admin copilot."
+      );
+    } finally {
+      setResponseLoading(false);
+    }
+  }
 
   if (!authResolved) {
     return (
@@ -248,9 +300,201 @@ export function AdminCopilot() {
           <article className="hero-metric-card">
             <span>Prompt execution</span>
             <strong>{health?.capabilities.promptExecutionEnabled ? "Enabled" : "Coming next"}</strong>
-                <p>Read-only diagnostics are live first; MCP-backed prompt execution stays disabled for now.</p>
+            <p>
+              {health?.capabilities.promptExecutionEnabled
+                ? "The protected backend can now call the configured Foundry admin agent for read-only diagnostics."
+                : "Prompt execution will turn on after the Foundry admin agent settings are configured on the backend."}
+            </p>
           </article>
         </div>
+      </section>
+
+      <section className="surface-panel editorial-section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Admin prompts</p>
+            <h2 className="section-title">Ask the protected admin copilot about backend health, config drift, and Azure platform readiness.</h2>
+            <p className="section-copy">
+              This prompt flow stays read-only. It is scoped to the current Azure Review Board
+              platform context and is intended for operator diagnostics, not deployments or writes.
+            </p>
+          </div>
+        </div>
+
+        <div className="copilot-layout">
+          <article className="filter-card copilot-card">
+            <div className="copilot-card-head">
+              <div>
+                <p className="eyebrow">Protected admin route</p>
+                <h3>Run a read-only platform diagnostic prompt.</h3>
+              </div>
+              <span className="chip">{promptExecutionEnabled ? "Prompt execution enabled" : "Prompt execution pending"}</span>
+            </div>
+
+            <form
+              className="copilot-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void submit(question);
+              }}
+            >
+              <label className="copilot-label">
+                <span className="microcopy">Question</span>
+                <textarea
+                  className="field-textarea copilot-textarea"
+                  value={question}
+                  onChange={(event) => setQuestion(event.target.value)}
+                  placeholder="Ask for resource inventory, backend drift, refresh posture, Azure OpenAI readiness, or Foundry agent health."
+                />
+              </label>
+              <p className="microcopy">
+                {promptExecutionEnabled
+                  ? "Use one of the suggested prompts or type your own internal admin question."
+                  : "The admin page is authenticated and healthy, but prompt execution is not available until the backend reports it as enabled."}
+              </p>
+              <div className="button-row">
+                <button
+                  type="submit"
+                  className="primary-button"
+                  disabled={responseLoading || !question.trim() || !promptExecutionEnabled}
+                >
+                  {responseLoading
+                    ? "Running admin copilot..."
+                    : promptExecutionEnabled
+                      ? "Run admin prompt"
+                      : "Prompt execution unavailable"}
+                </button>
+              </div>
+            </form>
+
+            <div className="copilot-suggestion-grid">
+              {SUGGESTED_ADMIN_PROMPTS.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  className="copilot-suggestion"
+                  onClick={() => {
+                    setQuestion(prompt);
+                    void submit(prompt);
+                  }}
+                  disabled={responseLoading || !promptExecutionEnabled}
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          </article>
+
+          <article className="leadership-brief copilot-brief">
+            <p className="eyebrow">Prompt scope</p>
+            <h2 className="leadership-title">Each answer is constrained to the published admin platform context.</h2>
+            <div className="leadership-list">
+              <article>
+                <strong>Static Web App</strong>
+                <p>{health?.scope.staticWebAppName ?? "Loading..."}</p>
+              </article>
+              <article>
+                <strong>Function App</strong>
+                <p>{health?.scope.functionAppName ?? "Loading..."}</p>
+              </article>
+              <article>
+                <strong>Scoped resource group</strong>
+                <p>{health?.scope.resourceGroup ?? "Loading..."}</p>
+              </article>
+              <article>
+                <strong>Azure OpenAI deployment</strong>
+                <p>{health?.scope.openAiDeployment ?? "Loading..."}</p>
+              </article>
+            </div>
+          </article>
+        </div>
+
+        {response ? (
+          <article className="filter-card copilot-card">
+            <div className="copilot-card-head">
+              <div>
+                <p className="eyebrow">Latest admin answer</p>
+                <h3>{submittedQuestion}</h3>
+              </div>
+              <span className="chip">
+                {[response.modelName, response.modelDeployment].filter(Boolean).join(" · ") || "Foundry admin agent"}
+              </span>
+            </div>
+            <div className="copilot-answer">{response.answer}</div>
+            <div className="traceability-grid">
+              <article className="trace-card">
+                <strong>Generated</strong>
+                <p>{formatDate(response.generatedAt)}</p>
+              </article>
+              <article className="trace-card">
+                <strong>Prompt execution</strong>
+                <p>{response.promptExecutionEnabled ? "Enabled" : "Disabled"}</p>
+              </article>
+              <article className="trace-card">
+                <strong>Source count</strong>
+                <p>{response.sources.length.toLocaleString()}</p>
+              </article>
+              <article className="trace-card">
+                <strong>Tool calls</strong>
+                <p>{response.toolCalls.length.toLocaleString()}</p>
+              </article>
+            </div>
+
+            {response.sources.length > 0 ? (
+              <div className="copilot-source-list">
+                {response.sources.map((source) => (
+                  <article
+                    className="trace-card"
+                    key={`${source.label}-${source.url ?? source.note ?? ""}`}
+                  >
+                    <strong>{source.label}</strong>
+                    <p>
+                      {source.url ? (
+                        <a href={source.url} target="_blank" rel="noreferrer" className="muted-link">
+                          {source.url}
+                        </a>
+                      ) : (
+                        source.note ?? "Admin platform context"
+                      )}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+
+            {response.toolCalls.length > 0 ? (
+              <div className="service-selection-grid">
+                {response.toolCalls.map((toolCall, index) => (
+                  <article className="future-card service-selection-card" key={`${toolCall.tool}-${index}`}>
+                    <div className="chip-row compact-chip-row">
+                      <span
+                        className={
+                          toolCall.status === "success"
+                            ? "matrix-chip matrix-chip-good"
+                            : toolCall.status === "failed"
+                              ? "matrix-chip matrix-chip-danger"
+                              : "matrix-chip matrix-chip-neutral"
+                        }
+                      >
+                        {toolCall.status}
+                      </span>
+                    </div>
+                    <h3>{toolCall.tool}</h3>
+                    <p className="microcopy">{toolCall.detail ?? "No additional detail was returned."}</p>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+          </article>
+        ) : null}
+
+        {responseError ? (
+          <section className="filter-card">
+            <p className="eyebrow">Admin copilot</p>
+            <h3>The admin prompt could not complete.</h3>
+            <p className="microcopy">{responseError}</p>
+          </section>
+        ) : null}
       </section>
 
       <section className="surface-panel editorial-section">
