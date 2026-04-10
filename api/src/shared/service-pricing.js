@@ -1,3 +1,4 @@
+
 const {
   PRICE_DISCLAIMER,
   PRICING_CALCULATOR_URL,
@@ -13,6 +14,7 @@ const {
   writePricingSnapshot
 } = require("./commercial-cache");
 const { getAvailabilityDataset } = require("./availability-service");
+const { enrichPricingRows } = require("./pricing-posture");
 
 const MAX_PAGES_PER_QUERY = 25;
 const MAX_ITEMS_PER_QUERY = 4000;
@@ -416,7 +418,7 @@ function classifyLocationKind(item, publicRegionMap) {
   return "Unknown";
 }
 
-function normalizePricingRows(items, publicRegionMap) {
+function normalizePricingRows(items, publicRegionMap, service, query) {
   const deduplicated = new Map();
 
   for (const item of items) {
@@ -465,7 +467,7 @@ function normalizePricingRows(items, publicRegionMap) {
     }
   }
 
-  return [...deduplicated.values()].sort((left, right) => {
+  const normalizedRows = [...deduplicated.values()].sort((left, right) => {
     const locationCompare = left.location.localeCompare(right.location);
 
     if (locationCompare !== 0) {
@@ -486,6 +488,8 @@ function normalizePricingRows(items, publicRegionMap) {
 
     return left.tierMinimumUnits - right.tierMinimumUnits;
   });
+
+  return enrichPricingRows(normalizedRows, service, query, publicRegionMap);
 }
 
 function matchesTargetRegion(row, targetRegions) {
@@ -639,7 +643,7 @@ async function fetchLiveServicePricingBase(service) {
 
   for (const query of candidateSet.queries) {
     const items = await fetchRetailPricingRows(query);
-    const rows = normalizePricingRows(items, availabilityDataset.publicRegionMap);
+    const rows = normalizePricingRows(items, availabilityDataset.publicRegionMap, service, query);
 
     if (rows.length === 0) {
       continue;

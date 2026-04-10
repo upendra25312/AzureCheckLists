@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -5,6 +6,18 @@ import { DataSourceStatusCard } from "@/components/data-source-status";
 import { buildServiceMonthlyEstimate } from "@/lib/monthly-estimate";
 import { buildServicePricingRequest, loadServicePricingBatch, matchesPricingTargetRegion } from "@/lib/service-pricing";
 import type { ServicePricing, ServiceRegionalFitSummary, ServiceSummary } from "@/types";
+
+type PricingRowView = ServicePricing["rows"][number] & {
+  officialRegionName?: string;
+  displayRegionName?: string;
+  geographyName?: string;
+  priceType?: string;
+  mappingConfidence?: string;
+  productionSuitability?: string;
+  warnings?: string[];
+  assumptions?: string[];
+  approximateMonthlyPrice?: number;
+};
 
 function formatRetailPrice(price: number | undefined, currencyCode: string) {
   if (price === undefined || Number.isNaN(price)) {
@@ -28,6 +41,49 @@ function formatEstimatePrice(price: number | undefined, currencyCode: string) {
     currency: currencyCode,
     maximumFractionDigits: 2
   }).format(price);
+}
+
+function getPriceTypeLabel(priceType?: string) {
+  switch (priceType) {
+    case "validated-retail-price":
+      return "Validated retail price";
+    case "estimated-selected-retail-meter":
+      return "Selected retail meter";
+    case "partial-price-component":
+      return "Partial price component";
+    case "pricing-needs-review":
+      return "Pricing needs review";
+    default:
+      return null;
+  }
+}
+
+function getProductionSuitabilityLabel(productionSuitability?: string) {
+  switch (productionSuitability) {
+    case "non-production":
+      return "Non-production tier";
+    case "free-tier":
+      return "Free tier";
+    default:
+      return null;
+  }
+}
+
+function getConfidenceLabel(confidence?: string) {
+  switch (confidence) {
+    case "high":
+      return "High confidence";
+    case "medium":
+      return "Medium confidence";
+    case "low":
+      return "Low confidence";
+    default:
+      return null;
+  }
+}
+
+function getRowRegionLabel(row: PricingRowView) {
+  return row.displayRegionName || row.officialRegionName || row.location || row.armRegionName || "No published billing location";
 }
 
 function findBaseMonthlyRow(pricing: ServicePricing | null, targetRegions: string[]) {
@@ -134,10 +190,10 @@ export function ServicePricingPanel({
     }
 
     if (scope === "all" || targetRegions.length === 0) {
-      return pricing.rows;
+      return pricing.rows as PricingRowView[];
     }
 
-    return pricing.rows.filter(
+    return (pricing.rows as PricingRowView[]).filter(
       (row) =>
         matchesPricingTargetRegion(
           row.armRegionName,
@@ -195,7 +251,7 @@ export function ServicePricingPanel({
         <div className="section-head">
           <div>
             <p className="eyebrow">Commercial fit</p>
-            <h2 className="section-title">Loading public retail pricing for this service.</h2>
+            <h2 className="section-title">Loading pricing posture for this service.</h2>
             <p className="section-copy">
               Pricing is pulled from Microsoft’s Azure Retail Prices API so pre-sales and solution
               teams can see real SKU and region meter data before creating a project review export.
@@ -447,34 +503,64 @@ export function ServicePricingPanel({
           {filteredRows.length > 0 ? (
             <article className="list-card review-list-card">
               <div className="item-list">
-                {filteredRows.slice(0, 200).map((row) => (
-                  <div className="item-row" key={`${row.meterId}-${row.location}-${row.tierMinimumUnits}-${row.retailPrice}`}>
-                    <div>
-                      <div className="item-topline">
-                        <span className="pill">{row.locationKind}</span>
-                        {row.skuName ? <span className="pill">{row.skuName}</span> : null}
-                        {row.armRegionName ? <span className="pill">{row.armRegionName}</span> : null}
-                        {matchesPricingTargetRegion(
-                          row.armRegionName,
-                          row.location,
-                          targetRegions,
-                          pricing.targetPricingLocations,
-                          row.locationKind
-                        ) ? (
-                          <span className="pill">Target region match</span>
+                {filteredRows.slice(0, 200).map((row) => {
+                  const priceTypeLabel = getPriceTypeLabel(row.priceType);
+                  const productionSuitabilityLabel = getProductionSuitabilityLabel(
+                    row.productionSuitability
+                  );
+                  const confidenceLabel = getConfidenceLabel(row.mappingConfidence);
+
+                  return (
+                    <div className="item-row" key={`${row.meterId}-${row.location}-${row.tierMinimumUnits}-${row.retailPrice}`}>
+                      <div>
+                        <div className="item-topline">
+                          <span className="pill">{row.locationKind}</span>
+                          {row.skuName ? <span className="pill">{row.skuName}</span> : null}
+                          {row.displayRegionName ? <span className="pill">{row.displayRegionName}</span> : null}
+                          {priceTypeLabel ? <span className="pill">{priceTypeLabel}</span> : null}
+                          {productionSuitabilityLabel ? (
+                            <span className="pill">{productionSuitabilityLabel}</span>
+                          ) : null}
+                          {matchesPricingTargetRegion(
+                            row.armRegionName,
+                            row.location,
+                            targetRegions,
+                            pricing.targetPricingLocations,
+                            row.locationKind
+                          ) ? (
+                            <span className="pill">Target region match</span>
+                          ) : null}
+                        </div>
+                        <p className="item-text">{getRowRegionLabel(row)}</p>
+                        <p className="item-description">
+                          {row.productName} · {row.meterName} · {formatRetailPrice(row.retailPrice, row.currencyCode)} per{" "}
+                          {row.unitOfMeasure}
+                          {row.approximateMonthlyPrice !== undefined
+                            ? ` · approx. ${formatEstimatePrice(row.approximateMonthlyPrice, row.currencyCode)} monthly`
+                            : ""}
+                          {row.tierMinimumUnits > 0
+                            ? ` after ${row.tierMinimumUnits.toLocaleString()} units`
+                            : ""}
+                        </p>
+                        {confidenceLabel || row.warnings?.length || row.assumptions?.length ? (
+                          <div className="chip-row" style={{ marginTop: "0.6rem" }}>
+                            {confidenceLabel ? <span className="chip">{confidenceLabel}</span> : null}
+                            {(row.warnings ?? []).map((warning) => (
+                              <span className="chip" key={warning}>
+                                {warning}
+                              </span>
+                            ))}
+                            {(row.assumptions ?? []).map((assumption) => (
+                              <span className="chip" key={assumption}>
+                                {assumption}
+                              </span>
+                            ))}
+                          </div>
                         ) : null}
                       </div>
-                      <p className="item-text">{row.location || "No published billing location"}</p>
-                      <p className="item-description">
-                        {row.productName} · {row.meterName} · {formatRetailPrice(row.retailPrice, row.currencyCode)} per{" "}
-                        {row.unitOfMeasure}
-                        {row.tierMinimumUnits > 0
-                          ? ` after ${row.tierMinimumUnits.toLocaleString()} units`
-                          : ""}
-                      </p>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </article>
           ) : null}
