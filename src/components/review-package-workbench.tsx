@@ -39,6 +39,7 @@ import {
   saveCloudProjectReviewState,
   structuredRecordsToReviewMap
 } from "@/lib/review-cloud";
+import { trackReviewTelemetry } from "@/lib/review-telemetry";
 import {
   createEmptyServiceAssumption,
   createEmptyReview,
@@ -754,6 +755,16 @@ export function ReviewPackageWorkbench({
         });
 
         if (stateDocument.activePackage) {
+          trackWorkspaceEvent({
+            name: "review_cloud_action",
+            category: "continuity",
+            reviewId: stateDocument.activePackage.id,
+            properties: {
+              action: requestedCloudReviewId ? "restore-link" : "restore-session",
+              recordCount: recordsDocument.recordCount,
+              serviceCount: stateDocument.activePackage.selectedServiceSlugs.length
+            }
+          });
           setPackageActionTone("success");
           setPackageActionMessage(
             requestedCloudReviewId
@@ -2085,6 +2096,49 @@ export function ReviewPackageWorkbench({
     }
   }, [matrixRows, selectedServiceDrawerSlug]);
 
+  function trackWorkspaceEvent(input: {
+    name:
+      | "review_create"
+      | "review_save_details"
+      | "review_scope_change"
+      | "review_export_download"
+      | "review_cloud_action";
+    category?: "review-workspace" | "continuity";
+    route?: string;
+    reviewId?: string | null;
+    properties?: Record<string, string | number | boolean | null | undefined>;
+  }) {
+    void trackReviewTelemetry({
+      name: input.name,
+      category: input.category ?? "review-workspace",
+      route: input.route ?? "/review-package",
+      reviewId: input.reviewId ?? activePackage?.id ?? null,
+      properties: input.properties
+    });
+  }
+
+  function trackExportDownload(
+    artifactType: string,
+    extraProperties?: Record<string, string | number | boolean | null | undefined>
+  ) {
+    if (!activePackage) {
+      return;
+    }
+
+    trackWorkspaceEvent({
+      name: "review_export_download",
+      reviewId: activePackage.id,
+      properties: {
+        artifactType,
+        audience: activePackage.audience,
+        findingCount: packageItems.length,
+        pendingCount,
+        serviceCount: selectedServices.length,
+        ...extraProperties
+      }
+    });
+  }
+
   function refreshPackages(nextPackages: ReviewPackage[], nextActiveId: string | null) {
     setPackages(nextPackages);
     setActivePackageId(nextActiveId);
@@ -2122,6 +2176,16 @@ export function ReviewPackageWorkbench({
     setPackageActionMessage(
       `Created "${nextPackage.name}" from the homepage initializer and made it the active project review.`
     );
+    trackWorkspaceEvent({
+      name: "review_create",
+      reviewId: nextPackage.id,
+      properties: {
+        audience: nextPackage.audience,
+        hasBusinessScope: nextPackage.businessScope.trim().length > 0,
+        source: "homepage-initializer",
+        targetRegionCount: nextPackage.targetRegions.length
+      }
+    });
     setHomepageCreateApplied(true);
     clearHomepagePackagePresetSearch();
   }, [
@@ -2182,6 +2246,16 @@ export function ReviewPackageWorkbench({
     refreshPackages(nextPackages, nextPackage.id);
     setPackageActionTone("success");
     setPackageActionMessage(`Created "${nextPackage.name}" and made it the active project review.`);
+    trackWorkspaceEvent({
+      name: "review_create",
+      reviewId: nextPackage.id,
+      properties: {
+        audience: nextPackage.audience,
+        hasBusinessScope: nextPackage.businessScope.trim().length > 0,
+        source: "workspace-create",
+        targetRegionCount: nextPackage.targetRegions.length
+      }
+    });
   }
 
   function handleSelectPackage(nextPackageId: string) {
@@ -2224,6 +2298,15 @@ export function ReviewPackageWorkbench({
 
       if (principal) {
         await saveCloudProjectReviewState(savedPackage, copilotContext);
+        trackWorkspaceEvent({
+          name: "review_save_details",
+          reviewId: savedPackage.id,
+          properties: {
+            savedToCloud: true,
+            serviceCount: savedPackage.selectedServiceSlugs.length,
+            targetRegionCount: savedPackage.targetRegions.length
+          }
+        });
         setPackageActionTone("success");
         setPackageActionMessage(
           `Saved the project review details for "${savedPackage.name}" locally and updated the Azure-backed review summary.`
@@ -2231,6 +2314,16 @@ export function ReviewPackageWorkbench({
         return;
       }
     } catch (error) {
+      trackWorkspaceEvent({
+        name: "review_save_details",
+        reviewId: savedPackage.id,
+        properties: {
+          cloudAttempted: true,
+          savedToCloud: false,
+          serviceCount: savedPackage.selectedServiceSlugs.length,
+          targetRegionCount: savedPackage.targetRegions.length
+        }
+      });
       setPackageActionTone("neutral");
       setPackageActionMessage(
         error instanceof Error
@@ -2240,6 +2333,15 @@ export function ReviewPackageWorkbench({
       return;
     }
 
+    trackWorkspaceEvent({
+      name: "review_save_details",
+      reviewId: savedPackage.id,
+      properties: {
+        savedToCloud: false,
+        serviceCount: savedPackage.selectedServiceSlugs.length,
+        targetRegionCount: savedPackage.targetRegions.length
+      }
+    });
     setPackageActionTone("success");
     setPackageActionMessage(`Saved the project review details for "${savedPackage.name}".`);
   }
@@ -2267,6 +2369,7 @@ export function ReviewPackageWorkbench({
       return;
     }
 
+    const wasSelected = activePackage.selectedServiceSlugs.includes(serviceSlug);
     const selectedServiceSlugs = activePackage.selectedServiceSlugs.includes(serviceSlug)
       ? activePackage.selectedServiceSlugs.filter((entry) => entry !== serviceSlug)
       : [...activePackage.selectedServiceSlugs, serviceSlug];
@@ -2277,12 +2380,24 @@ export function ReviewPackageWorkbench({
     });
 
     refreshPackages(loadPackages(), activePackage.id);
+    trackWorkspaceEvent({
+      name: "review_scope_change",
+      reviewId: activePackage.id,
+      properties: {
+        action: wasSelected ? "toggle-remove" : "toggle-add",
+        addedCount: wasSelected ? 0 : 1,
+        removedCount: wasSelected ? 1 : 0,
+        selectedCount: selectedServiceSlugs.length,
+        serviceSlug
+      }
+    });
   }
 
   function addServicesToReview(
     serviceSlugs: string[],
     sourceLabel: string,
-    successMessage: string
+    successMessage: string,
+    telemetryAction = "bulk-add"
   ) {
     if (!activePackage || serviceSlugs.length === 0) {
       return;
@@ -2305,6 +2420,16 @@ export function ReviewPackageWorkbench({
     });
 
     refreshPackages(loadPackages(), activePackage.id);
+    trackWorkspaceEvent({
+      name: "review_scope_change",
+      reviewId: activePackage.id,
+      properties: {
+        action: telemetryAction,
+        addedCount,
+        selectedCount: nextSelectedServiceSlugs.length,
+        sourceLabel
+      }
+    });
     setPackageActionTone("success");
     setPackageActionMessage(successMessage.replace("{count}", addedCount.toLocaleString()));
   }
@@ -2313,7 +2438,8 @@ export function ReviewPackageWorkbench({
     addServicesToReview(
       serviceSlugs,
       bundleTitle,
-      `Added {count} starter services from ${bundleTitle}.`
+      `Added {count} starter services from ${bundleTitle}.`,
+      "starter-bundle"
     );
   }
 
@@ -2328,6 +2454,15 @@ export function ReviewPackageWorkbench({
     });
 
     refreshPackages(loadPackages(), activePackage.id);
+    trackWorkspaceEvent({
+      name: "review_scope_change",
+      reviewId: activePackage.id,
+      properties: {
+        action: "clear-scope",
+        removedCount: activePackage.selectedServiceSlugs.length,
+        selectedCount: 0
+      }
+    });
     setPackageActionTone("neutral");
     setPackageActionMessage("Cleared the current review scope so you can reseed it with a different baseline.");
   }
@@ -2457,6 +2592,7 @@ export function ReviewPackageWorkbench({
         includeNeedsReview
       })
     );
+    trackExportDownload("checklist-csv");
   }
 
   function exportPackageMarkdown() {
@@ -2472,6 +2608,7 @@ export function ReviewPackageWorkbench({
       }),
       "text/markdown;charset=utf-8"
     );
+    trackExportDownload("design-markdown");
   }
 
   function exportPackageText() {
@@ -2486,6 +2623,7 @@ export function ReviewPackageWorkbench({
         includeNeedsReview
       })
     );
+    trackExportDownload("design-text");
   }
 
   function exportPackagePricingCsv() {
@@ -2497,6 +2635,7 @@ export function ReviewPackageWorkbench({
       `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}-pricing.csv`,
       buildPackagePricingRows(activePackage, pricingSnapshots)
     );
+    trackExportDownload("pricing-csv");
   }
 
   function exportPackagePricingMarkdown() {
@@ -2509,6 +2648,7 @@ export function ReviewPackageWorkbench({
       buildPackagePricingMarkdown(activePackage, pricingSnapshots),
       "text/markdown;charset=utf-8"
     );
+    trackExportDownload("pricing-markdown");
   }
 
   function exportPackagePricingText() {
@@ -2520,6 +2660,7 @@ export function ReviewPackageWorkbench({
       `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}-pricing.txt`,
       buildPackagePricingText(activePackage, pricingSnapshots)
     );
+    trackExportDownload("pricing-text");
   }
 
   function exportPackageMonthlyEstimateCsv() {
@@ -2531,6 +2672,7 @@ export function ReviewPackageWorkbench({
       `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}-monthly-estimate.csv`,
       buildPackageMonthlyEstimateRows(activePackage, monthlyEstimates)
     );
+    trackExportDownload("estimate-csv");
   }
 
   function exportPackageMonthlyEstimateMarkdown() {
@@ -2543,6 +2685,7 @@ export function ReviewPackageWorkbench({
       buildPackageMonthlyEstimateMarkdown(activePackage, monthlyEstimates),
       "text/markdown;charset=utf-8"
     );
+    trackExportDownload("estimate-markdown");
   }
 
   function exportPackageMonthlyEstimateText() {
@@ -2554,6 +2697,7 @@ export function ReviewPackageWorkbench({
       `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}-monthly-estimate.txt`,
       buildPackageMonthlyEstimateText(activePackage, monthlyEstimates)
     );
+    trackExportDownload("estimate-text");
   }
 
   function exportRegionalRiskCsv() {
@@ -2565,6 +2709,10 @@ export function ReviewPackageWorkbench({
       `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}-regional-risk.csv`,
       buildRegionalRiskRows(activePackage, regionalRiskExportRows)
     );
+    trackExportDownload("regional-risk-csv", {
+      blockedServiceCount: regionalRiskSummary.blockedServices.length,
+      caveatServiceCount: regionalRiskSummary.caveatServices.length
+    });
   }
 
   function exportLeadershipSummaryMarkdown() {
@@ -2591,6 +2739,9 @@ export function ReviewPackageWorkbench({
       }),
       "text/markdown;charset=utf-8"
     );
+    trackExportDownload("leadership-markdown", {
+      artifactAudience: "Senior Director"
+    });
   }
 
   return (

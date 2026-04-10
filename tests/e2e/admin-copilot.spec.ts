@@ -192,6 +192,80 @@ const adminPromptPayload = {
   ]
 } as const;
 
+const telemetrySummaryPayload = {
+  checkedAt: "2026-04-05T20:12:00.000Z",
+  storageConfigured: true,
+  windowDays: 14,
+  totalEvents: 18,
+  metrics: [
+    { key: "reviewStarts", label: "Homepage starts", count: 5 },
+    { key: "reviewCreates", label: "Review shells created", count: 4 },
+    { key: "servicesAdded", label: "Services added to scope", count: 9 },
+    { key: "exports", label: "Export downloads", count: 3 },
+    { key: "cloudLoads", label: "Cloud continuity loads", count: 2 },
+    { key: "cloudSaves", label: "Cloud saves and CSVs", count: 2 },
+    { key: "adminPrompts", label: "Admin prompts", count: 1 }
+  ],
+  exportBreakdown: [
+    {
+      key: "leadership-markdown",
+      label: "leadership-markdown",
+      count: 2
+    }
+  ],
+  cloudActionBreakdown: [
+    {
+      key: "resume",
+      label: "resume",
+      count: 1
+    },
+    {
+      key: "save",
+      label: "save",
+      count: 1
+    }
+  ],
+  recentEvents: [
+    {
+      occurredAt: "2026-04-05T20:10:00.000Z",
+      name: "admin_prompt_submit",
+      category: "admin",
+      actor: "admin",
+      route: "/admin/copilot",
+      reviewId: null,
+      properties: {
+        origin: "suggested",
+        questionLength: "48",
+        succeeded: "true"
+      }
+    }
+  ],
+  dailyRollup: [
+    {
+      date: "2026-04-04",
+      totalEvents: 8,
+      reviewStarts: 2,
+      reviewCreates: 2,
+      servicesAdded: 4,
+      exports: 1,
+      cloudLoads: 1,
+      cloudSaves: 1,
+      adminPrompts: 0
+    },
+    {
+      date: "2026-04-05",
+      totalEvents: 10,
+      reviewStarts: 3,
+      reviewCreates: 2,
+      servicesAdded: 5,
+      exports: 2,
+      cloudLoads: 1,
+      cloudSaves: 1,
+      adminPrompts: 1
+    }
+  ]
+} as const;
+
 test.describe("admin copilot access and diagnostics", () => {
   test("prompts signed-out users to sign in as admin", async ({ page }) => {
     await page.route("**/.auth/me", async (route) => {
@@ -216,12 +290,29 @@ test.describe("admin copilot access and diagnostics", () => {
   });
 
   test("renders admin diagnostics and runs a protected prompt for admin users", async ({ page }) => {
+    const telemetryEvents: Array<Record<string, unknown>> = [];
+
     await page.route("**/.auth/me", async (route) => {
       await route.fulfill({ json: adminPrincipal });
     });
 
     await page.route("**/api/admin/copilot/health", async (route) => {
       await route.fulfill({ json: adminHealthPayload });
+    });
+
+    await page.route("**/api/admin/telemetry/summary?days=14", async (route) => {
+      await route.fulfill({ json: telemetrySummaryPayload });
+    });
+
+    await page.route("**/api/telemetry", async (route) => {
+      telemetryEvents.push(route.request().postDataJSON() as Record<string, unknown>);
+      await route.fulfill({
+        status: 202,
+        json: {
+          recorded: true,
+          storageConfigured: true
+        }
+      });
     });
 
     await page.route("**/api/admin/copilot", async (route) => {
@@ -270,6 +361,10 @@ test.describe("admin copilot access and diagnostics", () => {
     await expect(page.getByText("Manual refresh key")).toBeVisible();
     await expect(page.getByText("Azure OpenAI API key")).toBeVisible();
     await expect(page.getByText("Manual refresh is enabled")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Inspect the shipped homepage-to-review funnel without opening raw storage rows." })).toBeVisible();
+    await expect(page.getByText("Homepage starts", { exact: true })).toBeVisible();
+    await expect(page.getByText("Export mix")).toBeVisible();
+    await expect(page.getByText("2026-04-05", { exact: true })).toBeVisible();
 
     await page.getByRole("button", { name: "List the Azure resources supporting this website." }).click();
 
@@ -286,5 +381,17 @@ test.describe("admin copilot access and diagnostics", () => {
     await expect(answerCard.getByRole("heading", { name: "azure.resourceGraph.query" })).toBeVisible();
     await expect(answerCard.getByRole("heading", { name: "azure.functionApp.config" })).toBeVisible();
     await expect(answerCard).toContainText("Enumerated the platform resources in the scoped resource group.");
+    await expect
+      .poll(() => telemetryEvents.length)
+      .toBe(1);
+    expect(telemetryEvents[0]).toMatchObject({
+      name: "admin_prompt_submit",
+      category: "admin",
+      route: "/admin/copilot",
+      properties: {
+        origin: "suggested",
+        succeeded: true
+      }
+    });
   });
 });

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
+import { trackReviewTelemetry } from "@/lib/review-telemetry";
 
 const DEFAULT_REGIONS = ["UAE Central", "East US", "UK South"];
 
@@ -80,6 +81,16 @@ export function HomepageReviewInitializer() {
     }
 
     setError(null);
+    void trackReviewTelemetry({
+      name: "homepage_initialize_review",
+      category: "homepage",
+      route: "/",
+      properties: {
+        hasBusinessScope: businessScope.trim().length > 0,
+        projectNameLength: trimmedName.length,
+        targetRegionCount: resolvedRegions.length
+      }
+    });
     startTransition(() => {
       router.push(`/review-package?${params.toString()}`);
     });

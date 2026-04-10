@@ -19,6 +19,7 @@ import {
   saveCloudReviewRecords,
   structuredRecordsToReviewMap
 } from "@/lib/review-cloud";
+import { trackReviewTelemetry } from "@/lib/review-telemetry";
 
 type ReviewCloudControlsProps = {
   items: ChecklistItem[];
@@ -89,6 +90,17 @@ export function ReviewCloudControls({
         activePackage: stateDocument.activePackage,
         reviews: restoredReviews
       });
+      void trackReviewTelemetry({
+        name: "review_cloud_action",
+        category: "continuity",
+        route: "/review-package",
+        reviewId: stateDocument.activePackage?.id ?? activePackage?.id ?? null,
+        properties: {
+          action: "load",
+          recordCount: recordsDocument.recordCount,
+          serviceCount: stateDocument.activePackage?.selectedServiceSlugs.length ?? 0
+        }
+      });
       setStatusMessage(
         stateDocument.activePackage || recordsDocument.recordCount > 0
           ? `Loaded ${recordsDocument.recordCount.toLocaleString()} scoped review records and the active project review context from Azure Storage.`
@@ -111,6 +123,17 @@ export function ReviewCloudControls({
         saveCloudProjectReviewState(nextActivePackage, copilotContext)
       ]);
 
+      void trackReviewTelemetry({
+        name: "review_cloud_action",
+        category: "continuity",
+        route: "/review-package",
+        reviewId: nextActivePackage?.id ?? null,
+        properties: {
+          action: "save",
+          recordCount: document.recordCount,
+          serviceCount: nextSelectedServiceCount
+        }
+      });
       setStatusMessage(
         `Saved ${document.recordCount.toLocaleString()} scoped review records for "${nextActivePackage?.name ?? "this project review"}" across ${nextSelectedServiceCount.toLocaleString()} service${nextSelectedServiceCount === 1 ? "" : "s"} in scope.`
       );
@@ -130,6 +153,19 @@ export function ReviewCloudControls({
       });
       const downloadServiceCount = activePackage?.selectedServiceSlugs.length ?? selectedServiceCount;
 
+      void trackReviewTelemetry({
+        name: "review_cloud_action",
+        category: "continuity",
+        route: "/review-package",
+        reviewId: activePackage?.id ?? null,
+        properties: {
+          action: "download-csv",
+          artifactPathStored: Boolean(result.artifactPath),
+          filename: result.filename,
+          serviceCount: downloadServiceCount,
+          recordCount: structuredRecords.length
+        }
+      });
       setStatusMessage(
         result.artifactPath
           ? `Downloaded ${result.filename} for "${activePackage?.name ?? "this project review"}" and stored the scoped CSV artifact in Azure Storage for ${downloadServiceCount.toLocaleString()} service${downloadServiceCount === 1 ? "" : "s"} in scope.`

@@ -12,6 +12,7 @@ import {
   purgeCloudProjectReview,
   restoreDeletedCloudProjectReview
 } from "@/lib/review-cloud";
+import { trackReviewTelemetry } from "@/lib/review-telemetry";
 import type {
   ProjectReviewLibraryResponse,
   SavedProjectReviewSummary,
@@ -202,6 +203,18 @@ export function ProjectReviewLibrary() {
       setActivatingReviewId(review.id);
       setError(null);
       await activateCloudProjectReview(review.id);
+      void trackReviewTelemetry({
+        name: "review_cloud_action",
+        category: "continuity",
+        route: "/my-project-reviews",
+        reviewId: review.id,
+        properties: {
+          action: "resume",
+          audience: review.audience,
+          pendingCount: review.pendingCount,
+          serviceCount: review.serviceCount
+        }
+      });
       window.location.href = `/review-package?cloudReviewId=${encodeURIComponent(review.id)}`;
     } catch (nextError) {
       setError(
@@ -218,6 +231,17 @@ export function ProjectReviewLibrary() {
       setWorkingReviewId(review.id);
       setError(null);
       await archiveCloudProjectReview(review.id, archived);
+      void trackReviewTelemetry({
+        name: "review_cloud_action",
+        category: "continuity",
+        route: "/my-project-reviews",
+        reviewId: review.id,
+        properties: {
+          action: archived ? "archive" : "restore-archive",
+          pendingCount: review.pendingCount,
+          serviceCount: review.serviceCount
+        }
+      });
       await refreshLibrary();
       setConfirmAction(null);
     } catch (nextError) {
@@ -238,6 +262,17 @@ export function ProjectReviewLibrary() {
       setWorkingReviewId(review.id);
       setError(null);
       await deleteCloudProjectReview(review.id);
+      void trackReviewTelemetry({
+        name: "review_cloud_action",
+        category: "continuity",
+        route: "/my-project-reviews",
+        reviewId: review.id,
+        properties: {
+          action: "delete",
+          pendingCount: review.pendingCount,
+          serviceCount: review.serviceCount
+        }
+      });
       await refreshLibrary();
       setConfirmAction(null);
     } catch (nextError) {
@@ -256,6 +291,17 @@ export function ProjectReviewLibrary() {
       setWorkingReviewId(review.id);
       setError(null);
       await restoreDeletedCloudProjectReview(review.id);
+      void trackReviewTelemetry({
+        name: "review_cloud_action",
+        category: "continuity",
+        route: "/my-project-reviews",
+        reviewId: review.id,
+        properties: {
+          action: "restore",
+          pendingCount: review.pendingCount,
+          serviceCount: review.serviceCount
+        }
+      });
       await refreshLibrary();
       setConfirmAction(null);
     } catch (nextError) {
@@ -274,6 +320,17 @@ export function ProjectReviewLibrary() {
       setWorkingReviewId(review.id);
       setError(null);
       await purgeCloudProjectReview(review.id);
+      void trackReviewTelemetry({
+        name: "review_cloud_action",
+        category: "continuity",
+        route: "/my-project-reviews",
+        reviewId: review.id,
+        properties: {
+          action: "purge",
+          pendingCount: review.pendingCount,
+          serviceCount: review.serviceCount
+        }
+      });
       await refreshLibrary();
       setConfirmAction(null);
     } catch (nextError) {

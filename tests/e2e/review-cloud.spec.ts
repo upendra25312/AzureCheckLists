@@ -175,8 +175,21 @@ const pricingPayload = {
 
 test.describe("cloud-backed project review flows", () => {
   test("lists saved reviews for a signed-in user and opens the selected review", async ({ page }) => {
+    const telemetryEvents: Array<Record<string, unknown>> = [];
+
     await page.route("**/.auth/me", async (route) => {
       await route.fulfill({ json: signedInPrincipal });
+    });
+
+    await page.route("**/api/telemetry", async (route) => {
+      telemetryEvents.push(route.request().postDataJSON() as Record<string, unknown>);
+      await route.fulfill({
+        status: 202,
+        json: {
+          recorded: true,
+          storageConfigured: true
+        }
+      });
     });
 
     await page.route("**/api/project-reviews", async (route) => {
@@ -202,14 +215,38 @@ test.describe("cloud-backed project review flows", () => {
     await expect(page.getByText(`Signed in with Microsoft. The active saved review is ${restoredPackage.id}.`)).toBeVisible();
 
     await page.getByRole("button", { name: "Open this review" }).click();
+    await expect
+      .poll(() => telemetryEvents.length)
+      .toBe(1);
+    expect(telemetryEvents[0]).toMatchObject({
+      name: "review_cloud_action",
+      category: "continuity",
+      route: "/my-project-reviews",
+      reviewId: restoredPackage.id,
+      properties: {
+        action: "resume"
+      }
+    });
     await expect(page).toHaveURL(new RegExp(`/review-package\\?cloudReviewId=${restoredPackage.id}$`));
   });
 
   test("restores a cloud review and saves review details back to Azure", async ({ page }) => {
     let sawSaveRequest = false;
+    const telemetryEvents: Array<Record<string, unknown>> = [];
 
     await page.route("**/.auth/me", async (route) => {
       await route.fulfill({ json: signedInPrincipal });
+    });
+
+    await page.route("**/api/telemetry", async (route) => {
+      telemetryEvents.push(route.request().postDataJSON() as Record<string, unknown>);
+      await route.fulfill({
+        status: 202,
+        json: {
+          recorded: true,
+          storageConfigured: true
+        }
+      });
     });
 
     await page.route("**/api/project-reviews/activate", async (route) => {
@@ -270,6 +307,27 @@ test.describe("cloud-backed project review flows", () => {
     await page.getByRole("button", { name: "Save review details" }).click();
 
     await expect(page.getByText(`Saved the project review details for "${restoredPackage.name}" locally and updated the Azure-backed review summary.`)).toBeVisible();
+    await expect
+      .poll(() => telemetryEvents.length)
+      .toBeGreaterThanOrEqual(2);
+    expect(
+      telemetryEvents.find((event) => event.name === "review_cloud_action")
+    ).toMatchObject({
+      route: "/review-package",
+      reviewId: restoredPackage.id,
+      properties: {
+        action: "restore-link"
+      }
+    });
+    expect(
+      telemetryEvents.find((event) => event.name === "review_save_details")
+    ).toMatchObject({
+      route: "/review-package",
+      reviewId: restoredPackage.id,
+      properties: {
+        savedToCloud: true
+      }
+    });
     expect(sawSaveRequest).toBeTruthy();
   });
 

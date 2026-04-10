@@ -4,10 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import type {
   AdminCopilotHealthResponse,
   AdminCopilotResponse,
+  ReviewTelemetrySummaryResponse,
   StaticWebAppClientPrincipal
 } from "@/types";
 import { loadAdminCopilotHealth, runAdminCopilot } from "@/lib/admin-copilot";
 import { fetchClientPrincipal } from "@/lib/review-cloud";
+import { loadReviewTelemetrySummary, trackReviewTelemetry } from "@/lib/review-telemetry";
 
 const SUGGESTED_ADMIN_PROMPTS = [
   "List the Azure resources supporting this website.",
@@ -82,6 +84,9 @@ export function AdminCopilot() {
   const [health, setHealth] = useState<AdminCopilotHealthResponse | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
   const [healthLoading, setHealthLoading] = useState(false);
+  const [telemetry, setTelemetry] = useState<ReviewTelemetrySummaryResponse | null>(null);
+  const [telemetryError, setTelemetryError] = useState<string | null>(null);
+  const [telemetryLoading, setTelemetryLoading] = useState(false);
   const [question, setQuestion] = useState("");
   const [submittedQuestion, setSubmittedQuestion] = useState("");
   const [response, setResponse] = useState<AdminCopilotResponse | null>(null);
@@ -162,7 +167,43 @@ export function AdminCopilot() {
     [health]
   );
 
-  async function submit(nextQuestion: string) {
+  useEffect(() => {
+    if (!hasAdminRole(principal)) {
+      return;
+    }
+
+    let active = true;
+    setTelemetryLoading(true);
+    setTelemetryError(null);
+
+    loadReviewTelemetrySummary(14)
+      .then((nextTelemetry) => {
+        if (!active) {
+          return;
+        }
+
+        setTelemetry(nextTelemetry);
+        setTelemetryLoading(false);
+      })
+      .catch((nextError) => {
+        if (!active) {
+          return;
+        }
+
+        setTelemetryError(
+          nextError instanceof Error
+            ? nextError.message
+            : "Unable to load redesign telemetry."
+        );
+        setTelemetryLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [principal]);
+
+  async function submit(nextQuestion: string, options?: { origin?: "manual" | "suggested" }) {
     const trimmed = nextQuestion.trim();
 
     if (!trimmed || !promptExecutionEnabled) {
@@ -178,10 +219,33 @@ export function AdminCopilot() {
         scope: adminScope
       });
 
+      void trackReviewTelemetry({
+        name: "admin_prompt_submit",
+        category: "admin",
+        route: "/admin/copilot",
+        properties: {
+          origin: options?.origin ?? "manual",
+          promptExecutionEnabled: nextResponse.promptExecutionEnabled,
+          questionLength: trimmed.length,
+          sourceCount: nextResponse.sources.length,
+          succeeded: true,
+          toolCallCount: nextResponse.toolCalls.length
+        }
+      });
       setResponse(nextResponse);
       setSubmittedQuestion(trimmed);
       setQuestion(trimmed);
     } catch (nextError) {
+      void trackReviewTelemetry({
+        name: "admin_prompt_submit",
+        category: "admin",
+        route: "/admin/copilot",
+        properties: {
+          origin: options?.origin ?? "manual",
+          questionLength: trimmed.length,
+          succeeded: false
+        }
+      });
       setResponseError(
         nextError instanceof Error ? nextError.message : "Unable to run the admin copilot."
       );
@@ -335,7 +399,7 @@ export function AdminCopilot() {
               className="copilot-form"
               onSubmit={(event) => {
                 event.preventDefault();
-                void submit(question);
+                void submit(question, { origin: "manual" });
               }}
             >
               <label className="copilot-label">
@@ -368,14 +432,14 @@ export function AdminCopilot() {
             </form>
 
             <div className="copilot-suggestion-grid">
-              {SUGGESTED_ADMIN_PROMPTS.map((prompt) => (
+                {SUGGESTED_ADMIN_PROMPTS.map((prompt) => (
                 <button
                   key={prompt}
                   type="button"
                   className="copilot-suggestion"
                   onClick={() => {
                     setQuestion(prompt);
-                    void submit(prompt);
+                    void submit(prompt, { origin: "suggested" });
                   }}
                   disabled={responseLoading || !promptExecutionEnabled}
                 >
@@ -752,6 +816,167 @@ export function AdminCopilot() {
             <p className="eyebrow">Admin API</p>
             <h3>The protected admin health check could not complete.</h3>
             <p className="microcopy">{healthError}</p>
+          </section>
+        ) : null}
+      </section>
+
+      <section className="surface-panel board-stage-panel">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Redesign telemetry</p>
+            <h2 className="section-title">Inspect the shipped homepage-to-review funnel without opening raw storage rows.</h2>
+            <p className="section-copy">
+              This view summarizes the last 14 days of redesign adoption across homepage starts,
+              review creation, scoped-service changes, export downloads, continuity actions, and
+              admin prompt usage.
+            </p>
+          </div>
+        </div>
+
+        {telemetryLoading ? (
+          <section className="filter-card">
+            <p className="eyebrow">Loading telemetry</p>
+            <p className="microcopy">Collecting the latest redesign funnel summary from the protected backend.</p>
+          </section>
+        ) : null}
+
+        {telemetry ? (
+          <>
+            <div className="package-stats-grid">
+              {telemetry.metrics.map((metric) => (
+                <article className="hero-metric-card" key={metric.key}>
+                  <span>{metric.label}</span>
+                  <strong>{metric.count.toLocaleString()}</strong>
+                  <p>Captured in the last {telemetry.windowDays.toLocaleString()} days.</p>
+                </article>
+              ))}
+            </div>
+
+            <div className="traceability-grid">
+              <article className="trace-card">
+                <strong>Telemetry storage</strong>
+                <p>{telemetry.storageConfigured ? "Configured" : "Missing"}</p>
+              </article>
+              <article className="trace-card">
+                <strong>Total events</strong>
+                <p>{telemetry.totalEvents.toLocaleString()}</p>
+              </article>
+              <article className="trace-card">
+                <strong>Rolling window</strong>
+                <p>{telemetry.windowDays.toLocaleString()} days</p>
+              </article>
+              <article className="trace-card">
+                <strong>Last checked</strong>
+                <p>{formatDate(telemetry.checkedAt)}</p>
+              </article>
+            </div>
+
+            <div className="service-selection-grid">
+              <article className="future-card service-selection-card">
+                <p className="eyebrow">Export mix</p>
+                <h3>Which artifacts are actually being downloaded.</h3>
+                <div className="section-stack" style={{ gap: 12 }}>
+                  {telemetry.exportBreakdown.length > 0 ? (
+                    telemetry.exportBreakdown.map((entry) => (
+                      <div key={entry.key}>
+                        <strong>{entry.label}</strong>
+                        <p className="microcopy">{entry.count.toLocaleString()} downloads</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="microcopy">No export downloads have been captured in this window yet.</p>
+                  )}
+                </div>
+              </article>
+
+              <article className="future-card service-selection-card">
+                <p className="eyebrow">Continuity actions</p>
+                <h3>See how often users save, restore, or resume Azure-backed reviews.</h3>
+                <div className="section-stack" style={{ gap: 12 }}>
+                  {telemetry.cloudActionBreakdown.length > 0 ? (
+                    telemetry.cloudActionBreakdown.map((entry) => (
+                      <div key={entry.key}>
+                        <strong>{entry.label}</strong>
+                        <p className="microcopy">{entry.count.toLocaleString()} events</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="microcopy">No cloud continuity actions have been captured in this window yet.</p>
+                  )}
+                </div>
+              </article>
+            </div>
+
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">Daily rollup</p>
+                <h2 className="section-title">Watch the funnel by day, not just as one total.</h2>
+              </div>
+            </div>
+
+            <div className="traceability-grid">
+              {telemetry.dailyRollup.length > 0 ? (
+                telemetry.dailyRollup.map((entry) => (
+                  <article className="trace-card" key={entry.date}>
+                    <strong>{entry.date}</strong>
+                    <p>{entry.totalEvents.toLocaleString()} total events</p>
+                    <p className="microcopy">
+                      Starts {entry.reviewStarts.toLocaleString()} · Creates {entry.reviewCreates.toLocaleString()} · Services {entry.servicesAdded.toLocaleString()} · Exports {entry.exports.toLocaleString()}
+                    </p>
+                  </article>
+                ))
+              ) : (
+                <article className="trace-card">
+                  <strong>No telemetry yet</strong>
+                  <p>The daily rollup will populate after the first redesign events are recorded.</p>
+                </article>
+              )}
+            </div>
+
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">Recent events</p>
+                <h2 className="section-title">Latest recorded funnel signals from the protected summary route.</h2>
+              </div>
+            </div>
+
+            <div className="service-selection-grid">
+              {telemetry.recentEvents.length > 0 ? (
+                telemetry.recentEvents.map((entry) => (
+                  <article className="future-card service-selection-card" key={`${entry.occurredAt}-${entry.name}`}>
+                    <p className="eyebrow">{entry.name}</p>
+                    <h3>{entry.route}</h3>
+                    <p className="microcopy">
+                      {formatDate(entry.occurredAt)} · {entry.actor}
+                    </p>
+                    <div className="section-stack" style={{ gap: 8 }}>
+                      {Object.entries(entry.properties).length > 0 ? (
+                        Object.entries(entry.properties).map(([key, value]) => (
+                          <p className="microcopy" key={`${entry.occurredAt}-${key}`}>
+                            <strong>{key}</strong>: {value}
+                          </p>
+                        ))
+                      ) : (
+                        <p className="microcopy">No extra properties recorded for this event.</p>
+                      )}
+                    </div>
+                  </article>
+                ))
+              ) : (
+                <article className="future-card service-selection-card">
+                  <p className="eyebrow">No recent events</p>
+                  <p className="microcopy">Recent events will appear here as the redesigned workflow is used.</p>
+                </article>
+              )}
+            </div>
+          </>
+        ) : null}
+
+        {telemetryError ? (
+          <section className="filter-card">
+            <p className="eyebrow">Telemetry summary</p>
+            <h3>The redesign telemetry summary could not be loaded.</h3>
+            <p className="microcopy">{telemetryError}</p>
           </section>
         ) : null}
       </section>

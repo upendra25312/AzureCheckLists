@@ -545,6 +545,90 @@ export type ProjectReviewLibraryResponse = {
   reviews: SavedProjectReviewSummary[];
 };
 
+export type ReviewTelemetryEventName =
+  | "homepage_initialize_review"
+  | "review_create"
+  | "review_save_details"
+  | "review_scope_change"
+  | "review_export_download"
+  | "review_cloud_action"
+  | "admin_prompt_submit";
+
+export type ReviewTelemetryEventCategory =
+  | "homepage"
+  | "review-workspace"
+  | "continuity"
+  | "admin";
+
+export type ReviewTelemetryActor = "anonymous" | "authenticated" | "admin";
+
+export type ReviewTelemetryEventProperties = Record<
+  string,
+  string | number | boolean | null | undefined
+>;
+
+export type ReviewTelemetryEventRequest = {
+  name: ReviewTelemetryEventName;
+  category: ReviewTelemetryEventCategory;
+  route: string;
+  sessionId?: string;
+  reviewId?: string | null;
+  properties?: ReviewTelemetryEventProperties;
+};
+
+export type ReviewTelemetrySummaryMetric = {
+  key:
+    | "reviewStarts"
+    | "reviewCreates"
+    | "servicesAdded"
+    | "exports"
+    | "cloudLoads"
+    | "cloudSaves"
+    | "adminPrompts";
+  label: string;
+  count: number;
+};
+
+export type ReviewTelemetryBreakdownEntry = {
+  key: string;
+  label: string;
+  count: number;
+};
+
+export type ReviewTelemetryDailyRollup = {
+  date: string;
+  totalEvents: number;
+  reviewStarts: number;
+  reviewCreates: number;
+  servicesAdded: number;
+  exports: number;
+  cloudLoads: number;
+  cloudSaves: number;
+  adminPrompts: number;
+};
+
+export type ReviewTelemetryRecentEvent = {
+  occurredAt: string;
+  name: ReviewTelemetryEventName;
+  category: ReviewTelemetryEventCategory;
+  actor: ReviewTelemetryActor;
+  route: string;
+  reviewId?: string | null;
+  properties: Record<string, string>;
+};
+
+export type ReviewTelemetrySummaryResponse = {
+  checkedAt: string;
+  storageConfigured: boolean;
+  windowDays: number;
+  totalEvents: number;
+  metrics: ReviewTelemetrySummaryMetric[];
+  exportBreakdown: ReviewTelemetryBreakdownEntry[];
+  cloudActionBreakdown: ReviewTelemetryBreakdownEntry[];
+  recentEvents: ReviewTelemetryRecentEvent[];
+  dailyRollup: ReviewTelemetryDailyRollup[];
+};
+
 export type AdminCopilotScope = {
   resourceGroup: string;
   staticWebAppName?: string;

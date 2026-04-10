@@ -48,14 +48,14 @@ Epic status: Completed
 
 ### Epic B: Telemetry and adoption instrumentation
 
-Epic status: Pending
+Epic status: Completed
 
 | ID | Priority | Status | Item | Definition of done |
 | --- | --- | --- | --- | --- |
-| QA-07 | P0 | Pending | Define the post-redesign funnel events | Event list exists for homepage start, service add, export use, save/resume, and admin copilot usage |
-| QA-08 | P1 | Pending | Instrument homepage and review-workspace conversion events | Events fire for initialize review, create review, service scope changes, and export actions |
-| QA-09 | P1 | Pending | Instrument continuity and admin/copilot events | Save, restore, admin prompt submit, and key protected-route actions are measurable |
-| QA-10 | P1 | Pending | Define a simple live dashboard or reporting view for redesign adoption | The team can inspect funnel health without digging through raw telemetry |
+| QA-07 | P0 | Completed | Define the post-redesign funnel events | Event list exists for homepage start, service add, export use, save/resume, and admin copilot usage |
+| QA-08 | P1 | Completed | Instrument homepage and review-workspace conversion events | Events fire for initialize review, create review, service scope changes, and export actions |
+| QA-09 | P1 | Completed | Instrument continuity and admin/copilot events | Save, restore, admin prompt submit, and key protected-route actions are measurable |
+| QA-10 | P1 | Completed | Define a simple live dashboard or reporting view for redesign adoption | The team can inspect funnel health without digging through raw telemetry |
 
 ### Epic C: Post-launch polish
 
@@ -133,6 +133,33 @@ Notes:
 - `[P2][homepage -> review-package][UX clarity]` Export previews default to `Audience: Cloud Architect` even when the homepage initializer never asked the user to choose an audience. The default is workable, but it can make leadership and commercial artifacts feel pre-filled by surprise. Follow-up owner: product + frontend.
 - `[P2][review-package][positive validation]` The audience-first export structure works well in real use. The live leadership brief download completed successfully and the content matched the current scoped services, blocked regions, and pending findings.
 
+## Epic B Telemetry Rollout
+
+### Event taxonomy now in use
+
+- `homepage_initialize_review` when the user submits the homepage initializer
+- `review_create` when a project review shell is created from the workspace or homepage handoff
+- `review_save_details` when workspace review details are saved locally or with Azure-backed summary sync
+- `review_scope_change` when services are added, removed, or cleared from scope
+- `review_export_download` when a local export artifact is downloaded
+- `review_cloud_action` when users resume, restore, save, archive, restore, delete, purge, or download the Azure-backed CSV flow
+- `admin_prompt_submit` when an authenticated admin runs a protected prompt
+
+### Reporting view
+
+- Protected summary route: `/api/admin/telemetry/summary`
+- Protected dashboard surface: `/admin/copilot`
+- Rolling window: `14 days`
+- Storage backing: Azure Table Storage via `AZURE_STORAGE_TELEMETRY_TABLE_NAME` with `reviewtelemetry` as the default table
+
+### What the dashboard now shows
+
+- headline funnel metrics for starts, created reviews, services added, exports, cloud loads, cloud saves/CSVs, and admin prompts
+- export artifact mix
+- continuity-action breakdown
+- daily rollup cards
+- recent-event cards with route, actor, and normalized properties
+
 ## Validation Log
 
 - April 10, 2026: Initial post-redesign live QA tracker created.
@@ -142,11 +169,15 @@ Notes:
 - April 10, 2026: Confirmed the live backend remained healthy at `2026-04-10T03:42:48.125Z` with `storageConfigured: true` and `copilotConfigured: true`.
 - April 10, 2026: Completed the deeper live interaction pass for create-review, scope-selection, and export-preview flow on the deployed site.
 - April 10, 2026: Verified the homepage initializer handed off a live review into `/review-package`, the starter bundle unlocked real region and pricing signals, and a live leadership export downloaded successfully.
+- April 10, 2026: Added the redesign telemetry pipeline (`/api/telemetry`) plus the protected adoption summary route (`/api/admin/telemetry/summary`).
+- April 10, 2026: Instrumented homepage start, workspace create/save/scope/export, continuity actions, and admin prompt submissions.
+- April 10, 2026: Added the protected redesign telemetry dashboard to `/admin/copilot`.
+- April 10, 2026: Validated telemetry with `npm --prefix api test`, `npm run build`, and targeted Playwright coverage for homepage/workspace funnel, continuity flows, and admin prompt usage.
 
 ## Recommended Next Step
 
-Start Epic B next:
+Start Epic C next:
 
-1. Define the post-redesign funnel events for initialize review, add service, export, save or restore, and admin prompt usage.
-2. Instrument the homepage and review workspace with those conversion events.
-3. Decide where the redesign adoption view should live so the funnel can be inspected without raw logs.
+1. Fix the `Checklist CSV` preview copy so it no longer claims scoped findings are missing when the review already has them.
+2. Decide whether audience should be chosen on the homepage initializer or explained more clearly inside the export stage.
+3. Run one more live mobile pass focused on spacing, stacked actions, and stage orientation after the new telemetry release.
