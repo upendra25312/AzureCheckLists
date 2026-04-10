@@ -1,8 +1,8 @@
 const { app } = require("@azure/functions");
 const { jsonResponse, requireAuthenticated } = require("../shared/auth");
-const { recordArbDecision } = require("../shared/arb-review-store");
+const { updateArbAction } = require("../shared/arb-review-store");
 
-async function handleArbRecordDecision(request, context) {
+async function handleArbPatchAction(request, context) {
   const auth = requireAuthenticated(request);
   if (auth.response) {
     return auth.response;
@@ -10,26 +10,27 @@ async function handleArbRecordDecision(request, context) {
 
   try {
     const reviewId = request.params?.reviewId || "demo-review";
+    const actionId = request.params?.actionId;
     const body = await request.json().catch(() => ({}));
 
     return jsonResponse(200, {
       reviewId,
-      decision: await recordArbDecision(auth.principal, reviewId, body)
+      action: await updateArbAction(auth.principal, reviewId, actionId, body)
     });
   } catch (error) {
     return jsonResponse(error?.statusCode === 404 ? 404 : 500, {
-      error: error instanceof Error ? error.message : "Unable to record the ARB decision."
+      error: error instanceof Error ? error.message : "Unable to update the ARB action."
     });
   }
 }
 
-app.http("arbRecordDecision", {
-  route: "arb/reviews/{reviewId}/decision",
-  methods: ["POST"],
+app.http("arbPatchAction", {
+  route: "arb/reviews/{reviewId}/actions/{actionId}",
+  methods: ["PATCH"],
   authLevel: "anonymous",
-  handler: handleArbRecordDecision
+  handler: handleArbPatchAction
 });
 
 module.exports = {
-  handleArbRecordDecision
+  handleArbPatchAction
 };

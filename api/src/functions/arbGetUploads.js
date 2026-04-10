@@ -1,8 +1,8 @@
 const { app } = require("@azure/functions");
 const { jsonResponse, requireAuthenticated } = require("../shared/auth");
-const { getArbFindings } = require("../shared/arb-review-store");
+const { getArbExtractionStatus, getArbFiles } = require("../shared/arb-review-store");
 
-async function handleArbGetFindings(request, context) {
+async function handleArbGetUploads(request, context) {
   const auth = requireAuthenticated(request);
   if (auth.response) {
     return auth.response;
@@ -12,22 +12,23 @@ async function handleArbGetFindings(request, context) {
     const reviewId = request.params?.reviewId || "demo-review";
     return jsonResponse(200, {
       reviewId,
-      findings: await getArbFindings(auth.principal, reviewId)
+      files: await getArbFiles(auth.principal, reviewId),
+      extraction: await getArbExtractionStatus(auth.principal, reviewId)
     });
   } catch (error) {
     return jsonResponse(error?.statusCode === 404 ? 404 : 500, {
-      error: error instanceof Error ? error.message : "Unable to load ARB findings."
+      error: error instanceof Error ? error.message : "Unable to load the ARB upload inventory."
     });
   }
 }
 
-app.http("arbGetFindings", {
-  route: "arb/reviews/{reviewId}/findings",
+app.http("arbGetUploads", {
+  route: "arb/reviews/{reviewId}/uploads",
   methods: ["GET"],
   authLevel: "anonymous",
-  handler: handleArbGetFindings
+  handler: handleArbGetUploads
 });
 
 module.exports = {
-  handleArbGetFindings
+  handleArbGetUploads
 };

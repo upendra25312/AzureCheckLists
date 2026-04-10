@@ -1,6 +1,6 @@
 const { app } = require("@azure/functions");
 const { jsonResponse, requireAuthenticated } = require("../shared/auth");
-const { buildMockReview } = require("../shared/arb-mock");
+const { createArbReview } = require("../shared/arb-review-store");
 
 async function handleArbCreateReview(request) {
   const auth = requireAuthenticated(request);
@@ -8,14 +8,19 @@ async function handleArbCreateReview(request) {
     return auth.response;
   }
 
-  const body = await request.json().catch(() => ({}));
-  const reviewId = body.projectCode ? `arb-${body.projectCode}` : "arb-demo-review";
-  const review = buildMockReview(reviewId);
+  try {
+    const body = await request.json().catch(() => ({}));
+    const review = await createArbReview(auth.principal, body);
 
-  return jsonResponse(201, {
-    review,
-    message: "ARB review scaffold created. Replace mock storage with persisted review creation."
-  });
+    return jsonResponse(201, {
+      review,
+      message: "ARB review persisted to Azure Table Storage."
+    });
+  } catch (error) {
+    return jsonResponse(error?.statusCode === 404 || error?.statusCode === 409 ? error.statusCode : 500, {
+      error: error instanceof Error ? error.message : "Unable to create the ARB review."
+    });
+  }
 }
 
 app.http("arbCreateReview", {

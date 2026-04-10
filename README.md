@@ -119,14 +119,18 @@ Recommended Static Web Apps build settings:
 This repo includes:
 
 - [azure-static-web-apps-jolly-sea-014792b10.yml](./.github/workflows/azure-static-web-apps-jolly-sea-014792b10.yml) for the frontend
+- [azure-functions-api.yml](./.github/workflows/azure-functions-api.yml) for the dedicated backend
 
 Required repository secrets:
 
 - `AZURE_STATIC_WEB_APPS_API_TOKEN_JOLLY_SEA_014792B10`
+- `AZURE_FUNCTIONAPP_PUBLISH_PROFILE_AZURE_REVIEW_CHECKLISTS_API`
 
 If deployment fails with `No matching Static Web App was found or the api key was invalid`, refresh that secret from the target Azure Static Web App deployment token in the Azure portal.
 
 The frontend workflow intentionally checks out the upstream `Azure/review-checklists` repository into `source-repo/` during CI so the dashboard can regenerate normalized data at build time without committing the upstream source into this repo.
+
+The backend workflow deploys the `api/` Azure Functions package directly to the linked Function App. It currently uses the Azure Functions GitHub Action with a publish profile secret and enables remote build for the Flex Consumption plan.
 
 ## Dedicated backend deployment
 
@@ -144,9 +148,12 @@ Use [deploy-dedicated-function-backend.ps1](./scripts/deploy-dedicated-function-
 
 - upgrade the target Static Web App to `Standard`
 - create the storage account
+- ensure the `arb-inputfiles` and `arb-outputfiles` blob containers exist
 - create the Function App
 - link the Function App to the Static Web App
 - configure the low-cost cache and refresh settings
+- configure the ARB Azure Table Storage setting used by `/api/arb/*`
+- configure the ARB upload and reviewed-output container settings used by `/api/arb/*`
 
 For Flex Consumption, the most reliable deployment path is currently Azure Functions Core Tools:
 
@@ -163,6 +170,8 @@ The public UI is local-first and does not require sign-in. The dedicated backend
 - `AZURE_STORAGE_REVIEW_CONTAINER_NAME`
 - `AZURE_STORAGE_REVIEW_ARTIFACT_CONTAINER_NAME`
 - `AZURE_STORAGE_COMMERCIAL_CACHE_CONTAINER_NAME`
+- `AZURE_STORAGE_ARB_INPUT_CONTAINER_NAME`
+- `AZURE_STORAGE_ARB_OUTPUT_CONTAINER_NAME`
 - `AZURE_COMMERCIAL_REFRESH_SCHEDULE`
 - `AZURE_COMMERCIAL_CACHE_TTL_HOURS`
 - `AZURE_AVAILABILITY_CACHE_TTL_HOURS`
@@ -181,10 +190,12 @@ Recommended defaults:
 - `AZURE_STORAGE_REVIEW_CONTAINER_NAME=review-notes`
 - `AZURE_STORAGE_REVIEW_ARTIFACT_CONTAINER_NAME=review-artifacts`
 - `AZURE_STORAGE_COMMERCIAL_CACHE_CONTAINER_NAME=commercial-data-cache`
+- `AZURE_STORAGE_ARB_INPUT_CONTAINER_NAME=arb-inputfiles`
+- `AZURE_STORAGE_ARB_OUTPUT_CONTAINER_NAME=arb-outputfiles`
 - `AZURE_COMMERCIAL_REFRESH_SCHEDULE=0 0 7 * * 1`
 - `AZURE_COMMERCIAL_CACHE_TTL_HOURS=168`
 
-The dedicated backend stores structured review records as JSON in Blob Storage, keeps commercial data in a separate blob-backed cache, and generates CSV only when the user clicks `Download CSV`.
+The dedicated backend stores structured review records as JSON in Blob Storage, keeps commercial data in a separate blob-backed cache, writes uploaded ARB input files into `arb-inputfiles`, and writes reviewed output artifacts into `arb-outputfiles`. The ARB experience now lets users regenerate the reviewed output package after findings, actions, scorecard posture, or reviewer decision changes so the downloaded `.md`, `.csv`, and `.html` files stay current.
 
 ## Architecture
 

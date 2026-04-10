@@ -4,6 +4,8 @@ const USER_PROFILE_TABLE_NAME =
   process.env.AZURE_STORAGE_REVIEW_USER_TABLE_NAME || "reviewusers";
 const PROJECT_REVIEW_TABLE_NAME =
   process.env.AZURE_STORAGE_PROJECT_REVIEW_TABLE_NAME || "projectreviews";
+const ARB_REVIEW_TABLE_NAME =
+  process.env.AZURE_STORAGE_ARB_REVIEW_TABLE_NAME || "arbreviews";
 
 function getTablesConnectionString() {
   const connectionString =
@@ -37,6 +39,7 @@ async function getTableClient(name) {
 }
 
 module.exports = {
+  ARB_REVIEW_TABLE_NAME,
   PROJECT_REVIEW_TABLE_NAME,
   USER_PROFILE_TABLE_NAME,
   encodeTableKey,

@@ -6,6 +6,12 @@ const ARTIFACTS_CONTAINER_NAME =
   process.env.AZURE_STORAGE_REVIEW_ARTIFACT_CONTAINER_NAME || "review-artifacts";
 const COMMERCIAL_CACHE_CONTAINER_NAME =
   process.env.AZURE_STORAGE_COMMERCIAL_CACHE_CONTAINER_NAME || "commercial-data-cache";
+const ARB_INPUT_CONTAINER_NAME =
+  process.env.AZURE_STORAGE_ARB_INPUT_CONTAINER_NAME || "arb-inputfiles";
+const ARB_OUTPUT_CONTAINER_NAME =
+  process.env.AZURE_STORAGE_ARB_OUTPUT_CONTAINER_NAME || "arb-outputfiles";
+const ARB_PROCESSING_CACHE_CONTAINER_NAME =
+  process.env.AZURE_STORAGE_ARB_PROCESSING_CACHE_CONTAINER_NAME || "arb-processing-cache";
 
 function getBlobServiceClient() {
   const connectionString =
@@ -77,6 +83,36 @@ async function uploadTextBlob(containerClient, blobName, body, contentType) {
   return blobClient;
 }
 
+async function uploadBinaryBlob(containerClient, blobName, body, contentType) {
+  const blobClient = containerClient.getBlockBlobClient(blobName);
+  const payload = Buffer.isBuffer(body) ? body : Buffer.from(body);
+
+  await blobClient.uploadData(payload, {
+    blobHTTPHeaders: {
+      blobContentType: contentType || "application/octet-stream"
+    }
+  });
+
+  return blobClient;
+}
+
+async function readTextBlob(containerClient, blobName) {
+  const blobClient = containerClient.getBlobClient(blobName);
+
+  if (!(await blobClient.exists())) {
+    return null;
+  }
+
+  const download = await blobClient.download();
+  const chunks = [];
+
+  for await (const chunk of download.readableStreamBody) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+
+  return Buffer.concat(chunks).toString("utf8");
+}
+
 async function deleteBlobIfExists(containerClient, blobName) {
   const blobClient = containerClient.getBlobClient(blobName);
 
@@ -100,6 +136,9 @@ function buildArtifactBlobName(userId, filename) {
 }
 
 module.exports = {
+  ARB_INPUT_CONTAINER_NAME,
+  ARB_OUTPUT_CONTAINER_NAME,
+  ARB_PROCESSING_CACHE_CONTAINER_NAME,
   ARTIFACTS_CONTAINER_NAME,
   COMMERCIAL_CACHE_CONTAINER_NAME,
   NOTES_CONTAINER_NAME,
@@ -109,8 +148,10 @@ module.exports = {
   buildProjectReviewStateBlobName,
   deleteBlobIfExists,
   getContainerClient,
+  readTextBlob,
   readJsonBlob,
   sanitizePathSegment,
+  uploadBinaryBlob,
   uploadJsonBlob,
   uploadTextBlob
 };

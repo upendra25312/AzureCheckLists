@@ -44,6 +44,15 @@ export interface ArbReviewSummary {
   createdAt?: string;
   finalDecision?: string | null;
   lastUpdated?: string;
+  targetReviewDate?: string | null;
+  notes?: string | null;
+  requiredEvidencePresent?: boolean;
+  recommendedEvidenceCoverage?: number;
+  missingRequiredItems?: string[];
+  missingRecommendedItems?: string[];
+  readinessOutcome?: string | null;
+  readinessNotes?: string | null;
+  documentCount?: number;
 }
 
 export interface ArbReviewLibraryResponse {
@@ -91,6 +100,81 @@ export interface ArbAction {
   closureNotes: string | null;
   reviewerVerificationRequired: boolean;
   createdAt: string;
+}
+
+export interface ArbUploadedFile {
+  fileId: string;
+  reviewId: string;
+  fileName: string;
+  fileType: string;
+  logicalCategory: string;
+  blobPath: string;
+  uploadedBy: string;
+  uploadedAt: string;
+  contentHash: string;
+  extractionStatus: string;
+  extractionError: string | null;
+  sourceRole: string | null;
+  sizeBytes: number;
+  contentType: string;
+  supportedTextExtraction: boolean;
+}
+
+export interface ArbExtractionFileStatus {
+  fileId: string;
+  fileName: string;
+  extractionStatus: string;
+  extractionError: string | null;
+}
+
+export interface ArbExtractionStatus {
+  reviewId: string;
+  jobId: string;
+  state: string;
+  completedSteps: string[];
+  failedSteps: string[];
+  evidenceReadinessState: ArbEvidenceReadiness | string;
+  extractionErrors: string[];
+  lastStartedAt: string | null;
+  lastCompletedAt: string | null;
+  fileStatuses: ArbExtractionFileStatus[];
+}
+
+export interface ArbRequirement {
+  requirementId: string;
+  reviewId: string;
+  sourceFileId: string | null;
+  sourceFileName: string | null;
+  normalizedText: string;
+  category: string;
+  criticality: string;
+  reviewerStatus: string;
+}
+
+export interface ArbEvidenceFact {
+  evidenceId: string;
+  reviewId: string;
+  sourceFileId: string | null;
+  sourceFileName: string | null;
+  factType: string;
+  summary: string;
+  sourceExcerpt: string;
+  confidence: string;
+}
+
+export type ArbExportFormat = "markdown" | "csv" | "html";
+
+export interface ArbExportArtifact {
+  exportId: string;
+  reviewId: string;
+  format: ArbExportFormat | string;
+  includeFindings: boolean;
+  includeScorecard: boolean;
+  includeActions: boolean;
+  blobPath: string;
+  fileName: string;
+  contentType: string;
+  generatedAt: string;
 }
 
 export interface ArbDomainScore {

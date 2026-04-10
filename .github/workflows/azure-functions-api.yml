@@ -1,0 +1,48 @@
+name: Azure Functions API CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - api/**
+      - .github/workflows/azure-functions-api.yml
+  workflow_dispatch:
+
+env:
+  AZURE_FUNCTIONAPP_NAME: azure-review-checklists-api
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: ./api
+  NODE_VERSION: 22
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    name: Build And Deploy Functions API
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ./api/package-lock.json
+
+      - name: Install API dependencies
+        run: npm ci
+        working-directory: ./api
+
+      - name: Run API tests
+        run: npm test
+        working-directory: ./api
+
+      - name: Deploy Azure Functions package
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE_AZURE_REVIEW_CHECKLISTS_API }}
+          sku: flexconsumption
+          remote-build: true

@@ -2,13 +2,21 @@
 
 import { useEffect, useState } from "react";
 import {
+  createArbExport,
   createArbAction,
+  downloadArbExport,
+  fetchArbEvidence,
   fetchArbActions,
   fetchArbDecision,
+  fetchArbExports,
   fetchArbFindings,
+  fetchArbRequirements,
   fetchArbReview,
   fetchArbScorecard,
+  fetchArbUploads,
   recordArbDecision,
+  startArbExtraction,
+  uploadArbFiles,
   updateArbAction,
   updateArbFinding
 } from "@/arb/api";
@@ -16,24 +24,20 @@ import { getArbReviewSteps } from "@/arb/mock-review";
 import type {
   ArbAction,
   ArbDecision,
+  ArbEvidenceFact,
+  ArbExportArtifact,
+  ArbExportFormat,
   ArbFinding,
+  ArbExtractionStatus,
+  ArbRequirement,
   ArbReviewSummary,
   ArbReviewStepKey,
-  ArbScorecard
+  ArbScorecard,
+  ArbUploadedFile
 } from "@/arb/types";
 import { ArbPlaceholderPage } from "@/components/arb/placeholder-page";
 import { ArbReviewShell } from "@/components/arb/review-shell";
 
-type LocalUploadItem = {
-  id: string;
-  name: string;
-  sizeLabel: string;
-  category: string;
-  status: string;
-  supported: boolean;
-};
-
-const UPLOAD_STORAGE_KEY_PREFIX = "arb-upload-stage:";
 const SUPPORTED_UPLOAD_EXTENSIONS = [
   ".pdf",
   ".doc",
@@ -47,7 +51,11 @@ const SUPPORTED_UPLOAD_EXTENSIONS = [
   ".jpg",
   ".jpeg",
   ".svg",
-  ".vsdx"
+  ".vsdx",
+  ".txt",
+  ".md",
+  ".markdown",
+  ".json"
 ] as const;
 
 function buildBullets(
@@ -129,10 +137,6 @@ function summarizeActions(actions: ArbAction[]) {
   };
 }
 
-function buildUploadStorageKey(reviewId: string) {
-  return `${UPLOAD_STORAGE_KEY_PREFIX}${reviewId}`;
-}
-
 function formatFileSize(bytes: number) {
   if (bytes >= 1024 * 1024) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -145,49 +149,16 @@ function formatFileSize(bytes: number) {
   return `${Math.max(1, bytes)} B`;
 }
 
-function getFileExtension(name: string) {
-  const lastIndex = name.lastIndexOf(".");
-
-  if (lastIndex === -1) {
-    return "";
+function formatExportLabel(format: string) {
+  if (format === "markdown") {
+    return ".md";
   }
 
-  return name.slice(lastIndex).toLowerCase();
-}
-
-function resolveUploadCategory(name: string) {
-  const extension = getFileExtension(name);
-
-  if ([".pdf", ".doc", ".docx"].includes(extension)) {
-    return "Narrative / requirements";
+  if (format === "html") {
+    return ".html";
   }
 
-  if ([".ppt", ".pptx"].includes(extension)) {
-    return "Architecture presentation";
-  }
-
-  if ([".xls", ".xlsx", ".csv"].includes(extension)) {
-    return "Workbook / cost model";
-  }
-
-  if ([".png", ".jpg", ".jpeg", ".svg", ".vsdx"].includes(extension)) {
-    return "Diagram / visual evidence";
-  }
-
-  return "Unsupported";
-}
-
-function createUploadItem(file: File): LocalUploadItem {
-  const category = resolveUploadCategory(file.name);
-
-  return {
-    id: `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    name: file.name,
-    sizeLabel: formatFileSize(file.size),
-    category,
-    status: category === "Unsupported" ? "Unsupported type" : "Staged locally",
-    supported: category !== "Unsupported"
-  };
+  return ".csv";
 }
 
 export function ArbLiveReviewStep(props: {
@@ -212,10 +183,19 @@ export function ArbLiveReviewStep(props: {
   const [decisionError, setDecisionError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [stagedUploads, setStagedUploads] = useState<LocalUploadItem[]>([]);
-  const [uploadReady, setUploadReady] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<ArbUploadedFile[]>([]);
+  const [requirements, setRequirements] = useState<ArbRequirement[]>([]);
+  const [evidenceFacts, setEvidenceFacts] = useState<ArbEvidenceFact[]>([]);
+  const [exportArtifacts, setExportArtifacts] = useState<ArbExportArtifact[]>([]);
+  const [extractionStatus, setExtractionStatus] = useState<ArbExtractionStatus | null>(null);
   const [confidentialityConfirmed, setConfidentialityConfirmed] = useState(false);
+  const [uploadSaving, setUploadSaving] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [extractionStarting, setExtractionStarting] = useState(false);
   const [uploadDropActive, setUploadDropActive] = useState(false);
+  const [exportDownloadingId, setExportDownloadingId] = useState<string | null>(null);
+  const [exportRegenerating, setExportRegenerating] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const actionSummary = summarizeActions(actions);
 
   let decisionGateMessage: string | null = null;
@@ -245,21 +225,141 @@ export function ArbLiveReviewStep(props: {
     );
   }
 
-  function stageFiles(fileList: FileList | null) {
-    if (!fileList) {
+  async function handleFileUpload(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) {
       return;
     }
 
-    const nextItems = Array.from(fileList).map((file) => createUploadItem(file));
+    try {
+      setUploadSaving(true);
+      setUploadError(null);
 
-    setStagedUploads((currentItems) => {
-      const knownKeys = new Set(currentItems.map((item) => `${item.name}-${item.sizeLabel}-${item.category}`));
-      const dedupedNewItems = nextItems.filter(
-        (item) => !knownKeys.has(`${item.name}-${item.sizeLabel}-${item.category}`)
+      const payload = await uploadArbFiles({
+        reviewId,
+        files: Array.from(fileList)
+      });
+
+      setUploadedFiles(payload.files);
+      setReview((currentReview) =>
+        currentReview
+          ? {
+              ...currentReview,
+              evidenceReadinessState:
+                payload.evidenceReadinessState as ArbReviewSummary["evidenceReadinessState"],
+              documentCount: payload.files.length
+            }
+          : currentReview
+      );
+    } catch (uploadFailure) {
+      setUploadError(
+        uploadFailure instanceof Error ? uploadFailure.message : "Unable to upload ARB files."
+      );
+    } finally {
+      setUploadSaving(false);
+    }
+  }
+
+  async function handleExportDownload(exportArtifact: ArbExportArtifact) {
+    try {
+      setExportDownloadingId(exportArtifact.exportId);
+      setExportError(null);
+      await downloadArbExport(reviewId, exportArtifact);
+    } catch (downloadError) {
+      setExportError(
+        downloadError instanceof Error
+          ? downloadError.message
+          : "Unable to download the reviewed output."
+      );
+    } finally {
+      setExportDownloadingId(null);
+    }
+  }
+
+  async function regenerateReviewedOutputs() {
+    const formats: ArbExportFormat[] = ["markdown", "csv", "html"];
+
+    try {
+      setExportRegenerating(true);
+      setExportError(null);
+
+      await Promise.all(
+        formats.map((format) =>
+          createArbExport({
+            reviewId,
+            format,
+            includeFindings: true,
+            includeScorecard: true,
+            includeActions: true
+          })
+        )
       );
 
-      return [...currentItems, ...dedupedNewItems];
-    });
+      const nextExports = await fetchArbExports(reviewId);
+      setExportArtifacts(nextExports);
+    } catch (regenerateError) {
+      setExportError(
+        regenerateError instanceof Error
+          ? regenerateError.message
+          : "Unable to regenerate the reviewed outputs."
+      );
+    } finally {
+      setExportRegenerating(false);
+    }
+  }
+
+  function renderOutputArtifactsCard() {
+    return (
+      <section className="trace-card arb-summary-card">
+        <div className="board-card-head">
+          <div className="board-card-head-copy">
+            <p className="board-card-subtitle">Reviewed outputs</p>
+            <h2 className="section-title">Regenerate or download the reviewed package</h2>
+          </div>
+        </div>
+        <p className="section-copy">
+          Processed ARB review outputs are written to <strong>arb-outputfiles</strong>. Regenerate
+          them after updating findings, actions, score posture, or the reviewer decision so the
+          downloaded package stays aligned with the latest review state.
+        </p>
+        <div className="button-row">
+          <button
+            type="button"
+            className="primary-button"
+            disabled={exportRegenerating}
+            onClick={() => void regenerateReviewedOutputs()}
+          >
+            {exportRegenerating ? "Regenerating outputs..." : "Regenerate reviewed outputs"}
+          </button>
+        </div>
+        {exportArtifacts.length === 0 ? (
+          <p className="microcopy">
+            Downloadable reviewed outputs will appear after extraction completes for this review.
+          </p>
+        ) : (
+          <div className="arb-upload-file-list">
+            {exportArtifacts.map((artifact) => (
+              <article key={artifact.exportId} className="trace-card arb-upload-file">
+                <div className="arb-upload-file-copy">
+                  <strong>{artifact.fileName}</strong>
+                  <p className="microcopy">
+                    {formatExportLabel(artifact.format)} · generated {new Date(artifact.generatedAt).toLocaleString()}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={exportDownloadingId === artifact.exportId}
+                  onClick={() => void handleExportDownload(artifact)}
+                >
+                  {exportDownloadingId === artifact.exportId ? "Preparing download..." : "Download"}
+                </button>
+              </article>
+            ))}
+          </div>
+        )}
+        {exportError ? <p>{exportError}</p> : null}
+      </section>
+    );
   }
 
   useEffect(() => {
@@ -271,9 +371,20 @@ export function ArbLiveReviewStep(props: {
         setError(null);
         const reviewResponse = await fetchArbReview(reviewId);
         const findingsResponse = activeStep === "findings" ? await fetchArbFindings(reviewId) : [];
+        const uploadsResponse =
+          activeStep === "upload" || activeStep === "requirements" || activeStep === "evidence"
+            ? await fetchArbUploads(reviewId)
+            : null;
         const actionsResponse =
           activeStep === "findings" || activeStep === "scorecard" || activeStep === "decision"
             ? await fetchArbActions(reviewId)
+            : [];
+        const requirementsResponse =
+          activeStep === "requirements" ? await fetchArbRequirements(reviewId) : [];
+        const evidenceResponse = activeStep === "evidence" ? await fetchArbEvidence(reviewId) : [];
+        const exportsResponse =
+          activeStep === "upload" || activeStep === "requirements" || activeStep === "evidence"
+            ? await fetchArbExports(reviewId)
             : [];
         const scorecardResponse =
           activeStep === "scorecard" ? await fetchArbScorecard(reviewId) : null;
@@ -283,6 +394,11 @@ export function ArbLiveReviewStep(props: {
         if (!cancelled) {
           setReview(reviewResponse);
           setFindings(findingsResponse);
+          setUploadedFiles(uploadsResponse?.files ?? []);
+          setExtractionStatus(uploadsResponse?.extraction ?? null);
+          setRequirements(requirementsResponse);
+          setEvidenceFacts(evidenceResponse);
+          setExportArtifacts(exportsResponse);
           setActions(actionsResponse);
           setScorecard(scorecardResponse);
           setDecisionResult(decisionResponse);
@@ -306,52 +422,6 @@ export function ArbLiveReviewStep(props: {
       cancelled = true;
     };
   }, [reviewId, activeStep]);
-
-  useEffect(() => {
-    if (activeStep !== "upload" || typeof window === "undefined") {
-      return;
-    }
-
-    const payload = window.sessionStorage.getItem(buildUploadStorageKey(reviewId));
-
-    if (!payload) {
-      setStagedUploads([]);
-      setUploadReady(false);
-      setConfidentialityConfirmed(false);
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(payload) as {
-        uploads?: LocalUploadItem[];
-        ready?: boolean;
-        confidentialityConfirmed?: boolean;
-      };
-
-      setStagedUploads(parsed.uploads ?? []);
-      setUploadReady(Boolean(parsed.ready));
-      setConfidentialityConfirmed(Boolean(parsed.confidentialityConfirmed));
-    } catch {
-      setStagedUploads([]);
-      setUploadReady(false);
-      setConfidentialityConfirmed(false);
-    }
-  }, [activeStep, reviewId]);
-
-  useEffect(() => {
-    if (activeStep !== "upload" || typeof window === "undefined") {
-      return;
-    }
-
-    window.sessionStorage.setItem(
-      buildUploadStorageKey(reviewId),
-      JSON.stringify({
-        uploads: stagedUploads,
-        ready: uploadReady,
-        confidentialityConfirmed
-      })
-    );
-  }, [activeStep, reviewId, stagedUploads, uploadReady, confidentialityConfirmed]);
 
   const shellReview =
     review ??
@@ -491,20 +561,16 @@ export function ArbLiveReviewStep(props: {
   }
 
   function renderUploadContent() {
-    const supportedUploads = stagedUploads.filter((item) => item.supported);
-    const unsupportedUploads = stagedUploads.filter((item) => !item.supported);
+    const supportedUploads = uploadedFiles.filter((item) => item.supportedTextExtraction);
+    const unsupportedUploads = uploadedFiles.filter((item) => !item.supportedTextExtraction);
     const readinessChecks = [
       {
-        label: "At least one supported source file is staged",
+        label: "At least one uploaded source file is persisted",
         complete: supportedUploads.length > 0
       },
       {
-        label: "Narrative or design evidence is present",
-        complete: supportedUploads.some((item) =>
-          ["Narrative / requirements", "Architecture presentation", "Diagram / visual evidence"].includes(
-            item.category
-          )
-        )
+        label: "Required upload categories are present",
+        complete: Boolean(review?.requiredEvidencePresent)
       },
       {
         label: "Confidentiality and handling note is acknowledged",
@@ -518,33 +584,40 @@ export function ArbLiveReviewStep(props: {
             "Topology, service, network, and security evidence from architecture docs",
             "Cost, support, and runbook signals from workbooks or appendices"
           ]
-        : Array.from(new Set(supportedUploads.map((item) => item.category))).map(
+        : Array.from(new Set(supportedUploads.map((item) => item.logicalCategory))).map(
             (category) => `Extraction will inspect: ${category}`
           );
-    const canMarkReady = readinessChecks.every((check) => check.complete);
+    const canStartExtraction = readinessChecks.every((check) => check.complete) && !uploadSaving;
 
     return (
       <div className="arb-page-stack">
         <div className="arb-summary-grid">
           <article className="future-card">
-            <p className="board-card-subtitle">Files staged for extraction</p>
+            <p className="board-card-subtitle">Files persisted for extraction</p>
             <strong>{supportedUploads.length}</strong>
             <p className="section-copy">
-              Supported files are staged locally and ready to feed the later extraction pipeline.
+              Supported files are stored in Blob Storage and ready to feed deterministic extraction.
             </p>
           </article>
           <article className="future-card">
-            <p className="board-card-subtitle">Unsupported files</p>
+            <p className="board-card-subtitle">Limited evidence files</p>
             <strong>{unsupportedUploads.length}</strong>
             <p className="section-copy">
-              Unsupported uploads stay visible so reviewers can remove or replace them before handoff.
+              Binary formats are stored and tracked, but only text-first formats are extracted in this budget path.
             </p>
           </article>
           <article className="future-card">
             <p className="board-card-subtitle">Readiness gate</p>
-            <strong>{canMarkReady ? "Ready" : "In progress"}</strong>
+            <strong>{canStartExtraction ? "Ready" : "In progress"}</strong>
             <p className="section-copy">
-              Gate the package before extraction so the downstream findings remain grounded.
+              Required evidence and reviewer confirmation gate extraction so downstream findings remain grounded.
+            </p>
+          </article>
+          <article className="future-card">
+            <p className="board-card-subtitle">Extraction state</p>
+            <strong>{extractionStatus?.state ?? "Not Started"}</strong>
+            <p className="section-copy">
+              {extractionStatus?.completedSteps.length ?? 0} completed steps across the current package.
             </p>
           </article>
         </div>
@@ -561,7 +634,7 @@ export function ArbLiveReviewStep(props: {
           onDrop={(event) => {
             event.preventDefault();
             setUploadDropActive(false);
-            stageFiles(event.dataTransfer.files);
+            void handleFileUpload(event.dataTransfer.files);
           }}
         >
           <div className="board-card-head">
@@ -572,8 +645,8 @@ export function ArbLiveReviewStep(props: {
           </div>
 
           <p className="section-copy">
-            Drag files here or use the file picker. This step is real, but it currently stages
-            files locally in this browser session until Blob-backed upload lands.
+            Drag files here or use the file picker. Uploaded files are persisted to Blob Storage,
+            registered against this review, and then made available to the extraction step.
           </p>
 
           <div className="pill-row">
@@ -594,12 +667,18 @@ export function ArbLiveReviewStep(props: {
             type="file"
             multiple
             accept={SUPPORTED_UPLOAD_EXTENSIONS.join(",")}
-            onChange={(event) => stageFiles(event.target.files)}
+            onChange={(event) => {
+              void handleFileUpload(event.target.files);
+              event.currentTarget.value = "";
+            }}
           />
           <p className="microcopy">
-            Accepted types: PDF, Office docs, spreadsheets, images, SVG, and VSDX. The next
-            backend slice will connect this staging surface to secure upload and extraction.
+            Accepted types: PDF, Office docs, spreadsheets, images, SVG, VSDX, text, and Markdown.
+            Text-first files extract immediately in this ARB cost-constrained path; other files stay
+            visible as limited-evidence artifacts.
           </p>
+          {uploadSaving ? <p className="microcopy">Uploading files to Blob Storage...</p> : null}
+          {uploadError ? <p>{uploadError}</p> : null}
         </section>
 
         <div className="arb-upload-layout">
@@ -610,33 +689,22 @@ export function ArbLiveReviewStep(props: {
                 <h2 className="section-title">Review the package contents before extraction</h2>
               </div>
             </div>
-            {stagedUploads.length === 0 ? (
+            {uploadedFiles.length === 0 ? (
               <p className="section-copy">
-                No files staged yet. Add the SOW, architecture pack, diagram, or workbook to start
+                No files uploaded yet. Add the SOW, architecture pack, diagram, or workbook to start
                 the review package.
               </p>
             ) : (
               <div className="arb-upload-file-list">
-                {stagedUploads.map((upload) => (
-                  <article key={upload.id} className="trace-card arb-upload-file">
+                {uploadedFiles.map((upload) => (
+                  <article key={upload.fileId} className="trace-card arb-upload-file">
                     <div className="arb-upload-file-copy">
-                      <strong>{upload.name}</strong>
+                      <strong>{upload.fileName}</strong>
                       <p className="microcopy">
-                        {upload.category} · {upload.sizeLabel} · {upload.status}
+                        {upload.logicalCategory} · {formatFileSize(upload.sizeBytes)} · {upload.extractionStatus}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      className="ghost-button"
-                      onClick={() => {
-                        setStagedUploads((currentItems) =>
-                          currentItems.filter((item) => item.id !== upload.id)
-                        );
-                        setUploadReady(false);
-                      }}
-                    >
-                      Remove
-                    </button>
+                    <span className="pill">{upload.supportedTextExtraction ? "Text-first" : "Limited"}</span>
                   </article>
                 ))}
               </div>
@@ -678,20 +746,151 @@ export function ArbLiveReviewStep(props: {
               <button
                 type="button"
                 className="primary-button"
-                disabled={!canMarkReady}
-                onClick={() => setUploadReady(true)}
+                disabled={!canStartExtraction || extractionStarting}
+                onClick={async () => {
+                  try {
+                    setExtractionStarting(true);
+                    setUploadError(null);
+                    const nextExtraction = await startArbExtraction(reviewId);
+                    setExtractionStatus(nextExtraction);
+                    const nextRequirements = await fetchArbRequirements(reviewId);
+                    const nextEvidence = await fetchArbEvidence(reviewId);
+                    const nextExports = await fetchArbExports(reviewId);
+                    setRequirements(nextRequirements);
+                    setEvidenceFacts(nextEvidence);
+                    setExportArtifacts(nextExports);
+                    setReview((currentReview) =>
+                      currentReview
+                        ? {
+                            ...currentReview,
+                            workflowState: "Review In Progress",
+                            evidenceReadinessState:
+                              nextExtraction.evidenceReadinessState as ArbReviewSummary["evidenceReadinessState"]
+                          }
+                        : currentReview
+                    );
+                  } catch (startFailure) {
+                    setUploadError(
+                      startFailure instanceof Error
+                        ? startFailure.message
+                        : "Unable to start extraction."
+                    );
+                  } finally {
+                    setExtractionStarting(false);
+                  }
+                }}
               >
-                Mark package ready for extraction
+                {extractionStarting ? "Starting extraction..." : "Start extraction"}
               </button>
-              {uploadReady ? (
+              {extractionStatus ? (
                 <p className="microcopy">
-                  Package staged locally for extraction. Blob-backed upload and document processing
-                  will connect in the next backend slice.
+                  Current extraction state: {extractionStatus.state}. Evidence readiness: {extractionStatus.evidenceReadinessState}.
                 </p>
               ) : null}
             </section>
+
+            {renderOutputArtifactsCard()}
           </div>
         </div>
+      </div>
+    );
+  }
+
+  function renderRequirementsContent() {
+    if (requirements.length === 0) {
+      return (
+        <ArbPlaceholderPage
+          intro="No extracted requirements are available yet. Upload required files and start extraction first."
+          bullets={buildBullets(activeStep, findings, scorecard)}
+        />
+      );
+    }
+
+    return (
+      <div className="arb-page-stack">
+        <div className="arb-summary-grid">
+          <article className="future-card">
+            <p className="board-card-subtitle">Normalized requirements</p>
+            <strong>{requirements.length}</strong>
+            <p className="section-copy">Requirements were derived from persisted text-first artifacts for this review.</p>
+          </article>
+          <article className="future-card">
+            <p className="board-card-subtitle">Source files</p>
+            <strong>{new Set(requirements.map((item) => item.sourceFileId).filter(Boolean)).size}</strong>
+            <p className="section-copy">Distinct uploaded files contributed to the normalized requirement set.</p>
+          </article>
+        </div>
+
+        <section className="surface-panel arb-summary-card">
+          <div className="board-card-head">
+            <div className="board-card-head-copy">
+              <p className="board-card-subtitle">Requirements</p>
+              <h2 className="section-title">Review the normalized requirement statements</h2>
+            </div>
+          </div>
+          <div className="arb-finding-grid">
+            {requirements.map((requirement) => (
+              <article key={requirement.requirementId} className="trace-card arb-score-card">
+                <h3>{requirement.category}</h3>
+                <p>{requirement.normalizedText}</p>
+                <p className="microcopy">
+                  {requirement.sourceFileName || "Derived review summary"} · {requirement.criticality} · {requirement.reviewerStatus}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {renderOutputArtifactsCard()}
+      </div>
+    );
+  }
+
+  function renderEvidenceContent() {
+    if (evidenceFacts.length === 0) {
+      return (
+        <ArbPlaceholderPage
+          intro="No extracted evidence facts are available yet. Upload required files and start extraction first."
+          bullets={buildBullets(activeStep, findings, scorecard)}
+        />
+      );
+    }
+
+    return (
+      <div className="arb-page-stack">
+        <div className="arb-summary-grid">
+          <article className="future-card">
+            <p className="board-card-subtitle">Evidence facts</p>
+            <strong>{evidenceFacts.length}</strong>
+            <p className="section-copy">Evidence facts are extracted from the persisted package and feed later findings.</p>
+          </article>
+          <article className="future-card">
+            <p className="board-card-subtitle">Extraction state</p>
+            <strong>{extractionStatus?.state ?? "Not Started"}</strong>
+            <p className="section-copy">Extraction status stays tied to this review instead of browser-local state.</p>
+          </article>
+        </div>
+
+        <section className="surface-panel arb-summary-card">
+          <div className="board-card-head">
+            <div className="board-card-head-copy">
+              <p className="board-card-subtitle">Evidence map</p>
+              <h2 className="section-title">Ground the review in extracted source evidence</h2>
+            </div>
+          </div>
+          <div className="arb-finding-grid">
+            {evidenceFacts.map((fact) => (
+              <article key={fact.evidenceId} className="trace-card arb-score-card">
+                <h3>{fact.factType}</h3>
+                <p>{fact.summary}</p>
+                <p className="microcopy">{fact.sourceFileName || "Derived review summary"} · {fact.confidence} confidence</p>
+                <p className="microcopy">{fact.sourceExcerpt}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {renderOutputArtifactsCard()}
       </div>
     );
   }
@@ -988,6 +1187,8 @@ export function ArbLiveReviewStep(props: {
             </div>
           )}
         </section>
+
+        {renderOutputArtifactsCard()}
       </div>
     );
   }
@@ -1093,87 +1294,93 @@ export function ArbLiveReviewStep(props: {
             </ul>
           </section>
         ) : null}
+
+        {renderOutputArtifactsCard()}
       </div>
     );
   }
 
   function renderDecisionContent() {
     return (
-      <div className="arb-decision-grid">
-        <section className="surface-panel arb-summary-card">
-          <div className="board-card-head">
-            <div className="board-card-head-copy">
-              <p className="board-card-subtitle">Decision posture</p>
-              <h2 className="section-title">Record an explicit reviewer outcome</h2>
+      <div className="arb-page-stack">
+        <div className="arb-decision-grid">
+          <section className="surface-panel arb-summary-card">
+            <div className="board-card-head">
+              <div className="board-card-head-copy">
+                <p className="board-card-subtitle">Decision posture</p>
+                <h2 className="section-title">Record an explicit reviewer outcome</h2>
+              </div>
             </div>
-          </div>
-          <p>This step records and reloads the persisted reviewer decision for this ARB review.</p>
-          <p>Open actions: {actionSummary.openCount}</p>
-          <p>Blocked actions: {actionSummary.blockedCount}</p>
-          <p>Reviewer verification required: {actionSummary.reviewerVerificationCount}</p>
-          {actionSummary.openActions.length > 0 ? (
-            <ul className="arb-checklist">
-              {actionSummary.openActions.map((action) => (
-                <li key={action.actionId}>
-                  {action.actionSummary} ({action.status})
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>No open actions remain for this review.</p>
-          )}
-          {decisionResult ? (
-            <div className="trace-card arb-summary-card">
-              <p>Recorded at: {decisionResult.recordedAt}</p>
-              <p>AI recommendation: {decisionResult.aiRecommendation}</p>
-              <p>Reviewer decision: {decisionResult.reviewerDecision}</p>
-              <p>Rationale: {decisionResult.rationale}</p>
-            </div>
-          ) : null}
-        </section>
+            <p>This step records and reloads the persisted reviewer decision for this ARB review.</p>
+            <p>Open actions: {actionSummary.openCount}</p>
+            <p>Blocked actions: {actionSummary.blockedCount}</p>
+            <p>Reviewer verification required: {actionSummary.reviewerVerificationCount}</p>
+            {actionSummary.openActions.length > 0 ? (
+              <ul className="arb-checklist">
+                {actionSummary.openActions.map((action) => (
+                  <li key={action.actionId}>
+                    {action.actionSummary} ({action.status})
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No open actions remain for this review.</p>
+            )}
+            {decisionResult ? (
+              <div className="trace-card arb-summary-card">
+                <p>Recorded at: {decisionResult.recordedAt}</p>
+                <p>AI recommendation: {decisionResult.aiRecommendation}</p>
+                <p>Reviewer decision: {decisionResult.reviewerDecision}</p>
+                <p>Rationale: {decisionResult.rationale}</p>
+              </div>
+            ) : null}
+          </section>
 
-        <section className="surface-panel arb-summary-card">
-          <div className="board-card-head">
-            <div className="board-card-head-copy">
-              <p className="board-card-subtitle">Reviewer sign-off</p>
-              <h2 className="section-title">Separate the human decision from the AI recommendation</h2>
+          <section className="surface-panel arb-summary-card">
+            <div className="board-card-head">
+              <div className="board-card-head-copy">
+                <p className="board-card-subtitle">Reviewer sign-off</p>
+                <h2 className="section-title">Separate the human decision from the AI recommendation</h2>
+              </div>
             </div>
-          </div>
-          <label className="filter-field">
-            <span>Final decision</span>
-            <select
-              className="field-select"
-              aria-label="Final decision"
-              value={decisionChoice}
-              onChange={(event) => setDecisionChoice(event.target.value)}
-            >
-              <option value="Approved">Approved</option>
-              <option value="Approved with Conditions">Approved with Conditions</option>
-              <option value="Needs Improvement">Needs Improvement</option>
-            </select>
-          </label>
-          {decisionGateMessage ? <p>{decisionGateMessage}</p> : null}
-          <label className="filter-field">
-            <span>Decision rationale</span>
-            <textarea
-              className="field-textarea"
-              aria-label="Decision rationale"
-              value={decisionRationale}
-              onChange={(event) => setDecisionRationale(event.target.value)}
-            />
-          </label>
-          <div className="button-row">
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => void submitDecision()}
-              disabled={decisionSaving || Boolean(decisionGateMessage)}
-            >
-              {decisionSaving ? "Recording decision..." : "Record decision"}
-            </button>
-          </div>
-          {decisionError ? <p>{decisionError}</p> : null}
-        </section>
+            <label className="filter-field">
+              <span>Final decision</span>
+              <select
+                className="field-select"
+                aria-label="Final decision"
+                value={decisionChoice}
+                onChange={(event) => setDecisionChoice(event.target.value)}
+              >
+                <option value="Approved">Approved</option>
+                <option value="Approved with Conditions">Approved with Conditions</option>
+                <option value="Needs Improvement">Needs Improvement</option>
+              </select>
+            </label>
+            {decisionGateMessage ? <p>{decisionGateMessage}</p> : null}
+            <label className="filter-field">
+              <span>Decision rationale</span>
+              <textarea
+                className="field-textarea"
+                aria-label="Decision rationale"
+                value={decisionRationale}
+                onChange={(event) => setDecisionRationale(event.target.value)}
+              />
+            </label>
+            <div className="button-row">
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => void submitDecision()}
+                disabled={decisionSaving || Boolean(decisionGateMessage)}
+              >
+                {decisionSaving ? "Recording decision..." : "Record decision"}
+              </button>
+            </div>
+            {decisionError ? <p>{decisionError}</p> : null}
+          </section>
+        </div>
+
+        {renderOutputArtifactsCard()}
       </div>
     );
   }
@@ -1213,6 +1420,14 @@ export function ArbLiveReviewStep(props: {
 
     if (activeStep === "findings") {
       return renderFindingsContent();
+    }
+
+    if (activeStep === "requirements") {
+      return renderRequirementsContent();
+    }
+
+    if (activeStep === "evidence") {
+      return renderEvidenceContent();
     }
 
     if (activeStep === "scorecard") {

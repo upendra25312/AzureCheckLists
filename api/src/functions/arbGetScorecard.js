@@ -1,6 +1,6 @@
 const { app } = require("@azure/functions");
 const { jsonResponse, requireAuthenticated } = require("../shared/auth");
-const { buildMockReview } = require("../shared/arb-mock");
+const { getArbScorecard } = require("../shared/arb-review-store");
 
 async function handleArbGetScorecard(request, context) {
   const auth = requireAuthenticated(request);
@@ -8,32 +8,18 @@ async function handleArbGetScorecard(request, context) {
     return auth.response;
   }
 
-  const reviewId = context?.triggerMetadata?.reviewId || "arb-demo-review";
-  const review = buildMockReview(reviewId);
+  try {
+    const reviewId = request.params?.reviewId || "demo-review";
 
-  return jsonResponse(200, {
-    reviewId,
-    scorecard: {
-      overallScore: review.overallScore,
-      recommendation: review.recommendation,
-      confidence: "Medium",
-      criticalBlockers: 0,
-      domainScores: [
-        {
-          domain: "Requirements Coverage",
-          weight: 20,
-          score: 16,
-          reason: "Baseline requirement mapping scaffold."
-        },
-        {
-          domain: "Security",
-          weight: 20,
-          score: 12,
-          reason: "Security rationale scaffold."
-        }
-      ]
-    }
-  });
+    return jsonResponse(200, {
+      reviewId,
+      scorecard: await getArbScorecard(auth.principal, reviewId)
+    });
+  } catch (error) {
+    return jsonResponse(error?.statusCode === 404 ? 404 : 500, {
+      error: error instanceof Error ? error.message : "Unable to load the ARB scorecard."
+    });
+  }
 }
 
 app.http("arbGetScorecard", {

@@ -12,6 +12,7 @@ param(
   [int]$WarmServiceLimit = 0,
   [string]$ReviewUserTableName = "reviewusers",
   [string]$ProjectReviewTableName = "projectreviews",
+  [string]$ArbReviewTableName = "arbreviews",
   [string]$OpenAiEndpoint = "",
   [string]$OpenAiApiKey = "",
   [string]$OpenAiDeployment = "",
@@ -92,14 +93,32 @@ $storageConnectionString = az storage account show-connection-string `
   --query connectionString `
   --output tsv
 
+Write-Host "Ensuring required blob containers exist..."
+@(
+  "review-notes",
+  "review-artifacts",
+  "commercial-data-cache",
+  "arb-inputfiles",
+  "arb-outputfiles"
+) | ForEach-Object {
+  az storage container create `
+    --name $_ `
+    --connection-string $storageConnectionString `
+    --auth-mode key `
+    --only-show-errors | Out-Null
+}
+
 Write-Host "Setting application settings..."
 $appSettings = @(
   "AZURE_STORAGE_CONNECTION_STRING=$storageConnectionString",
   "AZURE_STORAGE_REVIEW_CONTAINER_NAME=review-notes",
   "AZURE_STORAGE_REVIEW_ARTIFACT_CONTAINER_NAME=review-artifacts",
   "AZURE_STORAGE_COMMERCIAL_CACHE_CONTAINER_NAME=commercial-data-cache",
+  "AZURE_STORAGE_ARB_INPUT_CONTAINER_NAME=arb-inputfiles",
+  "AZURE_STORAGE_ARB_OUTPUT_CONTAINER_NAME=arb-outputfiles",
   "AZURE_STORAGE_REVIEW_USER_TABLE_NAME=$ReviewUserTableName",
   "AZURE_STORAGE_PROJECT_REVIEW_TABLE_NAME=$ProjectReviewTableName",
+  "AZURE_STORAGE_ARB_REVIEW_TABLE_NAME=$ArbReviewTableName",
   "AZURE_COMMERCIAL_REFRESH_SCHEDULE=$CommercialRefreshSchedule",
   "AZURE_COMMERCIAL_CACHE_TTL_HOURS=$CommercialCacheTtlHours",
   "AZURE_AVAILABILITY_CACHE_TTL_HOURS=$CommercialCacheTtlHours",
@@ -180,7 +199,10 @@ Write-Host "Static Web App: $StaticWebAppName"
 Write-Host "Function App: $FunctionAppName"
 Write-Host "Commercial refresh schedule: $CommercialRefreshSchedule"
 Write-Host "Commercial cache TTL hours: $CommercialCacheTtlHours"
+Write-Host "ARB input container: arb-inputfiles"
+Write-Host "ARB output container: arb-outputfiles"
 Write-Host "Review user table: $ReviewUserTableName"
 Write-Host "Project review table: $ProjectReviewTableName"
+Write-Host "ARB review table: $ArbReviewTableName"
 Write-Host "Next step: deploy the backend code with Azure Functions Core Tools, for example:"
 Write-Host "  func azure functionapp publish $FunctionAppName --javascript --no-build --force"

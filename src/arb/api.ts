@@ -1,10 +1,16 @@
 import type {
   ArbAction,
   ArbDecision,
+  ArbEvidenceFact,
+  ArbExportArtifact,
+  ArbExportFormat,
   ArbFinding,
+  ArbExtractionStatus,
+  ArbRequirement,
   ArbReviewLibraryResponse,
   ArbReviewSummary,
-  ArbScorecard
+  ArbScorecard,
+  ArbUploadedFile
 } from "@/arb/types";
 
 async function readJsonResponse<T>(response: Response, fallbackMessage: string) {
@@ -251,4 +257,168 @@ export async function recordArbDecision(input: {
     `Unable to record ARB decision (${response.status}).`
   );
   return payload.decision;
+}
+
+export async function fetchArbUploads(reviewId: string): Promise<{
+  files: ArbUploadedFile[];
+  extraction: ArbExtractionStatus;
+}> {
+  const response = await fetch(`/api/arb/reviews/${reviewId}/uploads`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json"
+    },
+    cache: "no-store"
+  });
+
+  return readJsonResponse<{ files: ArbUploadedFile[]; extraction: ArbExtractionStatus }>(
+    response,
+    `Unable to load ARB uploads (${response.status}).`
+  );
+}
+
+export async function uploadArbFiles(input: {
+  reviewId: string;
+  files: File[];
+}): Promise<{
+  files: ArbUploadedFile[];
+  addedCount: number;
+  evidenceReadinessState: string;
+}> {
+  const formData = new FormData();
+
+  for (const file of input.files) {
+    formData.append("files", file, file.name);
+  }
+
+  const response = await fetch(`/api/arb/reviews/${input.reviewId}/uploads`, {
+    method: "POST",
+    body: formData
+  });
+
+  return readJsonResponse<{
+    files: ArbUploadedFile[];
+    addedCount: number;
+    evidenceReadinessState: string;
+  }>(response, `Unable to upload ARB files (${response.status}).`);
+}
+
+export async function startArbExtraction(reviewId: string): Promise<ArbExtractionStatus> {
+  const response = await fetch(`/api/arb/reviews/${reviewId}/extract`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json"
+    }
+  });
+
+  const payload = await readJsonResponse<{ extraction: ArbExtractionStatus }>(
+    response,
+    `Unable to start ARB extraction (${response.status}).`
+  );
+  return payload.extraction;
+}
+
+export async function fetchArbRequirements(reviewId: string): Promise<ArbRequirement[]> {
+  const response = await fetch(`/api/arb/reviews/${reviewId}/requirements`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json"
+    },
+    cache: "no-store"
+  });
+
+  const payload = await readJsonResponse<{ requirements: ArbRequirement[] }>(
+    response,
+    `Unable to load ARB requirements (${response.status}).`
+  );
+  return payload.requirements;
+}
+
+export async function fetchArbEvidence(reviewId: string): Promise<ArbEvidenceFact[]> {
+  const response = await fetch(`/api/arb/reviews/${reviewId}/evidence`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json"
+    },
+    cache: "no-store"
+  });
+
+  const payload = await readJsonResponse<{ evidence: ArbEvidenceFact[] }>(
+    response,
+    `Unable to load ARB evidence (${response.status}).`
+  );
+  return payload.evidence;
+}
+
+export async function createArbExport(input: {
+  reviewId: string;
+  format: ArbExportFormat;
+  includeFindings?: boolean;
+  includeScorecard?: boolean;
+  includeActions?: boolean;
+}): Promise<ArbExportArtifact> {
+  const response = await fetch(`/api/arb/reviews/${input.reviewId}/exports`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(input)
+  });
+
+  const payload = await readJsonResponse<{ exportArtifact: ArbExportArtifact }>(
+    response,
+    `Unable to create ARB export (${response.status}).`
+  );
+  return payload.exportArtifact;
+}
+
+export async function fetchArbExports(reviewId: string): Promise<ArbExportArtifact[]> {
+  const response = await fetch(`/api/arb/reviews/${reviewId}/exports`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json"
+    },
+    cache: "no-store"
+  });
+
+  const payload = await readJsonResponse<{ exports: ArbExportArtifact[] }>(
+    response,
+    `Unable to load ARB reviewed outputs (${response.status}).`
+  );
+  return payload.exports;
+}
+
+export async function downloadArbExport(reviewId: string, exportArtifact: ArbExportArtifact) {
+  const response = await fetch(
+    `/api/arb/reviews/${reviewId}/exports/${exportArtifact.exportId}/download`,
+    {
+      method: "GET",
+      cache: "no-store"
+    }
+  );
+
+  if (!response.ok) {
+    let message = `Unable to download ARB reviewed output (${response.status}).`;
+
+    try {
+      const payload = (await response.json()) as { error?: string };
+      message = payload.error || message;
+    } catch {
+      message = `Unable to download ARB reviewed output (${response.status}).`;
+    }
+
+    throw new Error(message);
+  }
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+
+  anchor.href = objectUrl;
+  anchor.download = exportArtifact.fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(objectUrl);
 }

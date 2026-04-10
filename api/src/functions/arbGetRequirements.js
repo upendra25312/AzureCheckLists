@@ -1,8 +1,8 @@
 const { app } = require("@azure/functions");
 const { jsonResponse, requireAuthenticated } = require("../shared/auth");
-const { getArbReview } = require("../shared/arb-review-store");
+const { getArbRequirements } = require("../shared/arb-review-store");
 
-async function handleArbGetReview(request, context) {
+async function handleArbGetRequirements(request, context) {
   const auth = requireAuthenticated(request);
   if (auth.response) {
     return auth.response;
@@ -11,22 +11,23 @@ async function handleArbGetReview(request, context) {
   try {
     const reviewId = request.params?.reviewId || "demo-review";
     return jsonResponse(200, {
-      review: await getArbReview(auth.principal, reviewId)
+      reviewId,
+      requirements: await getArbRequirements(auth.principal, reviewId)
     });
   } catch (error) {
     return jsonResponse(error?.statusCode === 404 ? 404 : 500, {
-      error: error instanceof Error ? error.message : "Unable to load the ARB review."
+      error: error instanceof Error ? error.message : "Unable to load ARB requirements."
     });
   }
 }
 
-app.http("arbGetReview", {
-  route: "arb/reviews/{reviewId}",
+app.http("arbGetRequirements", {
+  route: "arb/reviews/{reviewId}/requirements",
   methods: ["GET"],
   authLevel: "anonymous",
-  handler: handleArbGetReview
+  handler: handleArbGetRequirements
 });
 
 module.exports = {
-  handleArbGetReview
+  handleArbGetRequirements
 };
