@@ -405,7 +405,7 @@ Test and validate:
 
 ### Task 12: Final regression and rollout validation
 
-Status: In progress
+Status: Completed
 Priority: P0
 
 Work:
@@ -467,4 +467,5 @@ Test and validate:
 - April 9, 2026: Task 10 completed. `/explorer`, `/how-to-use`, and the not-found route now follow the same Azure Review Board shell and command-surface pattern as the primary workflow pages.
 - April 9, 2026: Task 11 completed. Added a cross-site responsive and accessibility pass with shared detail-grid utilities, visible focus treatment, keyboard-navigation validation, and fresh desktop/mobile screenshots for the migrated routes.
 - April 9, 2026: Tasks 5-11 validation passed with `npm run build`, a clean `23 passed` targeted Playwright run across shell, board surfaces, review workspace, review-cloud, admin copilot, and route-rollout specs, plus fresh route screenshots captured under `output/playwright/`.
-- April 9, 2026: Task 12 is in progress pending post-deploy live-site smoke validation after the rollout commit is pushed.
+- April 10, 2026: Task 12 completed. Commit `9e9d422` pushed the remaining route-theme rollout, and GitHub Actions run `#76` succeeded at `2026-04-10T02:59:49Z`.
+- April 10, 2026: Post-deploy live smoke passed. `/`, `/services`, `/review-package`, `/my-project-reviews`, `/data-health`, `/explorer`, and `/how-to-use` returned `200` with `Last-Modified: Fri, 10 Apr 2026 02:59:34 GMT`, the live `/api/health` endpoint reported `Healthy` at `2026-04-10T02:58:27.739Z`, and `/admin/copilot` still returned `401` for signed-out access as expected.
