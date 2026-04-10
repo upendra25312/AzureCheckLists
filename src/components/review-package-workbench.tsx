@@ -574,6 +574,43 @@ function resolveStageExpanded(
   return expansion[stageId] ?? !complete;
 }
 
+function buildPreviewExcerpt(text: string, maxLines = 8, maxCharacters = 560) {
+  const lines = text
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter((line) => line.trim().length > 0)
+    .slice(0, maxLines);
+
+  if (lines.length === 0) {
+    return "No preview is available yet.";
+  }
+
+  const joined = lines.join("\n");
+
+  if (joined.length <= maxCharacters) {
+    return joined;
+  }
+
+  return `${joined.slice(0, maxCharacters).trimEnd()}...`;
+}
+
+function buildCsvPreview(
+  rows: Array<Record<string, string | number>>,
+  maxRows = 2,
+  maxColumns = 6
+) {
+  if (rows.length === 0) {
+    return "No rows are available yet.";
+  }
+
+  const headers = Object.keys(rows[0]).slice(0, maxColumns);
+  const previewRows = rows.slice(0, maxRows).map((row) =>
+    headers.map((header) => String(row[header] ?? "")).join(" | ")
+  );
+
+  return [headers.join(" | "), ...previewRows].join("\n");
+}
+
 export function ReviewPackageWorkbench({
   index
 }: {
@@ -596,10 +633,10 @@ export function ReviewPackageWorkbench({
   const [servicePricing, setServicePricing] = useState<Record<string, ServicePricing>>({});
   const [pricingLoading, setPricingLoading] = useState(false);
   const [pricingError, setPricingError] = useState<string | null>(null);
-  const [expandedPricingServices, setExpandedPricingServices] = useState<string[]>([]);
   const [showOnlyScopedServices, setShowOnlyScopedServices] = useState(true);
   const [showSetupDetails, setShowSetupDetails] = useState(false);
   const [stageExpansion, setStageExpansion] = useState<Record<string, boolean>>({});
+  const [highlightedStageId, setHighlightedStageId] = useState<string | null>(null);
   const [packageActionMessage, setPackageActionMessage] = useState<string | null>(null);
   const [packageActionTone, setPackageActionTone] = useState<PackageActionTone>("neutral");
   const [cloudRestoreAttempted, setCloudRestoreAttempted] = useState(false);
@@ -1200,6 +1237,76 @@ export function ReviewPackageWorkbench({
     }));
   }
 
+  function openStage(stageId: string) {
+    setStageExpansion((current) => ({
+      ...current,
+      [stageId]: true
+    }));
+    setHighlightedStageId(stageId);
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const nextUrl = new URL(window.location.href);
+
+    nextUrl.hash = stageId;
+    window.history.replaceState({}, "", `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+    document.getElementById(stageId)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const stageIds = new Set([
+      "project-review-setup",
+      "project-review-scope",
+      "project-review-signals",
+      "project-review-local-exports",
+      "project-review-cloud-continuity"
+    ]);
+
+    const syncHashStage = () => {
+      const nextHash = decodeURIComponent(window.location.hash.replace(/^#/, ""));
+
+      if (!nextHash || !stageIds.has(nextHash)) {
+        return;
+      }
+
+      setStageExpansion((current) => ({
+        ...current,
+        [nextHash]: true
+      }));
+      setHighlightedStageId(nextHash);
+    };
+
+    syncHashStage();
+    window.addEventListener("hashchange", syncHashStage);
+
+    return () => {
+      window.removeEventListener("hashchange", syncHashStage);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!highlightedStageId) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setHighlightedStageId((current) => (current === highlightedStageId ? null : current));
+    }, 1800);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [highlightedStageId]);
+
   useEffect(() => {
     let active = true;
 
@@ -1248,14 +1355,6 @@ export function ReviewPackageWorkbench({
       active = false;
     };
   }, [activePackage, selectedServices]);
-
-  useEffect(() => {
-    const selectedSlugs = new Set(selectedServices.map((service) => service.slug));
-
-    setExpandedPricingServices((current) =>
-      current.filter((serviceSlug) => selectedSlugs.has(serviceSlug))
-    );
-  }, [selectedServices]);
 
   useEffect(() => {
     let active = true;
@@ -1411,82 +1510,456 @@ export function ReviewPackageWorkbench({
       availableServices
     };
   }, [matrixRows]);
-  const exportPreviewCards = useMemo(
-    () => [
+  const serviceComparisonRows = useMemo(
+    () =>
+      matrixRows
+        .map((row) => {
+          const blockerCount = row.regionFit.chips.filter(
+            (chip) => classifyRegionalChip(chip) === "blocker"
+          ).length;
+          const caveatCount = row.regionFit.chips.filter(
+            (chip) => classifyRegionalChip(chip) === "caveat"
+          ).length;
+          const estimate = monthlyEstimates.find(
+            (entry) => entry.serviceSlug === row.service.slug
+          );
+          const pricingMapped = row.pricing?.mapped ?? false;
+          const readiness =
+            blockerCount > 0
+              ? "Blocked"
+              : caveatCount > 0
+                ? "Caveat"
+                : row.pendingCount > 0
+                  ? "Needs decisions"
+                  : "Ready";
+
+          return {
+            serviceSlug: row.service.slug,
+            serviceName: row.service.service,
+            pendingCount: row.pendingCount,
+            blockerCount,
+            caveatCount,
+            pricingMapped,
+            monthlyEstimateSupported: estimate?.supported ?? false,
+            monthlyEstimate: estimate?.selectedMonthlyCost,
+            estimateCurrencyCode: estimate?.currencyCode ?? row.pricing?.currencyCode ?? "USD",
+            readiness,
+            riskScore:
+              blockerCount * 100 +
+              caveatCount * 25 +
+              Math.min(row.pendingCount, 40) +
+              (pricingMapped ? 0 : 15) +
+              (estimate?.supported ? 0 : 8)
+          };
+        })
+        .sort(
+          (left, right) =>
+            right.riskScore - left.riskScore ||
+            right.pendingCount - left.pendingCount ||
+            left.serviceName.localeCompare(right.serviceName)
+        ),
+    [matrixRows, monthlyEstimates]
+  );
+  const regionalRiskExportRows = useMemo(() => {
+    if (!activePackage) {
+      return [];
+    }
+
+    return [
+      ...regionalRiskSummary.blockedServices.map((entry) => ({
+        serviceSlug:
+          selectedServices.find((service) => service.service === entry.serviceName)?.slug ?? "",
+        serviceName: entry.serviceName,
+        classification: "Blocked" as const,
+        signals: entry.signals
+      })),
+      ...regionalRiskSummary.caveatServices.map((entry) => ({
+        serviceSlug:
+          selectedServices.find((service) => service.service === entry.serviceName)?.slug ?? "",
+        serviceName: entry.serviceName,
+        classification: "Caveat" as const,
+        signals: entry.signals
+      })),
+      ...regionalRiskSummary.globalServices.map((serviceName) => ({
+        serviceSlug: selectedServices.find((service) => service.service === serviceName)?.slug ?? "",
+        serviceName,
+        classification: "Global" as const,
+        signals: ["Global service"]
+      })),
+      ...regionalRiskSummary.availableServices.map((serviceName) => ({
+        serviceSlug: selectedServices.find((service) => service.service === serviceName)?.slug ?? "",
+        serviceName,
+        classification: "Available" as const,
+        signals: ["Available without caveat"]
+      }))
+    ];
+  }, [activePackage, regionalRiskSummary, selectedServices]);
+  const outputFocusCards = useMemo(() => {
+    const highestPressureServices = serviceComparisonRows
+      .filter((entry) => entry.riskScore > 0)
+      .slice(0, 3);
+    const mostReadyServices = serviceComparisonRows
+      .filter((entry) => entry.readiness === "Ready")
+      .slice(0, 3);
+    const commercialWatchlist = serviceComparisonRows
+      .filter((entry) => !entry.pricingMapped || !entry.monthlyEstimateSupported)
+      .slice(0, 3);
+
+    return [
       {
-        title: "Checklist CSV",
-        audience: "Implementation tracking",
+        title: "Top risk summary",
+        eyebrow: "Before export",
         summary:
-          packageItems.length > 0
-            ? `${packageItems.length.toLocaleString()} scoped findings can be exported for action tracking and spreadsheet review.`
-            : "Becomes useful once the review contains scoped findings and explicit decisions.",
+          highestPressureServices.length > 0
+            ? "Start the handoff with the services carrying blockers, unresolved findings, or commercial gaps."
+            : "No high-pressure services are currently standing out ahead of export.",
+        bullets:
+          highestPressureServices.length > 0
+            ? highestPressureServices.map((entry) => {
+                const riskParts = [
+                  entry.blockerCount > 0
+                    ? `${entry.blockerCount.toLocaleString()} blockers`
+                    : null,
+                  entry.caveatCount > 0
+                    ? `${entry.caveatCount.toLocaleString()} caveats`
+                    : null,
+                  entry.pendingCount > 0
+                    ? `${entry.pendingCount.toLocaleString()} pending findings`
+                    : null
+                ].filter(Boolean);
+
+                return `${entry.serviceName}: ${riskParts.join(", ") || entry.readiness}`;
+              })
+            : ["No service is currently flagged as blocked, caveated, or overloaded with unresolved findings."]
+      },
+      {
+        title: "Service comparison",
+        eyebrow: "Readiness snapshot",
+        summary:
+          serviceComparisonRows.length > 0
+            ? "Compare the scoped services before choosing which artifact should carry the next conversation."
+            : "Service comparison appears after the review has scoped services.",
+        bullets:
+          serviceComparisonRows.length > 0
+            ? serviceComparisonRows.slice(0, 4).map((entry) => {
+                const estimateLabel = entry.monthlyEstimateSupported
+                  ? formatEstimatePrice(entry.monthlyEstimate, entry.estimateCurrencyCode)
+                  : "Estimate pending";
+
+                return `${entry.serviceName}: ${entry.readiness} · ${entry.pendingCount.toLocaleString()} pending · ${estimateLabel}/month`;
+              })
+            : ["Add services to scope before comparing readiness, pricing, and pending decisions."]
+      },
+      {
+        title: "Commercial watchlist",
+        eyebrow: "Pricing and estimate gaps",
+        summary:
+          commercialWatchlist.length > 0
+            ? "These services still need extra commercial attention before the export can stand on its own."
+            : "Every scoped service currently has a pricing mapping and at least a first-pass monthly estimate."
+            ,
+        bullets:
+          commercialWatchlist.length > 0
+            ? commercialWatchlist.map((entry) => {
+                const gaps = [
+                  !entry.pricingMapped ? "pricing mapping pending" : null,
+                  !entry.monthlyEstimateSupported ? "estimate model pending" : null
+                ].filter(Boolean);
+
+                return `${entry.serviceName}: ${gaps.join(", ")}`;
+              })
+            : ["No scoped services are currently missing pricing coverage or estimate support."]
+      },
+      {
+        title: "Most review-ready",
+        eyebrow: "Fastest to hand off",
+        summary:
+          mostReadyServices.length > 0
+            ? "These services already look clean enough to anchor the architecture and leadership artifacts."
+            : "No service is fully review-ready yet. Close pending findings or blockers before using that tone in the handoff.",
+        bullets:
+          mostReadyServices.length > 0
+            ? mostReadyServices.map((entry) => `${entry.serviceName}: ready with scoped pricing and no pending findings`)
+            : ["The fastest win is to clear the remaining pending findings on the least risky services first."]
+      }
+    ];
+  }, [serviceComparisonRows]);
+  const outputArtifactCards = useMemo(() => {
+    if (!activePackage) {
+      return [];
+    }
+
+    const checklistRows = buildPackageExportRows(activePackage, packageItems, reviews, {
+      includeNotApplicable,
+      includeNeedsReview
+    });
+    const designMarkdown = buildPackageMarkdown(activePackage, packageItems, reviews, {
+      includeNotApplicable,
+      includeNeedsReview
+    });
+    const pricingRows = buildPackagePricingRows(activePackage, pricingSnapshots);
+    const pricingMarkdown = buildPackagePricingMarkdown(activePackage, pricingSnapshots);
+    const estimateRows = buildPackageMonthlyEstimateRows(activePackage, monthlyEstimates);
+    const estimateMarkdown = buildPackageMonthlyEstimateMarkdown(activePackage, monthlyEstimates);
+    const leadershipMarkdown = buildLeadershipSummaryMarkdown(activePackage, {
+      selectedServiceCount: selectedServices.length,
+      blockedServices: regionalRiskSummary.blockedServices,
+      caveatServices: regionalRiskSummary.caveatServices,
+      globalServices: regionalRiskSummary.globalServices,
+      availableServices: regionalRiskSummary.availableServices,
+      pricingMappedCount: mappedPricingCount,
+      selectedPricingCount: pricingSnapshots.length,
+      startingRetailPrice:
+        startingRetailPrice.length > 0 ? Math.min(...startingRetailPrice) : undefined,
+      pricingCurrencyCode: pricingSnapshots[0]?.currencyCode,
+      includedCount,
+      notApplicableCount,
+      excludedCount,
+      pendingCount
+    });
+
+    return [
+      {
+        id: "checklist",
+        eyebrow: "Implementation tracker",
+        title: "Checklist CSV",
+        summary:
+          checklistRows.length > 0
+            ? `${checklistRows.length.toLocaleString()} scoped finding rows are ready for spreadsheet tracking and action assignment.`
+            : "This preview appears once the review has scoped findings to export.",
+        readiness: checklistRows.length > 0 ? "Ready" : "Waiting on scoped findings",
+        previewLabel: "CSV preview",
+        preview: buildCsvPreview(checklistRows),
         bullets: [
           `${includedCount.toLocaleString()} included items`,
           `${notApplicableCount.toLocaleString()} not applicable items`,
-          includeNeedsReview ? "Pending-review items included" : "Pending-review items hidden by default"
+          includeNeedsReview ? "Needs-review rows included" : "Needs-review rows hidden"
         ]
       },
       {
+        id: "design",
+        eyebrow: "Architecture handoff",
         title: "Design Markdown",
-        audience: "Architecture and pre-sales handoff",
-        summary: activePackage
-          ? `${activePackage.name} can be turned into a reusable narrative artifact with scoped notes and review context.`
-          : "Becomes useful after the review shell exists and services are in scope.",
+        summary:
+          packageItems.length > 0
+            ? "Reusable design notes with service assumptions, checklist decisions, and scoped context."
+            : "This preview appears after the review has real scope and notes.",
+        readiness: packageItems.length > 0 ? "Ready" : "Waiting on scoped findings",
+        previewLabel: "Markdown preview",
+        preview: buildPreviewExcerpt(designMarkdown),
         bullets: [
           selectedServices.length > 0
-            ? `${selectedServices.length.toLocaleString()} selected services in scope`
+            ? `${selectedServices.length.toLocaleString()} services in scope`
             : "No services selected yet",
-          activePackage?.targetRegions.length
+          activePackage.targetRegions.length > 0
             ? `${activePackage.targetRegions.length.toLocaleString()} target regions captured`
-            : "No target regions captured yet",
-          activePackage?.businessScope.trim()
-            ? "Business scope captured"
-            : "Business scope still optional"
+            : "Target regions still optional",
+          activePackage.businessScope.trim() ? "Business scope captured" : "Business scope still optional"
         ]
       },
       {
+        id: "pricing",
+        eyebrow: "Commercial snapshot",
+        title: "Pricing export",
+        summary:
+          pricingRows.length > 0
+            ? "Public retail pricing rows for only the services in this review, ready for pre-sales and architecture conversations."
+            : "Pricing preview appears after the scoped retail snapshot finishes loading.",
+        readiness:
+          pricingRows.length > 0
+            ? `${mappedPricingCount.toLocaleString()} services mapped`
+            : pricingLoading
+              ? "Waiting on pricing load"
+              : "Waiting on pricing scope",
+        previewLabel: "Pricing preview",
+        preview: buildPreviewExcerpt(pricingMarkdown),
+        bullets: [
+          `${pricingSnapshots.length.toLocaleString()} scoped pricing snapshots`,
+          `${mappedPricingCount.toLocaleString()} pricing mappings`,
+          startingRetailPrice.length > 0
+            ? `Lowest meter ${formatRetailPrice(Math.min(...startingRetailPrice), pricingSnapshots[0]?.currencyCode ?? "USD")}`
+            : "Lowest meter not published"
+        ]
+      },
+      {
+        id: "estimate",
+        eyebrow: "Monthly baseline",
+        title: "Estimate export",
+        summary:
+          estimateRows.length > 0
+            ? "First-pass monthly estimates based on Microsoft retail rows and scoped service assumptions."
+            : "Estimate preview appears after pricing loads and at least one scoped service has an estimate model.",
+        readiness:
+          estimateRows.length > 0
+            ? `${supportedMonthlyEstimates.length.toLocaleString()} services modeled`
+            : pricingLoading
+              ? "Waiting on pricing load"
+              : "Waiting on estimate model",
+        previewLabel: "Estimate preview",
+        preview: buildPreviewExcerpt(estimateMarkdown),
+        bullets: [
+          supportedMonthlyEstimates.length > 0
+            ? `Estimated monthly total ${formatEstimatePrice(totalMonthlyEstimate, supportedMonthlyEstimates[0]?.currencyCode ?? "USD")}`
+            : "Monthly total not modeled yet",
+          supportedMonthlyEstimates.length > 0
+            ? `Estimated hourly total ${formatEstimatePrice(totalHourlyEstimate, supportedMonthlyEstimates[0]?.currencyCode ?? "USD")}`
+            : "Hourly total not modeled yet",
+          `${(monthlyEstimates.length - supportedMonthlyEstimates.length).toLocaleString()} services still need richer assumptions`
+        ]
+      },
+      {
+        id: "leadership",
+        eyebrow: "Leadership brief",
         title: "Leadership summary",
-        audience: "Decision brief",
         summary:
           matrixRows.length > 0
-            ? "Summarizes blockers, caveats, pricing posture, and next decisions for leadership readers."
-            : "Unlocks after the review has enough service scope to summarize risks credibly.",
+            ? "Executive-ready blockers, caveats, pricing posture, and recommended next actions."
+            : "Leadership preview appears after the review has enough service scope to summarize real risk.",
+        readiness:
+          matrixRows.length > 0
+            ? `${regionalRiskSummary.blockedServices.length.toLocaleString()} blocked and ${regionalRiskSummary.caveatServices.length.toLocaleString()} caveated services`
+            : "Waiting on scoped services",
+        previewLabel: "Leadership preview",
+        preview: buildPreviewExcerpt(leadershipMarkdown),
         bullets: [
-          `${regionalRiskSummary.blockedServices.length.toLocaleString()} blocked or restricted services`,
-          `${regionalRiskSummary.caveatServices.length.toLocaleString()} caveat services`,
+          `${regionalRiskExportRows.length.toLocaleString()} regional risk rows ready`,
+          `${pendingCount.toLocaleString()} pending findings still affect sign-off`,
           `${mappedPricingCount.toLocaleString()} services with pricing mapped`
         ]
-      },
-      {
-        title: "Regional risk CSV",
-        audience: "Risk and readiness review",
-        summary:
-          selectedServices.length > 0
-            ? "Creates a focused handoff of blocked, caveated, global, and fully available services."
-            : "Unlocks after services are added to the review.",
-        bullets: [
-          `${regionalRiskSummary.availableServices.length.toLocaleString()} available without caveat`,
-          `${regionalRiskSummary.globalServices.length.toLocaleString()} global services`,
-          includeNotApplicable ? "Not-applicable rationale preserved" : "Not-applicable items omitted"
-        ]
       }
-    ],
-    [
-      activePackage,
-      includeNeedsReview,
-      includeNotApplicable,
-      includedCount,
-      mappedPricingCount,
-      matrixRows.length,
-      notApplicableCount,
-      packageItems.length,
-      regionalRiskSummary.availableServices.length,
-      regionalRiskSummary.blockedServices.length,
-      regionalRiskSummary.caveatServices.length,
-      regionalRiskSummary.globalServices.length,
-      selectedServices.length
-    ]
-  );
+    ];
+  }, [
+    activePackage,
+    excludedCount,
+    includeNeedsReview,
+    includeNotApplicable,
+    includedCount,
+    mappedPricingCount,
+    matrixRows.length,
+    monthlyEstimates,
+    notApplicableCount,
+    packageItems,
+    pendingCount,
+    pricingLoading,
+    pricingSnapshots,
+    regionalRiskExportRows.length,
+    regionalRiskSummary.availableServices,
+    regionalRiskSummary.blockedServices,
+    regionalRiskSummary.caveatServices,
+    regionalRiskSummary.globalServices,
+    reviews,
+    selectedServices.length,
+    startingRetailPrice,
+    supportedMonthlyEstimates.length,
+    totalHourlyEstimate,
+    totalMonthlyEstimate
+  ]);
+  const pricingStageStatus = useMemo(() => {
+    if (selectedServices.length === 0) {
+      return {
+        title: "Pricing is still locked by service scope.",
+        summary:
+          "Select the services that actually belong to this design first. Then the workspace can ask the retail prices feed only for that scoped list.",
+        chips: ["Step 2 scope required", "No pricing rows queried yet"]
+      };
+    }
+
+    if (pricingLoading) {
+      return {
+        title: "Pricing is loading for the scoped services.",
+        summary:
+          "The workspace is querying Microsoft retail pricing now. Stay here if you want the detailed commercial surface, or use the output previews above once the rows arrive.",
+        chips: [
+          `${selectedServices.length.toLocaleString()} services in scope`,
+          "Retail pricing refresh in progress"
+        ]
+      };
+    }
+
+    if (pricingError) {
+      return {
+        title: "Pricing is scoped, but the latest retail refresh did not finish.",
+        summary:
+          "The detailed pricing stage keeps the review boundary, but the dedicated backend needs to return the retail rows before this section becomes a dependable handoff surface.",
+        chips: [
+          `${selectedServices.length.toLocaleString()} services in scope`,
+          "Retail pricing refresh failed"
+        ]
+      };
+    }
+
+    return {
+      title:
+        mappedPricingCount > 0
+          ? "Pricing is ready for commercial review."
+          : "Pricing is in scope, but no clean service mapping is published yet.",
+      summary:
+        mappedPricingCount > 0
+          ? "Use this section when you want the detailed commercial drilldown behind the audience-first pricing preview in the output stage."
+          : "The project review boundary is already correct. The remaining work is a pricing-data mapping gap, not a scoping problem.",
+      chips: [
+        `${pricingSnapshots.length.toLocaleString()} pricing snapshots`,
+        `${mappedPricingCount.toLocaleString()} pricing mappings`,
+        activePackage?.targetRegions.length
+          ? `${activePackage.targetRegions.length.toLocaleString()} target regions`
+          : "Target regions still optional"
+      ]
+    };
+  }, [
+    activePackage?.targetRegions.length,
+    mappedPricingCount,
+    pricingError,
+    pricingLoading,
+    pricingSnapshots.length,
+    selectedServices.length
+  ]);
+  const estimateStageStatus = useMemo(() => {
+    if (selectedServices.length === 0) {
+      return {
+        title: "The estimate stage is still locked by service scope.",
+        summary:
+          "Monthly estimates are intentionally quiet until the review has a real service boundary. That keeps early architecture work from turning into a pricing portal too soon.",
+        chips: ["Step 2 scope required", "No estimate model yet"]
+      };
+    }
+
+    if (pricingLoading) {
+      return {
+        title: "The estimate stage is waiting on scoped pricing rows.",
+        summary:
+          "The monthly estimate uses Microsoft retail rows as the cost basis, so it cannot finish until the pricing refresh is ready.",
+        chips: ["Retail pricing load in progress", `${selectedServices.length.toLocaleString()} services in scope`]
+      };
+    }
+
+    if (supportedMonthlyEstimates.length === 0) {
+      return {
+        title: "The estimate stage still needs richer commercial coverage.",
+        summary:
+          "At least one service needs either pricing coverage or a product-owned estimate model before this stage becomes useful for first-pass monthly direction.",
+        chips: [
+          `${monthlyEstimates.length.toLocaleString()} estimate records loaded`,
+          "No supported monthly estimates yet"
+        ]
+      };
+    }
+
+    return {
+      title: "The estimate stage is ready for first-pass cost direction.",
+      summary:
+        "Use this deeper section when you want to inspect the assumptions and SKU breakdown behind the audience-first estimate preview in the output stage.",
+      chips: [
+        `${supportedMonthlyEstimates.length.toLocaleString()} services modeled`,
+        `Monthly total ${formatEstimatePrice(totalMonthlyEstimate, supportedMonthlyEstimates[0]?.currencyCode ?? "USD")}`
+      ]
+    };
+  }, [
+    monthlyEstimates.length,
+    pricingLoading,
+    selectedServices.length,
+    supportedMonthlyEstimates,
+    totalMonthlyEstimate
+  ]);
   const copilotContext = useMemo<ProjectReviewCopilotContext | null>(() => {
     if (!activePackage || matrixRows.length === 0) {
       return null;
@@ -2088,38 +2561,9 @@ export function ReviewPackageWorkbench({
       return;
     }
 
-    const rows = [
-      ...regionalRiskSummary.blockedServices.map((entry) => ({
-        serviceSlug:
-          selectedServices.find((service) => service.service === entry.serviceName)?.slug ?? "",
-        serviceName: entry.serviceName,
-        classification: "Blocked" as const,
-        signals: entry.signals
-      })),
-      ...regionalRiskSummary.caveatServices.map((entry) => ({
-        serviceSlug:
-          selectedServices.find((service) => service.service === entry.serviceName)?.slug ?? "",
-        serviceName: entry.serviceName,
-        classification: "Caveat" as const,
-        signals: entry.signals
-      })),
-      ...regionalRiskSummary.globalServices.map((serviceName) => ({
-        serviceSlug: selectedServices.find((service) => service.service === serviceName)?.slug ?? "",
-        serviceName,
-        classification: "Global" as const,
-        signals: ["Global service"]
-      })),
-      ...regionalRiskSummary.availableServices.map((serviceName) => ({
-        serviceSlug: selectedServices.find((service) => service.service === serviceName)?.slug ?? "",
-        serviceName,
-        classification: "Available" as const,
-        signals: ["Available without caveat"]
-      }))
-    ];
-
     downloadCsv(
       `${activePackage.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-") || "project-review"}-regional-risk.csv`,
-      buildRegionalRiskRows(activePackage, rows)
+      buildRegionalRiskRows(activePackage, regionalRiskExportRows)
     );
   }
 
@@ -2201,8 +2645,15 @@ export function ReviewPackageWorkbench({
               </div>
               <p className="microcopy">{stage.detail}</p>
               <div className="button-row">
-                <a href={`#${stage.id}`} className="home-finding-action home-finding-action-primary">
-                  Open stage
+                <a
+                  href={`#${stage.id}`}
+                  className="home-finding-action home-finding-action-primary"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    openStage(stage.id);
+                  }}
+                >
+                  {stage.complete ? "Reopen stage" : "Open stage"}
                 </a>
               </div>
             </article>
@@ -2220,7 +2671,15 @@ export function ReviewPackageWorkbench({
             </p>
             <div className="review-progress-list">
               {workspaceStages.map((stage, index) => (
-                <a className="review-progress-item" href={`#${stage.id}`} key={stage.id}>
+                <a
+                  className="review-progress-item"
+                  href={`#${stage.id}`}
+                  key={stage.id}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    openStage(stage.id);
+                  }}
+                >
                   <div className="review-progress-item-head">
                     <span className="review-progress-step">0{index + 1}</span>
                     <span className={`review-progress-pill review-progress-pill-${stage.status}`}>
@@ -2236,7 +2695,12 @@ export function ReviewPackageWorkbench({
         </aside>
 
         <div className="review-workspace-flow">
-      <section className="surface-panel board-stage-panel" id="project-review-setup">
+      <section
+        className={`surface-panel board-stage-panel${
+          highlightedStageId === "project-review-setup" ? " board-stage-panel-highlighted" : ""
+        }`}
+        id="project-review-setup"
+      >
         <div className="section-head">
           <div>
             <p className="eyebrow">Step 1</p>
@@ -2426,11 +2890,25 @@ export function ReviewPackageWorkbench({
                 ? `${selectedServices.length.toLocaleString()} services are currently in scope, and ${pendingCount.toLocaleString()} findings still need review decisions.`
                 : "Only the review name is required to start. Audience, regions, and scope can stay optional until later."}
             </p>
+            <div className="button-row">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => openStage("project-review-setup")}
+              >
+                Reopen stage
+              </button>
+            </div>
           </section>
         )}
       </section>
 
-      <section className="surface-panel board-stage-panel" id="project-review-scope">
+      <section
+        className={`surface-panel board-stage-panel${
+          highlightedStageId === "project-review-scope" ? " board-stage-panel-highlighted" : ""
+        }`}
+        id="project-review-scope"
+      >
         <div className="section-head">
           <div>
             <p className="eyebrow">Step 2</p>
@@ -2474,6 +2952,15 @@ export function ReviewPackageWorkbench({
                   ? "Open the stage again when you are ready to add the Azure services that truly belong to the design."
                   : "Create the review shell first, then this step unlocks automatically."}
             </p>
+            <div className="button-row">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => openStage("project-review-scope")}
+              >
+                {selectedServices.length > 0 ? "Reopen stage" : "Open stage"}
+              </button>
+            </div>
           </section>
         ) : !activePackage ? (
           <section className="filter-card">
@@ -2693,7 +3180,12 @@ export function ReviewPackageWorkbench({
 
       {copilotContext ? <ProjectReviewCopilot context={copilotContext} /> : null}
 
-      <section className="surface-panel board-stage-panel" id="project-review-signals">
+      <section
+        className={`surface-panel board-stage-panel${
+          highlightedStageId === "project-review-signals" ? " board-stage-panel-highlighted" : ""
+        }`}
+        id="project-review-signals"
+      >
         <div className="section-head">
           <div>
             <p className="eyebrow">Step 3</p>
@@ -2846,21 +3338,10 @@ export function ReviewPackageWorkbench({
                     ))}
                   </div>
                   <p className="microcopy">{row.costFit.summary}</p>
-                  <button
-                    type="button"
-                    className="secondary-button button-compact"
-                    onClick={() =>
-                      setExpandedPricingServices((current) =>
-                        current.includes(row.service.slug)
-                          ? current.filter((serviceSlug) => serviceSlug !== row.service.slug)
-                          : [...current, row.service.slug]
-                      )
-                    }
-                  >
-                    {expandedPricingServices.includes(row.service.slug)
-                      ? "Hide pricing drilldown"
-                      : "Show pricing drilldown"}
-                  </button>
+                  <p className="microcopy">
+                    Open the detail drawer when you want the full pricing drilldown, target-region
+                    rows, and estimate input controls.
+                  </p>
                 </div>
 
                 <div className="project-review-matrix-cell">
@@ -2908,71 +3389,12 @@ export function ReviewPackageWorkbench({
                     className="primary-button"
                     onClick={() => handleOpenServiceDrawer(row.service.slug)}
                   >
-                    Open details and assumptions
+                    Open detail workspace
                   </button>
                   <Link href={`/services/${row.service.slug}`} className="secondary-button">
                     Open service review
                   </Link>
                 </div>
-
-                {expandedPricingServices.includes(row.service.slug) ? (
-                  <div className="project-review-matrix-detail">
-                    <div className="project-review-matrix-detail-head">
-                      <div>
-                        <p className="eyebrow">Pricing drilldown</p>
-                        <h3>{row.pricingDrilldown.title}</h3>
-                        <p className="microcopy">{row.pricingDrilldown.summary}</p>
-                      </div>
-                    </div>
-
-                    {row.pricingDrilldown.skuLabels.length > 0 ? (
-                      <div className="chip-row compact-chip-row">
-                        {row.pricingDrilldown.skuLabels.map((skuLabel) => (
-                          <span className="chip" key={`${row.service.slug}-${skuLabel}`}>
-                            {skuLabel}
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-
-                    {row.pricingDrilldown.ready && row.pricingDrilldown.rows.length > 0 ? (
-                      <>
-                        <div className="pricing-drilldown-table">
-                          <div className="pricing-drilldown-head">
-                            <span>Location</span>
-                            <span>SKU</span>
-                            <span>Meter</span>
-                            <span>Retail price</span>
-                            <span>Unit</span>
-                          </div>
-                          {row.pricingDrilldown.rows.map((pricingRow) => (
-                            <div
-                              className="pricing-drilldown-row"
-                              key={`${row.service.slug}-${pricingRow.meterId}-${pricingRow.location}-${pricingRow.skuName}`}
-                            >
-                              <span>{pricingRow.location || pricingRow.armRegionName || "Global"}</span>
-                              <span>{pricingRow.skuName || pricingRow.armSkuName || "Unspecified SKU"}</span>
-                              <span>{pricingRow.meterName}</span>
-                              <span>{formatRetailPrice(pricingRow.retailPrice, pricingRow.currencyCode)}</span>
-                              <span>{pricingRow.unitOfMeasure}</span>
-                            </div>
-                          ))}
-                        </div>
-                        {row.pricingDrilldown.hasHiddenRows ? (
-                          <p className="microcopy">
-                            Showing the first {row.pricingDrilldown.rows.length.toLocaleString()} published pricing rows in this
-                            drilldown. Use the pricing CSV export when you need every scoped row.
-                          </p>
-                        ) : null}
-                      </>
-                    ) : (
-                      <section className="trace-card">
-                        <strong>Pricing rows unavailable</strong>
-                        <p>{row.pricingDrilldown.summary}</p>
-                      </section>
-                    )}
-                  </div>
-                ) : null}
               </article>
             ))}
           </div>
@@ -3000,6 +3422,15 @@ export function ReviewPackageWorkbench({
                 ? `${selectedServices.length.toLocaleString()} selected services are contributing to the current review posture.`
                 : "Expand this stage when you want to inspect region fit, pricing posture, and checklist readiness together."}
             </p>
+            <div className="button-row">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => openStage("project-review-signals")}
+              >
+                {reviewedDecisionCount > 0 ? "Reopen stage" : "Open stage"}
+              </button>
+            </div>
           </section>
         )}
       </section>
@@ -3135,7 +3566,12 @@ export function ReviewPackageWorkbench({
         )}
       </section>
 
-      <section id="project-review-local-exports" className="surface-panel board-stage-panel">
+      <section
+        id="project-review-local-exports"
+        className={`surface-panel board-stage-panel${
+          highlightedStageId === "project-review-local-exports" ? " board-stage-panel-highlighted" : ""
+        }`}
+      >
         <div className="section-head">
           <div>
             <p className="eyebrow">Step 4</p>
@@ -3179,111 +3615,233 @@ export function ReviewPackageWorkbench({
                   : `${pendingCount.toLocaleString()} scoped findings are still pending, so treat the exports as a draft until the review posture is more explicit.`
                 : "This stage stays quiet until the review contains real service scope and findings."}
             </p>
+            <div className="button-row">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => openStage("project-review-local-exports")}
+              >
+                {packageItems.length > 0 ? "Reopen stage" : "Open stage"}
+              </button>
+            </div>
           </section>
         ) : selectedServices.length > 0 ? (
           <>
+          <section className="filter-card review-stage-handoff-card">
+            <p className="eyebrow">Export posture</p>
+            <h3>Choose the handoff artifact by audience first, then pick the file format.</h3>
+            <p className="microcopy">
+              {allScopedFindingsResolved
+                ? "The scoped review is ready for cleaner handoff language. Use the previews below to choose the artifact that best matches the next conversation."
+                : `${pendingCount.toLocaleString()} scoped findings are still pending, so every export below should be treated as a draft until the review posture is explicit.`}
+            </p>
+            <div className="chip-row compact-chip-row">
+              <span className="chip">
+                {packageItems.length.toLocaleString()} scoped findings
+              </span>
+              <span className="chip">
+                {selectedServices.length.toLocaleString()} selected services
+              </span>
+              <span className="chip">
+                {allScopedFindingsResolved ? "Ready for cleaner handoff" : "Draft posture"}
+              </span>
+            </div>
+          </section>
+
           <div className="package-context-grid export-preview-grid">
-            {exportPreviewCards.map((card) => (
+            {outputFocusCards.map((card) => (
               <article className="future-card export-preview-card" key={card.title}>
-                <p className="eyebrow">{card.audience}</p>
+                <p className="eyebrow">{card.eyebrow}</p>
                 <h3>{card.title}</h3>
                 <p>{card.summary}</p>
-                <div className="chip-row compact-chip-row">
+                <div className="export-preview-bullet-list">
                   {card.bullets.map((bullet) => (
-                    <span className="chip" key={`${card.title}-${bullet}`}>
+                    <p className="microcopy" key={`${card.title}-${bullet}`}>
                       {bullet}
-                    </span>
+                    </p>
                   ))}
                 </div>
               </article>
             ))}
           </div>
 
-          <div className="package-header-grid">
-            <article className="filter-card package-card">
-              <div className="filter-grid">
-                <label className="package-option">
-                  <input
-                    type="checkbox"
-                    checked={includeNotApplicable}
-                    onChange={(event) => setIncludeNotApplicable(event.target.checked)}
-                  />
-                  <span className="microcopy">Include `Not Applicable` findings with rationale</span>
-                </label>
-                <label className="package-option">
-                  <input
-                    type="checkbox"
-                    checked={includeNeedsReview}
-                    onChange={(event) => setIncludeNeedsReview(event.target.checked)}
-                  />
-                  <span className="microcopy">Include `Needs Review` items in the handoff</span>
-                </label>
-              </div>
-              <div className="button-row">
-                <button
-                  type="button"
-                  className="primary-button"
-                  disabled={!activePackage || packageItems.length === 0}
-                  onClick={exportPackageCsv}
-                >
-                  Download checklist CSV
-                </button>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  disabled={!activePackage || packageItems.length === 0}
-                  onClick={exportPackageMarkdown}
-                >
-                  Download design Markdown
-                </button>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  disabled={!activePackage || packageItems.length === 0}
-                  onClick={exportPackageText}
-                >
-                  Download plain text notes
-                </button>
-              </div>
-              <div className="button-row">
-                <button
-                  type="button"
-                  className="secondary-button"
-                  disabled={!activePackage || matrixRows.length === 0}
-                  onClick={exportLeadershipSummaryMarkdown}
-                >
-                  Download leadership summary
-                </button>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  disabled={!activePackage || matrixRows.length === 0}
-                  onClick={exportRegionalRiskCsv}
-                >
-                  Download regional risk CSV
-                </button>
-              </div>
-            </article>
+          <article className="filter-card package-card export-preview-controls">
+            <div className="filter-grid">
+              <label className="package-option">
+                <input
+                  type="checkbox"
+                  checked={includeNotApplicable}
+                  onChange={(event) => setIncludeNotApplicable(event.target.checked)}
+                />
+                <span className="microcopy">Include `Not Applicable` findings with rationale</span>
+              </label>
+              <label className="package-option">
+                <input
+                  type="checkbox"
+                  checked={includeNeedsReview}
+                  onChange={(event) => setIncludeNeedsReview(event.target.checked)}
+                />
+                <span className="microcopy">Include `Needs Review` items in the handoff</span>
+              </label>
+            </div>
+            <p className="microcopy">
+              These toggles update the previews below before you download anything, so the artifact
+              choice stays tied to the exact draft posture of the current review.
+            </p>
+          </article>
 
-            <article className="leadership-brief package-card">
-              <p className="eyebrow">Project review guidance</p>
-              <h2 className="leadership-title">Notes, regional fit, and pricing now share the same project scope.</h2>
-              <div className="leadership-list">
-                <article>
-                  <strong>Target regions</strong>
-                  <p>Project review target regions now drive the default filter for service availability, restrictions, and pricing emphasis.</p>
-                </article>
-                <article>
-                  <strong>Pricing baseline</strong>
-                  <p>Use the commercial snapshot as the list-price baseline before moving into customer-specific usage and discount assumptions. Preferred SKU and sizing notes refine the estimate later, but they are not required to fetch the first-pass retail snapshot.</p>
-                </article>
-                <article>
-                  <strong>Commercial handoff</strong>
-                  <p>Export review notes separately from the pricing snapshot so each audience gets the level of detail they need.</p>
-                </article>
-              </div>
-            </article>
+          <div className="package-context-grid export-preview-grid">
+            {outputArtifactCards.map((card) => (
+              <article className="future-card export-preview-card export-preview-card-detailed" key={card.id}>
+                <div className="export-preview-card-head">
+                  <div>
+                    <p className="eyebrow">{card.eyebrow}</p>
+                    <h3>{card.title}</h3>
+                  </div>
+                  <span className="chip">{card.readiness}</span>
+                </div>
+                <p>{card.summary}</p>
+                <div className="chip-row compact-chip-row">
+                  {card.bullets.map((bullet) => (
+                    <span className="chip" key={`${card.id}-${bullet}`}>
+                      {bullet}
+                    </span>
+                  ))}
+                </div>
+                <div className="export-preview-surface">
+                  <strong>{card.previewLabel}</strong>
+                  <pre className="export-preview-code">{card.preview}</pre>
+                </div>
+                <div className="button-row">
+                  {card.id === "checklist" ? (
+                    <button
+                      type="button"
+                      className="primary-button"
+                      disabled={!activePackage || packageItems.length === 0}
+                      onClick={exportPackageCsv}
+                    >
+                      Download tracker CSV
+                    </button>
+                  ) : null}
+                  {card.id === "design" ? (
+                    <>
+                      <button
+                        type="button"
+                        className="primary-button"
+                        disabled={!activePackage || packageItems.length === 0}
+                        onClick={exportPackageMarkdown}
+                      >
+                        Download handoff Markdown
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={!activePackage || packageItems.length === 0}
+                        onClick={exportPackageText}
+                      >
+                        Download plain text notes
+                      </button>
+                    </>
+                  ) : null}
+                  {card.id === "pricing" ? (
+                    <>
+                      <button
+                        type="button"
+                        className="primary-button"
+                        disabled={!activePackage || !pricingReady || pricingLoading}
+                        onClick={exportPackagePricingCsv}
+                      >
+                        Download commercial CSV
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={!activePackage || !pricingReady || pricingLoading}
+                        onClick={exportPackagePricingMarkdown}
+                      >
+                        Download commercial Markdown
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={!activePackage || !pricingReady || pricingLoading}
+                        onClick={exportPackagePricingText}
+                      >
+                        Download pricing text
+                      </button>
+                    </>
+                  ) : null}
+                  {card.id === "estimate" ? (
+                    <>
+                      <button
+                        type="button"
+                        className="primary-button"
+                        disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
+                        onClick={exportPackageMonthlyEstimateCsv}
+                      >
+                        Download estimate CSV
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
+                        onClick={exportPackageMonthlyEstimateMarkdown}
+                      >
+                        Download estimate Markdown
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
+                        onClick={exportPackageMonthlyEstimateText}
+                      >
+                        Download estimate text
+                      </button>
+                    </>
+                  ) : null}
+                  {card.id === "leadership" ? (
+                    <>
+                      <button
+                        type="button"
+                        className="primary-button"
+                        disabled={!activePackage || matrixRows.length === 0}
+                        onClick={exportLeadershipSummaryMarkdown}
+                      >
+                        Download leadership brief
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={!activePackage || regionalRiskExportRows.length === 0}
+                        onClick={exportRegionalRiskCsv}
+                      >
+                        Download regional risk CSV
+                      </button>
+                    </>
+                  ) : null}
+                </div>
+              </article>
+            ))}
           </div>
+
+          <article className="leadership-brief package-card">
+            <p className="eyebrow">Project review guidance</p>
+            <h2 className="leadership-title">Notes, regional fit, and pricing now share the same project scope.</h2>
+            <div className="leadership-list">
+              <article>
+                <strong>Target regions</strong>
+                <p>Project review target regions now drive the default filter for service availability, restrictions, and pricing emphasis.</p>
+              </article>
+              <article>
+                <strong>Pricing baseline</strong>
+                <p>Use the commercial snapshot as the list-price baseline before moving into customer-specific usage and discount assumptions. Preferred SKU and sizing notes refine the estimate later, but they are not required to fetch the first-pass retail snapshot.</p>
+              </article>
+              <article>
+                <strong>Commercial handoff</strong>
+                <p>Export review notes separately from the pricing and estimate artifacts so each audience gets the level of detail they need.</p>
+              </article>
+            </div>
+          </article>
           </>
         ) : (
           <section className="filter-card">
@@ -3297,7 +3855,12 @@ export function ReviewPackageWorkbench({
         )}
       </section>
 
-      <section className="surface-panel board-stage-panel" id="project-review-cloud-continuity">
+      <section
+        className={`surface-panel board-stage-panel${
+          highlightedStageId === "project-review-cloud-continuity" ? " board-stage-panel-highlighted" : ""
+        }`}
+        id="project-review-cloud-continuity"
+      >
         <div className="section-head">
           <div>
             <p className="eyebrow">Optional cloud continuity</p>
@@ -3336,6 +3899,15 @@ export function ReviewPackageWorkbench({
                 ? "This stage is intentionally optional. Keep the workflow local-first until you actually need save, restore, or a cloud-generated CSV."
                 : "Create the review shell first, then sign in later only if you need continuity across sessions."}
             </p>
+            <div className="button-row">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => openStage("project-review-cloud-continuity")}
+              >
+                {activePackage ? "Reopen stage" : "Open stage"}
+              </button>
+            </div>
           </section>
         ) : activePackage ? (
           <ReviewCloudControls
@@ -3374,6 +3946,19 @@ export function ReviewPackageWorkbench({
 
         {selectedServices.length > 0 ? (
           <>
+            <section className="filter-card review-stage-handoff-card">
+              <p className="eyebrow">Detailed commercial stage</p>
+              <h3>{pricingStageStatus.title}</h3>
+              <p className="microcopy">{pricingStageStatus.summary}</p>
+              <div className="chip-row compact-chip-row">
+                {pricingStageStatus.chips.map((chip) => (
+                  <span className="chip" key={`pricing-stage-${chip}`}>
+                    {chip}
+                  </span>
+                ))}
+              </div>
+            </section>
+
             <div className="package-header-grid">
               <article className="filter-card package-card">
                 <div className="package-stats-grid">
@@ -3539,6 +4124,19 @@ export function ReviewPackageWorkbench({
 
         {selectedServices.length > 0 ? (
           <>
+            <section className="filter-card review-stage-handoff-card">
+              <p className="eyebrow">Detailed estimate stage</p>
+              <h3>{estimateStageStatus.title}</h3>
+              <p className="microcopy">{estimateStageStatus.summary}</p>
+              <div className="chip-row compact-chip-row">
+                {estimateStageStatus.chips.map((chip) => (
+                  <span className="chip" key={`estimate-stage-${chip}`}>
+                    {chip}
+                  </span>
+                ))}
+              </div>
+            </section>
+
             <div className="package-header-grid">
               <article className="filter-card package-card">
                 <div className="package-stats-grid">

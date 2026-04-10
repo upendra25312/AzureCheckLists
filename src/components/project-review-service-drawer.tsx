@@ -317,7 +317,7 @@ export function ProjectReviewServiceDrawer({
         <section className="drawer-section">
           <h3>Design assumptions</h3>
           <p className="microcopy">
-            These assumptions stay tied to this service in the active project review and help refine the pricing export later.
+            These assumptions stay tied to this service in the active project review and keep the matrix compact by moving estimate and pricing refinement into this drawer.
           </p>
           <div className="matrix-assumption-grid service-drawer-assumptions">
             <label>

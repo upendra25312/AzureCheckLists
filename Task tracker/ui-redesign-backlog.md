@@ -29,26 +29,26 @@ Epic status: Completed
 
 ### Epic 2: Project review becomes a staged workspace instead of a long page
 
-Epic status: In progress
+Epic status: Completed
 
 | ID | Priority | Status | Item | Estimate | Dependencies | Definition of done |
 | --- | --- | --- | --- | --- | --- | --- |
 | UX-06 | P0 | Completed | Add a sticky progress rail for review stages | 2 days | UX-04 | Users can always see the current stage, completed stages, and what unlocks next |
 | UX-07 | P0 | Completed | Convert the workspace into clear stages: setup, service scope, review signals, exports, continuity | 3 days | UX-06 | Sections read as a guided workflow rather than unrelated stacked panels |
-| UX-08 | P0 | Pending | Collapse completed stages into concise summaries with reopen controls | 2 days | UX-07 | Users can move forward without losing context and can reopen any finished stage intentionally |
-| UX-09 | P1 | Pending | Promote service drawer depth so matrix rows stay compact by default | 2 days | UX-07 | Matrix rows emphasize decision signals and status while assumptions and estimate controls remain drawer-first |
-| UX-10 | P1 | Pending | Add explicit empty states and unlock states for pricing, estimate, and export stages | 1.5 days | UX-07 | Users understand why a stage is unavailable and what action unlocks it |
-| UX-11 | P2 | Pending | Add stage-level animation and scroll behavior that helps orientation without adding noise | 1 day | UX-06, UX-07 | Stage transitions and sticky navigation feel deliberate and do not hurt usability |
+| UX-08 | P0 | Completed | Collapse completed stages into concise summaries with reopen controls | 2 days | UX-07 | Users can move forward without losing context and can reopen any finished stage intentionally |
+| UX-09 | P1 | Completed | Promote service drawer depth so matrix rows stay compact by default | 2 days | UX-07 | Matrix rows emphasize decision signals and status while assumptions and estimate controls remain drawer-first |
+| UX-10 | P1 | Completed | Add explicit empty states and unlock states for pricing, estimate, and export stages | 1.5 days | UX-07 | Users understand why a stage is unavailable and what action unlocks it |
+| UX-11 | P2 | Completed | Add stage-level animation and scroll behavior that helps orientation without adding noise | 1 day | UX-06, UX-07 | Stage transitions and sticky navigation feel deliberate and do not hurt usability |
 
 ### Epic 3: Exports and outputs become previewable before download
 
-Epic status: Pending
+Epic status: Completed
 
 | ID | Priority | Status | Item | Estimate | Dependencies | Definition of done |
 | --- | --- | --- | --- | --- | --- | --- |
-| UX-12 | P1 | Pending | Add preview cards for checklist, markdown, pricing, and leadership outputs | 2 days | UX-07 | Users can understand what each export contains before downloading it |
-| UX-13 | P1 | Pending | Reframe export actions around audience intent instead of file type only | 1.5 days | UX-12 | Export labels explain who the artifact is for and what decision it supports |
-| UX-14 | P2 | Pending | Add service comparison and top-risk summary block before export stage | 2 days | UX-07, UX-12 | Reviewers can quickly compare the riskiest or least-ready services before producing handoff material |
+| UX-12 | P1 | Completed | Add preview cards for checklist, markdown, pricing, and leadership outputs | 2 days | UX-07 | Users can understand what each export contains before downloading it |
+| UX-13 | P1 | Completed | Reframe export actions around audience intent instead of file type only | 1.5 days | UX-12 | Export labels explain who the artifact is for and what decision it supports |
+| UX-14 | P2 | Completed | Add service comparison and top-risk summary block before export stage | 2 days | UX-07, UX-12 | Reviewers can quickly compare the riskiest or least-ready services before producing handoff material |
 
 ### Epic 4: Service pages align visually with the review experience
 
@@ -128,10 +128,10 @@ Each issue should include:
 
 ## Backlog Status
 
-- State: In progress
+- State: Completed
 - Owner: Product / UX / Engineering
-- Progress summary: 10 items completed, 7 items pending
-- Completed epics: Epic 1 and Epic 4
-- In-progress epic: Epic 2
-- Pending epic: Epic 3
-- Recommended next focus: finish the remaining Epic 2 workspace tasks before moving into Epic 3 export-preview work
+- Progress summary: 17 items completed, 0 items pending
+- Completed epics: Epic 1, Epic 2, Epic 3, and Epic 4
+- In-progress epic: None
+- Pending epic: None
+- Recommended next focus: capture before/after screenshots per backlog item and break any follow-up refinements into a new post-redesign backlog instead of reopening these completed items
