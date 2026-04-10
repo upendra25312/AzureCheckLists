@@ -1,6 +1,6 @@
 # UI Redesign Backlog
 
-Last updated: April 5, 2026
+Last updated: April 10, 2026
 
 ## Goal
 
@@ -17,40 +17,48 @@ Turn the homepage and project-review workflow into the clearest path in the prod
 
 ### Epic 1: Homepage becomes a decision-oriented entry point
 
-| ID | Priority | Item | Estimate | Dependencies | Definition of done |
-| --- | --- | --- | --- | --- | --- |
-| UX-01 | P0 | Rebuild the homepage hero around `Start a project review` as the primary call to action | 2 days | None | Hero has one dominant CTA into `/review-package`, one supporting CTA, clearer message hierarchy, and reduced competing copy |
-| UX-02 | P0 | Reduce homepage sections to a tighter narrative: start, trust, workflow, outputs | 2 days | UX-01 | Homepage removes low-signal repetition, keeps only the sections that help users understand why and how to start |
-| UX-03 | P1 | Replace generic proof blocks with product-specific review outcomes and artifact examples | 1.5 days | UX-01 | Homepage shows real outputs such as scoped checklist export, pricing snapshot, leadership summary, and saved review continuity |
-| UX-04 | P1 | Introduce a shared visual system for hero typography, section spacing, chips, and evidence cards | 2 days | UX-01 | Homepage styles are reusable in review and service pages and reduce the current mixed visual density |
-| UX-05 | P2 | Add a lightweight homepage validation pass for mobile layout and CTA visibility | 1 day | UX-01, UX-02 | Desktop and mobile views preserve CTA order, section rhythm, and readable hierarchy |
+Epic status: Completed
+
+| ID | Priority | Status | Item | Estimate | Dependencies | Definition of done |
+| --- | --- | --- | --- | --- | --- | --- |
+| UX-01 | P0 | Completed | Rebuild the homepage hero around `Start a project review` as the primary call to action | 2 days | None | Hero has one dominant CTA into `/review-package`, one supporting CTA, clearer message hierarchy, and reduced competing copy |
+| UX-02 | P0 | Completed | Reduce homepage sections to a tighter narrative: start, trust, workflow, outputs | 2 days | UX-01 | Homepage removes low-signal repetition, keeps only the sections that help users understand why and how to start |
+| UX-03 | P1 | Completed | Replace generic proof blocks with product-specific review outcomes and artifact examples | 1.5 days | UX-01 | Homepage shows real outputs such as scoped checklist export, pricing snapshot, leadership summary, and saved review continuity |
+| UX-04 | P1 | Completed | Introduce a shared visual system for hero typography, section spacing, chips, and evidence cards | 2 days | UX-01 | Homepage styles are reusable in review and service pages and reduce the current mixed visual density |
+| UX-05 | P2 | Completed | Add a lightweight homepage validation pass for mobile layout and CTA visibility | 1 day | UX-01, UX-02 | Desktop and mobile views preserve CTA order, section rhythm, and readable hierarchy |
 
 ### Epic 2: Project review becomes a staged workspace instead of a long page
 
-| ID | Priority | Item | Estimate | Dependencies | Definition of done |
-| --- | --- | --- | --- | --- | --- |
-| UX-06 | P0 | Add a sticky progress rail for review stages | 2 days | UX-04 | Users can always see the current stage, completed stages, and what unlocks next |
-| UX-07 | P0 | Convert the workspace into clear stages: setup, service scope, review signals, exports, continuity | 3 days | UX-06 | Sections read as a guided workflow rather than unrelated stacked panels |
-| UX-08 | P0 | Collapse completed stages into concise summaries with reopen controls | 2 days | UX-07 | Users can move forward without losing context and can reopen any finished stage intentionally |
-| UX-09 | P1 | Promote service drawer depth so matrix rows stay compact by default | 2 days | UX-07 | Matrix rows emphasize decision signals and status while assumptions and estimate controls remain drawer-first |
-| UX-10 | P1 | Add explicit empty states and unlock states for pricing, estimate, and export stages | 1.5 days | UX-07 | Users understand why a stage is unavailable and what action unlocks it |
-| UX-11 | P2 | Add stage-level animation and scroll behavior that helps orientation without adding noise | 1 day | UX-06, UX-07 | Stage transitions and sticky navigation feel deliberate and do not hurt usability |
+Epic status: In progress
+
+| ID | Priority | Status | Item | Estimate | Dependencies | Definition of done |
+| --- | --- | --- | --- | --- | --- | --- |
+| UX-06 | P0 | Completed | Add a sticky progress rail for review stages | 2 days | UX-04 | Users can always see the current stage, completed stages, and what unlocks next |
+| UX-07 | P0 | Completed | Convert the workspace into clear stages: setup, service scope, review signals, exports, continuity | 3 days | UX-06 | Sections read as a guided workflow rather than unrelated stacked panels |
+| UX-08 | P0 | Pending | Collapse completed stages into concise summaries with reopen controls | 2 days | UX-07 | Users can move forward without losing context and can reopen any finished stage intentionally |
+| UX-09 | P1 | Pending | Promote service drawer depth so matrix rows stay compact by default | 2 days | UX-07 | Matrix rows emphasize decision signals and status while assumptions and estimate controls remain drawer-first |
+| UX-10 | P1 | Pending | Add explicit empty states and unlock states for pricing, estimate, and export stages | 1.5 days | UX-07 | Users understand why a stage is unavailable and what action unlocks it |
+| UX-11 | P2 | Pending | Add stage-level animation and scroll behavior that helps orientation without adding noise | 1 day | UX-06, UX-07 | Stage transitions and sticky navigation feel deliberate and do not hurt usability |
 
 ### Epic 3: Exports and outputs become previewable before download
 
-| ID | Priority | Item | Estimate | Dependencies | Definition of done |
-| --- | --- | --- | --- | --- | --- |
-| UX-12 | P1 | Add preview cards for checklist, markdown, pricing, and leadership outputs | 2 days | UX-07 | Users can understand what each export contains before downloading it |
-| UX-13 | P1 | Reframe export actions around audience intent instead of file type only | 1.5 days | UX-12 | Export labels explain who the artifact is for and what decision it supports |
-| UX-14 | P2 | Add service comparison and top-risk summary block before export stage | 2 days | UX-07, UX-12 | Reviewers can quickly compare the riskiest or least-ready services before producing handoff material |
+Epic status: Pending
+
+| ID | Priority | Status | Item | Estimate | Dependencies | Definition of done |
+| --- | --- | --- | --- | --- | --- | --- |
+| UX-12 | P1 | Pending | Add preview cards for checklist, markdown, pricing, and leadership outputs | 2 days | UX-07 | Users can understand what each export contains before downloading it |
+| UX-13 | P1 | Pending | Reframe export actions around audience intent instead of file type only | 1.5 days | UX-12 | Export labels explain who the artifact is for and what decision it supports |
+| UX-14 | P2 | Pending | Add service comparison and top-risk summary block before export stage | 2 days | UX-07, UX-12 | Reviewers can quickly compare the riskiest or least-ready services before producing handoff material |
 
 ### Epic 4: Service pages align visually with the review experience
 
-| ID | Priority | Item | Estimate | Dependencies | Definition of done |
-| --- | --- | --- | --- | --- | --- |
-| UX-15 | P1 | Refresh service-page hero, evidence blocks, and CTA hierarchy to match the new homepage system | 2 days | UX-04 | Service pages feel like part of the same product and surface review actions clearly |
-| UX-16 | P1 | Tighten pricing and regional-fit panels with clearer signal grouping and less raw density | 2 days | UX-15 | Users can identify blockers, target-region matches, and pricing posture faster |
-| UX-17 | P2 | Improve technology and service detail pages for mobile spacing and action clarity | 1.5 days | UX-15 | Secondary detail pages do not regress after the primary visual refresh |
+Epic status: Completed
+
+| ID | Priority | Status | Item | Estimate | Dependencies | Definition of done |
+| --- | --- | --- | --- | --- | --- | --- |
+| UX-15 | P1 | Completed | Refresh service-page hero, evidence blocks, and CTA hierarchy to match the new homepage system | 2 days | UX-04 | Service pages feel like part of the same product and surface review actions clearly |
+| UX-16 | P1 | Completed | Tighten pricing and regional-fit panels with clearer signal grouping and less raw density | 2 days | UX-15 | Users can identify blockers, target-region matches, and pricing posture faster |
+| UX-17 | P2 | Completed | Improve technology and service detail pages for mobile spacing and action clarity | 1.5 days | UX-15 | Secondary detail pages do not regress after the primary visual refresh |
 
 ## Proposed Sprint Sequence
 
@@ -120,6 +128,10 @@ Each issue should include:
 
 ## Backlog Status
 
-- State: Ready for implementation
+- State: In progress
 - Owner: Product / UX / Engineering
-- Recommended start: Epic 1 and Epic 2 in parallel, with the shared visual system landing before the broader page refresh
+- Progress summary: 10 items completed, 7 items pending
+- Completed epics: Epic 1 and Epic 4
+- In-progress epic: Epic 2
+- Pending epic: Epic 3
+- Recommended next focus: finish the remaining Epic 2 workspace tasks before moving into Epic 3 export-preview work
