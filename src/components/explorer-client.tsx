@@ -155,6 +155,28 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
   const selectedTechnology = filters.technologies[0] ?? "";
   const selectedStatus = filters.statuses[0] ?? "";
   const selectedSourceKind = filters.sourceKinds[0] ?? "";
+  const explorerMetrics = [
+    {
+      label: "Visible findings",
+      value: filteredItems.length.toLocaleString(),
+      detail: "Scoped by the current GA-first filters and advanced explorer controls."
+    },
+    {
+      label: "High severity",
+      value: highSeverityCount.toLocaleString(),
+      detail: "Items that deserve earlier architectural attention in the current scope."
+    },
+    {
+      label: "Checklist families",
+      value: new Set(filteredItems.map((item) => item.technologySlug)).size.toLocaleString(),
+      detail: "Families represented in the current filtered result set."
+    },
+    {
+      label: "Locally reviewed",
+      value: reviewedCount.toLocaleString(),
+      detail: "Items with local notes or review-state changes in this browser."
+    }
+  ];
   const isGaOnly = matchesValues(filters.maturityBuckets, ["GA"]);
   const isIncludingPreview = matchesValues(filters.maturityBuckets, ["GA", "Preview", "Mixed"]);
   const isShowingAll = matchesValues(filters.maturityBuckets, [
@@ -195,23 +217,36 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
 
   return (
     <>
-      <section id="explorer" className="surface-panel explorer-shell">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Explorer</p>
-            <h2 className="section-title">
-              Move from executive posture to detailed findings without losing clarity.
-            </h2>
-            <p className="section-copy">
-              This explorer keeps the high-value controls visible, defaults to GA-ready guidance,
-              and tucks deeper scoping behind a simpler advanced filter panel.
-            </p>
+      <section id="explorer" className="surface-panel explorer-shell board-stage-panel">
+        <section className="review-command-panel">
+          <div className="detail-command-grid">
+            <div className="detail-command-copy">
+              <div>
+                <p className="eyebrow">Explorer</p>
+                <h2 className="review-command-title">
+                  Move from executive posture to detailed findings without losing clarity.
+                </h2>
+                <p className="review-command-summary">
+                  This explorer keeps the high-value controls visible, defaults to GA-ready guidance,
+                  and tucks deeper scoping behind a simpler advanced filter panel.
+                </p>
+              </div>
+            </div>
+            <div className="chip-row" style={{ alignSelf: "start", justifyContent: "flex-end" }}>
+              <span className="chip">{filteredItems.length.toLocaleString()} visible findings</span>
+              <span className="chip">{reviewedCount.toLocaleString()} locally reviewed</span>
+            </div>
           </div>
-          <div className="chip-row">
-            <span className="chip">{filteredItems.length.toLocaleString()} visible findings</span>
-            <span className="chip">{reviewedCount.toLocaleString()} locally reviewed</span>
+          <div className="review-command-metrics">
+            {explorerMetrics.map((metric) => (
+              <article className="review-command-metric" key={metric.label}>
+                <span>{metric.label}</span>
+                <strong>{metric.value}</strong>
+                <p>{metric.detail}</p>
+              </article>
+            ))}
           </div>
-        </div>
+        </section>
 
         <div className="future-grid workspace-brief">
           <article className="future-card">
@@ -258,7 +293,7 @@ export function ExplorerClient({ summary }: { summary: CatalogSummary }) {
           </div>
         ) : null}
 
-        <div className="filter-card workspace-toolbar">
+        <div className="filter-card workspace-toolbar board-toolbar-card">
           <div className="workspace-toolbar-main">
             <input
               className="search-input"

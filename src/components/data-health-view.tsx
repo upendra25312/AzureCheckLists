@@ -85,12 +85,12 @@ export function DataHealthView() {
 
   return (
     <main className="section-stack">
-      <section className="surface-panel editorial-section">
+      <section className="review-command-panel">
         <div className="section-head">
           <div>
             <p className="eyebrow">Data health</p>
-            <h1 className="section-title">See when availability and pricing were last refreshed.</h1>
-            <p className="section-copy">
+            <h1 className="review-command-title">See when availability and pricing were last refreshed.</h1>
+            <p className="review-command-summary">
               This page proves the app is using a real Azure Function backend, and it shows whether
               the backend is serving fresh data, scheduled cache, or the last successful fallback.
             </p>
@@ -138,7 +138,7 @@ export function DataHealthView() {
             </article>
           </div>
         ) : (
-          <section className="filter-card">
+          <section className="filter-card board-stage-panel">
             <p className="eyebrow">Health check</p>
             <h3>Loading backend health.</h3>
             <p className="microcopy">
@@ -261,7 +261,7 @@ export function DataHealthView() {
         ) : null}
 
         {payload?.availability?.lastError ? (
-          <section className="filter-card">
+          <section className="filter-card board-stage-panel">
             <p className="eyebrow">Availability warning</p>
             <h3>The last availability refresh reported an issue.</h3>
             <p className="microcopy">{payload.availability.lastError}</p>
@@ -269,7 +269,7 @@ export function DataHealthView() {
         ) : null}
 
         {payload?.pricing?.lastError ? (
-          <section className="filter-card">
+          <section className="filter-card board-stage-panel">
             <p className="eyebrow">Pricing warning</p>
             <h3>The last pricing refresh reported an issue.</h3>
             <p className="microcopy">{payload.pricing.lastError}</p>
@@ -277,7 +277,7 @@ export function DataHealthView() {
         ) : null}
 
         {error ? (
-          <section className="filter-card">
+          <section className="filter-card board-stage-panel">
             <p className="eyebrow">Health check</p>
             <h3>The backend health check is degraded.</h3>
             <p className="microcopy">{error}</p>

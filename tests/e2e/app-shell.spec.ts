@@ -113,4 +113,28 @@ test.describe("shared app shell", () => {
     await expectSharedShell(page, ["Browse Services"]);
     await expect(page.getByText("Sign in").first()).toBeVisible();
   });
+
+  test("keeps keyboard focus visible through the shared shell navigation", async ({ page }) => {
+    await page.goto("/services");
+
+    const brandLink = page.getByRole("link", { name: "Azure Review Board", exact: true });
+    const initializeLink = page.getByRole("link", { name: "Initialize Review", exact: true });
+
+    await page.keyboard.press("Tab");
+    await expect(brandLink).toBeFocused();
+
+    const brandOutline = await brandLink.evaluate((element) => {
+      const styles = window.getComputedStyle(element);
+      return {
+        outlineStyle: styles.outlineStyle,
+        outlineWidth: styles.outlineWidth
+      };
+    });
+
+    expect(brandOutline.outlineStyle).not.toBe("none");
+    expect(brandOutline.outlineWidth).not.toBe("0px");
+
+    await page.keyboard.press("Tab");
+    await expect(initializeLink).toBeFocused();
+  });
 });

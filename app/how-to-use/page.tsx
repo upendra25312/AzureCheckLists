@@ -10,30 +10,41 @@ export const metadata: Metadata = {
 export default function HowToUsePage() {
   return (
     <main className="section-stack">
-      <section className="surface-panel editorial-section">
-        <p className="eyebrow">How this tool should be used</p>
-        <h2 className="section-title">Use the review board to prepare decisions, not to issue approval.</h2>
-        <p className="section-copy">
-          The review board turns Azure checklist content into a clearer decision-support surface.
-          It helps teams structure review discussions, preserve source traceability, and show where
-          architectural judgment is still required. It does not certify architectures, waive
-          governance, or substitute for accountable sign-off.
-        </p>
-        <p className="microcopy">
-          Source traceability remains visible in the family and service views so reviewers can
-          verify why a recommendation should carry weight.
-        </p>
-        <div className="button-row">
-          <Link href="/" className="primary-button">
-            Back to overview
-          </Link>
-          <Link href="/explorer" className="secondary-button">
-            Open explorer
-          </Link>
+      <section className="review-command-panel">
+        <div className="detail-command-grid">
+          <div className="detail-command-copy">
+            <div>
+              <p className="eyebrow">How this tool should be used</p>
+              <h1 className="review-command-title">Use the review board to prepare decisions, not to issue approval.</h1>
+              <p className="review-command-summary">
+                The review board turns Azure checklist content into a clearer decision-support surface.
+                It helps teams structure review discussions, preserve source traceability, and show where
+                architectural judgment is still required. It does not certify architectures, waive
+                governance, or substitute for accountable sign-off.
+              </p>
+            </div>
+            <div className="button-row">
+              <Link href="/" className="primary-button">
+                Back to overview
+              </Link>
+              <Link href="/explorer" className="secondary-button">
+                Open explorer
+              </Link>
+            </div>
+          </div>
+
+          <section className="leadership-brief detail-command-sidecar">
+            <p className="eyebrow">Responsible use</p>
+            <h2 className="leadership-title">Source traceability stays visible so recommendations keep their context.</h2>
+            <p>
+              Family and service views retain source lineage so reviewers can see why a recommendation
+              should carry weight before it enters a decision pack.
+            </p>
+          </section>
         </div>
       </section>
 
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel board-stage-panel">
         <div className="section-head">
           <div>
             <p className="eyebrow">Plain-language guide</p>
@@ -76,7 +87,7 @@ export default function HowToUsePage() {
         </div>
       </section>
 
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel board-stage-panel">
         <div className="section-head">
           <div>
             <p className="eyebrow">Responsible use</p>
@@ -109,7 +120,7 @@ export default function HowToUsePage() {
         </div>
       </section>
 
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel board-stage-panel">
         <div className="section-head">
           <div>
             <p className="eyebrow">Limitations</p>

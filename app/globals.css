@@ -14,6 +14,8 @@
   --success: #1a7f57;
   --warning: #b77417;
   --danger: #bb3a2b;
+  --focus-ring: #4f90d8;
+  --focus-ring-soft: rgba(79, 144, 216, 0.18);
   --shadow: 0 20px 60px rgba(13, 24, 38, 0.08);
   --radius-xl: 28px;
   --radius-lg: 20px;
@@ -38,6 +40,8 @@
   --success: #6ed39f;
   --warning: #f2c365;
   --danger: #ef8f83;
+  --focus-ring: #7fc4ff;
+  --focus-ring-soft: rgba(127, 196, 255, 0.22);
   --shadow: 0 20px 60px rgba(0, 0, 0, 0.34);
 }
 
@@ -80,6 +84,12 @@ button {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.62;
+}
+
+:where(a[href], button, input:not([type="hidden"]), select, textarea, summary):focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--focus-ring-soft);
 }
 
 pre {
@@ -2509,6 +2519,27 @@ button.chip:disabled:hover {
   text-align: center;
 }
 
+.detail-command-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.detail-command-copy {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.detail-command-copy .button-row {
+  justify-content: flex-start;
+}
+
+.detail-command-sidecar {
+  align-self: stretch;
+}
+
 .review-command-title {
   margin: 0;
   font-size: clamp(2rem, 3.1vw, 3.4rem);
@@ -4143,6 +4174,7 @@ button.chip:disabled:hover {
   .library-state-grid,
   .library-review-grid,
   .library-review-stats,
+  .detail-command-grid,
   .package-context-grid,
   .service-drawer-metrics,
   .service-drawer-assumptions {

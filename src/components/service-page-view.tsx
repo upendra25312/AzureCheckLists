@@ -110,6 +110,34 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
         "Open item detail before carrying recommendations into leadership material so the source lineage and normalization context remain visible."
     }
   ];
+  const serviceCommandMetrics = [
+    {
+      label: "Checklist families",
+      value: payload.service.familyCount.toLocaleString(),
+      detail: "Related families that mention or assess this service directly."
+    },
+    {
+      label: "High-severity findings",
+      value: payload.service.highSeverityCount.toLocaleString(),
+      detail: "Findings that should be triaged earlier in the design and review conversation."
+    },
+    {
+      label: "GA-ready baseline",
+      value: payload.service.gaFamilyCount.toLocaleString(),
+      detail: "Families safe to lead with when building a default review pack."
+    },
+    {
+      label: "Project review state",
+      value: activePackage
+        ? activePackage.selectedServiceSlugs.includes(payload.service.slug)
+          ? "In active review"
+          : "Review active"
+        : "No active review",
+      detail: activePackage
+        ? `Current review: ${activePackage.name}.`
+        : "Start a project review to capture include, exclude, and not-applicable decisions."
+    }
+  ];
 
   function updateReview(guid: string, next: Partial<ReviewDraft>) {
     setReviews((current) => {
@@ -142,54 +170,68 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
 
   return (
     <main className="section-stack">
-      <section className="surface-panel technology-hero technology-brief-hero">
-        <div className="technology-hero-summary">
-          <p className="eyebrow">Azure service</p>
-          <h1 className="technology-title">{payload.service.service}</h1>
-          <p className="technology-summary">{payload.service.description}</p>
-          <p className="hero-note">
-            Generated {generatedDate}. Use this page to decide whether this service belongs in the
-            design, where it can run, what the public pricing looks like, and which findings need
-            project-specific notes.
-          </p>
-          <div className="button-row">
-            <Link href="/services" className="secondary-button">
-              Back to services
-            </Link>
-            <Link href="/" className="ghost-button">
-              Back to overview
-            </Link>
-            <Link href="/how-to-use" className="ghost-button">
-              Review guidance
-            </Link>
+      <section className="review-command-panel">
+        <div className="detail-command-grid">
+          <div className="detail-command-copy">
+            <div>
+              <p className="eyebrow">Azure service</p>
+              <h1 className="review-command-title">{payload.service.service}</h1>
+              <p className="review-command-summary">{payload.service.description}</p>
+              <p className="microcopy">
+                Generated {generatedDate}. Use this page to decide whether this service belongs in
+                the design, where it can run, what the public pricing looks like, and which
+                findings need project-specific notes.
+              </p>
+            </div>
+            <div className="button-row">
+              <Link href="/services" className="secondary-button">
+                Back to services
+              </Link>
+              <Link href="/" className="ghost-button">
+                Back to overview
+              </Link>
+              <Link href="/how-to-use" className="ghost-button">
+                Review guidance
+              </Link>
+            </div>
           </div>
+
+          <aside className="leadership-brief detail-command-sidecar">
+            <p className="eyebrow">Service brief</p>
+            <h2 className="leadership-title">What to lead with on this page.</h2>
+            <div className="leadership-list">
+              <article>
+                <strong>Baseline position</strong>
+                <p>
+                  {payload.service.gaFamilyCount > 0
+                    ? `${payload.service.gaFamilyCount.toLocaleString()} GA-ready families can anchor the review baseline.`
+                    : "No GA-ready family exists yet, so review confidence depends on preview guidance and explicit validation."}
+                </p>
+              </article>
+              <article>
+                <strong>Coverage</strong>
+                <p>
+                  {payload.service.itemCount.toLocaleString()} findings across{" "}
+                  {payload.service.familyCount.toLocaleString()} checklist families.
+                </p>
+              </article>
+              <article>
+                <strong>Service handling</strong>
+                <p>{payload.service.whatThisMeans}</p>
+              </article>
+            </div>
+          </aside>
         </div>
 
-        <aside className="leadership-brief family-brief-sidecar">
-          <p className="eyebrow">Service brief</p>
-          <h2 className="leadership-title">What to lead with on this page.</h2>
-          <div className="leadership-list">
-            <article>
-              <strong>Baseline position</strong>
-              <p>
-                {payload.service.gaFamilyCount > 0
-                  ? `${payload.service.gaFamilyCount.toLocaleString()} GA-ready families can anchor the review baseline.`
-                  : "No GA-ready family exists yet, so review confidence depends on preview guidance and explicit validation."}
-              </p>
+        <div className="review-command-metrics">
+          {serviceCommandMetrics.map((metric) => (
+            <article className="review-command-metric" key={metric.label}>
+              <span>{metric.label}</span>
+              <strong>{metric.value}</strong>
+              <p>{metric.detail}</p>
             </article>
-            <article>
-              <strong>Coverage</strong>
-              <p>
-                {payload.service.itemCount.toLocaleString()} findings across{" "}
-                {payload.service.familyCount.toLocaleString()} checklist families.
-              </p>
-            </article>
-            <article>
-              <strong>Service handling</strong>
-              <p>{payload.service.whatThisMeans}</p>
-            </article>
-          </div>
-        </aside>
+          ))}
+        </div>
       </section>
 
       <section className="filter-card package-context-card">
@@ -244,7 +286,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
         )}
       </section>
 
-      <section className="surface-panel story-ribbon">
+      <section className="surface-panel board-stage-panel story-ribbon">
         <div className="decision-cue-grid">
           <article className="decision-cue-card">
             <span>Step 1</span>
@@ -276,7 +318,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
         targetRegions={activePackage?.targetRegions ?? []}
       />
 
-      <section className="surface-panel story-ribbon">
+      <section className="surface-panel board-stage-panel story-ribbon">
         <div className="decision-cue-grid">
           {serviceDecisionCues.map((cue) => (
             <article className="decision-cue-card" key={cue.label}>
@@ -288,7 +330,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
         </div>
       </section>
 
-      <section className="surface-panel family-metric-strip">
+      <section className="surface-panel board-stage-panel family-metric-strip">
         <div className="hero-metrics-row">
           <article className="hero-metric-card">
             <span>Checklist families</span>
@@ -308,7 +350,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
         </div>
       </section>
 
-      <section className="surface-panel editorial-section executive-brief-section">
+      <section className="surface-panel board-stage-panel executive-brief-section">
         <div className="section-head">
           <div>
             <p className="eyebrow">Recommended review path</p>
@@ -390,7 +432,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
         </div>
       </section>
 
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel board-stage-panel">
         <div className="section-head">
           <div>
             <p className="eyebrow">Service context</p>
@@ -426,7 +468,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
         </div>
       </section>
 
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel board-stage-panel">
         <div className="section-head family-list-head">
           <div>
             <p className="eyebrow">Service findings</p>
@@ -444,7 +486,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
             <span className="chip">{reviewedCount.toLocaleString()} locally reviewed</span>
           </div>
         </div>
-        <div className="filter-card workspace-toolbar">
+        <div className="filter-card workspace-toolbar board-toolbar-card">
           <div className="workspace-toolbar-main">
             <input
               className="search-input"

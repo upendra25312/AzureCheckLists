@@ -205,7 +205,7 @@ Test and validate:
 
 ### Task 5: Services directory migration
 
-Status: Ready
+Status: Completed
 Priority: P1
 
 Work:
@@ -234,7 +234,7 @@ Test and validate:
 
 ### Task 6: Service detail page migration
 
-Status: Ready
+Status: Completed
 Priority: P1
 
 Work:
@@ -265,7 +265,7 @@ Test and validate:
 
 ### Task 7: Technology detail page migration
 
-Status: Ready
+Status: Completed
 Priority: P1
 
 Work:
@@ -292,7 +292,7 @@ Test and validate:
 
 ### Task 8: Data Health page migration
 
-Status: Ready
+Status: Completed
 Priority: P1
 
 Work:
@@ -319,7 +319,7 @@ Test and validate:
 
 ### Task 9: Admin Copilot page migration
 
-Status: Ready
+Status: Completed
 Priority: P1
 
 Work:
@@ -347,7 +347,7 @@ Test and validate:
 
 ### Task 10: Advanced Tools and informational pages migration
 
-Status: Ready
+Status: Completed
 Priority: P2
 
 Work:
@@ -376,7 +376,7 @@ Test and validate:
 
 ### Task 11: Cross-site responsive and accessibility pass
 
-Status: Ready
+Status: Completed
 Priority: P0
 
 Work:
@@ -405,7 +405,7 @@ Test and validate:
 
 ### Task 12: Final regression and rollout validation
 
-Status: Ready
+Status: In progress
 Priority: P0
 
 Work:
@@ -459,3 +459,12 @@ Test and validate:
 - April 9, 2026: Task 3 validation passed with `npm run build`, targeted Playwright coverage including the new `review-workspace-shell` spec, and fresh desktop/mobile route screenshots.
 - April 9, 2026: Task 4 completed. `/my-project-reviews` now uses a board-style library shell with command metrics, signed-in lifecycle cards, and denser saved-review cards that keep resume/archive/delete actions in the same product family.
 - April 9, 2026: Task 4 validation passed with `npm run build`, targeted Playwright coverage for shared shell, board surfaces, and review-cloud flows, plus fresh desktop/mobile screenshots for the saved-review library route.
+- April 9, 2026: Task 5 completed. `/services` now uses a board-style command surface, shared operational metrics, and denser result cards that match the homepage review board language.
+- April 9, 2026: Task 6 completed. Service detail pages now use board-style command panels and consistent pricing and regional-fit surfaces instead of the older editorial layout.
+- April 9, 2026: Task 7 completed. Technology detail pages now use the shared command-panel, evidence, and findings surfaces while keeping dense checklist content readable.
+- April 9, 2026: Task 8 completed. `/data-health` now uses the same operational board framing as the rest of the product, including aligned command copy and board-stage health surfaces.
+- April 9, 2026: Task 9 completed. `/admin/copilot` now uses the shared board system for signed-out, access-denied, diagnostics, and prompt workflow states without losing its admin-only context.
+- April 9, 2026: Task 10 completed. `/explorer`, `/how-to-use`, and the not-found route now follow the same Azure Review Board shell and command-surface pattern as the primary workflow pages.
+- April 9, 2026: Task 11 completed. Added a cross-site responsive and accessibility pass with shared detail-grid utilities, visible focus treatment, keyboard-navigation validation, and fresh desktop/mobile screenshots for the migrated routes.
+- April 9, 2026: Tasks 5-11 validation passed with `npm run build`, a clean `23 passed` targeted Playwright run across shell, board surfaces, review workspace, review-cloud, admin copilot, and route-rollout specs, plus fresh route screenshots captured under `output/playwright/`.
+- April 9, 2026: Task 12 is in progress pending post-deploy live-site smoke validation after the rollout commit is pushed.

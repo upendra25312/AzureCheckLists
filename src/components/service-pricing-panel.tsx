@@ -191,7 +191,7 @@ export function ServicePricingPanel({
 
   if (loading) {
     return (
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel board-stage-panel">
         <div className="section-head">
           <div>
             <p className="eyebrow">Commercial fit</p>
@@ -208,7 +208,7 @@ export function ServicePricingPanel({
 
   if (error) {
     return (
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel board-stage-panel">
         <div className="section-head">
           <div>
             <p className="eyebrow">Commercial fit</p>
@@ -222,7 +222,7 @@ export function ServicePricingPanel({
 
   if (!pricing || !pricing.mapped) {
     return (
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel board-stage-panel">
         <div className="section-head">
           <div>
             <p className="eyebrow">Commercial fit</p>
@@ -262,7 +262,7 @@ export function ServicePricingPanel({
   }
 
   return (
-    <section className="surface-panel editorial-section">
+    <section className="surface-panel board-stage-panel">
       <div className="section-head">
         <div>
           <p className="eyebrow">Commercial fit</p>

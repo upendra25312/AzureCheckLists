@@ -76,7 +76,7 @@ export function ServiceRegionalFitPanel({
 
   if (!resolvedRegionalFit || !resolvedRegionalFit.mapped) {
     return (
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel board-stage-panel">
         <div className="section-head">
           <div>
             <p className="eyebrow">Regional fit</p>
@@ -162,7 +162,7 @@ export function ServiceRegionalFitPanel({
       : [];
 
   return (
-    <section className="surface-panel editorial-section">
+    <section className="surface-panel board-stage-panel">
       <div className="section-head">
         <div>
           <p className="eyebrow">Regional fit</p>

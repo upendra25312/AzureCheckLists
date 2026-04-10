@@ -193,10 +193,10 @@ export function AdminCopilot() {
   if (!authResolved) {
     return (
       <main className="section-stack">
-        <section className="surface-panel editorial-section">
+        <section className="review-command-panel">
           <p className="eyebrow">Admin copilot</p>
-          <h1 className="section-title">Checking admin sign-in status.</h1>
-          <p className="section-copy">
+          <h1 className="review-command-title">Checking admin sign-in status.</h1>
+          <p className="review-command-summary">
             This internal area is reserved for platform administrators and operational diagnostics.
           </p>
         </section>
@@ -207,12 +207,12 @@ export function AdminCopilot() {
   if (!principal) {
     return (
       <main className="section-stack">
-        <section className="surface-panel editorial-section">
+        <section className="review-command-panel">
           <div className="section-head">
             <div>
               <p className="eyebrow">Admin access required</p>
-              <h1 className="section-title">Sign in as an internal administrator.</h1>
-              <p className="section-copy">
+              <h1 className="review-command-title">Sign in as an internal administrator.</h1>
+              <p className="review-command-summary">
                 This area is for internal administrators who manage the Azure Review Board platform,
                 diagnostics, and operational tooling.
               </p>
@@ -234,12 +234,12 @@ export function AdminCopilot() {
   if (!hasAdminRole(principal)) {
     return (
       <main className="section-stack">
-        <section className="surface-panel editorial-section">
+        <section className="review-command-panel">
           <div className="section-head">
             <div>
               <p className="eyebrow">Access denied</p>
-              <h1 className="section-title">You are signed in, but you do not have admin access.</h1>
-              <p className="section-copy">
+              <h1 className="review-command-title">You are signed in, but you do not have admin access.</h1>
+              <p className="review-command-summary">
                 Your account can use the project review features, but this admin area is restricted
                 to internal platform administrators.
               </p>
@@ -260,12 +260,12 @@ export function AdminCopilot() {
 
   return (
     <main className="section-stack">
-      <section className="surface-panel editorial-section">
+      <section className="review-command-panel">
         <div className="section-head">
           <div>
             <p className="eyebrow">Admin copilot</p>
-            <h1 className="section-title">Inspect the Azure platform behind the website before deeper admin tooling goes live.</h1>
-            <p className="section-copy">
+            <h1 className="review-command-title">Inspect the Azure platform behind the website before deeper admin tooling goes live.</h1>
+            <p className="review-command-summary">
               This shell is protected for internal administrators only. It confirms the admin route,
               admin API, scoped Azure environment, and current backend readiness before we connect
               the full Azure MCP-driven prompt workflow.
@@ -309,7 +309,7 @@ export function AdminCopilot() {
         </div>
       </section>
 
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel board-stage-panel">
         <div className="section-head">
           <div>
             <p className="eyebrow">Admin prompts</p>
@@ -497,7 +497,7 @@ export function AdminCopilot() {
         ) : null}
       </section>
 
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel board-stage-panel">
         <div className="section-head">
           <div>
             <p className="eyebrow">Admin health</p>
@@ -756,7 +756,7 @@ export function AdminCopilot() {
         ) : null}
       </section>
 
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel board-stage-panel">
         <div className="section-head">
           <div>
             <p className="eyebrow">Next admin prompts</p>

@@ -89,6 +89,30 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
         "Keep traceability visible so reviewers can inspect the originating family, repository source, and normalization run before promotion."
     }
   ];
+  const familyCommandMetrics = [
+    {
+      label: "Family findings",
+      value: payload.technology.itemCount.toLocaleString(),
+      detail: "Normalized items available in this checklist family."
+    },
+    {
+      label: "High-severity findings",
+      value: payload.technology.highSeverityCount.toLocaleString(),
+      detail: "Items that should receive faster architectural attention."
+    },
+    {
+      label: "Usage confidence",
+      value: payload.technology.quality.recommendedUsageConfidence,
+      detail: "How much default review weight this family should carry."
+    },
+    {
+      label: "Project review state",
+      value: activePackage ? activePackage.name : "No active review",
+      detail: activePackage
+        ? `Notes in this family view are scoped to ${activePackage.audience}.`
+        : "Activate a project review when you want family notes carried into a saved solution review."
+    }
+  ];
 
   function updateReview(guid: string, next: Partial<ReviewDraft>) {
     setReviews((current) => {
@@ -104,52 +128,66 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
 
   return (
     <main className="section-stack">
-      <section className="surface-panel technology-hero technology-brief-hero">
-        <div className="technology-hero-summary">
-          <p className="eyebrow">Checklist family</p>
-          <h1 className="technology-title">{payload.technology.technology}</h1>
-          <p className="technology-summary">{payload.technology.description}</p>
-          <p className="hero-note">
-            Generated {generatedDate}. Use this family at the confidence level it has earned,
-            rather than treating every checklist source as equally reliable.
-          </p>
-          <div className="button-row">
-            <Link href="/" className="secondary-button">
-              Back to overview
-            </Link>
-            <Link href="/how-to-use" className="ghost-button">
-              Review guidance
-            </Link>
+      <section className="review-command-panel">
+        <div className="detail-command-grid">
+          <div className="detail-command-copy">
+            <div>
+              <p className="eyebrow">Checklist family</p>
+              <h1 className="review-command-title">{payload.technology.technology}</h1>
+              <p className="review-command-summary">{payload.technology.description}</p>
+              <p className="microcopy">
+                Generated {generatedDate}. Use this family at the confidence level it has earned,
+                rather than treating every checklist source as equally reliable.
+              </p>
+            </div>
+            <div className="button-row">
+              <Link href="/" className="secondary-button">
+                Back to overview
+              </Link>
+              <Link href="/how-to-use" className="ghost-button">
+                Review guidance
+              </Link>
+            </div>
           </div>
+
+          <aside className="leadership-brief detail-command-sidecar">
+            <p className="eyebrow">Family brief</p>
+            <h2 className="leadership-title">How much weight this family should carry.</h2>
+            <div className="leadership-list">
+              <article>
+                <strong>Maturity position</strong>
+                <p>
+                  Source status is {payload.technology.status} and this family is classified as{" "}
+                  {payload.technology.maturityBucket}.
+                </p>
+              </article>
+              <article>
+                <strong>Recommended use</strong>
+                <p>
+                  {payload.technology.quality.recommendedUsageConfidence} confidence.{" "}
+                  {payload.technology.whatThisMeans}
+                </p>
+              </article>
+              <article>
+                <strong>Review caution</strong>
+                <p>
+                  Keep source traceability intact and validate severity interpretation before using
+                  this family in decision packs.
+                </p>
+              </article>
+            </div>
+          </aside>
         </div>
 
-        <aside className="leadership-brief family-brief-sidecar">
-          <p className="eyebrow">Family brief</p>
-          <h2 className="leadership-title">How much weight this family should carry.</h2>
-          <div className="leadership-list">
-            <article>
-              <strong>Maturity position</strong>
-              <p>
-                Source status is {payload.technology.status} and this family is classified as{" "}
-                {payload.technology.maturityBucket}.
-              </p>
+        <div className="review-command-metrics">
+          {familyCommandMetrics.map((metric) => (
+            <article className="review-command-metric" key={metric.label}>
+              <span>{metric.label}</span>
+              <strong>{metric.value}</strong>
+              <p>{metric.detail}</p>
             </article>
-            <article>
-              <strong>Recommended use</strong>
-              <p>
-                {payload.technology.quality.recommendedUsageConfidence} confidence.{" "}
-                {payload.technology.whatThisMeans}
-              </p>
-            </article>
-            <article>
-              <strong>Review caution</strong>
-              <p>
-                Keep source traceability intact and validate severity interpretation before using
-                this family in decision packs.
-              </p>
-            </article>
-          </div>
-        </aside>
+          ))}
+        </div>
       </section>
 
       {activePackage ? (
@@ -172,7 +210,7 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
         </section>
       ) : null}
 
-      <section className="surface-panel story-ribbon">
+      <section className="surface-panel board-stage-panel story-ribbon">
         <div className="decision-cue-grid">
           {familyDecisionCues.map((cue) => (
             <article className="decision-cue-card" key={cue.label}>
@@ -184,7 +222,7 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
         </div>
       </section>
 
-      <section className="surface-panel family-metric-strip">
+      <section className="surface-panel board-stage-panel family-metric-strip">
         <div className="hero-metrics-row">
           <article className="hero-metric-card">
             <span>Family findings</span>
@@ -204,7 +242,7 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
         </div>
       </section>
 
-      <section className="surface-panel editorial-section executive-brief-section">
+      <section className="surface-panel board-stage-panel executive-brief-section">
         <div className="section-head">
           <div>
             <p className="eyebrow">Family recommendation</p>
@@ -253,7 +291,7 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
         </div>
       </section>
 
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel board-stage-panel">
         <div className="section-head">
           <div>
             <p className="eyebrow">Quality profile</p>
@@ -286,7 +324,7 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
         </div>
       </section>
 
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel board-stage-panel">
         <div className="section-head">
           <div>
             <p className="eyebrow">Source traceability</p>
@@ -330,7 +368,7 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
         </div>
       </section>
 
-      <section className="surface-panel editorial-section">
+      <section className="surface-panel board-stage-panel">
         <div className="section-head family-list-head">
           <div>
             <p className="eyebrow">Family findings</p>
@@ -347,7 +385,7 @@ export function TechnologyPageView({ payload }: { payload: TechnologyPayload }) 
             <span className="chip">{reviewedCount.toLocaleString()} locally reviewed</span>
           </div>
         </div>
-        <div className="filter-card workspace-toolbar">
+        <div className="filter-card workspace-toolbar board-toolbar-card">
           <div className="workspace-toolbar-main">
             <input
               className="search-input"

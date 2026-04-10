@@ -73,24 +73,44 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
   );
   const postureButtonClass = (value: ServicePosture) =>
     posture === value ? "secondary-button" : "ghost-button";
+  const directoryMetrics = [
+    {
+      label: "Available services",
+      value: index.services.length.toLocaleString(),
+      detail: "Canonical Azure services discovered across the normalized review catalog."
+    },
+    {
+      label: "GA-ready baselines",
+      value: servicesWithGaBaseline.toLocaleString(),
+      detail: "Services with at least one GA-ready family to anchor design and review."
+    },
+    {
+      label: "Preview-led services",
+      value: previewLedServices.toLocaleString(),
+      detail: "Services that still need more explicit validation before leadership reliance."
+    },
+    {
+      label: "Visible in current filter",
+      value: filteredServices.length.toLocaleString(),
+      detail: POSTURE_COPY[posture].description
+    }
+  ];
 
   return (
     <main className="section-stack">
-      <section className="hero-panel director-hero editorial-hero">
-        <div className="editorial-hero-layout">
-          <div className="editorial-hero-copy">
-            <p className="eyebrow">Azure services</p>
-            <h1 className="hero-title">Start with the Azure service, not the checklist filename.</h1>
-            <p className="hero-copy">
-              Browse all available Azure services discovered in the normalized catalog and open a
-              service-specific view that gathers related checklist families, findings, and maturity
-              guidance in one place.
-            </p>
-            <p className="hero-note">
-              This is the fastest path when the question is practical, such as how to design or
-              review Azure Firewall, Key Vault, AKS, App Service, or another specific service.
-            </p>
-            <div className="hero-actions">
+      <section className="review-command-panel">
+        <div className="detail-command-grid">
+          <div className="detail-command-copy">
+            <div>
+              <p className="eyebrow">Azure services</p>
+              <h1 className="review-command-title">Start with the Azure service, not the checklist filename.</h1>
+              <p className="review-command-summary">
+                Browse the normalized Azure service catalog and open a service-specific view that
+                gathers related checklist families, findings, regional fit, and pricing posture in
+                one working surface.
+              </p>
+            </div>
+            <div className="button-row">
               <Link href="/" className="secondary-button">
                 Back to overview
               </Link>
@@ -103,8 +123,8 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
             </div>
           </div>
 
-          <aside className="leadership-brief">
-            <p className="eyebrow">Service brief</p>
+          <aside className="leadership-brief detail-command-sidecar">
+            <p className="eyebrow">Directory brief</p>
             <h2 className="leadership-title">How to use this directory.</h2>
             <div className="leadership-list">
               <article>
@@ -123,26 +143,18 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
           </aside>
         </div>
 
-        <div className="hero-metrics-row">
-          <article className="hero-metric-card">
-            <span>Available services</span>
-            <strong>{index.services.length.toLocaleString()}</strong>
-            <p>Canonical Azure services discovered across the normalized review catalog.</p>
-          </article>
-          <article className="hero-metric-card">
-            <span>GA-ready service baselines</span>
-            <strong>{servicesWithGaBaseline.toLocaleString()}</strong>
-            <p>Services with at least one GA-ready family to anchor design and review conversations.</p>
-          </article>
-          <article className="hero-metric-card">
-            <span>Preview-led services</span>
-            <strong>{previewLedServices.toLocaleString()}</strong>
-            <p>Services that still need more explicit architectural judgment before heavy reliance.</p>
-          </article>
+        <div className="review-command-metrics">
+          {directoryMetrics.map((metric) => (
+            <article className="review-command-metric" key={metric.label}>
+              <span>{metric.label}</span>
+              <strong>{metric.value}</strong>
+              <p>{metric.detail}</p>
+            </article>
+          ))}
         </div>
       </section>
 
-      <section className="surface-panel editorial-section" id="service-directory">
+      <section className="surface-panel board-stage-panel" id="service-directory">
         <div className="section-head">
           <div>
             <p className="eyebrow">Service directory</p>
@@ -273,7 +285,7 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
             ))}
           </div>
         ) : (
-          <section className="filter-card">
+          <section className="filter-card board-stage-panel">
             <p className="eyebrow">No matching services</p>
             <h3>Try a broader search or reset to all services.</h3>
             <p className="microcopy">
