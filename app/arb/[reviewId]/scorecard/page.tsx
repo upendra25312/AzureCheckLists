@@ -1,14 +1,24 @@
-import { ArbReviewShell } from "@/components/arb/review-shell";
-import { ArbPlaceholderPage } from "@/components/arb/placeholder-page";
-import { getArbReviewSteps, getMockArbReviewSummary } from "@/arb/mock-review";
+import { ArbLiveReviewStep } from "@/components/arb/live-review-step";
 
-export default function Page({ params }: { params: { reviewId: string } }) {
-  const review = getMockArbReviewSummary(params.reviewId);
-  const steps = getArbReviewSteps(params.reviewId);
+type PageProps = {
+  params: Promise<{
+    reviewId: string;
+  }>;
+};
+
+export function generateStaticParams() {
+  return [{ reviewId: "demo-review" }];
+}
+
+export default async function Page({ params }: PageProps) {
+  const { reviewId } = await params;
 
   return (
-    <ArbReviewShell review={review} steps={steps} activeStep="scorecard" title="Scorecard" description="Scaffold for weighted score and rationale.">
-      <ArbPlaceholderPage intro="This route will host the explainable ARB scorecard." bullets={["Show domain scores", "Link scores to findings", "Show overall recommendation and confidence"]} />
-    </ArbReviewShell>
+    <ArbLiveReviewStep
+      reviewId={reviewId}
+      activeStep="scorecard"
+      title="Scorecard"
+      description="Review the weighted rationale, open conditions, and recommendation before final sign-off."
+    />
   );
 }

@@ -1,27 +1,24 @@
-import { ArbReviewShell } from "@/components/arb/review-shell";
-import { ArbPlaceholderPage } from "@/components/arb/placeholder-page";
-import { getArbReviewSteps, getMockArbReviewSummary } from "@/arb/mock-review";
+import { ArbLiveReviewStep } from "@/components/arb/live-review-step";
 
-export default function ArbUploadPage({ params }: { params: { reviewId: string } }) {
-  const review = getMockArbReviewSummary(params.reviewId);
-  const steps = getArbReviewSteps(params.reviewId);
+type PageProps = {
+  params: Promise<{
+    reviewId: string;
+  }>;
+};
+
+export function generateStaticParams() {
+  return [{ reviewId: "demo-review" }];
+}
+
+export default async function ArbUploadPage({ params }: PageProps) {
+  const { reviewId } = await params;
 
   return (
-    <ArbReviewShell
-      review={review}
-      steps={steps}
+    <ArbLiveReviewStep
+      reviewId={reviewId}
       activeStep="upload"
       title="Upload Review Package"
-      description="Scaffold for package upload, file registration, and evidence readiness."
-    >
-      <ArbPlaceholderPage
-        intro="This step will collect SOW, design, diagram, and supporting artifacts."
-        bullets={[
-          "Add drag-and-drop upload zone",
-          "Register logical file category",
-          "Show evidence checklist and readiness badge"
-        ]}
-      />
-    </ArbReviewShell>
+      description="Stage source documents, confirm package readiness, and prepare the extraction handoff."
+    />
   );
 }

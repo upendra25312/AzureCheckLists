@@ -2689,6 +2689,241 @@ button.chip:disabled:hover {
   line-height: 1.2;
 }
 
+.arb-page-stack,
+.arb-library-stack,
+.arb-sidecar-stack,
+.arb-action-list {
+  display: grid;
+  gap: 18px;
+}
+
+.arb-signin-grid,
+.arb-upload-layout,
+.arb-shell-grid,
+.arb-decision-grid,
+.arb-form-grid,
+.arb-field-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.arb-signin-grid,
+.arb-upload-layout,
+.arb-shell-grid,
+.arb-decision-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.arb-form-grid,
+.arb-field-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.arb-summary-grid,
+.arb-score-grid,
+.arb-finding-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.arb-step-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.arb-step-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text);
+  font-weight: 700;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.arb-step-link:hover {
+  transform: translateY(-1px);
+  border-color: var(--border-strong);
+}
+
+.arb-step-link-active {
+  background: linear-gradient(180deg, rgba(95, 164, 238, 0.2), rgba(255, 255, 255, 0.96));
+  border-color: rgba(95, 164, 238, 0.6);
+  color: var(--brand);
+}
+
+.arb-step-link-complete {
+  border-color: rgba(26, 127, 87, 0.28);
+  background: rgba(226, 244, 235, 0.88);
+}
+
+[data-theme="dark"] .arb-step-link {
+  background: rgba(12, 24, 36, 0.82);
+}
+
+[data-theme="dark"] .arb-step-link-active {
+  background: linear-gradient(180deg, rgba(95, 164, 238, 0.16), rgba(12, 24, 36, 0.9));
+}
+
+[data-theme="dark"] .arb-step-link-complete {
+  background: rgba(27, 52, 42, 0.86);
+}
+
+.arb-shell-main,
+.arb-summary-card,
+.arb-placeholder-card,
+.arb-shell-sidecar-card,
+.arb-user-card,
+.arb-score-card,
+.arb-action-card,
+.arb-finding-card,
+.arb-upload-file {
+  display: grid;
+  gap: 16px;
+}
+
+.arb-shell-sidecar-metrics {
+  display: grid;
+  gap: 12px;
+}
+
+.arb-shell-sidecar-metrics span,
+.arb-summary-list span {
+  color: var(--brand);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.arb-shell-sidecar-metrics strong,
+.arb-summary-list strong {
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.arb-summary-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.arb-summary-list li {
+  display: grid;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.arb-summary-list li:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.arb-review-card-title,
+.arb-finding-title {
+  max-width: none;
+}
+
+.arb-review-actions,
+.arb-upload-dropzone {
+  align-items: start;
+}
+
+.arb-upload-picker {
+  width: fit-content;
+}
+
+.arb-upload-dropzone-active {
+  border-color: rgba(95, 164, 238, 0.72);
+  box-shadow:
+    0 18px 40px rgba(74, 133, 214, 0.12),
+    inset 0 0 0 2px rgba(95, 164, 238, 0.26);
+}
+
+.arb-upload-file-list {
+  display: grid;
+  gap: 12px;
+}
+
+.arb-upload-file {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.arb-upload-file-copy {
+  min-width: 0;
+}
+
+.arb-checklist {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.arb-checklist li {
+  line-height: 1.6;
+}
+
+.arb-inline-check {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.arb-inline-check input {
+  margin-top: 4px;
+}
+
+.arb-score-card h3,
+.arb-action-card h3 {
+  margin: 0;
+}
+
+.arb-action-card,
+.arb-score-card {
+  align-content: start;
+}
+
+@media (max-width: 1100px) {
+  .arb-signin-grid,
+  .arb-upload-layout,
+  .arb-shell-grid,
+  .arb-decision-grid,
+  .arb-form-grid,
+  .arb-field-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .arb-upload-file {
+    grid-template-columns: 1fr;
+  }
+
+  .arb-review-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .arb-review-actions > * {
+    width: 100%;
+  }
+}
+
 .review-stage-preview-card {
   gap: 16px;
 }

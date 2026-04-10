@@ -1,14 +1,24 @@
-import { ArbReviewShell } from "@/components/arb/review-shell";
-import { ArbPlaceholderPage } from "@/components/arb/placeholder-page";
-import { getArbReviewSteps, getMockArbReviewSummary } from "@/arb/mock-review";
+import { ArbLiveReviewStep } from "@/components/arb/live-review-step";
 
-export default function Page({ params }: { params: { reviewId: string } }) {
-  const review = getMockArbReviewSummary(params.reviewId);
-  const steps = getArbReviewSteps(params.reviewId);
+type PageProps = {
+  params: Promise<{
+    reviewId: string;
+  }>;
+};
+
+export function generateStaticParams() {
+  return [{ reviewId: "demo-review" }];
+}
+
+export default async function Page({ params }: PageProps) {
+  const { reviewId } = await params;
 
   return (
-    <ArbReviewShell review={review} steps={steps} activeStep="evidence" title="Evidence Mapping" description="Scaffold for requirement-to-evidence mapping.">
-      <ArbPlaceholderPage intro="This route will host evidence mapping and match-state review." bullets={["Show requirements and evidence side by side", "Show match states", "Open source excerpts for traceability"]} />
-    </ArbReviewShell>
+    <ArbLiveReviewStep
+      reviewId={reviewId}
+      activeStep="evidence"
+      title="Map Design Evidence"
+      description="Compare each requirement with the supporting architecture evidence and expose weak or missing proof."
+    />
   );
 }

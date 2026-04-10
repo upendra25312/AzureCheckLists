@@ -1,14 +1,24 @@
-import { ArbReviewShell } from "@/components/arb/review-shell";
-import { ArbPlaceholderPage } from "@/components/arb/placeholder-page";
-import { getArbReviewSteps, getMockArbReviewSummary } from "@/arb/mock-review";
+import { ArbLiveReviewStep } from "@/components/arb/live-review-step";
 
-export default function Page({ params }: { params: { reviewId: string } }) {
-  const review = getMockArbReviewSummary(params.reviewId);
-  const steps = getArbReviewSteps(params.reviewId);
+type PageProps = {
+  params: Promise<{
+    reviewId: string;
+  }>;
+};
+
+export function generateStaticParams() {
+  return [{ reviewId: "demo-review" }];
+}
+
+export default async function Page({ params }: PageProps) {
+  const { reviewId } = await params;
 
   return (
-    <ArbReviewShell review={review} steps={steps} activeStep="requirements" title="Requirements" description="Scaffold for extracted requirement review.">
-      <ArbPlaceholderPage intro="This route will host requirement extraction review." bullets={["List normalized requirements", "Allow accept and edit actions", "Preserve source and confidence"]} />
-    </ArbReviewShell>
+    <ArbLiveReviewStep
+      reviewId={reviewId}
+      activeStep="requirements"
+      title="Extract Requirements"
+      description="Review the inferred scope, category, and criticality before findings are generated."
+    />
   );
 }

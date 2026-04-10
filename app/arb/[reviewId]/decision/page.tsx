@@ -1,14 +1,24 @@
-import { ArbReviewShell } from "@/components/arb/review-shell";
-import { ArbPlaceholderPage } from "@/components/arb/placeholder-page";
-import { getArbReviewSteps, getMockArbReviewSummary } from "@/arb/mock-review";
+import { ArbLiveReviewStep } from "@/components/arb/live-review-step";
 
-export default function Page({ params }: { params: { reviewId: string } }) {
-  const review = getMockArbReviewSummary(params.reviewId);
-  const steps = getArbReviewSteps(params.reviewId);
+type PageProps = {
+  params: Promise<{
+    reviewId: string;
+  }>;
+};
+
+export function generateStaticParams() {
+  return [{ reviewId: "demo-review" }];
+}
+
+export default async function Page({ params }: PageProps) {
+  const { reviewId } = await params;
 
   return (
-    <ArbReviewShell review={review} steps={steps} activeStep="decision" title="Decision Center" description="Scaffold for reviewer decision and sign-off.">
-      <ArbPlaceholderPage intro="This route will host AI recommendation review and final decision logging." bullets={["Show AI recommendation and score", "Capture reviewer decision and rationale", "Show conditions and must-fix actions"]} />
-    </ArbReviewShell>
+    <ArbLiveReviewStep
+      reviewId={reviewId}
+      activeStep="decision"
+      title="Decision Center"
+      description="Record the human-owned decision, rationale, and conditions after reviewing the score and blockers."
+    />
   );
 }

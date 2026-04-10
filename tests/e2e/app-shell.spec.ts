@@ -53,14 +53,18 @@ const adminHealthPayload = {
 
 async function expectSharedShell(page: Page, activeLabels: string[]) {
   await expect(page.getByRole("link", { name: "Azure Review Board", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Initialize Review", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Project Review", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "My Projects", exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: "Browse Services", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Data Health Dashboard", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Advanced Tools", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "How to use", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Home", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Knowledge Hub", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Review Workspace", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Decision Center", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "My Reviews", exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Data Health", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "How It Works", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Admin", exact: true })).toBeVisible();
   await expect(page.getByLabel(/switch to dark mode|switch to light mode/i)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Initialize Review", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Project Review", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Advanced Tools", exact: true })).toHaveCount(0);
 
   for (const label of activeLabels) {
     await expect(page.getByRole("link", { name: label, exact: true }).first()).toHaveAttribute("aria-current", "page");
@@ -75,16 +79,20 @@ test.describe("shared app shell", () => {
   });
 
   test("renders the shared Azure Review Board shell on public workflow routes", async ({ page }) => {
-    await page.goto("/services");
-    await expectSharedShell(page, ["Browse Services"]);
+    await page.goto("/arb");
+    await expectSharedShell(page, ["Review Workspace"]);
     await expect(page.getByText("Sign in").first()).toBeVisible();
 
-    await page.goto("/review-package");
-    await expectSharedShell(page, ["Project Review"]);
+    await page.goto("/services");
+    await expectSharedShell(page, ["Knowledge Hub"]);
+    await expect(page.getByText("Sign in").first()).toBeVisible();
+
+    await page.goto("/decision-center");
+    await expectSharedShell(page, ["Decision Center"]);
     await expect(page.getByText("Sign in").first()).toBeVisible();
 
     await page.goto("/data-health");
-    await expectSharedShell(page, ["Data Health Dashboard"]);
+    await expectSharedShell(page, ["Data Health"]);
     await expect(page.getByText("Sign in").first()).toBeVisible();
   });
 
@@ -101,7 +109,7 @@ test.describe("shared app shell", () => {
 
     await page.goto("/admin/copilot");
 
-    await expectSharedShell(page, ["Admin Copilot"]);
+    await expectSharedShell(page, ["Admin"]);
     await expect(page.getByText("admin@contoso.com", { exact: true }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Inspect the Azure platform behind the website before deeper admin tooling goes live." })).toBeVisible();
   });
@@ -110,7 +118,7 @@ test.describe("shared app shell", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/services");
 
-    await expectSharedShell(page, ["Browse Services"]);
+    await expectSharedShell(page, ["Knowledge Hub"]);
     await expect(page.getByText("Sign in").first()).toBeVisible();
   });
 
@@ -118,7 +126,7 @@ test.describe("shared app shell", () => {
     await page.goto("/services");
 
     const brandLink = page.getByRole("link", { name: "Azure Review Board", exact: true });
-    const initializeLink = page.getByRole("link", { name: "Initialize Review", exact: true });
+    const homeLink = page.getByRole("link", { name: "Home", exact: true });
 
     await page.keyboard.press("Tab");
     await expect(brandLink).toBeFocused();
@@ -135,6 +143,6 @@ test.describe("shared app shell", () => {
     expect(brandOutline.outlineWidth).not.toBe("0px");
 
     await page.keyboard.press("Tab");
-    await expect(initializeLink).toBeFocused();
+    await expect(homeLink).toBeFocused();
   });
 });

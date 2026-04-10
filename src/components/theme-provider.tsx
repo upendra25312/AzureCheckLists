@@ -15,19 +15,53 @@ type NavItem = {
   href: Route;
   label: string;
   matchPrefixes?: string[];
+  matches?: (pathname: string) => boolean;
 };
 
+function isDecisionCenterPath(pathname: string) {
+  return (
+    pathname === "/decision-center" ||
+    pathname.endsWith("/scorecard") ||
+    pathname.endsWith("/decision")
+  );
+}
+
+function isReviewWorkspacePath(pathname: string) {
+  if (pathname === "/arb") {
+    return true;
+  }
+
+  if (!pathname.startsWith("/arb/")) {
+    return false;
+  }
+
+  return !isDecisionCenterPath(pathname);
+}
+
 const PRIMARY_TAB_ITEMS: NavItem[] = [
-  { href: "/", label: "Initialize Review" },
-  { href: "/review-package", label: "Project Review" },
-  { href: "/my-project-reviews", label: "My Projects" }
+  { href: "/" as Route, label: "Home" },
+  {
+    href: "/services" as Route,
+    label: "Knowledge Hub",
+    matchPrefixes: ["/services", "/technologies"]
+  },
+  {
+    href: "/arb" as Route,
+    label: "Review Workspace",
+    matches: isReviewWorkspacePath
+  },
+  {
+    href: "/decision-center" as Route,
+    label: "Decision Center",
+    matches: isDecisionCenterPath
+  },
+  { href: "/my-project-reviews" as Route, label: "My Reviews" }
 ] as const;
 
 const SECONDARY_LINK_ITEMS: NavItem[] = [
-  { href: "/services", label: "Browse Services", matchPrefixes: ["/services", "/technologies"] },
-  { href: "/data-health", label: "Data Health Dashboard" },
-  { href: "/explorer", label: "Advanced Tools" },
-  { href: "/how-to-use", label: "How to use" }
+  { href: "/data-health" as Route, label: "Data Health" },
+  { href: "/how-to-use" as Route, label: "How It Works" },
+  { href: "/admin/copilot" as Route, label: "Admin", matchPrefixes: ["/admin"] }
 ] as const;
 
 function isActiveHref(pathname: string, href: string) {
@@ -39,6 +73,10 @@ function isActiveHref(pathname: string, href: string) {
 }
 
 function matchesNavItem(pathname: string, item: NavItem) {
+  if (item.matches?.(pathname)) {
+    return true;
+  }
+
   if (isActiveHref(pathname, item.href)) {
     return true;
   }
@@ -64,13 +102,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("light");
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const isAdmin = pathname.startsWith("/admin");
-  const utilityLinks: NavItem[] = isAdmin
-    ? [
-        ...SECONDARY_LINK_ITEMS,
-        { href: "/admin/copilot", label: "Admin Copilot", matchPrefixes: ["/admin"] }
-      ]
-    : [...SECONDARY_LINK_ITEMS];
+  const utilityLinks: NavItem[] = [...SECONDARY_LINK_ITEMS];
 
   useEffect(() => {
     const initialTheme = resolveInitialTheme();
@@ -149,22 +181,24 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             <article className="site-footer-column">
               <h3>Why this exists</h3>
               <p>
-                Turn Azure solution requirements into a scoped review artifact with service fit,
-                region fit, pricing context, and project-specific notes.
+                Route architects into the right job quickly: explore Azure guidance in the
+                Knowledge Hub, run evidence-backed reviews in the Review Workspace, and
+                capture human-owned outcomes in the Decision Center.
               </p>
             </article>
             <article className="site-footer-column">
-              <h3>What this is not</h3>
+              <h3>Approval boundary</h3>
               <p>
-                Not an approval engine, not a compliance system, and not a substitute for
-                accountable architecture sign-off.
+                AI can summarize evidence, highlight gaps, and recommend a posture. Final
+                approval, conditions, and sign-off remain explicit human decisions.
               </p>
             </article>
             <article className="site-footer-column">
               <h3>Source and transparency</h3>
               <p>
-                Built from Azure review checklist content with preserved traceability, Microsoft-backed
-                commercial data, and dedicated backend data-health visibility.
+                Built from traceable review content, Microsoft-backed commercial data, and
+                backend freshness signals so reviewers can see what the platform knows and
+                when it was last refreshed.
               </p>
             </article>
           </div>
