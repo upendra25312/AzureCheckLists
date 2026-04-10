@@ -6,6 +6,8 @@ Last updated: April 10, 2026
 
 Add an AI-assisted Architecture Review Board capability to the Azure Checklists website so an architect can upload a project SOW and design documentation, receive a structured review, see grounded findings with Microsoft references, get a weighted score, and produce an approval recommendation such as `ARB Approved`, `Approved with Conditions`, `Needs Improvement`, or `Insufficient Evidence`.
 
+Companion page backlog: [arb-page-gap-backlog.md](./arb-page-gap-backlog.md)
+
 ## Delivery Tracker
 
 | Activity | Status | Recommended Owner | Priority | Test / Validation Status | Next Step |
