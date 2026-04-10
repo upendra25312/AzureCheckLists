@@ -21,6 +21,7 @@ import {
   updateArbFinding
 } from "@/arb/api";
 import { getArbReviewSteps } from "@/arb/mock-review";
+import { buildLoginUrl } from "@/lib/review-cloud";
 import type {
   ArbAction,
   ArbDecision,
@@ -197,6 +198,7 @@ export function ArbLiveReviewStep(props: {
   const [exportRegenerating, setExportRegenerating] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const actionSummary = summarizeActions(actions);
+  const authRequired = error?.includes("Sign in is required") ?? false;
 
   let decisionGateMessage: string | null = null;
 
@@ -1454,7 +1456,18 @@ export function ArbLiveReviewStep(props: {
       ) : error ? (
         <div>
           <p>{error}</p>
-          <p>This scaffold expects the Function App ARB endpoints to be available.</p>
+          {authRequired ? (
+            <div className="review-command-bar">
+              <p>Sign in with Microsoft to open Azure-backed uploads, findings, exports, and decision state for this review.</p>
+              <div className="review-command-actions">
+                <a href={buildLoginUrl("aad")} className="primary-button">
+                  Continue with Microsoft
+                </a>
+              </div>
+            </div>
+          ) : (
+            <p>This scaffold expects the Function App ARB endpoints to be available.</p>
+          )}
         </div>
       ) : (
         renderStepContent()
