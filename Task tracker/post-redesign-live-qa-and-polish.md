@@ -35,7 +35,7 @@ Out of scope:
 
 ### Epic A: Live-site QA baseline
 
-Epic status: In progress
+Epic status: Completed
 
 | ID | Priority | Status | Item | Definition of done |
 | --- | --- | --- | --- | --- |
@@ -43,8 +43,8 @@ Epic status: In progress
 | QA-02 | P0 | Completed | Capture mobile screenshot baseline for key live routes | Mobile screenshots exist for homepage, review workspace, and at least one dense route |
 | QA-03 | P0 | Completed | Run public-route smoke checks on the deployed site | Core public routes return successfully and render the expected review-board shell |
 | QA-04 | P0 | Completed | Run protected-route and backend-health smoke checks | Signed-out protected routes still block correctly and the live backend health endpoint remains healthy |
-| QA-05 | P1 | Pending | Run a deeper live interaction pass for create-review, scope-selection, and export-preview flow | Live browser walkthrough confirms the main public workflow still feels right after deployment |
-| QA-06 | P1 | Pending | Record any visual regressions or route-specific polish findings from the live pass | Findings are written below with route, severity, and follow-up owner |
+| QA-05 | P1 | Completed | Run a deeper live interaction pass for create-review, scope-selection, and export-preview flow | Live browser walkthrough confirms the main public workflow still feels right after deployment |
+| QA-06 | P1 | Completed | Record any visual regressions or route-specific polish findings from the live pass | Findings are written below with route, severity, and follow-up owner |
 
 ### Epic B: Telemetry and adoption instrumentation
 
@@ -110,6 +110,29 @@ Notes:
 - `data-health` and `explorer` both returned `200` and still exposed the board shell markers (`Azure Review Board`, `review-command-panel`) even though the first text-match probe used a copy string that was not present in the server-rendered HTML.
 - A deeper interaction walkthrough is still worth doing next so we can judge small UX polish items with real browser input, not just route-load validation.
 
+## QA-05 Live Interaction Pass
+
+### Walkthrough performed
+
+1. Opened the live homepage at `/`.
+2. Created a new review named `QA-05 live flow review` from the homepage initializer.
+3. Confirmed the handoff landed in `/review-package` with the new review active.
+4. Added the `Edge web baseline` starter bundle to scope four real services.
+5. Verified the matrix unlocked with live region-fit and pricing posture data.
+6. Jumped to the export stage and reviewed the audience-first handoff cards.
+7. Downloaded a real export artifact: `qa-05-live-flow-review-leadership-summary.md`.
+
+### Artifacts captured
+
+- `output/playwright/qa05-live-pass/review-package-live-flow.png`
+- `output/playwright/qa05-live-pass/qa-05-live-flow-review-leadership-summary.md`
+
+### Findings from the live pass
+
+- `[P1][review-package][UX copy]` The `Checklist CSV` export card says `Waiting on scoped findings` and `This preview appears once the review has scoped findings to export` even when the live review already contains `344 scoped findings`. Follow-up owner: frontend/workspace.
+- `[P2][homepage -> review-package][UX clarity]` Export previews default to `Audience: Cloud Architect` even when the homepage initializer never asked the user to choose an audience. The default is workable, but it can make leadership and commercial artifacts feel pre-filled by surprise. Follow-up owner: product + frontend.
+- `[P2][review-package][positive validation]` The audience-first export structure works well in real use. The live leadership brief download completed successfully and the content matched the current scoped services, blocked regions, and pending findings.
+
 ## Validation Log
 
 - April 10, 2026: Initial post-redesign live QA tracker created.
@@ -117,12 +140,13 @@ Notes:
 - April 10, 2026: Verified public live routes returned successfully and still rendered the Azure Review Board shell.
 - April 10, 2026: Verified signed-out admin protection and live `/api/health` backend readiness.
 - April 10, 2026: Confirmed the live backend remained healthy at `2026-04-10T03:42:48.125Z` with `storageConfigured: true` and `copilotConfigured: true`.
+- April 10, 2026: Completed the deeper live interaction pass for create-review, scope-selection, and export-preview flow on the deployed site.
+- April 10, 2026: Verified the homepage initializer handed off a live review into `/review-package`, the starter bundle unlocked real region and pricing signals, and a live leadership export downloaded successfully.
 
 ## Recommended Next Step
 
-Start QA-05 next:
+Start Epic B next:
 
-1. Walk through the live homepage-to-review-package flow in a real browser.
-2. Add a service to scope.
-3. Inspect the new export-preview stage live.
-4. Record any micro-polish findings as separate follow-up items.
+1. Define the post-redesign funnel events for initialize review, add service, export, save or restore, and admin prompt usage.
+2. Instrument the homepage and review workspace with those conversion events.
+3. Decide where the redesign adoption view should live so the funnel can be inspected without raw logs.
