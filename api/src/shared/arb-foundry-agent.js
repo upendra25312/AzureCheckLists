@@ -1,7 +1,13 @@
+const { DefaultAzureCredential } = require("@azure/identity");
+
 const FOUNDRY_PROJECT_ENDPOINT = (process.env.FOUNDRY_PROJECT_ENDPOINT || "").replace(/\/+$/, "");
 const FOUNDRY_API_KEY = process.env.FOUNDRY_API_KEY || "";
+// When set, use the pre-configured Foundry Agent (Azure-ARB-Agent) via Agents API + managed identity.
+// When absent, fall back to direct Chat Completions via API key.
+const FOUNDRY_AGENT_ID = process.env.FOUNDRY_AGENT_ID || "";
 const FOUNDRY_AGENT_MODEL = "model-router";
 const OPENAI_API_VERSION = "2025-01-01-preview";
+const AGENTS_API_VERSION = "2025-05-15-preview";
 
 // Derive the base AI Services endpoint from the Foundry project endpoint
 // e.g. https://foo.services.ai.azure.com/api/projects/bar -> https://foo.services.ai.azure.com
@@ -17,8 +23,94 @@ function getAiServicesBaseEndpoint() {
 function getFoundryConfiguration() {
   return {
     configured: Boolean(FOUNDRY_PROJECT_ENDPOINT && FOUNDRY_API_KEY),
-    endpoint: FOUNDRY_PROJECT_ENDPOINT
+    endpoint: FOUNDRY_PROJECT_ENDPOINT,
+    agentId: FOUNDRY_AGENT_ID || null,
+    useAgent: Boolean(FOUNDRY_AGENT_ID)
   };
+}
+
+// Obtain an Azure AD token for the Foundry project-level Agents API.
+// Uses DefaultAzureCredential which picks up the Function App's managed identity in Azure
+// and falls back to developer credentials locally.
+let _credential = null;
+async function getFoundryAgentToken() {
+  if (!_credential) {
+    _credential = new DefaultAzureCredential();
+  }
+  const tokenResponse = await _credential.getToken("https://ai.azure.com/.default");
+  return tokenResponse.token;
+}
+
+async function foundryAgentRequest(path, method, body) {
+  const token = await getFoundryAgentToken();
+  const url = `${FOUNDRY_PROJECT_ENDPOINT}${path}?api-version=${AGENTS_API_VERSION}`;
+  const res = await fetch(url, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => `HTTP ${res.status}`);
+    throw new Error(`Foundry Agents ${method} ${path} failed ${res.status}: ${text}`);
+  }
+
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// Run the review using the pre-configured Azure-ARB-Agent via Foundry Agents API.
+// The agent has the Microsoft Learn MCP tool and (optionally) Bing grounding configured
+// in the Azure AI Foundry portal.
+async function runViaFoundryAgent(userMessage) {
+  const agentId = FOUNDRY_AGENT_ID;
+
+  // Create thread
+  const thread = await foundryAgentRequest("/threads", "POST", {});
+
+  // Add user message
+  await foundryAgentRequest(`/threads/${thread.id}/messages`, "POST", {
+    role: "user",
+    content: userMessage
+  });
+
+  // Create run
+  const run = await foundryAgentRequest(`/threads/${thread.id}/runs`, "POST", {
+    assistant_id: agentId,
+    additional_instructions: "Respond ONLY with the structured JSON as specified in your instructions."
+  });
+
+  // Poll for completion (max 3 minutes, 5s intervals)
+  const maxAttempts = 36;
+  let attempts = 0;
+  let finalRun = run;
+  const terminal = ["completed", "failed", "cancelled", "expired"];
+
+  while (attempts < maxAttempts && !terminal.includes(finalRun.status)) {
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    finalRun = await foundryAgentRequest(`/threads/${thread.id}/runs/${run.id}`, "GET");
+    attempts++;
+  }
+
+  if (finalRun.status !== "completed") {
+    throw new Error(`Agent run ended with status: ${finalRun.status}`);
+  }
+
+  // Get the last assistant message
+  const messages = await foundryAgentRequest(
+    `/threads/${thread.id}/messages?order=desc&limit=5`,
+    "GET"
+  );
+  const responseText = (messages?.data ?? [])
+    .filter((m) => m.role === "assistant")
+    .flatMap((m) => (m.content ?? []).filter((c) => c.type === "text").map((c) => c.text?.value ?? ""))
+    .join("\n")
+    .trim();
+
+  return responseText;
 }
 
 async function chatCompletionsRequest(messages) {
@@ -264,12 +356,22 @@ async function runArbAgentReview({ review, files, requirements, evidence, search
     return { success: false, reason: "Foundry not configured — FOUNDRY_PROJECT_ENDPOINT or FOUNDRY_API_KEY missing" };
   }
 
+  const userMessage = buildUserMessage(review, files, requirements, evidence, searchChunks);
+
   try {
-    const userMessage = buildUserMessage(review, files, requirements, evidence, searchChunks);
-    const responseText = await chatCompletionsRequest([
-      { role: "system", content: ARB_SYSTEM_PROMPT },
-      { role: "user", content: userMessage }
-    ]);
+    let responseText;
+
+    if (config.useAgent) {
+      // Use the pre-configured Azure-ARB-Agent (has Microsoft Learn MCP tool + optional Bing grounding)
+      // Authenticated via Function App managed identity → Azure AD token → Foundry Agents API
+      responseText = await runViaFoundryAgent(userMessage);
+    } else {
+      // Fallback: direct Chat Completions with the system prompt embedded in the request
+      responseText = await chatCompletionsRequest([
+        { role: "system", content: ARB_SYSTEM_PROMPT },
+        { role: "user", content: userMessage }
+      ]);
+    }
 
     if (!responseText) {
       return { success: false, reason: "Model returned an empty response" };
