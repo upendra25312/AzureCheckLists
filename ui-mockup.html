@@ -1,0 +1,1742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Azure Review Assistant — v2 Redesign</title>
+<style>
+/* ═══════════════════════════════════════════════════════
+   RESEARCH APPLIED:
+   • Linear.app  → bold mono-color base, one-direction scroll, tight type
+   • Vercel       → dark-first, minimal, information-dense metric strips
+   • Stripe       → KPI cards with sparklines, sidebar-ready layout
+   • Bento Grid   → variable-size modular cards (Apple/SaaS 2025 trend)
+   • Snyk/Datadog → severity colour system, findings density, trust signals
+   • Glassmorphism 2025 → subtle backdrop-filter, thin borders, no heavy blur
+═══════════════════════════════════════════════════════ */
+
+:root {
+  /* Core palette — dark-first */
+  --page-bg:    #060d14;
+  --surf-0:     rgba(8,16,26,0.95);
+  --surf-1:     rgba(12,22,34,0.92);
+  --surf-2:     rgba(16,28,42,0.90);
+  --surf-hover: rgba(20,34,50,0.95);
+  --border:     rgba(255,255,255,0.07);
+  --border-md:  rgba(255,255,255,0.11);
+  --border-hi:  rgba(255,255,255,0.18);
+
+  /* Text */
+  --t1: #e2ecf6;
+  --t2: #8ba4bc;
+  --t3: #4d6478;
+
+  /* Brand — teal + orange */
+  --brand:      #00c4e0;
+  --brand-dim:  rgba(0,196,224,0.12);
+  --brand-glow: rgba(0,196,224,0.22);
+  --accent:     #ff6b35;
+  --accent-dim: rgba(255,107,53,0.12);
+
+  /* Severity */
+  --high:       #ff4d4d;
+  --high-dim:   rgba(255,77,77,0.13);
+  --med:        #ffaa33;
+  --med-dim:    rgba(255,170,51,0.13);
+  --low:        #3dd68c;
+  --low-dim:    rgba(61,214,140,0.12);
+
+  /* Misc */
+  --success: #3dd68c;
+  --r-xl: 20px;
+  --r-lg: 14px;
+  --r-md: 10px;
+  --r-sm: 7px;
+  --shadow: 0 24px 64px rgba(0,0,0,0.5);
+  --shadow-sm: 0 8px 24px rgba(0,0,0,0.35);
+  --font: "Segoe UI Variable","Segoe UI","Inter","Helvetica Neue",sans-serif;
+  --font-display: "Rockwell","Cambria","Georgia",serif;
+  --font-mono: "Cascadia Code","Consolas","JetBrains Mono",monospace;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font);
+  background:var(--page-bg);
+  color:var(--t1);
+  min-height:100vh;
+  /* Subtle dot grid — Vercel/Linear style */
+  background-image:
+    radial-gradient(circle at 20% 0%,  rgba(0,196,224,0.08) 0%, transparent 40%),
+    radial-gradient(circle at 80% 5%,  rgba(255,107,53,0.06) 0%, transparent 35%),
+    radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: auto, auto, 28px 28px;
+}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;font:inherit;border:none;background:none}
+svg{display:block}
+
+/* ── Utility ── */
+.eyebrow{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--brand);
+}
+.eyebrow-pip{width:5px;height:5px;border-radius:50%;background:var(--brand)}
+
+/* Live pulse dot */
+.live-dot{
+  display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--success);
+  box-shadow:0 0 0 0 rgba(61,214,140,0.5);
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(61,214,140,0.5)}70%{box-shadow:0 0 0 6px rgba(61,214,140,0)}100%{box-shadow:0 0 0 0 rgba(61,214,140,0)}}
+
+/* Severity badges */
+.sev{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:.7rem;font-weight:800;white-space:nowrap}
+.sev-h{background:var(--high-dim);color:var(--high)}
+.sev-m{background:var(--med-dim);color:var(--med)}
+.sev-l{background:var(--low-dim);color:var(--low)}
+
+/* Card base */
+.card{
+  background:var(--surf-1);
+  border:1px solid var(--border);
+  border-radius:var(--r-xl);
+  position:relative;overflow:hidden;
+  transition:border-color .18s,transform .18s;
+}
+.card:hover{border-color:var(--border-md)}
+
+/* Glow rim on featured cards */
+.card-glow::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;
+  background:linear-gradient(135deg,rgba(0,196,224,.06),transparent 55%,rgba(255,107,53,.04));
+  pointer-events:none;
+}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  font:inherit;font-weight:700;cursor:pointer;border:none;
+  border-radius:999px;transition:transform .15s,box-shadow .15s,background .15s;
+  white-space:nowrap;
+}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{
+  background:linear-gradient(135deg,#00b8d4,#0090b0);
+  color:#fff;padding:0 22px;height:44px;font-size:.9rem;
+  box-shadow:0 8px 24px rgba(0,196,224,0.3);
+}
+.btn-primary:hover{box-shadow:0 12px 30px rgba(0,196,224,0.4)}
+.btn-ghost{
+  background:var(--surf-2);border:1px solid var(--border-md);
+  color:var(--t1);padding:0 18px;height:44px;font-size:.88rem;
+}
+.btn-ghost:hover{background:var(--surf-hover);border-color:var(--border-hi)}
+.btn-accent{
+  background:linear-gradient(135deg,#ff6b35,#e8521c);
+  color:#fff;padding:0 22px;height:44px;font-size:.9rem;
+  box-shadow:0 8px 24px rgba(255,107,53,0.3);
+}
+.btn-sm{height:36px;padding:0 14px;font-size:.82rem}
+
+/* Shell */
+.shell{
+  width:min(1320px,calc(100% - 32px));
+  margin:0 auto;
+  padding:12px 0 80px;
+}
+
+/* ══════════════════════════════════════
+   TOPBAR
+══════════════════════════════════════ */
+.topbar{
+  display:flex;align-items:center;gap:8px;
+  height:56px;padding:0 16px;
+  background:rgba(6,13,20,0.88);
+  border:1px solid var(--border-md);
+  border-radius:16px;
+  backdrop-filter:blur(20px);
+  position:sticky;top:12px;z-index:100;
+  margin-bottom:24px;
+  box-shadow:0 4px 30px rgba(0,0,0,0.4);
+}
+
+.topbar-brand{
+  display:flex;align-items:center;gap:10px;
+  padding:0 10px 0 2px;
+  margin-right:4px;
+  flex-shrink:0;
+}
+.brand-mark{
+  width:32px;height:32px;border-radius:9px;
+  background:linear-gradient(135deg,#00c4e0,#0077a0);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-weight:900;font-size:.8rem;color:#fff;
+  box-shadow:0 4px 12px rgba(0,196,224,0.35);
+  flex-shrink:0;
+}
+.brand-name{
+  font-weight:800;font-size:.92rem;color:var(--t1);
+  white-space:nowrap;letter-spacing:-.01em;
+}
+
+/* Command bar — Linear/Vercel style */
+.cmd-bar{
+  flex:1;max-width:320px;
+  display:flex;align-items:center;gap:9px;
+  height:34px;padding:0 13px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--border);
+  border-radius:8px;
+  font-size:.82rem;color:var(--t3);
+  cursor:pointer;
+  margin:0 8px;
+  transition:background .15s,border-color .15s;
+}
+.cmd-bar:hover{background:rgba(255,255,255,0.07);border-color:var(--border-md)}
+.cmd-bar-icon{width:14px;height:14px;opacity:.5}
+.cmd-kbd{
+  margin-left:auto;
+  display:flex;gap:3px;
+}
+.kbd{
+  padding:1px 5px;border-radius:4px;
+  background:rgba(255,255,255,0.07);border:1px solid var(--border-md);
+  font-family:var(--font-mono);font-size:.66rem;color:var(--t3);
+}
+
+/* Nav */
+.topbar-nav{
+  display:flex;align-items:center;gap:1px;
+}
+.nav-link{
+  display:inline-flex;align-items:center;gap:6px;
+  height:36px;padding:0 13px;
+  border-radius:8px;
+  font-size:.85rem;font-weight:600;color:var(--t2);
+  transition:background .15s,color .15s;
+}
+.nav-link:hover{background:rgba(255,255,255,0.05);color:var(--t1)}
+.nav-link.active{background:rgba(0,196,224,0.1);color:var(--brand)}
+.nav-link-icon{width:15px;height:15px;opacity:.7;flex-shrink:0}
+.nav-link.active .nav-link-icon{opacity:1}
+.nav-badge{
+  padding:1px 6px;border-radius:999px;
+  background:rgba(255,107,53,0.2);color:var(--accent);
+  font-size:.62rem;font-weight:800;
+}
+
+/* Topbar right */
+.topbar-right{
+  margin-left:auto;
+  display:flex;align-items:center;gap:8px;
+}
+.sign-in{
+  display:inline-flex;align-items:center;gap:8px;
+  height:36px;padding:0 16px;
+  border-radius:8px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid var(--border-md);
+  font-size:.84rem;font-weight:700;color:var(--t1);
+}
+.sign-in:hover{background:rgba(255,255,255,0.1);border-color:var(--border-hi)}
+.ms-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;width:14px;height:14px;flex-shrink:0}
+.ms-grid span{display:block;border-radius:1px}
+.avatar{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,#00c4e0,#7c3aed);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.72rem;font-weight:800;color:#fff;
+  flex-shrink:0;
+}
+
+/* ══════════════════════════════════════
+   BENTO HERO — 2025 trend
+   Variable-size cards in a CSS grid
+══════════════════════════════════════ */
+.bento{
+  display:grid;
+  grid-template-columns: 2fr 1.1fr 1.1fr;
+  grid-template-rows: auto auto auto;
+  gap:14px;
+  margin-bottom:20px;
+}
+
+/* Bento card sizes via grid-area */
+.b-headline{grid-column:1;grid-row:1/3;} /* tall left */
+.b-preview{grid-column:2/4;grid-row:1/3;} /* tall right spans 2 cols */
+.b-stat-1{grid-column:1;grid-row:3;}
+.b-stat-2{grid-column:2;grid-row:3;}
+.b-stat-3{grid-column:3;grid-row:3;}
+
+/* Headline card */
+.bcard-headline{
+  padding:44px 40px;
+  display:flex;flex-direction:column;gap:24px;
+  background:
+    radial-gradient(circle at 0% 100%, rgba(0,196,224,0.1) 0%, transparent 50%),
+    var(--surf-1);
+}
+.bcard-headline h1{
+  font-family:var(--font-display);
+  font-size:clamp(2.2rem,3.4vw,3.2rem);
+  font-weight:700;
+  line-height:1.06;
+  letter-spacing:-.03em;
+  color:var(--t1);
+  max-width:14ch;
+}
+.bcard-headline h1 .hi{
+  background:linear-gradient(90deg,#00c4e0,#7c8cff);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.hero-sub{
+  font-size:1rem;color:var(--t2);line-height:1.7;
+  max-width:44ch;
+}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+/* Value bullets */
+.vbullets{display:flex;flex-direction:column;gap:9px;margin-top:4px}
+.vbullet{
+  display:flex;align-items:center;gap:10px;
+  font-size:.84rem;font-weight:600;color:var(--t2);
+}
+.vbullet-check{
+  width:20px;height:20px;flex-shrink:0;
+  border-radius:6px;background:rgba(61,214,140,0.14);
+  color:var(--success);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;
+}
+
+/* Preview card — workspace screenshot mock */
+.bcard-preview{
+  padding:0;overflow:hidden;
+  background:var(--surf-0);
+}
+.pw-chrome{
+  display:flex;align-items:center;gap:8px;
+  padding:11px 16px;
+  background:rgba(255,255,255,0.03);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.pw-dots{display:flex;gap:5px}
+.pw-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.pw-url{
+  flex:1;margin:0 10px;
+  height:22px;border-radius:5px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border);
+  display:flex;align-items:center;padding:0 8px;
+  font-size:.7rem;color:var(--t3);
+  font-family:var(--font-mono);
+}
+.pw-body{
+  padding:14px;
+  display:flex;flex-direction:column;gap:11px;
+  height:calc(100% - 44px);
+  overflow:hidden;
+}
+
+/* Inside the preview */
+.pw-toolbar{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.pw-project-name{
+  font-size:.82rem;font-weight:800;color:var(--t1);
+}
+.pw-scope-chips{display:flex;gap:5px;flex-wrap:wrap;flex:1}
+.scope-c{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:999px;
+  background:var(--brand-dim);border:1px solid rgba(0,196,224,0.2);
+  color:var(--brand);font-size:.68rem;font-weight:700;
+}
+.scope-c-more{
+  background:var(--accent-dim);border-color:rgba(255,107,53,0.2);color:var(--accent);
+}
+
+/* Mini stats in preview */
+.pw-stats{display:flex;gap:6px}
+.pw-stat{
+  flex:1;padding:8px 10px;
+  border-radius:var(--r-sm);
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--border);
+  text-align:center;
+}
+.pw-stat-v{
+  display:block;font-family:var(--font-mono);
+  font-size:.95rem;font-weight:800;color:var(--t1);
+}
+.pw-stat-l{font-size:.62rem;color:var(--t3);font-weight:600}
+
+/* Finding rows in preview */
+.pw-findings{display:flex;flex-direction:column;gap:5px}
+.pw-finding{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;
+  border-radius:var(--r-sm);
+  border-left:2px solid transparent;
+  background:rgba(255,255,255,0.03);
+}
+.pw-finding-h{border-left-color:var(--high);background:var(--high-dim)}
+.pw-finding-m{border-left-color:var(--med);background:var(--med-dim)}
+.pw-finding-l{border-left-color:var(--low);background:var(--low-dim)}
+.pw-finding-text{
+  flex:1;font-size:.74rem;font-weight:600;color:var(--t1);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.pw-finding-svc{font-size:.65rem;color:var(--t3)}
+
+/* Export row in preview */
+.pw-exports{display:flex;gap:5px;flex-wrap:wrap}
+.pw-export{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:4px 9px;border-radius:6px;
+  background:rgba(255,255,255,0.05);border:1px solid var(--border);
+  font-size:.68rem;font-weight:700;color:var(--t2);
+}
+
+/* Stat cards at bottom of bento */
+.bcard-stat{
+  padding:22px 24px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  background:var(--surf-1);
+}
+.bcard-stat-icon{
+  width:38px;height:38px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;margin-bottom:12px;
+}
+.bcard-stat-number{
+  font-family:var(--font-display);
+  font-size:1.9rem;font-weight:700;
+  letter-spacing:-.03em;line-height:1;color:var(--t1);
+}
+.bcard-stat-label{font-size:.8rem;color:var(--t2);font-weight:600;margin-top:4px}
+.bcard-stat-trend{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:.72rem;font-weight:700;color:var(--success);
+  margin-top:8px;
+}
+
+/* SVG sparkline */
+.sparkline{
+  width:100%;height:28px;margin-top:8px;
+}
+
+/* ══════════════════════════════════════
+   SECTION WRAPPER
+══════════════════════════════════════ */
+.section{margin-bottom:20px}
+.sec-head{margin-bottom:22px}
+.sec-kicker{
+  font-size:.74rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--brand);margin-bottom:7px;
+}
+.sec-title{
+  font-family:var(--font-display);
+  font-size:clamp(1.45rem,2.4vw,2rem);
+  font-weight:700;letter-spacing:-.025em;line-height:1.1;
+  color:var(--t1);max-width:24ch;
+}
+.sec-copy{font-size:.95rem;color:var(--t2);line-height:1.7;max-width:60ch;margin-top:8px}
+.sec-row{
+  display:flex;justify-content:space-between;align-items:flex-start;gap:20px;
+}
+
+/* ══════════════════════════════════════
+   FEATURE GRID (3 cols, icons, linear style)
+══════════════════════════════════════ */
+.feature-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+}
+.feat-card{
+  padding:28px 26px;
+  background:var(--surf-1);
+  border:1px solid var(--border);
+  border-radius:var(--r-xl);
+  transition:border-color .18s,background .18s;
+}
+.feat-card:hover{background:var(--surf-hover);border-color:var(--border-md)}
+.feat-icon{
+  width:44px;height:44px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.25rem;margin-bottom:18px;
+}
+.feat-title{
+  font-weight:800;font-size:.95rem;color:var(--t1);
+  margin-bottom:8px;letter-spacing:-.01em;
+}
+.feat-copy{font-size:.86rem;color:var(--t2);line-height:1.65}
+.feat-link{
+  display:inline-flex;align-items:center;gap:5px;
+  margin-top:14px;font-size:.8rem;font-weight:700;color:var(--brand);
+}
+.feat-link:hover{text-decoration:underline;text-underline-offset:3px}
+
+/* Wide feature card spanning 2 cols */
+.feat-card-wide{
+  grid-column:span 2;
+  display:grid;grid-template-columns:1fr 1.2fr;gap:24px;
+  align-items:center;
+}
+
+/* ══════════════════════════════════════
+   TIMELINE (How it works)
+══════════════════════════════════════ */
+.timeline{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  position:relative;gap:0;
+  padding-top:4px;
+}
+/* Connecting line */
+.timeline::before{
+  content:"";
+  position:absolute;
+  top:28px;left:calc(100%/6);
+  width:calc(100% - 100%/3);
+  height:1px;
+  background:linear-gradient(90deg,var(--brand),rgba(0,196,224,0.2),var(--brand));
+  z-index:0;
+}
+.t-step{
+  padding:0 24px 28px 0;
+  position:relative;z-index:1;
+}
+.t-step:last-child{padding-right:0}
+.t-num-row{
+  display:flex;align-items:center;gap:0;
+  margin-bottom:20px;
+}
+.t-circle{
+  width:56px;height:56px;flex-shrink:0;
+  border-radius:50%;
+  background:linear-gradient(135deg,#00c4e0,#0077a0);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:#fff;
+  box-shadow:0 6px 20px rgba(0,196,224,0.35);
+}
+.t-title{font-weight:800;font-size:.95rem;color:var(--t1);margin-bottom:7px}
+.t-copy{font-size:.85rem;color:var(--t2);line-height:1.65}
+.t-cta{
+  display:inline-flex;align-items:center;gap:5px;
+  margin-top:12px;font-size:.8rem;font-weight:700;color:var(--brand);
+}
+
+/* ══════════════════════════════════════
+   FINDINGS SHOWCASE (Datadog-style table)
+══════════════════════════════════════ */
+.findings-layout{
+  display:grid;
+  grid-template-columns:1.5fr 1fr;
+  gap:14px;
+}
+.findings-table-card{
+  background:var(--surf-1);
+  border:1px solid var(--border);
+  border-radius:var(--r-xl);
+  overflow:hidden;
+}
+.ft-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;
+  border-bottom:1px solid var(--border);
+  background:rgba(255,255,255,0.02);
+}
+.ft-title{font-weight:800;font-size:.88rem;color:var(--t1)}
+.ft-filters{display:flex;gap:6px}
+.ft-chip{
+  padding:3px 10px;border-radius:999px;
+  font-size:.72rem;font-weight:700;
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border);
+  color:var(--t2);cursor:pointer;
+}
+.ft-chip.on{background:var(--brand-dim);border-color:rgba(0,196,224,0.25);color:var(--brand)}
+.ft-body{padding:12px 16px;display:flex;flex-direction:column;gap:7px}
+
+/* Finding row — Snyk-style with full colour treatment */
+.f-row{
+  display:grid;
+  grid-template-columns:8px 1fr auto auto;
+  align-items:center;gap:10px;
+  padding:10px 12px;
+  border-radius:var(--r-sm);
+  background:rgba(255,255,255,0.03);
+  border:1px solid transparent;
+  transition:background .15s,border-color .15s;
+}
+.f-row:hover{background:rgba(255,255,255,0.06);border-color:var(--border)}
+.f-row-high{border-left:2px solid var(--high)!important}
+.f-row-med {border-left:2px solid var(--med)!important}
+.f-row-low {border-left:2px solid var(--low)!important}
+.f-sev-bar{width:4px;height:100%;border-radius:2px}
+.f-body{}
+.f-text{font-size:.82rem;font-weight:700;color:var(--t1);line-height:1.35}
+.f-meta{
+  font-size:.7rem;color:var(--t3);margin-top:3px;
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+}
+.f-tag{
+  padding:1px 6px;border-radius:4px;
+  background:rgba(255,255,255,0.06);
+  font-size:.66rem;font-weight:700;color:var(--t3);
+}
+
+/* Summary panel beside findings */
+.summary-card{
+  display:flex;flex-direction:column;gap:12px;
+}
+.s-metric-card{
+  flex:1;
+  padding:20px;
+  background:var(--surf-1);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  display:flex;flex-direction:column;gap:8px;
+}
+.s-donut-row{
+  display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;
+}
+.s-donut{
+  width:70px;height:70px;flex-shrink:0;
+}
+.donut-labels{display:flex;flex-direction:column;gap:6px}
+.donut-label{
+  display:flex;align-items:center;gap:7px;
+  font-size:.76rem;font-weight:700;color:var(--t2);
+}
+.donut-pip{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* Region map placeholder */
+.region-card{
+  padding:18px;
+  background:var(--surf-1);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+}
+.region-grid{
+  display:flex;flex-wrap:wrap;gap:5px;margin-top:12px;
+}
+.region-pill{
+  padding:3px 9px;border-radius:999px;
+  font-size:.7rem;font-weight:700;
+  border:1px solid var(--border);
+}
+.r-avail{background:var(--low-dim);color:var(--low);border-color:rgba(61,214,140,0.2)}
+.r-preview{background:var(--med-dim);color:var(--med);border-color:rgba(255,170,51,0.2)}
+.r-restricted{background:rgba(255,255,255,0.05);color:var(--t3)}
+
+/* ══════════════════════════════════════
+   ARB SECTION — dark card, full width
+══════════════════════════════════════ */
+.arb-band{
+  display:grid;
+  grid-template-columns:1fr 1.05fr;
+  gap:28px;align-items:start;
+  padding:48px;
+  border-radius:var(--r-xl);
+  border:1px solid var(--border-md);
+  background:
+    radial-gradient(circle at 5%  50%, rgba(0,196,224,0.07) 0%, transparent 45%),
+    radial-gradient(circle at 95% 50%, rgba(255,107,53,0.07) 0%, transparent 45%),
+    linear-gradient(160deg,rgba(8,18,30,0.98),rgba(10,20,32,0.98));
+  box-shadow:var(--shadow);
+  margin-bottom:20px;
+  position:relative;overflow:hidden;
+}
+.arb-band::before{
+  content:"";position:absolute;inset:0;
+  background:
+    linear-gradient(rgba(255,255,255,0.018) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.018) 1px,transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+}
+.arb-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:4px 12px;border-radius:999px;
+  background:var(--accent-dim);border:1px solid rgba(255,107,53,0.2);
+  color:var(--accent);font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  margin-bottom:18px;
+}
+.arb-h2{
+  font-family:var(--font-display);
+  font-size:clamp(1.6rem,2.5vw,2.2rem);
+  font-weight:700;letter-spacing:-.025em;line-height:1.1;
+  color:var(--t1);margin-bottom:14px;max-width:22ch;
+}
+.arb-copy{font-size:.95rem;color:var(--t2);line-height:1.7;margin-bottom:26px;max-width:52ch}
+.arb-steps{display:flex;flex-direction:column;gap:12px;margin-bottom:28px}
+.arb-step{
+  display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:start;
+}
+.arb-step-n{
+  width:28px;height:28px;border-radius:8px;
+  background:rgba(0,196,224,0.15);border:1px solid rgba(0,196,224,0.25);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.72rem;font-weight:800;color:var(--brand);
+  flex-shrink:0;margin-top:1px;
+}
+.arb-step-title{font-weight:800;font-size:.88rem;color:var(--t1)}
+.arb-step-desc{font-size:.8rem;color:var(--t3);margin-top:2px;line-height:1.55}
+
+/* ARB flow cards */
+.arb-flow{display:flex;flex-direction:column;gap:8px;position:relative;z-index:1}
+.arb-flow-card{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px;
+  border-radius:var(--r-lg);
+  border:1px solid var(--border);
+  background:rgba(255,255,255,0.03);
+  transition:background .15s,border-color .15s;
+}
+.arb-flow-card:hover{background:rgba(255,255,255,0.06);border-color:var(--border-md)}
+.arb-flow-icon{
+  width:38px;height:38px;flex-shrink:0;
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;
+}
+.afc-1{background:rgba(0,196,224,0.14);color:var(--brand)}
+.afc-2{background:var(--med-dim);color:var(--med)}
+.afc-3{background:var(--accent-dim);color:var(--accent)}
+.afc-4{background:var(--low-dim);color:var(--success)}
+.arb-flow-body{}
+.arb-flow-title{font-weight:800;font-size:.86rem;color:var(--t1)}
+.arb-flow-desc{font-size:.75rem;color:var(--t3);margin-top:2px}
+.arb-flow-state{
+  margin-left:auto;flex-shrink:0;
+  padding:2px 8px;border-radius:999px;
+  font-size:.68rem;font-weight:800;
+}
+.afs-done{background:var(--low-dim);color:var(--success)}
+.afs-active{background:var(--brand-dim);color:var(--brand)}
+.afs-pending{background:rgba(255,255,255,0.05);color:var(--t3)}
+.arb-flow-connector{
+  display:flex;align-items:center;justify-content:center;
+  color:var(--t3);font-size:.75rem;height:12px;
+}
+
+/* ══════════════════════════════════════
+   SERVICES + TRUST SIDE BY SIDE
+══════════════════════════════════════ */
+.dual{
+  display:grid;grid-template-columns:1.3fr 1fr;
+  gap:14px;margin-bottom:20px;
+}
+.panel{
+  background:var(--surf-1);
+  border:1px solid var(--border);
+  border-radius:var(--r-xl);
+  padding:28px;
+}
+.search-row{
+  display:flex;align-items:center;gap:8px;margin-bottom:12px;
+}
+.search-input{
+  display:flex;align-items:center;gap:8px;
+  flex:1;height:38px;padding:0 13px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border-md);
+  border-radius:var(--r-sm);
+  font-size:.84rem;color:var(--t2);
+}
+.search-input input{
+  flex:1;background:none;border:none;outline:none;
+  color:var(--t1);font:inherit;font-size:.84rem;
+}
+.filter-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.fchip{
+  padding:4px 11px;border-radius:999px;
+  font-size:.74rem;font-weight:700;
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--border);color:var(--t3);cursor:pointer;
+}
+.fchip.on{background:var(--brand-dim);border-color:rgba(0,196,224,0.22);color:var(--brand)}
+
+.svc-list{display:flex;flex-direction:column;gap:6px}
+.svc-row{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:var(--r-sm);
+  border:1px solid var(--border);
+  background:rgba(255,255,255,0.02);
+  cursor:pointer;
+  transition:background .15s,border-color .15s;
+}
+.svc-row:hover{background:rgba(0,196,224,0.06);border-color:rgba(0,196,224,0.25)}
+.svc-icon{
+  width:32px;height:32px;border-radius:8px;
+  background:var(--brand-dim);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:.7rem;font-weight:800;color:var(--brand);
+  flex-shrink:0;
+}
+.svc-name{font-weight:700;font-size:.86rem;color:var(--t1);flex:1}
+.svc-meta{font-size:.7rem;color:var(--t3)}
+.svc-count{flex-shrink:0}
+
+/* Trust panel items */
+.trust-list{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.trust-row{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;
+  border-radius:var(--r-sm);
+  border:1px solid var(--border);
+  background:rgba(255,255,255,0.03);
+}
+.trust-icon{
+  width:34px;height:34px;flex-shrink:0;
+  border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.95rem;
+}
+.trust-label{font-size:.74rem;color:var(--t3);margin-bottom:2px}
+.trust-value{font-weight:800;font-size:.86rem;color:var(--t1)}
+.fresh-pill{
+  margin-left:auto;flex-shrink:0;
+  padding:3px 9px;border-radius:999px;
+  font-size:.68rem;font-weight:800;
+  display:flex;align-items:center;gap:5px;
+}
+.fp-live{background:var(--low-dim);color:var(--success)}
+.fp-cache{background:var(--med-dim);color:var(--med)}
+
+/* ══════════════════════════════════════
+   CTA BAND — dark, high contrast
+══════════════════════════════════════ */
+.cta-band{
+  display:grid;
+  grid-template-columns:1.2fr 1fr;
+  gap:40px;align-items:center;
+  padding:56px 52px;
+  border-radius:var(--r-xl);
+  background:
+    radial-gradient(circle at 0% 50%, rgba(0,196,224,0.14) 0%, transparent 45%),
+    linear-gradient(135deg,#0a1422,#0c1a2c);
+  border:1px solid rgba(0,196,224,0.15);
+  box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,0.04);
+  margin-bottom:20px;
+  position:relative;overflow:hidden;
+}
+.cta-band::after{
+  content:"";
+  position:absolute;right:-60px;top:-60px;
+  width:300px;height:300px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,107,53,0.07),transparent 70%);
+  pointer-events:none;
+}
+.cta-kicker{
+  font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--brand);margin-bottom:12px;
+}
+.cta-h2{
+  font-family:var(--font-display);
+  font-size:clamp(1.6rem,2.6vw,2.3rem);
+  font-weight:700;letter-spacing:-.025em;line-height:1.1;
+  color:var(--t1);max-width:24ch;margin-bottom:14px;
+}
+.cta-sub{font-size:.95rem;color:var(--t2);line-height:1.7;max-width:50ch;margin-bottom:28px}
+.cta-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}
+.cta-note{
+  display:flex;align-items:center;gap:7px;
+  font-size:.78rem;color:var(--t3);
+}
+.cta-note-dot{width:5px;height:5px;border-radius:50%;background:var(--t3);flex-shrink:0}
+
+/* Trust signals list */
+.trust-signals{display:flex;flex-direction:column;gap:10px}
+.ts-item{
+  display:flex;align-items:center;gap:10px;
+  font-size:.85rem;color:var(--t2);
+}
+.ts-check{
+  width:22px;height:22px;flex-shrink:0;
+  border-radius:7px;
+  background:var(--low-dim);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;color:var(--success);
+}
+
+/* ══════════════════════════════════════
+   FOOTER — 4 col
+══════════════════════════════════════ */
+.footer{
+  display:grid;
+  grid-template-columns:1.6fr 1fr 1fr 1fr;
+  gap:36px;
+  padding:42px 48px;
+  border-radius:var(--r-xl);
+  background:var(--surf-1);
+  border:1px solid var(--border);
+}
+.footer-brand-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.footer-brand-name{font-weight:800;font-size:.92rem;color:var(--t1)}
+.footer-tagline{font-size:.84rem;color:var(--t2);line-height:1.65;max-width:30ch;margin-bottom:18px}
+.footer-socials{display:flex;gap:7px}
+.f-social{
+  width:34px;height:34px;border-radius:9px;
+  border:1px solid var(--border);background:rgba(255,255,255,0.04);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.78rem;font-weight:800;color:var(--t3);
+}
+.f-social:hover{border-color:var(--border-md);color:var(--t1)}
+.footer-col-h{
+  font-weight:800;font-size:.82rem;color:var(--t1);
+  margin-bottom:14px;letter-spacing:.01em;
+}
+.footer-links{display:flex;flex-direction:column;gap:9px}
+.footer-link{
+  font-size:.82rem;color:var(--t2);font-weight:600;
+  transition:color .15s;
+}
+.footer-link:hover{color:var(--brand)}
+.footer-bottom{
+  grid-column:1/-1;
+  padding-top:22px;border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:10px;
+}
+.footer-copy{font-size:.76rem;color:var(--t3)}
+.footer-badges{display:flex;gap:7px;flex-wrap:wrap}
+.f-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;border-radius:999px;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,0.03);
+  font-size:.7rem;font-weight:700;color:var(--t3);
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════ */
+@media(max-width:1024px){
+  .bento{grid-template-columns:1fr 1fr;grid-template-rows:auto auto auto auto}
+  .b-headline{grid-column:1/3;grid-row:1}
+  .b-preview{grid-column:1/3;grid-row:2}
+  .b-stat-1{grid-column:1;grid-row:3}
+  .b-stat-2{grid-column:2;grid-row:3}
+  .b-stat-3{grid-column:1/3;grid-row:4}
+  .feature-grid{grid-template-columns:repeat(2,1fr)}
+  .feat-card-wide{grid-column:span 1;grid-template-columns:1fr}
+  .findings-layout{grid-template-columns:1fr}
+  .arb-band{grid-template-columns:1fr;padding:32px 24px}
+  .dual{grid-template-columns:1fr}
+  .cta-band{grid-template-columns:1fr;padding:36px 28px}
+  .footer{grid-template-columns:1fr 1fr;gap:24px}
+}
+@media(max-width:680px){
+  .topbar-nav,.cmd-bar{display:none}
+  .bento{grid-template-columns:1fr}
+  .b-headline,.b-preview,.b-stat-1,.b-stat-2,.b-stat-3{grid-column:1;grid-row:auto}
+  .bcard-headline{padding:28px 22px}
+  .bcard-headline h1{font-size:2rem}
+  .timeline{grid-template-columns:1fr}
+  .timeline::before{display:none}
+  .feature-grid{grid-template-columns:1fr}
+  .footer{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ══════════════════════════════════════
+     TOPBAR
+══════════════════════════════════════ -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-mark">AR</div>
+    <span class="brand-name">Azure Review Assistant</span>
+  </div>
+
+  <!-- Command bar — Linear / Vercel style -->
+  <div class="cmd-bar" role="button" tabindex="0">
+    <svg class="cmd-bar-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+      <circle cx="6.5" cy="6.5" r="4.5"/><path d="m10.5 10.5 3 3"/>
+    </svg>
+    Search services, findings, docs…
+    <div class="cmd-kbd">
+      <span class="kbd">⌘</span>
+      <span class="kbd">K</span>
+    </div>
+  </div>
+
+  <nav class="topbar-nav">
+    <a href="#" class="nav-link active">
+      <svg class="nav-link-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/>
+        <rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/>
+      </svg>Dashboard
+    </a>
+    <a href="#" class="nav-link">
+      <svg class="nav-link-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M6 7.5l2.5 2.5 5-5"/><path d="M13.5 8A5.5 5.5 0 112.5 8"/>
+      </svg>Reviews
+    </a>
+    <a href="#" class="nav-link">
+      <svg class="nav-link-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M8 1l2 5h5l-4 3 1.5 5L8 11l-4.5 3L5 9 1 6h5z"/>
+      </svg>Services
+    </a>
+    <a href="#" class="nav-link">
+      <svg class="nav-link-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M8 14s-6-3-6-7.5A4 4 0 018 2a4 4 0 016 4.5C14 11 8 14 8 14z"/>
+      </svg>ARB Review
+      <span class="nav-badge">PRO</span>
+    </a>
+    <a href="#" class="nav-link">
+      <svg class="nav-link-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="8" cy="8" r="7"/><path d="M8 11V7.5M8 5.5h.01"/>
+      </svg>Docs
+    </a>
+  </nav>
+
+  <div class="topbar-right">
+    <button class="sign-in">
+      <div class="ms-grid">
+        <span style="background:#f25022"></span><span style="background:#7fba00"></span>
+        <span style="background:#00a4ef"></span><span style="background:#ffb900"></span>
+      </div>
+      Sign in with Microsoft
+    </button>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════
+     BENTO HERO
+══════════════════════════════════════ -->
+<div class="bento">
+
+  <!-- Headline card -->
+  <article class="card card-glow bcard-headline b-headline">
+    <div class="eyebrow">
+      <span class="eyebrow-pip"></span>
+      Azure architects &amp; review boards
+    </div>
+
+    <h1>
+      Architecture reviews that
+      <span class="hi">ship,</span><br>not stall.
+    </h1>
+
+    <p class="hero-sub">
+      Scope services, review WAF-aligned findings, confirm region fit
+      and live pricing, then export a decision-ready pack — in one workflow.
+    </p>
+
+    <div class="hero-actions">
+      <button class="btn btn-primary">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8h10M8 3l5 5-5 5"/></svg>
+        Start a review
+      </button>
+      <button class="btn btn-ghost">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8a6 6 0 1112 0A6 6 0 012 8zm6-3v4m0 1.5v.5"/></svg>
+        See sample output
+      </button>
+    </div>
+
+    <div class="vbullets">
+      <div class="vbullet">
+        <div class="vbullet-check">✓</div>
+        Standard + ARB-grade (formal review board) modes
+      </div>
+      <div class="vbullet">
+        <div class="vbullet-check">✓</div>
+        Live Microsoft retail pricing — region-aware
+      </div>
+      <div class="vbullet">
+        <div class="vbullet-check">✓</div>
+        Export: exec summary, action list, pricing, ARB pack
+      </div>
+    </div>
+  </article>
+
+  <!-- Workspace preview card -->
+  <article class="card b-preview bcard-preview">
+    <div class="pw-chrome">
+      <div class="pw-dots">
+        <div class="pw-dot" style="background:#ff5f57"></div>
+        <div class="pw-dot" style="background:#febc2e"></div>
+        <div class="pw-dot" style="background:#28c840"></div>
+      </div>
+      <div class="pw-url">azurereview.io/review/contoso-ha-arch</div>
+      <div class="live-dot" title="Data is live"></div>
+    </div>
+    <div class="pw-body">
+      <div class="pw-toolbar">
+        <span class="pw-project-name">Contoso HA Architecture</span>
+        <div class="pw-scope-chips">
+          <span class="scope-c">⎔ AKS</span>
+          <span class="scope-c">⎔ APIM</span>
+          <span class="scope-c">⎔ App Service</span>
+          <span class="scope-c scope-c-more">+2 more</span>
+        </div>
+      </div>
+
+      <div class="pw-stats">
+        <div class="pw-stat"><span class="pw-stat-v" style="color:var(--high)">4</span><span class="pw-stat-l">High</span></div>
+        <div class="pw-stat"><span class="pw-stat-v" style="color:var(--med)">7</span><span class="pw-stat-l">Medium</span></div>
+        <div class="pw-stat"><span class="pw-stat-v" style="color:var(--low)">3</span><span class="pw-stat-l">Resolved</span></div>
+        <div class="pw-stat"><span class="pw-stat-v" style="font-size:.8rem">East US</span><span class="pw-stat-l">Region</span></div>
+      </div>
+
+      <div>
+        <div style="font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:6px">Top findings</div>
+        <div class="pw-findings">
+          <div class="pw-finding pw-finding-h">
+            <div class="sev sev-h">High</div>
+            <div>
+              <div class="pw-finding-text">Enable zone-redundant node pools across all AKS clusters</div>
+              <div class="pw-finding-svc">AKS · Reliability · WAF</div>
+            </div>
+          </div>
+          <div class="pw-finding pw-finding-m">
+            <div class="sev sev-m">Med</div>
+            <div>
+              <div class="pw-finding-text">Configure APIM rate-limit policies per subscription key</div>
+              <div class="pw-finding-svc">APIM · Security</div>
+            </div>
+          </div>
+          <div class="pw-finding pw-finding-l">
+            <div class="sev sev-l">Low</div>
+            <div>
+              <div class="pw-finding-text">Enable App Service deployment slots for staging</div>
+              <div class="pw-finding-svc">App Service · OpEx</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:6px">Export pack</div>
+        <div class="pw-exports">
+          <span class="pw-export">📄 Exec summary</span>
+          <span class="pw-export">✅ Action list</span>
+          <span class="pw-export">💰 Pricing snapshot</span>
+          <span class="pw-export">🔒 ARB pack</span>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- Stat cards — Vercel-style with sparklines -->
+  <article class="card bcard-stat b-stat-1">
+    <div class="bcard-stat-icon" style="background:var(--brand-dim);color:var(--brand)">⎔</div>
+    <div class="bcard-stat-number">180+</div>
+    <div class="bcard-stat-label">Azure services mapped</div>
+    <div class="bcard-stat-trend">↑ 12 added this month</div>
+    <!-- SVG sparkline — pure CSS/SVG, no library -->
+    <svg class="sparkline" viewBox="0 0 120 28" preserveAspectRatio="none">
+      <polyline points="0,20 20,16 40,18 60,12 80,9 100,7 120,4"
+        fill="none" stroke="rgba(0,196,224,0.5)" stroke-width="1.5" stroke-linecap="round"/>
+      <polyline points="0,28 0,20 20,16 40,18 60,12 80,9 100,7 120,4 120,28"
+        fill="url(#g1)" stroke="none"/>
+      <defs>
+        <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(0,196,224,0.18)"/>
+          <stop offset="100%" stop-color="rgba(0,196,224,0)"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </article>
+
+  <article class="card bcard-stat b-stat-2">
+    <div class="bcard-stat-icon" style="background:var(--high-dim);color:var(--high)">⚠</div>
+    <div class="bcard-stat-number">2,400+</div>
+    <div class="bcard-stat-label">WAF-aligned findings</div>
+    <div class="bcard-stat-trend">↑ Refreshed Apr 2025</div>
+    <svg class="sparkline" viewBox="0 0 120 28" preserveAspectRatio="none">
+      <polyline points="0,22 20,19 40,22 60,15 80,17 100,11 120,8"
+        fill="none" stroke="rgba(255,77,77,0.5)" stroke-width="1.5" stroke-linecap="round"/>
+      <polyline points="0,28 0,22 20,19 40,22 60,15 80,17 100,11 120,8 120,28"
+        fill="url(#g2)" stroke="none"/>
+      <defs>
+        <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(255,77,77,0.15)"/>
+          <stop offset="100%" stop-color="rgba(255,77,77,0)"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </article>
+
+  <article class="card bcard-stat b-stat-3">
+    <div class="bcard-stat-icon" style="background:var(--low-dim);color:var(--success)">💰</div>
+    <div class="bcard-stat-number" style="display:flex;align-items:center;gap:8px">
+      Live
+      <div class="live-dot"></div>
+    </div>
+    <div class="bcard-stat-label">Microsoft retail pricing</div>
+    <div class="bcard-stat-trend">Updated Apr 11, 2025 · 64 regions</div>
+    <svg class="sparkline" viewBox="0 0 120 28" preserveAspectRatio="none">
+      <polyline points="0,24 20,22 40,20 60,20 80,18 100,19 120,18"
+        fill="none" stroke="rgba(61,214,140,0.5)" stroke-width="1.5" stroke-linecap="round"/>
+      <polyline points="0,28 0,24 20,22 40,20 60,20 80,18 100,19 120,18 120,28"
+        fill="url(#g3)" stroke="none"/>
+      <defs>
+        <linearGradient id="g3" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(61,214,140,0.15)"/>
+          <stop offset="100%" stop-color="rgba(61,214,140,0)"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </article>
+
+</div>
+
+<!-- ══════════════════════════════════════
+     FEATURES — 3 + WIDE CARD
+══════════════════════════════════════ -->
+<section class="section">
+  <div class="sec-row sec-head">
+    <div>
+      <div class="sec-kicker">Why teams use it</div>
+      <h2 class="sec-title">Stop rebuilding the same review from scratch.</h2>
+    </div>
+    <button class="btn btn-ghost btn-sm">Browse all services →</button>
+  </div>
+
+  <div class="feature-grid">
+
+    <article class="feat-card">
+      <div class="feat-icon" style="background:var(--brand-dim);color:var(--brand)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+      </div>
+      <div class="feat-title">Traceable findings</div>
+      <p class="feat-copy">Every finding stays tied to source guidance, reviewer rationale, owner, and next action. No black-box outputs — full audit trail.</p>
+      <a href="#" class="feat-link">Explore findings →</a>
+    </article>
+
+    <article class="feat-card">
+      <div class="feat-icon" style="background:var(--low-dim);color:var(--success)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      </div>
+      <div class="feat-title">Live region fit + pricing</div>
+      <p class="feat-copy">Real Microsoft retail prices, SKU availability per region, refresh timestamps — all visible before your team commits to a design.</p>
+      <a href="#" class="feat-link">Open pricing explorer →</a>
+    </article>
+
+    <article class="feat-card">
+      <div class="feat-icon" style="background:var(--med-dim);color:var(--med)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </div>
+      <div class="feat-title">Export-ready outputs</div>
+      <p class="feat-copy">Executive summary, action list, pricing snapshot, and ARB-ready pack — consistently formatted, tied to the same review scope.</p>
+      <a href="#" class="feat-link">See sample export →</a>
+    </article>
+
+    <!-- Wide card — ARB teaser inside features -->
+    <article class="feat-card feat-card-wide card-glow"
+      style="background:linear-gradient(135deg,rgba(12,22,38,0.98),rgba(10,18,32,0.98));border-color:rgba(255,107,53,0.2)">
+      <div>
+        <div class="feat-icon" style="background:var(--accent-dim);color:var(--accent)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="feat-title" style="font-size:1.05rem">ARB-grade review mode</div>
+        <p class="feat-copy">When the design needs uploaded evidence, formal reviewer checkpoints, a weighted scorecard, and an auditable decision record — step up to ARB-grade mode.</p>
+        <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+          <button class="btn btn-accent btn-sm">Open ARB Review</button>
+          <button class="btn btn-ghost btn-sm">Open Decision Center</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--r-sm);background:rgba(255,255,255,0.04);border:1px solid var(--border)">
+          <span style="font-size:1rem">📁</span>
+          <div><div style="font-size:.8rem;font-weight:700;color:var(--t1)">Upload design pack</div><div style="font-size:.7rem;color:var(--t3)">Diagrams, ADRs, evidence</div></div>
+          <span style="margin-left:auto;font-size:.68rem;font-weight:700;color:var(--success);background:var(--low-dim);padding:2px 7px;border-radius:999px">Step 1</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--r-sm);background:rgba(255,255,255,0.04);border:1px solid var(--border)">
+          <span style="font-size:1rem">🔍</span>
+          <div><div style="font-size:.8rem;font-weight:700;color:var(--t1)">Review findings</div><div style="font-size:.7rem;color:var(--t3)">Evidence-grounded scope</div></div>
+          <span style="margin-left:auto;font-size:.68rem;font-weight:700;color:var(--brand);background:var(--brand-dim);padding:2px 7px;border-radius:999px">Step 2</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--r-sm);background:rgba(255,255,255,0.04);border:1px solid var(--border)">
+          <span style="font-size:1rem">📊</span>
+          <div><div style="font-size:.8rem;font-weight:700;color:var(--t1)">Weighted scorecard</div><div style="font-size:.7rem;color:var(--t3)">Blockers, conditions, gaps</div></div>
+          <span style="margin-left:auto;font-size:.68rem;font-weight:700;color:var(--med);background:var(--med-dim);padding:2px 7px;border-radius:999px">Step 3</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--r-sm);background:rgba(255,255,255,0.04);border:1px solid var(--border)">
+          <span style="font-size:1rem">✅</span>
+          <div><div style="font-size:.8rem;font-weight:700;color:var(--t1)">Human sign-off</div><div style="font-size:.7rem;color:var(--t3)">AI recommends, humans decide</div></div>
+          <span style="margin-left:auto;font-size:.68rem;font-weight:700;color:var(--t3);background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:999px">Step 4</span>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     HOW IT WORKS — Timeline
+══════════════════════════════════════ -->
+<section class="section panel" style="background:var(--surf-1);border:1px solid var(--border);border-radius:var(--r-xl);padding:36px 40px">
+  <div class="sec-row sec-head">
+    <div>
+      <div class="sec-kicker">How it works</div>
+      <h2 class="sec-title">Three steps. One consistent output.</h2>
+    </div>
+  </div>
+  <div class="timeline">
+    <div class="t-step">
+      <div class="t-num-row">
+        <div class="t-circle">1</div>
+        <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(0,196,224,0.5),rgba(0,196,224,0.1))"></div>
+      </div>
+      <h3 class="t-title">Start and scope the review</h3>
+      <p class="t-copy">Choose Standard or ARB-grade mode. Add services that belong to your design. Set target regions, audience, and business scope — under 2 minutes.</p>
+      <a href="#" class="t-cta">Open workspace →</a>
+    </div>
+    <div class="t-step">
+      <div class="t-num-row">
+        <div class="t-circle">2</div>
+        <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(0,196,224,0.5),rgba(0,196,224,0.1))"></div>
+      </div>
+      <h3 class="t-title">Review findings, region fit, pricing</h3>
+      <p class="t-copy">Work through severity-coded findings per service. Confirm region availability, live retail pricing, and record rationale — all in one workspace.</p>
+      <a href="#" class="t-cta">Explore services →</a>
+    </div>
+    <div class="t-step">
+      <div class="t-num-row"><div class="t-circle">3</div></div>
+      <h3 class="t-title">Export the deliverable</h3>
+      <p class="t-copy">Download the exec summary, action list, pricing snapshot, or full ARB pack — consistently formatted, aligned to the same scope you just reviewed.</p>
+      <a href="#" class="t-cta">See sample output →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     FINDINGS SHOWCASE — Snyk/Datadog style
+══════════════════════════════════════ -->
+<section class="section">
+  <div class="sec-row sec-head">
+    <div>
+      <div class="sec-kicker">Sample output preview</div>
+      <h2 class="sec-title">See the deliverable before you start.</h2>
+      <p class="sec-copy">Severity-coded, source-backed, and exportable. No black-box recommendations.</p>
+    </div>
+    <button class="btn btn-ghost btn-sm">Download sample →</button>
+  </div>
+  <div class="findings-layout">
+
+    <!-- Findings table — Snyk-style -->
+    <div class="findings-table-card">
+      <div class="ft-header">
+        <span class="ft-title">Review findings — Contoso HA Architecture</span>
+        <div class="ft-filters">
+          <button class="ft-chip on">All 14</button>
+          <button class="ft-chip" style="color:var(--high)">High 4</button>
+          <button class="ft-chip" style="color:var(--med)">Med 7</button>
+          <button class="ft-chip" style="color:var(--low)">Low 3</button>
+        </div>
+      </div>
+      <div class="ft-body">
+        <div class="f-row f-row-high">
+          <div style="width:3px;height:36px;background:var(--high);border-radius:2px;flex-shrink:0"></div>
+          <div class="f-body">
+            <div class="f-text">Enable zone-redundant node pools across all AKS clusters</div>
+            <div class="f-meta">
+              <span class="f-tag">AKS</span>
+              <span class="f-tag">Reliability</span>
+              <span class="f-tag">WAF-pillar</span>
+            </div>
+          </div>
+          <span class="sev sev-h">High</span>
+          <span style="font-size:.7rem;color:var(--t3);white-space:nowrap">Unresolved</span>
+        </div>
+        <div class="f-row f-row-high">
+          <div style="width:3px;height:36px;background:var(--high);border-radius:2px;flex-shrink:0"></div>
+          <div class="f-body">
+            <div class="f-text">Enable private endpoints for all PaaS services in this architecture</div>
+            <div class="f-meta">
+              <span class="f-tag">Networking</span>
+              <span class="f-tag">Security</span>
+            </div>
+          </div>
+          <span class="sev sev-h">High</span>
+          <span style="font-size:.7rem;color:var(--t3);white-space:nowrap">Unresolved</span>
+        </div>
+        <div class="f-row f-row-med">
+          <div style="width:3px;height:36px;background:var(--med);border-radius:2px;flex-shrink:0"></div>
+          <div class="f-body">
+            <div class="f-text">Configure APIM rate-limit policies per subscription key</div>
+            <div class="f-meta">
+              <span class="f-tag">APIM</span>
+              <span class="f-tag">Security</span>
+            </div>
+          </div>
+          <span class="sev sev-m">Med</span>
+          <span style="font-size:.7rem;color:var(--t3);white-space:nowrap">In review</span>
+        </div>
+        <div class="f-row f-row-med">
+          <div style="width:3px;height:36px;background:var(--med);border-radius:2px;flex-shrink:0"></div>
+          <div class="f-body">
+            <div class="f-text">Set up Azure Monitor alerts for AKS node pool CPU and memory thresholds</div>
+            <div class="f-meta">
+              <span class="f-tag">AKS</span>
+              <span class="f-tag">Monitor</span>
+              <span class="f-tag">Ops Excellence</span>
+            </div>
+          </div>
+          <span class="sev sev-m">Med</span>
+          <span style="font-size:.7rem;color:var(--t3);white-space:nowrap">In review</span>
+        </div>
+        <div class="f-row f-row-low">
+          <div style="width:3px;height:36px;background:var(--low);border-radius:2px;flex-shrink:0"></div>
+          <div class="f-body">
+            <div class="f-text">Enable App Service deployment slots for zero-downtime staging</div>
+            <div class="f-meta">
+              <span class="f-tag">App Service</span>
+              <span class="f-tag">OpEx</span>
+            </div>
+          </div>
+          <span class="sev sev-l">Low</span>
+          <span style="font-size:.7rem;color:var(--success);white-space:nowrap">✓ Resolved</span>
+        </div>
+        <div class="f-row f-row-low">
+          <div style="width:3px;height:36px;background:var(--low);border-radius:2px;flex-shrink:0"></div>
+          <div class="f-body">
+            <div class="f-text">Tag all resources with environment, cost-center, and owner metadata</div>
+            <div class="f-meta">
+              <span class="f-tag">Governance</span>
+              <span class="f-tag">Cost Opt</span>
+            </div>
+          </div>
+          <span class="sev sev-l">Low</span>
+          <span style="font-size:.7rem;color:var(--success);white-space:nowrap">✓ Resolved</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary + Donut + Region -->
+    <div class="summary-card">
+      <div class="s-metric-card">
+        <div style="font-weight:800;font-size:.84rem;color:var(--t1);margin-bottom:4px">Severity distribution</div>
+        <div class="s-donut-row">
+          <!-- SVG Donut chart — pure SVG, no lib -->
+          <svg class="s-donut" viewBox="0 0 70 70">
+            <circle cx="35" cy="35" r="28" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="10"/>
+            <!-- High 29% = 50.9° -->
+            <circle cx="35" cy="35" r="28" fill="none" stroke="var(--high)" stroke-width="10"
+              stroke-dasharray="50.9 175.7" stroke-dashoffset="44" transform="rotate(-90 35 35)"/>
+            <!-- Med 50% = 87.9° -->
+            <circle cx="35" cy="35" r="28" fill="none" stroke="var(--med)" stroke-width="10"
+              stroke-dasharray="87.9 138.7" stroke-dashoffset="-6.9" transform="rotate(-90 35 35)"/>
+            <!-- Low 21% = 37.7° -->
+            <circle cx="35" cy="35" r="28" fill="none" stroke="var(--low)" stroke-width="10"
+              stroke-dasharray="37.7 188.9" stroke-dashoffset="-94.8" transform="rotate(-90 35 35)"/>
+            <text x="35" y="39" text-anchor="middle" font-size="11" font-weight="800" fill="var(--t1)" font-family="Segoe UI,sans-serif">14</text>
+          </svg>
+          <div class="donut-labels">
+            <div class="donut-label"><div class="donut-pip" style="background:var(--high)"></div>4 High (29%)</div>
+            <div class="donut-label"><div class="donut-pip" style="background:var(--med)"></div>7 Medium (50%)</div>
+            <div class="donut-label"><div class="donut-pip" style="background:var(--low)"></div>3 Low (21%)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="s-metric-card">
+        <div style="font-weight:800;font-size:.84rem;color:var(--t1);margin-bottom:4px">Review summary</div>
+        <div style="display:flex;flex-direction:column;gap:7px;margin-top:4px">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:.8rem;color:var(--t2)">Services in scope</span>
+            <span style="font-size:.8rem;font-weight:800;color:var(--t1)">5 services</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:.8rem;color:var(--t2)">Pricing source</span>
+            <span style="font-size:.8rem;font-weight:800;color:var(--t1);display:flex;align-items:center;gap:5px"><span class="live-dot"></span>Apr 11 2025</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:.8rem;color:var(--t2)">AKS starts at</span>
+            <span style="font-size:.8rem;font-weight:800;color:var(--t1)">$0.10 / node-hr</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0">
+            <span style="font-size:.8rem;color:var(--t2)">APIM starts at</span>
+            <span style="font-size:.8rem;font-weight:800;color:var(--t1)">$0.37 / hr</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="region-card">
+        <div style="font-weight:800;font-size:.84rem;color:var(--t1)">Region fit — East US</div>
+        <div class="region-grid">
+          <span class="region-pill r-avail">AKS ✓ GA</span>
+          <span class="region-pill r-avail">APIM ✓ GA</span>
+          <span class="region-pill r-avail">App Svc ✓ GA</span>
+          <span class="region-pill r-avail">SQL DB ✓ GA</span>
+          <span class="region-pill r-preview">Azure OpenAI ⚡ Preview</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     ARB BAND — full-width dark feature
+══════════════════════════════════════ -->
+<div class="arb-band">
+  <div style="position:relative;z-index:1">
+    <div class="arb-eyebrow">🔒 Formal review mode</div>
+    <h2 class="arb-h2">Need formal sign-off?<br>Use ARB-grade review mode.</h2>
+    <p class="arb-copy">When your design needs uploaded evidence, explicit reviewer checkpoints, a weighted scorecard, and an auditable decision record — step up from Standard into ARB-grade mode. Same product, higher rigour, human-owned final decision.</p>
+    <div class="arb-steps">
+      <div class="arb-step">
+        <div class="arb-step-n">1</div>
+        <div><div class="arb-step-title">Upload design pack &amp; evidence</div><div class="arb-step-desc">Diagrams, ADRs, supporting material — source the review in evidence, not guesswork.</div></div>
+      </div>
+      <div class="arb-step">
+        <div class="arb-step-n">2</div>
+        <div><div class="arb-step-title">Review requirements &amp; findings with evidence</div><div class="arb-step-desc">Each finding is grounded in uploaded material, not just catalog guidance.</div></div>
+      </div>
+      <div class="arb-step">
+        <div class="arb-step-n">3</div>
+        <div><div class="arb-step-title">Generate weighted scorecard</div><div class="arb-step-desc">AI recommends a posture. Reviewers own blockers, conditions, and rationale.</div></div>
+      </div>
+      <div class="arb-step">
+        <div class="arb-step-n">4</div>
+        <div><div class="arb-step-title">Human-owned final decision</div><div class="arb-step-desc">Approval, conditions, and timing captured explicitly — AI assists, humans decide.</div></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-accent">Open ARB Review</button>
+      <button class="btn btn-ghost">Open Decision Center</button>
+    </div>
+  </div>
+
+  <div class="arb-flow" style="position:relative;z-index:1">
+    <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:4px">Live review in progress</div>
+    <div class="arb-flow-card">
+      <div class="arb-flow-icon afc-1">📁</div>
+      <div class="arb-flow-body">
+        <div class="arb-flow-title">Evidence intake</div>
+        <div class="arb-flow-desc">Design pack uploaded · 3 artefacts</div>
+      </div>
+      <span class="arb-flow-state afs-done">✓ Complete</span>
+    </div>
+    <div class="arb-flow-connector">↓</div>
+    <div class="arb-flow-card">
+      <div class="arb-flow-icon afc-2">🔍</div>
+      <div class="arb-flow-body">
+        <div class="arb-flow-title">Requirements &amp; findings</div>
+        <div class="arb-flow-desc">14 findings · 4 blockers outstanding</div>
+      </div>
+      <span class="arb-flow-state afs-active">● Active</span>
+    </div>
+    <div class="arb-flow-connector">↓</div>
+    <div class="arb-flow-card">
+      <div class="arb-flow-icon afc-3">📊</div>
+      <div class="arb-flow-body">
+        <div class="arb-flow-title">Weighted scorecard</div>
+        <div class="arb-flow-desc">Score: pending blockers resolution</div>
+      </div>
+      <span class="arb-flow-state afs-pending">Pending</span>
+    </div>
+    <div class="arb-flow-connector">↓</div>
+    <div class="arb-flow-card">
+      <div class="arb-flow-icon afc-4">✅</div>
+      <div class="arb-flow-body">
+        <div class="arb-flow-title">Decision Center</div>
+        <div class="arb-flow-desc">Human-owned approval &amp; sign-off</div>
+      </div>
+      <span class="arb-flow-state afs-pending">Pending</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SERVICES BROWSER + TRUST
+══════════════════════════════════════ -->
+<div class="dual">
+  <article class="panel">
+    <div class="sec-row" style="margin-bottom:16px">
+      <div>
+        <div class="sec-kicker">Explore</div>
+        <h2 class="sec-title" style="font-size:1.35rem">Browse 180+ Azure services.</h2>
+      </div>
+      <button class="btn btn-ghost btn-sm">All services →</button>
+    </div>
+    <div class="search-row">
+      <div class="search-input">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6.5" cy="6.5" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>
+        <input placeholder="Search services, WAF pillars, categories…"/>
+      </div>
+    </div>
+    <div class="filter-chips">
+      <button class="fchip on">All</button>
+      <button class="fchip">GA baseline</button>
+      <button class="fchip">Containers</button>
+      <button class="fchip">Networking</button>
+      <button class="fchip">AI + ML</button>
+      <button class="fchip">Data</button>
+    </div>
+    <div class="svc-list">
+      <div class="svc-row">
+        <div class="svc-icon">AKS</div>
+        <div><div class="svc-name">Azure Kubernetes Service</div><div class="svc-meta">Containers · 42 findings · GA baseline</div></div>
+        <span class="svc sev sev-h svc-count">8 High</span>
+      </div>
+      <div class="svc-row">
+        <div class="svc-icon" style="background:var(--med-dim);color:var(--med)">APM</div>
+        <div><div class="svc-name">API Management</div><div class="svc-meta">Integration · 31 findings · GA baseline</div></div>
+        <span class="sev sev-m svc-count">5 High</span>
+      </div>
+      <div class="svc-row">
+        <div class="svc-icon" style="background:var(--low-dim);color:var(--success)">APP</div>
+        <div><div class="svc-name">Azure App Service</div><div class="svc-meta">Compute · 28 findings · GA baseline</div></div>
+        <span class="sev sev-l svc-count">2 High</span>
+      </div>
+      <div class="svc-row">
+        <div class="svc-icon" style="background:var(--accent-dim);color:var(--accent)">SQL</div>
+        <div><div class="svc-name">Azure SQL Database</div><div class="svc-meta">Data · 36 findings · GA baseline</div></div>
+        <span class="sev sev-h svc-count">6 High</span>
+      </div>
+      <div class="svc-row">
+        <div class="svc-icon" style="background:rgba(124,58,237,0.15);color:#a78bfa">SB</div>
+        <div><div class="svc-name">Service Bus</div><div class="svc-meta">Messaging · 18 findings · GA baseline</div></div>
+        <span class="sev sev-l svc-count">1 High</span>
+      </div>
+    </div>
+  </article>
+
+  <article class="panel">
+    <div class="sec-row" style="margin-bottom:16px">
+      <div>
+        <div class="sec-kicker">Data freshness</div>
+        <h2 class="sec-title" style="font-size:1.35rem">Know what's current before you rely on it.</h2>
+      </div>
+    </div>
+    <p style="font-size:.86rem;color:var(--t2);line-height:1.65;margin-bottom:4px">Source dates, pricing refresh state, and what sign-in unlocks — visible without logging in.</p>
+    <div class="trust-list">
+      <div class="trust-row">
+        <div class="trust-icon" style="background:var(--low-dim);color:var(--success)">📚</div>
+        <div><div class="trust-label">Catalog last refreshed</div><div class="trust-value">April 11, 2025</div></div>
+        <div class="fresh-pill fp-live"><span class="live-dot"></span>Live</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-icon" style="background:var(--brand-dim);color:var(--brand)">💰</div>
+        <div><div class="trust-label">Pricing snapshot</div><div class="trust-value">April 11, 2025</div></div>
+        <div class="fresh-pill fp-live"><span class="live-dot"></span>Live</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-icon" style="background:var(--med-dim);color:var(--med)">🌍</div>
+        <div><div class="trust-label">Region availability</div><div class="trust-value">64 public regions</div></div>
+        <div class="fresh-pill fp-live"><span class="live-dot"></span>Current</div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-icon" style="background:var(--accent-dim);color:var(--accent)">🔓</div>
+        <div><div class="trust-label">Sign-in unlocks</div><div class="trust-value">Saved reviews + ARB mode</div></div>
+      </div>
+      <div class="trust-row">
+        <div class="trust-icon" style="background:rgba(124,58,237,0.15);color:#a78bfa">🤖</div>
+        <div><div class="trust-label">AI boundary</div><div class="trust-value">AI assists · Humans approve</div></div>
+      </div>
+    </div>
+  </article>
+</div>
+
+<!-- ══════════════════════════════════════
+     CTA BAND
+══════════════════════════════════════ -->
+<section class="cta-band">
+  <div>
+    <div class="cta-kicker">Ready to ship your next review?</div>
+    <h2 class="cta-h2">Start standard. Step up when the design needs more rigour.</h2>
+    <p class="cta-sub">Standard reviews keep teams moving fast. ARB-grade review mode adds evidence upload, stricter checkpoints, and decision-ready outputs — inside the same product.</p>
+    <div class="cta-actions">
+      <button class="btn btn-primary">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8h10M8 3l5 5-5 5"/></svg>
+        Open review workspace
+      </button>
+      <button class="btn btn-ghost">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+        My reviews dashboard
+      </button>
+    </div>
+    <div class="cta-note">
+      <div class="cta-note-dot"></div>
+      No setup required — public pages work without sign-in
+    </div>
+  </div>
+  <div class="trust-signals">
+    <div class="ts-item"><div class="ts-check">✓</div>All findings traceable to official Microsoft WAF guidance</div>
+    <div class="ts-item"><div class="ts-check">✓</div>Pricing sourced live from Microsoft Azure retail API</div>
+    <div class="ts-item"><div class="ts-check">✓</div>Sign in with Microsoft to save reviews &amp; use ARB mode</div>
+    <div class="ts-item"><div class="ts-check">✓</div>AI recommends — humans own approval and final sign-off</div>
+    <div class="ts-item"><div class="ts-check">✓</div>Deployed on Azure Static Web Apps · GitHub Actions CI/CD</div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     FOOTER
+══════════════════════════════════════ -->
+<footer class="footer">
+  <div>
+    <div class="footer-brand-row">
+      <div class="brand-mark" style="width:28px;height:28px;font-size:.72rem">AR</div>
+      <span class="footer-brand-name">Azure Review Assistant</span>
+    </div>
+    <p class="footer-tagline">Structured Azure architecture reviews with traceable findings, live pricing, and exportable packs.</p>
+    <div class="footer-socials">
+      <a href="#" class="f-social">GH</a>
+      <a href="#" class="f-social">in</a>
+      <a href="#" class="f-social">Az</a>
+    </div>
+  </div>
+  <div>
+    <div class="footer-col-h">Product</div>
+    <div class="footer-links">
+      <a href="#" class="footer-link">Review workspace</a>
+      <a href="#" class="footer-link">ARB-grade review</a>
+      <a href="#" class="footer-link">Decision Center</a>
+      <a href="#" class="footer-link">Services explorer</a>
+      <a href="#" class="footer-link">My reviews</a>
+    </div>
+  </div>
+  <div>
+    <div class="footer-col-h">Resources</div>
+    <div class="footer-links">
+      <a href="#" class="footer-link">How to use</a>
+      <a href="#" class="footer-link">Data health</a>
+      <a href="#" class="footer-link">Sample exports</a>
+      <a href="#" class="footer-link">Changelog</a>
+      <a href="#" class="footer-link">GitHub</a>
+    </div>
+  </div>
+  <div>
+    <div class="footer-col-h">Trust &amp; data</div>
+    <div class="footer-links">
+      <a href="#" class="footer-link">Pricing source</a>
+      <a href="#" class="footer-link">WAF guidance</a>
+      <a href="#" class="footer-link">Region availability</a>
+      <a href="#" class="footer-link">Privacy</a>
+      <a href="#" class="footer-link">Terms of use</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 Azure Review Assistant · Built on Azure Static Web Apps</span>
+    <div class="footer-badges">
+      <span class="f-badge">
+        <svg width="12" height="12" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+        Azure Static Web Apps
+      </span>
+      <span class="f-badge">⚡ WAF-aligned</span>
+      <span class="f-badge">🔁 GitHub Actions CI/CD</span>
+    </div>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>
