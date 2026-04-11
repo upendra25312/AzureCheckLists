@@ -51,23 +51,9 @@ export function AuthStatusChip() {
 
   if (!principal) {
     return (
-      <details className="auth-menu">
-        <summary className="auth-chip">Sign in</summary>
-        <div className="auth-menu-panel">
-          <p className="microcopy">
-            Sign in to save project reviews to Azure, resume them later, and let the copilot reload
-            your active review automatically.
-          </p>
-          <div className="auth-menu-actions">
-            <a href={buildLoginUrl("aad")} className="primary-button">
-              Continue with Microsoft
-            </a>
-            <Link href="/review-package" className="ghost-button">
-              Keep working locally
-            </Link>
-          </div>
-        </div>
-      </details>
+      <a href={buildLoginUrl("aad")} className="auth-chip" title="Continue with Microsoft">
+        Sign in
+      </a>
     );
   }
 
