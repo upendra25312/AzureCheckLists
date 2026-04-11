@@ -14,65 +14,36 @@ function getAiServicesBaseEndpoint() {
   }
 }
 
-// Get the project name from the endpoint
-function getProjectName() {
-  try {
-    const parts = FOUNDRY_PROJECT_ENDPOINT.split("/api/projects/");
-    return parts[1]?.split("/")?.[0] ?? "";
-  } catch {
-    return "";
-  }
-}
-
 function getFoundryConfiguration() {
   return {
     configured: Boolean(FOUNDRY_PROJECT_ENDPOINT && FOUNDRY_API_KEY),
-    endpoint: FOUNDRY_PROJECT_ENDPOINT,
-    agentName: process.env.FOUNDRY_AGENT_NAME || "azure-review-admin"
+    endpoint: FOUNDRY_PROJECT_ENDPOINT
   };
 }
 
-async function foundryRequest(path, method, body) {
+async function chatCompletionsRequest(messages) {
   const base = getAiServicesBaseEndpoint();
-  const url = `${base}${path}?api-version=${OPENAI_API_VERSION}`;
+  const url = `${base}/openai/deployments/${FOUNDRY_AGENT_MODEL}/chat/completions?api-version=${OPENAI_API_VERSION}`;
   const res = await fetch(url, {
-    method,
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
       "api-key": FOUNDRY_API_KEY
     },
-    body: body !== undefined ? JSON.stringify(body) : undefined
+    body: JSON.stringify({
+      messages,
+      max_tokens: 8192,
+      temperature: 0.2
+    })
   });
 
   if (!res.ok) {
     const text = await res.text().catch(() => `HTTP ${res.status}`);
-    throw new Error(`Foundry ${method} ${path} failed ${res.status}: ${text}`);
+    throw new Error(`Foundry chat completions failed ${res.status}: ${text}`);
   }
 
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
-}
-
-async function getOrCreateArbAssistant(systemPrompt) {
-  const project = getProjectName();
-  const agentName = getFoundryConfiguration().agentName;
-  const assistantsPath = `/openai/projects/${project}/assistants`;
-
-  // List existing assistants to find one matching the agent name
-  const list = await foundryRequest(assistantsPath, "GET");
-  const existing = (list?.data ?? []).find((a) => a.name === agentName);
-  if (existing) return existing.id;
-
-  // Create a new assistant
-  const created = await foundryRequest(assistantsPath, "POST", {
-    name: agentName,
-    model: FOUNDRY_AGENT_MODEL,
-    instructions: systemPrompt,
-    temperature: 0.2,
-    response_format: { type: "text" }
-  });
-
-  return created.id;
+  const data = await res.json();
+  return data?.choices?.[0]?.message?.content ?? "";
 }
 
 const ARB_SYSTEM_PROMPT = `You are ARB Agent, an expert Azure Architecture Review Board acting as a coordinated team of:
@@ -180,7 +151,7 @@ function parseRecommendation(value) {
 }
 
 function parseAgentResponse(responseText) {
-  // Extract JSON from response (agent may wrap in markdown code fences)
+  // Extract JSON from response (model may wrap in markdown code fences)
   let jsonText = responseText.trim();
   const fenceMatch = jsonText.match(/```(?:json)?\s*([\s\S]+?)```/);
   if (fenceMatch) jsonText = fenceMatch[1].trim();
@@ -245,62 +216,20 @@ async function runArbAgentReview({ review, files, requirements, evidence, search
     return { success: false, reason: "Foundry not configured — FOUNDRY_PROJECT_ENDPOINT or FOUNDRY_API_KEY missing" };
   }
 
-  const project = getProjectName();
-  if (!project) {
-    return { success: false, reason: "Could not derive project name from FOUNDRY_PROJECT_ENDPOINT" };
-  }
-
   try {
-    const assistantId = await getOrCreateArbAssistant(ARB_SYSTEM_PROMPT);
-    const base = getAiServicesBaseEndpoint();
-    const threadsPath = `/openai/projects/${project}/threads`;
-
-    // Create thread
-    const thread = await foundryRequest(threadsPath, "POST", {});
-
-    // Add user message
-    await foundryRequest(`${threadsPath}/${thread.id}/messages`, "POST", {
-      role: "user",
-      content: buildUserMessage(review, files, requirements, evidence, searchChunks)
-    });
-
-    // Create run and poll until complete
-    const run = await foundryRequest(`${threadsPath}/${thread.id}/runs`, "POST", {
-      assistant_id: assistantId,
-      max_completion_tokens: 4096
-    });
-
-    // Poll for completion
-    const maxAttempts = 60;
-    let attempts = 0;
-    let finalRun = run;
-
-    while (attempts < maxAttempts && !["completed", "failed", "cancelled", "expired"].includes(finalRun.status)) {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      finalRun = await foundryRequest(`${threadsPath}/${thread.id}/runs/${run.id}`, "GET");
-      attempts++;
-    }
-
-    if (finalRun.status !== "completed") {
-      return { success: false, reason: `Agent run ended with status: ${finalRun.status}` };
-    }
-
-    // Get the last assistant message
-    const messages = await foundryRequest(`${threadsPath}/${thread.id}/messages?order=desc&limit=1`, "GET");
-    const lastMsg = messages?.data?.[0];
-    const responseText = (lastMsg?.content ?? [])
-      .filter((c) => c.type === "text")
-      .map((c) => c.text?.value ?? "")
-      .join("\n")
-      .trim();
+    const userMessage = buildUserMessage(review, files, requirements, evidence, searchChunks);
+    const responseText = await chatCompletionsRequest([
+      { role: "system", content: ARB_SYSTEM_PROMPT },
+      { role: "user", content: userMessage }
+    ]);
 
     if (!responseText) {
-      return { success: false, reason: "Agent returned an empty response" };
+      return { success: false, reason: "Model returned an empty response" };
     }
 
     const parsed = parseAgentResponse(responseText);
     if (!parsed) {
-      return { success: false, reason: "Agent response could not be parsed as structured JSON", rawResponse: responseText };
+      return { success: false, reason: "Model response could not be parsed as structured JSON", rawResponse: responseText };
     }
 
     return { success: true, ...parsed };
