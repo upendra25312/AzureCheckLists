@@ -27,3 +27,11 @@ override.tf.json
 terraform.rc
 
 .fake
+
+# Local dev artifacts
+.azurite/
+.claude/
+.playwright-cli/
+.vscode/
+tsconfig.tsbuildinfo
+azure-portal-snapshot.md
