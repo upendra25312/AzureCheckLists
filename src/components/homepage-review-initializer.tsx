@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
 import { trackReviewTelemetry } from "@/lib/review-telemetry";
 
 const DEFAULT_REGIONS: string[] = [];
@@ -20,6 +21,8 @@ export function HomepageReviewInitializer() {
   const [selectedRegions, setSelectedRegions] = useState(DEFAULT_REGIONS);
   const [regionDraft, setRegionDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [principal, setPrincipal] = useState<Awaited<ReturnType<typeof fetchClientPrincipal>>>(null);
+  const [authResolved, setAuthResolved] = useState(false);
 
   const resolvedRegions = useMemo(
     () =>
@@ -29,6 +32,32 @@ export function HomepageReviewInitializer() {
       ),
     [selectedRegions]
   );
+
+  useEffect(() => {
+    let active = true;
+
+    fetchClientPrincipal()
+      .then((nextPrincipal) => {
+        if (!active) {
+          return;
+        }
+
+        setPrincipal(nextPrincipal);
+        setAuthResolved(true);
+      })
+      .catch(() => {
+        if (!active) {
+          return;
+        }
+
+        setPrincipal(null);
+        setAuthResolved(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function addRegion(rawValue: string) {
     const nextValue = normalizeRegion(rawValue);
@@ -97,6 +126,11 @@ export function HomepageReviewInitializer() {
       router.push(`/review-package?${params.toString()}`);
     });
   }
+
+  const arbUploadHref =
+    typeof window === "undefined"
+      ? buildLoginUrl("aad", "/arb")
+      : buildLoginUrl("aad", new URL("/arb", window.location.origin).toString());
 
   return (
     <section className="home-init-panel">
@@ -195,10 +229,37 @@ export function HomepageReviewInitializer() {
           </button>
         </div>
 
+        <section className="home-arb-intake-band" aria-label="Architecture Review Board input intake">
+          <div className="home-arb-intake-copy">
+            <p className="home-arb-intake-kicker">Architecture Review Board</p>
+            <h2 className="home-arb-intake-title">Upload the source documents used as ARB review inputs.</h2>
+            <p className="home-arb-intake-summary">
+              {authResolved && principal
+                ? "Open the ARB intake workspace to upload the SOW, HLD, LLD, diagrams, and other source files used for Architecture Review Board analysis."
+                : "Microsoft sign-in is required before Architecture Review Board input files can be uploaded."}
+            </p>
+          </div>
+
+          <div className="home-arb-intake-actions">
+            {authResolved ? (
+              principal ? (
+                <Link href="/arb" className="home-arb-intake-button">
+                  Upload Architecture Review Board Inputs
+                </Link>
+              ) : (
+                <a href={arbUploadHref} className="home-arb-intake-button">
+                  Sign In to Upload ARB Review Inputs
+                </a>
+              )
+            ) : (
+              <button type="button" className="home-arb-intake-button" disabled>
+                Checking Sign-In for ARB Upload...
+              </button>
+            )}
+          </div>
+        </section>
+
         <div className="home-init-secondary-actions">
-          <Link href="/arb" className="home-init-secondary-link">
-            Upload ARB artifacts
-          </Link>
           <Link href="/my-project-reviews" className="home-init-secondary-link">
             Open saved reviews
           </Link>
