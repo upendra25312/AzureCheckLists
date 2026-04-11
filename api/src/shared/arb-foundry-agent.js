@@ -2,12 +2,11 @@ const { DefaultAzureCredential } = require("@azure/identity");
 
 const FOUNDRY_PROJECT_ENDPOINT = (process.env.FOUNDRY_PROJECT_ENDPOINT || "").replace(/\/+$/, "");
 const FOUNDRY_API_KEY = process.env.FOUNDRY_API_KEY || "";
-// When set, use the pre-configured Foundry Agent (Azure-ARB-Agent) via Agents API + managed identity.
-// When absent, fall back to direct Chat Completions via API key.
 const FOUNDRY_AGENT_ID = process.env.FOUNDRY_AGENT_ID || "";
 const FOUNDRY_AGENT_MODEL = "model-router";
 const OPENAI_API_VERSION = "2025-01-01-preview";
 const AGENTS_API_VERSION = "2025-05-15-preview";
+const MICROSOFT_LEARN_MCP_ENDPOINT = "https://learn.microsoft.com/api/mcp";
 
 // Derive the base AI Services endpoint from the Foundry project endpoint
 // e.g. https://foo.services.ai.azure.com/api/projects/bar -> https://foo.services.ai.azure.com
@@ -231,7 +230,97 @@ Respond ONLY with a valid JSON object in this exact shape:
 
 Scores are 0-100. Ground every finding in evidence from the uploaded documents. Do not invent facts. When a framework requirement cannot be assessed due to missing documentation, list it in missingEvidence rather than inventing a finding.`;
 
-function buildUserMessage(review, files, requirements, evidence, searchChunks) {
+// ---------------------------------------------------------------------------
+// Microsoft Learn MCP integration — fetches real-time documentation grounding
+// ---------------------------------------------------------------------------
+
+async function callMicrosoftLearnMcp(method, params) {
+  try {
+    const res = await fetch(MICROSOFT_LEARN_MCP_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params })
+    });
+    if (!res.ok) return null;
+    const text = await res.text();
+    // Response is Server-Sent Events: extract the data line
+    const dataLine = text.split("\n").find((l) => l.startsWith("data:"));
+    if (!dataLine) return null;
+    const parsed = JSON.parse(dataLine.replace(/^data:\s*/, ""));
+    const raw = parsed?.result?.content?.[0]?.text;
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function searchMicrosoftLearnDocs(query, top = 5) {
+  const result = await callMicrosoftLearnMcp("tools/call", {
+    name: "microsoft_docs_search",
+    arguments: { query, top }
+  });
+  return result?.results ?? [];
+}
+
+// Build 4 targeted queries: WAF, CAF/ALZ, services, and review-specific
+function buildLearnQueries(review, requirements, evidence) {
+  const queries = [
+    "Azure Well-Architected Framework five pillars reliability security cost operational excellence performance",
+    "Azure Cloud Adoption Framework landing zone governance management baseline"
+  ];
+
+  // Extract Azure service names mentioned in requirements + evidence
+  const text = [
+    ...requirements.map((r) => r.normalizedText),
+    ...evidence.map((e) => e.summary)
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  const servicePatterns = [
+    ["kubernetes", "Azure Kubernetes Service AKS best practices"],
+    ["aks", "Azure Kubernetes Service AKS well-architected"],
+    ["sql", "Azure SQL Database reliability security best practices"],
+    ["cosmos", "Azure Cosmos DB reliability availability best practices"],
+    ["app service", "Azure App Service well-architected deployment slots"],
+    ["function", "Azure Functions reliability performance best practices"],
+    ["storage", "Azure Storage security lifecycle management best practices"],
+    ["key vault", "Azure Key Vault security access policies best practices"],
+    ["api management", "Azure API Management security reliability best practices"],
+    ["front door", "Azure Front Door reliability global load balancing"],
+    ["application gateway", "Azure Application Gateway WAF security best practices"],
+    ["virtual network", "Azure Virtual Network security NSG hub spoke"],
+    ["entra", "Microsoft Entra ID identity zero trust best practices"],
+    ["defender", "Microsoft Defender for Cloud security posture management"]
+  ];
+
+  const matched = servicePatterns.filter(([keyword]) => text.includes(keyword)).slice(0, 2);
+  for (const [, query] of matched) {
+    queries.push(query);
+  }
+
+  if (queries.length < 4 && review.projectName) {
+    queries.push(`Azure architecture review board checklist ${review.projectName}`);
+  }
+
+  return queries;
+}
+
+async function fetchMicrosoftLearnGrounding(review, requirements, evidence) {
+  const queries = buildLearnQueries(review, requirements, evidence);
+  const results = await Promise.all(queries.map((q) => searchMicrosoftLearnDocs(q, 3)));
+  const allDocs = results.flat().filter(Boolean);
+
+  // Deduplicate by URL
+  const seen = new Set();
+  return allDocs.filter((doc) => {
+    if (!doc.url || seen.has(doc.url)) return false;
+    seen.add(doc.url);
+    return true;
+  });
+}
+
+function buildUserMessage(review, files, requirements, evidence, searchChunks, learnDocs = []) {
   const parts = [
     `## Review Request`,
     `Review ID: ${review.reviewId}`,
@@ -267,6 +356,16 @@ function buildUserMessage(review, files, requirements, evidence, searchChunks) {
     for (const c of searchChunks) {
       parts.push(`### ${c.fileName} [${c.logicalCategory}]`);
       parts.push(c.content);
+      parts.push(``);
+    }
+  }
+
+  if (learnDocs.length > 0) {
+    parts.push(`## Microsoft Learn Reference Documentation (${learnDocs.length} live results)`);
+    parts.push(`The following content was retrieved in real time from learn.microsoft.com. Use it to ground your findings in current Microsoft guidance.`);
+    for (const doc of learnDocs) {
+      parts.push(`### ${doc.title ?? "Microsoft Learn"} — ${doc.url ?? ""}`);
+      if (doc.content) parts.push(doc.content.slice(0, 600));
       parts.push(``);
     }
   }
@@ -356,7 +455,9 @@ async function runArbAgentReview({ review, files, requirements, evidence, search
     return { success: false, reason: "Foundry not configured — FOUNDRY_PROJECT_ENDPOINT or FOUNDRY_API_KEY missing" };
   }
 
-  const userMessage = buildUserMessage(review, files, requirements, evidence, searchChunks);
+  // Fetch real-time Microsoft Learn documentation — best-effort, never blocks the review
+  const learnDocs = await fetchMicrosoftLearnGrounding(review, requirements, evidence).catch(() => []);
+  const userMessage = buildUserMessage(review, files, requirements, evidence, searchChunks, learnDocs);
 
   try {
     let responseText;
