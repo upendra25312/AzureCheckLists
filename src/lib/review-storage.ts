@@ -2,6 +2,7 @@ import type {
   ExplorerFilters,
   ReviewDraft,
   ReviewPackage,
+  ReviewMode,
   ReviewPackageAudience,
   ReviewServiceAssumption
 } from "@/types";
@@ -72,6 +73,7 @@ function normalizeServiceAssumptions(
 function normalizeReviewPackage(reviewPackage: ReviewPackage): ReviewPackage {
   return {
     ...reviewPackage,
+    reviewMode: reviewPackage.reviewMode ?? ("Standard review" as ReviewMode),
     serviceAssumptions: normalizeServiceAssumptions(reviewPackage.serviceAssumptions)
   };
 }
@@ -139,6 +141,7 @@ export function createReviewPackage(input?: Partial<ReviewPackage>): ReviewPacka
   return normalizeReviewPackage({
     id: input?.id ?? createPackageId(),
     name: input?.name?.trim() || "Project review package",
+    reviewMode: input?.reviewMode ?? ("Standard review" as ReviewMode),
     audience: input?.audience ?? ("Cloud Architect" as ReviewPackageAudience),
     businessScope: input?.businessScope ?? "",
     targetRegions: input?.targetRegions ?? [],

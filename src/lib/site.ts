@@ -1,3 +1,3 @@
-export const SITE_NAME = "Azure Review Board";
+export const SITE_NAME = "Azure Review Assistant";
 export const SITE_DESCRIPTION =
-  "Project-scoped Azure review guidance with service-level notes, region fit, pricing, and exportable design artifacts.";
+  "Premium Azure review workflows with traceable findings, region fit, pricing context, and exportable review packs.";

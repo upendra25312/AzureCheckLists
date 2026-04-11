@@ -6,33 +6,35 @@ export default function ArbLandingPage() {
     <main className="arb-page-stack">
       <section className="review-command-panel">
         <div className="review-command-copy">
-          <p className="header-badge">Review Workspace</p>
-          <h1 className="review-command-title">Start an evidence-backed architecture review</h1>
+          <p className="header-badge">ARB-grade review mode</p>
+          <h1 className="review-command-title">Use the advanced review flow when the design needs uploaded evidence and explicit reviewer sign-off.</h1>
           <p className="review-command-summary">
-            The new Architecture Review Board workflow starts with uploaded project evidence,
-            then moves through extracted requirements, mapped design proof, findings, weighted
-            score, and an explicit human decision.
+            This mode sits inside Azure Review Assistant as the stricter path for review boards,
+            uploaded project material, and decision-ready evidence handling.
           </p>
         </div>
 
-        <div className="review-command-metrics">
-          <article className="review-command-metric">
-            <span>1. Upload</span>
-            <strong>Stage review evidence</strong>
-            <p>Collect the SOW, design pack, diagrams, and cost/support inputs before review begins.</p>
+        <div className="arb-flow-band">
+          <article className="review-command-metric arb-flow-node">
+            <span className="arb-flow-node-step">01</span>
+            <strong>Upload review material</strong>
+            <p>Bring the design pack, diagrams, and supporting material into the review first.</p>
           </article>
-          <article className="review-command-metric">
-            <span>2. Extract</span>
-            <strong>Confirm requirements</strong>
-            <p>Review what the platform inferred and correct weak or ambiguous extractions early.</p>
+          <span className="arb-flow-arrow" aria-hidden="true">→</span>
+          <article className="review-command-metric arb-flow-node">
+            <span className="arb-flow-node-step">02</span>
+            <strong>Confirm requirements and findings</strong>
+            <p>Use the uploaded evidence to tighten scope, findings, and reviewer rationale.</p>
           </article>
-          <article className="review-command-metric">
-            <span>3. Review</span>
-            <strong>Work from findings</strong>
-            <p>Use blockers, owners, and missing evidence as the operating center of the review.</p>
+          <span className="arb-flow-arrow" aria-hidden="true">→</span>
+          <article className="review-command-metric arb-flow-node">
+            <span className="arb-flow-node-step">03</span>
+            <strong>Prepare the decision pack</strong>
+            <p>Keep blockers, owners, evidence gaps, and score visible in one workflow.</p>
           </article>
-          <article className="review-command-metric">
-            <span>4. Decide</span>
+          <span className="arb-flow-arrow" aria-hidden="true">→</span>
+          <article className="review-command-metric arb-flow-node">
+            <span className="arb-flow-node-step">04</span>
             <strong>Keep humans in control</strong>
             <p>AI recommends the posture. Reviewers own conditions, rationale, and final sign-off.</p>
           </article>
@@ -44,7 +46,7 @@ export default function ArbLandingPage() {
               Open Decision Center
             </Link>
             <Link href="/services" className="secondary-button review-command-secondary">
-              Open Knowledge Hub
+              Open services explorer
             </Link>
           </div>
         </div>
@@ -54,37 +56,35 @@ export default function ArbLandingPage() {
         <article className="future-card review-stage-preview-card">
           <div className="review-stage-preview-head">
             <div>
-              <h2>Upload-first intake</h2>
-              <p>Package readiness</p>
+              <h2>Evidence-first intake</h2>
+              <p>Advanced mode</p>
             </div>
             <div className="board-card-icon-pill" aria-hidden="true">
               01
             </div>
           </div>
           <p className="section-copy">
-            Start by staging the actual project material, not by picking Azure services first.
-            That keeps extraction and findings grounded in source evidence.
+            Start with the real project material so the stricter review remains grounded in evidence.
           </p>
         </article>
         <article className="future-card review-stage-preview-card">
           <div className="review-stage-preview-head">
             <div>
-              <h2>Findings-first operations</h2>
-              <p>Action workflow</p>
+              <h2>Reviewer-driven workflow</h2>
+              <p>Evidence and findings</p>
             </div>
             <div className="board-card-icon-pill" aria-hidden="true">
               02
             </div>
           </div>
           <p className="section-copy">
-            The review should become operational once blockers, missing evidence, owners, and
-            remediation actions are visible in one working surface.
+            Use findings, blockers, and reviewer-owned actions as the operating center of the advanced flow.
           </p>
         </article>
         <article className="future-card review-stage-preview-card">
           <div className="review-stage-preview-head">
             <div>
-              <h2>Decision-aware closeout</h2>
+              <h2>Decision-ready closeout</h2>
               <p>Human sign-off</p>
             </div>
             <div className="board-card-icon-pill" aria-hidden="true">

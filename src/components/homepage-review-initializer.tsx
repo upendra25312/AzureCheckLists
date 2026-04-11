@@ -1,272 +1,64 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
-import { buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
-import { trackReviewTelemetry } from "@/lib/review-telemetry";
-
-const DEFAULT_REGIONS: string[] = [];
-const REGION_SUGGESTIONS = ["East US", "UK South", "West Europe", "UAE Central"];
-
-function normalizeRegion(value: string) {
-  return value.trim().replace(/\s+/g, " ");
-}
 
 export function HomepageReviewInitializer() {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [projectName, setProjectName] = useState("");
-  const [businessScope, setBusinessScope] = useState("");
-  const [selectedRegions, setSelectedRegions] = useState(DEFAULT_REGIONS);
-  const [regionDraft, setRegionDraft] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [principal, setPrincipal] = useState<Awaited<ReturnType<typeof fetchClientPrincipal>>>(null);
-  const [authResolved, setAuthResolved] = useState(false);
-
-  const resolvedRegions = useMemo(
-    () =>
-      selectedRegions.filter(
-        (region, index) =>
-          selectedRegions.findIndex((entry) => entry.toLowerCase() === region.toLowerCase()) === index
-      ),
-    [selectedRegions]
-  );
-
-  useEffect(() => {
-    let active = true;
-
-    fetchClientPrincipal()
-      .then((nextPrincipal) => {
-        if (!active) {
-          return;
-        }
-
-        setPrincipal(nextPrincipal);
-        setAuthResolved(true);
-      })
-      .catch(() => {
-        if (!active) {
-          return;
-        }
-
-        setPrincipal(null);
-        setAuthResolved(true);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  function addRegion(rawValue: string) {
-    const nextValue = normalizeRegion(rawValue);
-
-    if (!nextValue) {
-      return;
-    }
-
-    setSelectedRegions((current) => {
-      if (current.some((entry) => entry.toLowerCase() === nextValue.toLowerCase())) {
-        return current;
-      }
-
-      return [...current, nextValue];
-    });
-  }
-
-  function removeRegion(region: string) {
-    setSelectedRegions((current) => current.filter((entry) => entry !== region));
-  }
-
-  function commitRegionDraft() {
-    if (!regionDraft.trim()) {
-      return;
-    }
-
-    addRegion(regionDraft);
-    setRegionDraft("");
-  }
-
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const trimmedName = projectName.trim();
-
-    if (!trimmedName) {
-      setError("Project name is required before the review workspace can be created.");
-      return;
-    }
-
-    const params = new URLSearchParams({
-      intent: "create",
-      name: trimmedName
-    });
-
-    if (businessScope.trim()) {
-      params.set("businessScope", businessScope.trim());
-    }
-
-    if (resolvedRegions.length > 0) {
-      params.set("targetRegions", resolvedRegions.join(", "));
-    }
-
-    setError(null);
-    void trackReviewTelemetry({
-      name: "homepage_initialize_review",
-      category: "homepage",
-      route: "/",
-      properties: {
-        hasBusinessScope: businessScope.trim().length > 0,
-        projectNameLength: trimmedName.length,
-        targetRegionCount: resolvedRegions.length
-      }
-    });
-    startTransition(() => {
-      router.push(`/review-package?${params.toString()}`);
-    });
-  }
-
-  const arbUploadHref =
-    typeof window === "undefined"
-      ? buildLoginUrl("aad", "/arb")
-      : buildLoginUrl("aad", new URL("/arb", window.location.origin).toString());
-
   return (
-    <section className="home-init-panel">
-      <div className="home-init-copy">
-        <p className="home-init-kicker">Start here</p>
-        <h1 className="home-init-title">Start a Structured Azure Review</h1>
-        <p className="home-init-summary">Create the review shell first, then refine the scope inside the workspace.</p>
-      </div>
+    <section className="dashboard-hero" aria-labelledby="dashboard-hero-title">
+      <div className="dashboard-hero-copy">
+        <p className="dashboard-kicker">Azure review workflows for working architects</p>
+        <h1 id="dashboard-hero-title" className="dashboard-hero-title">
+          Review Azure designs faster with traceable checks, region fit, pricing context, and exportable review packs.
+        </h1>
+        <p className="dashboard-hero-summary">
+          Azure Review Assistant helps teams start a standard review quickly, step up into ARB-grade rigor when needed,
+          and leave with outputs that are usable outside the product.
+        </p>
 
-      <form className="home-init-form" onSubmit={handleSubmit}>
-        <label className="home-init-field home-init-field-primary">
-          <span>Project name</span>
-          <input
-            className="field-input home-init-input"
-            value={projectName}
-            onChange={(event) => setProjectName(event.target.value)}
-            placeholder="Greenfield AKS Cluster"
-          />
-          <small className="home-init-hint">Required. Everything else can be refined inside the workspace.</small>
-        </label>
-
-        <details className="home-init-optional">
-          <summary>Optional context</summary>
-
-          <div className="home-init-optional-grid">
-            <label className="home-init-field">
-              <span>Business case</span>
-              <textarea
-                className="field-textarea home-init-textarea"
-                value={businessScope}
-                onChange={(event) => setBusinessScope(event.target.value)}
-                placeholder="Summarize the problem, target architecture, and the business goal."
-              />
-              <small className="home-init-hint">Short is enough. Expand it later in the review.</small>
-            </label>
-
-            <label className="home-init-field">
-              <span>Target regions</span>
-              <div className="home-region-field">
-                <div className="home-region-chip-list">
-                  {resolvedRegions.map((region) => (
-                    <button
-                      type="button"
-                      key={region}
-                      className="home-region-chip"
-                      onClick={() => removeRegion(region)}
-                      title={`Remove ${region}`}
-                    >
-                      {region} <span>x</span>
-                    </button>
-                  ))}
-                  <input
-                    className="home-region-input"
-                    value={regionDraft}
-                    onChange={(event) => setRegionDraft(event.target.value)}
-                    onBlur={commitRegionDraft}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === ",") {
-                        event.preventDefault();
-                        commitRegionDraft();
-                      }
-                    }}
-                    placeholder={resolvedRegions.length === 0 ? "Add a region" : ""}
-                  />
-                </div>
-                <button
-                  type="button"
-                  className="home-region-caret"
-                  onClick={commitRegionDraft}
-                  aria-label="Add typed region"
-                >
-                  Add
-                </button>
-              </div>
-              <div className="home-region-suggestions" aria-label="Suggested regions">
-                {REGION_SUGGESTIONS.map((region) => (
-                  <button
-                    type="button"
-                    key={region}
-                    className="home-region-suggestion"
-                    onClick={() => addRegion(region)}
-                  >
-                    {region}
-                  </button>
-                ))}
-              </div>
-              <small className="home-init-hint">Optional. Add regions now only if they matter to the first pass.</small>
-            </label>
-          </div>
-        </details>
-
-        <div className="home-init-button-band">
-          <p className="home-init-button-caption">Creates the review shell and opens the structured review workspace.</p>
-          <button type="submit" className="home-init-button" disabled={isPending}>
-            {isPending ? "Creating Review Workspace..." : "Create Review Workspace"}
-          </button>
-        </div>
-
-        <section className="home-arb-intake-band" aria-label="Architecture Review Board input intake">
-          <div className="home-arb-intake-copy">
-            <p className="home-arb-intake-kicker">Architecture Review Board</p>
-            <h2 className="home-arb-intake-title">Upload the source documents used as ARB review inputs.</h2>
-            <p className="home-arb-intake-summary">
-              {authResolved && principal
-                ? "Open the ARB intake workspace to upload the SOW, HLD, LLD, diagrams, and other source files used for Architecture Review Board analysis."
-                : "Microsoft sign-in is required before Architecture Review Board input files can be uploaded."}
-            </p>
-          </div>
-
-          <div className="home-arb-intake-actions">
-            {authResolved ? (
-              principal ? (
-                <Link href="/arb" className="home-arb-intake-button">
-                  Upload Architecture Review Board Inputs
-                </Link>
-              ) : (
-                <a href={arbUploadHref} className="home-arb-intake-button">
-                  Sign In to Upload ARB Review Inputs
-                </a>
-              )
-            ) : (
-              <button type="button" className="home-arb-intake-button" disabled>
-                Checking Sign-In for ARB Upload...
-              </button>
-            )}
-          </div>
-        </section>
-
-        <div className="home-init-secondary-actions">
-          <Link href="/my-project-reviews" className="home-init-secondary-link">
-            Open saved reviews
+        <div className="dashboard-hero-actions">
+          <Link href="/review-package" className="primary-button dashboard-hero-button">
+            Start a review
+          </Link>
+          <Link href="/services" className="secondary-button dashboard-hero-button">
+            Explore Azure guidance
           </Link>
         </div>
 
-        {error ? <p className="home-init-error">{error}</p> : null}
-      </form>
+        <div className="dashboard-hero-points" aria-label="Primary value points">
+          <span className="dashboard-point-chip">Standard review and ARB-grade review modes</span>
+          <span className="dashboard-point-chip">Sample outputs visible before sign-in</span>
+          <span className="dashboard-point-chip">Signed-in features only appear when they unlock value</span>
+        </div>
+      </div>
+
+      <aside className="dashboard-hero-preview surface-panel" aria-label="Review preview">
+        <div className="dashboard-hero-preview-head">
+          <div>
+            <p className="dashboard-preview-kicker">Example review pack</p>
+            <h2>What reviewers leave with</h2>
+          </div>
+          <span className="dashboard-status-badge dashboard-status-badge-good">Ready to share</span>
+        </div>
+
+        <div className="dashboard-hero-preview-grid">
+          <article className="dashboard-preview-card">
+            <span>Review summary</span>
+            <strong>12 findings across 5 services</strong>
+            <p>Executive summary, action list, and pricing snapshot stay aligned to the same scope.</p>
+          </article>
+          <article className="dashboard-preview-card">
+            <span>Evidence state</span>
+            <strong>9 source-backed, 3 need follow-up</strong>
+            <p>Each recommendation keeps source lineage and a confidence cue.</p>
+          </article>
+          <article className="dashboard-preview-card">
+            <span>Commercial context</span>
+            <strong>Retail baseline with assumptions</strong>
+            <p>Region fit, source date, and list-pricing assumptions stay visible in the pack.</p>
+          </article>
+        </div>
+      </aside>
     </section>
   );
 }
+

@@ -19,6 +19,8 @@ export type ReviewPackageAudience =
   | "Senior Director"
   | "Cloud Engineer";
 
+export type ReviewMode = "Standard review" | "ARB-grade review";
+
 export type RegionalAccessState = "Open" | "ReservedAccess" | "EarlyAccess";
 export type RegionalAvailabilityState = "GA" | "Preview" | "Retiring";
 export type ServiceRegionalMatchType = "exact" | "alias" | "manual";
@@ -426,6 +428,7 @@ export type ReviewServiceAssumption = {
 export type ReviewPackage = {
   id: string;
   name: string;
+  reviewMode: ReviewMode;
   audience: ReviewPackageAudience;
   businessScope: string;
   targetRegions: string[];

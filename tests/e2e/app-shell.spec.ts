@@ -71,6 +71,16 @@ async function expectSharedShell(page: Page, activeLabels: string[]) {
   }
 }
 
+async function expectHeaderSignInLink(page: Page) {
+  const signInLink = page.getByRole("link", { name: "Sign in", exact: true }).first();
+
+  await expect(signInLink).toBeVisible();
+  await expect(signInLink).toHaveAttribute(
+    "href",
+    /\/\.auth\/login\/aad\?post_login_redirect_uri=/
+  );
+}
+
 test.describe("shared app shell", () => {
   test.beforeEach(async ({ page }) => {
     await page.route("**/.auth/me", async (route) => {
@@ -81,19 +91,19 @@ test.describe("shared app shell", () => {
   test("renders the shared Azure Review Board shell on public workflow routes", async ({ page }) => {
     await page.goto("/arb");
     await expectSharedShell(page, ["Review Workspace"]);
-    await expect(page.getByText("Sign in").first()).toBeVisible();
+    await expectHeaderSignInLink(page);
 
     await page.goto("/services");
     await expectSharedShell(page, ["Knowledge Hub"]);
-    await expect(page.getByText("Sign in").first()).toBeVisible();
+    await expectHeaderSignInLink(page);
 
     await page.goto("/decision-center");
     await expectSharedShell(page, ["Decision Center"]);
-    await expect(page.getByText("Sign in").first()).toBeVisible();
+    await expectHeaderSignInLink(page);
 
     await page.goto("/data-health");
     await expectSharedShell(page, ["Data Health"]);
-    await expect(page.getByText("Sign in").first()).toBeVisible();
+    await expectHeaderSignInLink(page);
   });
 
   test("keeps the shared shell on the admin route and exposes the admin link state", async ({
@@ -119,7 +129,7 @@ test.describe("shared app shell", () => {
     await page.goto("/services");
 
     await expectSharedShell(page, ["Knowledge Hub"]);
-    await expect(page.getByText("Sign in").first()).toBeVisible();
+    await expectHeaderSignInLink(page);
   });
 
   test("keeps keyboard focus visible through the shared shell navigation", async ({ page }) => {

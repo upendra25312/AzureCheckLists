@@ -33,6 +33,42 @@ function formatProvider(provider: string | undefined) {
   }
 }
 
+function getReviewLifecycleLabel(review: SavedProjectReviewSummary) {
+  if (review.isDeleted) {
+    return "Deleted";
+  }
+
+  if (review.isArchived) {
+    return "Archived";
+  }
+
+  if (review.pendingCount > 0) {
+    return "In review";
+  }
+
+  if (review.recordCount > 0) {
+    return "Ready to export";
+  }
+
+  return "Draft";
+}
+
+function getReviewLifecycleTone(review: SavedProjectReviewSummary) {
+  if (review.isDeleted) {
+    return "danger";
+  }
+
+  if (review.isArchived) {
+    return "neutral";
+  }
+
+  if (review.pendingCount > 0) {
+    return "warning";
+  }
+
+  return "good";
+}
+
 type ReviewSortMode = "updated-desc" | "created-desc" | "name-asc" | "pending-desc";
 type ReviewFilterMode = "active" | "archived" | "deleted" | "all";
 type ReviewAction = "archive" | "delete" | "purge";
@@ -348,12 +384,11 @@ export function ProjectReviewLibrary() {
     <main className="section-stack">
       <section className="review-command-panel library-command-panel">
         <div className="review-command-copy">
-          <p className="eyebrow">My project reviews</p>
-          <h1 className="review-command-title">Resume the Azure project reviews you already saved.</h1>
+          <p className="eyebrow">Reviews dashboard</p>
+          <h1 className="review-command-title">Start, resume, and manage saved Azure reviews.</h1>
           <p className="review-command-summary">
-            This board uses the signed-in user&apos;s Azure review index so you can reopen the exact
-            review shell, scope, and saved posture without rebuilding the project context from
-            scratch.
+            Use this dashboard to reopen active reviews, compare progress, and manage saved review
+            history without rebuilding the same project context from scratch.
           </p>
         </div>
 
@@ -370,11 +405,11 @@ export function ProjectReviewLibrary() {
         <div className="review-command-band">
           <div className="review-command-band-actions">
             <Link href="/review-package" className="home-init-button review-command-button">
-              Open project review
+              Start a new review
             </Link>
             {!principal ? (
               <a href={buildLoginUrl("aad")} className="secondary-button review-command-secondary">
-                Continue with Microsoft
+                Sign in to sync reviews
               </a>
             ) : (
               <a href="/.auth/logout" className="secondary-button review-command-secondary">
@@ -399,10 +434,10 @@ export function ProjectReviewLibrary() {
         <section className="library-state-grid">
           <section className="filter-card board-stage-panel library-state-card">
             <p className="eyebrow">Sign in</p>
-            <h3>Sign in with Microsoft to see your saved project reviews.</h3>
+            <h3>Sign in with Microsoft to sync saved reviews across sessions.</h3>
             <p className="microcopy">
-              Local browsing still works without sign-in, but cloud-backed review history and resume
-              need an authenticated identity.
+              You can still explore services and outputs without sign-in. Saving, resuming, and
+              restoring reviews from Azure requires an authenticated identity.
             </p>
             <div className="button-row">
               <a href={buildLoginUrl("aad")} className="primary-button">
@@ -412,7 +447,7 @@ export function ProjectReviewLibrary() {
           </section>
           <section className="filter-card board-stage-panel library-state-card">
             <p className="eyebrow">What unlocks after sign-in</p>
-            <h3>Saved Azure-backed reviews become a working library instead of one browser session.</h3>
+            <h3>Saved reviews become a real working queue instead of a one-browser draft.</h3>
             <p className="microcopy">
               Resume active reviews, restore archived ones, recover deleted reviews before purge,
               and reopen the exact project context in the scoped review workspace.
@@ -458,7 +493,7 @@ export function ProjectReviewLibrary() {
       {!loading && payload && payload.reviews.length === 0 ? (
         <section className="filter-card board-stage-panel library-state-card">
           <p className="eyebrow">No saved reviews yet</p>
-          <h3>Save your first project review from the main workspace.</h3>
+          <h3>Your saved review queue will appear here after the first sync.</h3>
           <p className="microcopy">
             Once you save a review to Azure, it appears here so you can reopen it later without
             rebuilding the full context.
@@ -522,188 +557,182 @@ export function ProjectReviewLibrary() {
             </section>
           ) : null}
 
-          <section className="library-review-grid" aria-label="Saved project review library">
-            {filteredReviews.map((review) => (
-              <article className="future-card service-selection-card library-review-card" key={review.id}>
-                <div className="section-head board-card-head">
-                  <div className="board-card-head-copy">
-                    <p className="eyebrow">
-                      {review.isDeleted
-                        ? "Deleted review"
-                        : review.isArchived
-                        ? "Archived review"
-                        : review.isActive
-                          ? "Active saved review"
-                          : "Saved review"}
-                    </p>
-                    <h3>{review.name}</h3>
-                  </div>
-                  <span className="chip">{review.audience}</span>
-                </div>
-                <div className="library-review-stats">
-                  <article className="library-review-stat">
-                    <span>Services</span>
-                    <strong>{review.serviceCount.toLocaleString()}</strong>
-                  </article>
-                  <article className="library-review-stat">
-                    <span>Saved findings</span>
-                    <strong>{review.recordCount.toLocaleString()}</strong>
-                  </article>
-                  <article className="library-review-stat">
-                    <span>Pending</span>
-                    <strong>{review.pendingCount.toLocaleString()}</strong>
-                  </article>
-                </div>
-                <p className="microcopy">
-                  {review.serviceCount.toLocaleString()} services,{" "}
-                  {review.recordCount.toLocaleString()} saved findings, and{" "}
-                  {review.pendingCount.toLocaleString()} items still pending.
+          <section className="surface-panel reviews-table-shell" aria-label="Saved project review library">
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">Recent reviews</p>
+                <h2 className="section-title">Saved reviews</h2>
+                <p className="section-copy">
+                  Compare progress, reopen the right review quickly, and manage lifecycle state from one table.
                 </p>
-                <div className="chip-row board-summary-row">
-                  {review.isDeleted ? (
-                    <span className="chip">
-                      Deleted {review.deletedAt ? formatDate(review.deletedAt) : "in Azure"}
-                    </span>
-                  ) : null}
-                  {review.isArchived ? (
-                    <span className="chip">
-                      Archived {review.archivedAt ? formatDate(review.archivedAt) : "in Azure"}
-                    </span>
-                  ) : null}
-                  <span className="chip">
-                    Regions: {review.targetRegions.join(", ") || "Not captured"}
-                  </span>
-                  <span className="chip">Updated {formatDate(review.updatedAt)}</span>
-                </div>
-                {review.businessScope ? <p className="microcopy">{review.businessScope}</p> : null}
-                <div className="button-row board-action-row-compact">
-                  {!review.isArchived && !review.isDeleted ? (
-                    <button
-                      type="button"
-                      className="primary-button"
-                      disabled={activatingReviewId === review.id || workingReviewId === review.id}
-                      onClick={() => void openReview(review)}
-                    >
-                      {activatingReviewId === review.id ? "Opening..." : "Open this review"}
-                    </button>
-                  ) : null}
-                  <Link href="/review-package" className="ghost-button">
-                    Open workspace
-                  </Link>
-                  {confirmAction?.reviewId === review.id && confirmAction.action === "archive" ? (
-                    <>
-                      <button
-                        type="button"
-                        className="secondary-button"
-                        disabled={workingReviewId === review.id}
-                        onClick={() => void handleArchiveToggle(review, true)}
-                      >
-                        {workingReviewId === review.id ? "Archiving..." : "Confirm archive"}
-                      </button>
-                      <button
-                        type="button"
-                        className="ghost-button"
-                        onClick={() => setConfirmAction(null)}
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  ) : null}
-                  {confirmAction?.reviewId === review.id && confirmAction.action === "delete" ? (
-                    <>
-                      <button
-                        type="button"
-                        className="secondary-button"
-                        disabled={workingReviewId === review.id}
-                        onClick={() => void handleDelete(review)}
-                      >
-                        {workingReviewId === review.id ? "Deleting..." : "Confirm delete"}
-                      </button>
-                      <button
-                        type="button"
-                        className="ghost-button"
-                        onClick={() => setConfirmAction(null)}
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  ) : null}
-                  {confirmAction?.reviewId === review.id && confirmAction.action === "purge" ? (
-                    <>
-                      <button
-                        type="button"
-                        className="secondary-button"
-                        disabled={workingReviewId === review.id}
-                        onClick={() => void handlePurge(review)}
-                      >
-                        {workingReviewId === review.id ? "Purging..." : "Confirm permanent delete"}
-                      </button>
-                      <button
-                        type="button"
-                        className="ghost-button"
-                        onClick={() => setConfirmAction(null)}
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  ) : null}
-                  {confirmAction?.reviewId !== review.id ? (
-                    <>
-                      {review.isDeleted ? (
-                        <button
-                          type="button"
-                          className="secondary-button"
-                          disabled={workingReviewId === review.id}
-                          onClick={() => void handleRestoreDeleted(review)}
-                        >
-                          {workingReviewId === review.id ? "Restoring..." : "Restore to library"}
-                        </button>
-                      ) : review.isArchived ? (
-                        <button
-                          type="button"
-                          className="secondary-button"
-                          disabled={workingReviewId === review.id}
-                          onClick={() => void handleArchiveToggle(review, false)}
-                        >
-                          {workingReviewId === review.id ? "Restoring..." : "Restore to library"}
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="secondary-button"
-                          disabled={workingReviewId === review.id}
-                          onClick={() => setConfirmAction({ reviewId: review.id, action: "archive" })}
-                        >
-                          {review.isActive ? "Archive active review" : "Archive review"}
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        className="ghost-button"
-                        disabled={workingReviewId === review.id}
-                        onClick={() =>
-                          setConfirmAction({
-                            reviewId: review.id,
-                            action: review.isDeleted ? "purge" : "delete"
-                          })
-                        }
-                      >
-                        {review.isDeleted ? "Delete permanently" : "Move to deleted"}
-                      </button>
-                    </>
-                  ) : null}
-                </div>
-                {review.isActive ? (
-                  <p className="microcopy">This review is the current Azure-backed active review for your account.</p>
-                ) : null}
-                {review.isArchived ? (
-                  <p className="microcopy">Archived reviews stay in Azure until you restore or delete them.</p>
-                ) : null}
-                {review.isDeleted ? (
-                  <p className="microcopy">Deleted reviews stay recoverable until you permanently delete them.</p>
-                ) : null}
-              </article>
-            ))}
+              </div>
+            </div>
+
+            <div className="reviews-table-scroll">
+              <table className="enterprise-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Review</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Scope</th>
+                    <th scope="col">Last modified</th>
+                    <th scope="col">Quick actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredReviews.map((review) => (
+                    <tr key={review.id}>
+                      <td>
+                        <div className="enterprise-table-primary">
+                          <strong>{review.name}</strong>
+                          <p>{review.businessScope || "No architecture notes captured yet."}</p>
+                          <div className="enterprise-table-inline-meta">
+                            <span>{review.audience}</span>
+                            <span>{review.isActive ? "Active review" : "Saved review"}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="enterprise-status-stack">
+                          <span
+                            className={`dashboard-status-badge dashboard-status-badge-${getReviewLifecycleTone(review)}`}
+                          >
+                            {getReviewLifecycleLabel(review)}
+                          </span>
+                          <p>
+                            {review.pendingCount.toLocaleString()} pending · {review.recordCount.toLocaleString()} saved findings
+                          </p>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="enterprise-table-metric-stack">
+                          <strong>{review.serviceCount.toLocaleString()} services</strong>
+                          <p>{review.targetRegions.join(", ") || "Regions not captured"}</p>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="enterprise-table-metric-stack">
+                          <strong>{formatDate(review.updatedAt)}</strong>
+                          <p>
+                            {review.isDeleted
+                              ? `Deleted ${review.deletedAt ? formatDate(review.deletedAt) : "in Azure"}`
+                              : review.isArchived
+                                ? `Archived ${review.archivedAt ? formatDate(review.archivedAt) : "in Azure"}`
+                                : `Created ${formatDate(review.createdAt)}`}
+                          </p>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="enterprise-action-stack">
+                          {!review.isArchived && !review.isDeleted ? (
+                            <button
+                              type="button"
+                              className="primary-button"
+                              disabled={activatingReviewId === review.id || workingReviewId === review.id}
+                              onClick={() => void openReview(review)}
+                            >
+                              {activatingReviewId === review.id ? "Opening..." : "Open review"}
+                            </button>
+                          ) : null}
+                          <div className="button-row board-action-row-compact">
+                            {confirmAction?.reviewId === review.id && confirmAction.action === "archive" ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="secondary-button"
+                                  disabled={workingReviewId === review.id}
+                                  onClick={() => void handleArchiveToggle(review, true)}
+                                >
+                                  {workingReviewId === review.id ? "Archiving..." : "Confirm archive"}
+                                </button>
+                                <button type="button" className="ghost-button" onClick={() => setConfirmAction(null)}>
+                                  Cancel
+                                </button>
+                              </>
+                            ) : null}
+                            {confirmAction?.reviewId === review.id && confirmAction.action === "delete" ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="secondary-button"
+                                  disabled={workingReviewId === review.id}
+                                  onClick={() => void handleDelete(review)}
+                                >
+                                  {workingReviewId === review.id ? "Deleting..." : "Confirm delete"}
+                                </button>
+                                <button type="button" className="ghost-button" onClick={() => setConfirmAction(null)}>
+                                  Cancel
+                                </button>
+                              </>
+                            ) : null}
+                            {confirmAction?.reviewId === review.id && confirmAction.action === "purge" ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="secondary-button"
+                                  disabled={workingReviewId === review.id}
+                                  onClick={() => void handlePurge(review)}
+                                >
+                                  {workingReviewId === review.id ? "Purging..." : "Confirm permanent delete"}
+                                </button>
+                                <button type="button" className="ghost-button" onClick={() => setConfirmAction(null)}>
+                                  Cancel
+                                </button>
+                              </>
+                            ) : null}
+                            {confirmAction?.reviewId !== review.id ? (
+                              <>
+                                {review.isDeleted ? (
+                                  <button
+                                    type="button"
+                                    className="secondary-button"
+                                    disabled={workingReviewId === review.id}
+                                    onClick={() => void handleRestoreDeleted(review)}
+                                  >
+                                    {workingReviewId === review.id ? "Restoring..." : "Restore"}
+                                  </button>
+                                ) : review.isArchived ? (
+                                  <button
+                                    type="button"
+                                    className="secondary-button"
+                                    disabled={workingReviewId === review.id}
+                                    onClick={() => void handleArchiveToggle(review, false)}
+                                  >
+                                    {workingReviewId === review.id ? "Restoring..." : "Restore"}
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="secondary-button"
+                                    disabled={workingReviewId === review.id}
+                                    onClick={() => setConfirmAction({ reviewId: review.id, action: "archive" })}
+                                  >
+                                    Archive
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  className="ghost-button"
+                                  disabled={workingReviewId === review.id}
+                                  onClick={() =>
+                                    setConfirmAction({
+                                      reviewId: review.id,
+                                      action: review.isDeleted ? "purge" : "delete"
+                                    })
+                                  }
+                                >
+                                  {review.isDeleted ? "Delete permanently" : "Move to deleted"}
+                                </button>
+                              </>
+                            ) : null}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </section>
         </>
       ) : null}

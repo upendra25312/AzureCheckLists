@@ -46,7 +46,7 @@ export function AuthStatusChip() {
   }, []);
 
   if (!resolved) {
-    return <span className="auth-chip auth-chip-pending">Checking sign-in…</span>;
+    return null;
   }
 
   if (!principal) {
@@ -61,7 +61,7 @@ export function AuthStatusChip() {
     <div className="auth-chip-group">
       <details className="auth-menu">
         <summary className="auth-chip auth-chip-signed-in">
-          <span className="auth-chip-label">Signed in</span>
+          <span className="auth-chip-label">Account</span>
           <span className="auth-chip-value">{principal.userDetails || principal.userId}</span>
         </summary>
         <div className="auth-menu-panel">
@@ -71,10 +71,10 @@ export function AuthStatusChip() {
           </p>
           <div className="auth-menu-actions">
             <Link href="/my-project-reviews" className="secondary-button">
-              My project reviews
+              Reviews dashboard
             </Link>
             <Link href="/review-package" className="ghost-button">
-              Open project review
+              Start a review
             </Link>
             <a href="/.auth/logout" className="ghost-button">
               Sign out

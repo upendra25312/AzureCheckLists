@@ -14,31 +14,30 @@ export default function HowToUsePage() {
         <div className="detail-command-grid">
           <div className="detail-command-copy">
             <div>
-              <p className="eyebrow">How this tool should be used</p>
-              <h1 className="review-command-title">Use the review board to prepare decisions, not to issue approval.</h1>
+              <p className="eyebrow">Docs</p>
+              <h1 className="review-command-title">Understand the product, the workflows, and the outputs without reading internal product language.</h1>
               <p className="review-command-summary">
-                The review board turns Azure checklist content into a clearer decision-support surface.
-                It helps teams structure review discussions, preserve source traceability, and show where
-                architectural judgment is still required. It does not certify architectures, waive
-                governance, or substitute for accountable sign-off.
+                Azure Review Assistant helps teams start a review, inspect Azure guidance, work from
+                findings and evidence, and export a usable review pack. These docs explain what the
+                product is for, what sign-in unlocks, and how to read the outputs.
               </p>
             </div>
             <div className="button-row">
               <Link href="/" className="primary-button">
-                Back to overview
+                Back to dashboard
               </Link>
-              <Link href="/explorer" className="secondary-button">
-                Open explorer
+              <Link href="/review-package" className="secondary-button">
+                Start a review
               </Link>
             </div>
           </div>
 
           <section className="leadership-brief detail-command-sidecar">
-            <p className="eyebrow">Responsible use</p>
-            <h2 className="leadership-title">Source traceability stays visible so recommendations keep their context.</h2>
+            <p className="eyebrow">Product guide</p>
+            <h2 className="leadership-title">Intent first, workflow second.</h2>
             <p>
-              Family and service views retain source lineage so reviewers can see why a recommendation
-              should carry weight before it enters a decision pack.
+              Start with the task you need to finish: begin a review, explore services, or inspect trust
+              signals. The system model only appears after that choice is clear.
             </p>
           </section>
         </div>
@@ -47,41 +46,45 @@ export default function HowToUsePage() {
       <section className="surface-panel board-stage-panel">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Plain-language guide</p>
-            <h2 className="section-title">Understand the core terms in one minute.</h2>
+            <p className="eyebrow">Core workflows</p>
+            <h2 className="section-title">Choose the right path quickly.</h2>
             <p className="section-copy">
-              These definitions make the rest of the product easier to understand, especially for
-              leadership, pre-sales, and first-time reviewers.
+              Most teams need one of three things: start a review, step up to ARB-grade rigor, or
+              explore Azure guidance before they decide what belongs in scope.
             </p>
           </div>
         </div>
-        <div className="future-grid">
-          <article className="future-card">
-            <h3>GA-ready baseline</h3>
+        <div className="how-timeline">
+          <article className="how-timeline-step future-card">
+            <div className="how-timeline-number">01</div>
+            <h3>Start a review</h3>
             <p>
-              Guidance mature enough to lead an executive or architecture review by default. This
-              is the safest starting point for decision packs.
+              Use the main review workspace when you need a scoped service list, findings, pricing,
+              evidence, and exportable outputs in one guided flow.
             </p>
           </article>
-          <article className="future-card">
-            <h3>Checklist family</h3>
+          <article className="how-timeline-step future-card">
+            <div className="how-timeline-number">02</div>
+            <h3>ARB-grade review</h3>
             <p>
-              A source checklist grouped into one reviewable unit. Family pages show how much
-              confidence that source deserves and how many findings it contributes.
+              Use the advanced ARB path when the review needs uploaded source material, stricter
+              evidence handling, and decision-oriented sign-off steps.
             </p>
           </article>
-          <article className="future-card">
-            <h3>Normalized item</h3>
+          <article className="how-timeline-step future-card">
+            <div className="how-timeline-number">03</div>
+            <h3>Explore services</h3>
             <p>
-              A source recommendation reshaped into a common structure for filtering, comparison,
-              and export. Normalization improves usability, but the original source still carries authority.
+              Browse services and guidance without creating a review first. This is useful during
+              discovery, presales, and early architecture conversations.
             </p>
           </article>
-          <article className="future-card">
-            <h3>Confidence level</h3>
+          <article className="how-timeline-step future-card">
+            <div className="how-timeline-number">04</div>
+            <h3>Export outputs</h3>
             <p>
-              A signal for how much default weight a family should carry. High-confidence guidance
-              can anchor a review pack; lower-confidence guidance should inform judgment, not replace it.
+              Review packs, action lists, executive summaries, and pricing snapshots should be visible
+              early so users understand what success looks like.
             </p>
           </article>
         </div>
@@ -90,31 +93,30 @@ export default function HowToUsePage() {
       <section className="surface-panel board-stage-panel">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Responsible use</p>
-            <h2 className="section-title">Interpret severity, confidence, and normalization carefully.</h2>
+            <p className="eyebrow">Reading the outputs</p>
+            <h2 className="section-title">Interpret findings, evidence, and pricing together.</h2>
           </div>
         </div>
         <div className="future-grid">
           <article className="future-card">
-            <h3>Normalization</h3>
+            <h3>Findings</h3>
             <p>
-              A normalized item is easier to search and compare, but it should still be read with
-              awareness of the original checklist source behind it.
+              Findings are useful only when they stay tied to the right service, a clear rationale,
+              and the original guidance source.
             </p>
           </article>
           <article className="future-card">
-            <h3>Severity</h3>
+            <h3>Evidence</h3>
             <p>
-              Severity is an input to prioritization, not a standalone business decision.
-              Use it with architectural context, service maturity, control dependencies, and
-              the source family’s confidence level.
+              Evidence should tell reviewers how confident the product is, what source supports the
+              conclusion, and what still needs human follow-up.
             </p>
           </article>
           <article className="future-card">
-            <h3>Confidence level</h3>
+            <h3>Pricing</h3>
             <p>
-              GA-ready families can anchor executive and architecture review packs. Preview and
-              mixed-confidence families should enrich expert analysis, not define leadership decisions by default.
+              Pricing views use Microsoft retail data as a baseline. Region context, refresh date,
+              and assumptions should stay visible so the comparison remains credible.
             </p>
           </article>
         </div>
@@ -123,30 +125,30 @@ export default function HowToUsePage() {
       <section className="surface-panel board-stage-panel">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Limitations</p>
-            <h2 className="section-title">Be explicit about what the platform can and cannot claim.</h2>
+            <p className="eyebrow">Trust and boundaries</p>
+            <h2 className="section-title">Be explicit about what the product helps with and what stays human-owned.</h2>
           </div>
         </div>
         <div className="bar-list">
           <article className="trace-card">
             <strong>What this is</strong>
             <p>
-              A static-first review product for exploring checklist families, separating mature
-              and unstable guidance, and improving review preparation.
+              A review assistant for Azure architects that helps structure scope, findings,
+              evidence, pricing context, and exports.
             </p>
           </article>
           <article className="trace-card">
             <strong>What this is not</strong>
             <p>
-              Not an official Microsoft approval system, not a compliance platform, not a
-              backend workflow engine, and not a replacement for architecture sign-off.
+              Not an approval system, not a compliance certification tool, and not a replacement
+              for architecture sign-off.
             </p>
           </article>
           <article className="trace-card">
-            <strong>When to validate manually</strong>
+            <strong>What sign-in unlocks</strong>
             <p>
-              Validate manually whenever content is preview, deprecated, sparse, conflicting,
-              or missing service-specific context for the workload under review.
+              Saved reviews, Azure-backed continuity, and ARB-grade review steps. Public pages still
+              remain useful without sign-in.
             </p>
           </article>
         </div>

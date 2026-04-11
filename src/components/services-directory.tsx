@@ -42,7 +42,15 @@ function matchesPosture(posture: ServicePosture, service: ServiceIndex["services
 export function ServicesDirectory({ index }: { index: ServiceIndex }) {
   const [search, setSearch] = useState("");
   const [posture, setPosture] = useState<ServicePosture>("all");
+  const [category, setCategory] = useState<string>("all");
   const normalizedSearch = search.trim().toLowerCase();
+  const availableCategories = useMemo(
+    () =>
+      Array.from(new Set(index.services.flatMap((service) => service.categories)))
+        .filter(Boolean)
+        .sort((left, right) => left.localeCompare(right)),
+    [index.services]
+  );
   const servicesWithGaBaseline = index.services.filter((service) => service.gaFamilyCount > 0).length;
   const previewLedServices = index.services.filter(
     (service) => service.gaFamilyCount === 0 && service.previewFamilyCount + service.mixedFamilyCount > 0
@@ -51,6 +59,10 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
     () =>
       index.services.filter((service) => {
         if (!matchesPosture(posture, service)) {
+          return false;
+        }
+
+        if (category !== "all" && !service.categories.includes(category)) {
           return false;
         }
 
@@ -69,7 +81,7 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
 
         return searchable.includes(normalizedSearch);
       }),
-    [index.services, normalizedSearch, posture]
+    [category, index.services, normalizedSearch, posture]
   );
   const postureButtonClass = (value: ServicePosture) =>
     posture === value ? "secondary-button" : "ghost-button";
@@ -102,30 +114,29 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
         <div className="detail-command-grid">
           <div className="detail-command-copy">
             <div>
-              <p className="eyebrow">Azure services</p>
-              <h1 className="review-command-title">Start with the Azure service, not the checklist filename.</h1>
+              <p className="eyebrow">Services explorer</p>
+              <h1 className="review-command-title">Browse Azure services, guidance coverage, and review relevance in one explorer.</h1>
               <p className="review-command-summary">
-                Browse the normalized Azure service catalog and open a service-specific view that
-                gathers related checklist families, findings, regional fit, and pricing posture in
-                one working surface.
+                Use this page before or during a review to find the right Azure service, understand
+                where guidance is strongest, and open the deeper service page when you need detail.
               </p>
             </div>
             <div className="button-row">
               <Link href="/" className="secondary-button">
-                Back to overview
+                Back to dashboard
               </Link>
               <a href="#service-directory" className="primary-button">
                 Browse services
               </a>
               <Link href="/how-to-use" className="ghost-button">
-                Review guidance
+                Open docs
               </Link>
             </div>
           </div>
 
           <aside className="leadership-brief detail-command-sidecar">
-            <p className="eyebrow">Directory brief</p>
-            <h2 className="leadership-title">How to use this directory.</h2>
+            <p className="eyebrow">Explorer brief</p>
+            <h2 className="leadership-title">Use the explorer before you commit a service into scope.</h2>
             <div className="leadership-list">
               <article>
                 <strong>Service-first entry</strong>
@@ -157,7 +168,7 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
       <section className="surface-panel board-stage-panel" id="service-directory">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Service directory</p>
+            <p className="eyebrow">Service explorer</p>
             <h2 className="section-title">{POSTURE_COPY[posture].title}</h2>
             <p className="section-copy">{POSTURE_COPY[posture].description}</p>
           </div>
@@ -198,6 +209,21 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
                 Preview-led services
               </button>
             </div>
+            <label className="filter-field services-category-filter">
+              <span className="microcopy">Category</span>
+              <select
+                className="field-select"
+                value={category}
+                onChange={(event) => setCategory(event.target.value)}
+              >
+                <option value="all">All categories</option>
+                {availableCategories.map((entry) => (
+                  <option key={entry} value={entry}>
+                    {entry}
+                  </option>
+                ))}
+              </select>
+            </label>
             <p className="microcopy">
               Search by service name, alias, architecture category, or related checklist family.
             </p>
@@ -205,84 +231,78 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
         </div>
 
         {filteredServices.length > 0 ? (
-          <div className="service-directory-grid">
-            {filteredServices.map((service) => (
-              <article className="service-directory-card" key={service.slug}>
-                <div className="section-head board-card-head">
-                  <div className="board-card-head-copy">
-                    <p className="eyebrow">Azure service</p>
-                    <h3 className="service-card-title">{service.service}</h3>
-                  </div>
-                  <div className="chip-row board-summary-row">
-                    <span className="chip">{service.familyCount.toLocaleString()} families</span>
-                    <span className="chip">{service.itemCount.toLocaleString()} findings</span>
-                  </div>
-                </div>
-
-                <p className="service-card-copy">{service.description}</p>
-                <p className="service-card-note">{service.whatThisMeans}</p>
-
-                <div className="service-card-meta board-summary-row">
-                  {service.gaFamilyCount > 0 ? (
-                    <span className="pill">{service.gaFamilyCount.toLocaleString()} GA-ready</span>
-                  ) : null}
-                  {service.previewFamilyCount > 0 ? (
-                    <span className="pill">{service.previewFamilyCount.toLocaleString()} preview</span>
-                  ) : null}
-                  {service.mixedFamilyCount > 0 ? (
-                    <span className="pill">{service.mixedFamilyCount.toLocaleString()} mixed</span>
-                  ) : null}
-                  {service.deprecatedFamilyCount > 0 ? (
-                    <span className="pill">{service.deprecatedFamilyCount.toLocaleString()} deprecated</span>
-                  ) : null}
-                  <span className="pill">{service.highSeverityCount.toLocaleString()} high severity</span>
-                  {service.regionalFitSummary?.mapped ? (
-                    service.regionalFitSummary.isGlobalService ? (
-                      <span className="pill">global / non-regional</span>
-                    ) : (
-                      <span className="pill">
-                        {service.regionalFitSummary.availableRegionCount.toLocaleString()} regions
-                      </span>
-                    )
-                  ) : (
-                    <span className="pill">availability mapping pending</span>
-                  )}
-                  {service.regionalFitSummary?.restrictedRegionCount ? (
-                    <span className="pill">
-                      {service.regionalFitSummary.restrictedRegionCount.toLocaleString()} restricted
-                    </span>
-                  ) : null}
-                  {service.regionalFitSummary?.previewRegionCount ? (
-                    <span className="pill">
-                      {service.regionalFitSummary.previewRegionCount.toLocaleString()} preview regions
-                    </span>
-                  ) : null}
-                </div>
-
-                {service.aliases.length > 0 ? (
-                  <p className="microcopy">
-                    Also seen as {service.aliases.slice(0, 4).join(", ")}.
-                  </p>
-                ) : null}
-
-                <div className="service-family-preview">
-                  <strong>Recommended families</strong>
-                  <div className="service-family-links">
-                    {service.families.slice(0, 3).map((family) => (
-                      <Link key={family.slug} href={`/technologies/${family.slug}`} className="muted-link">
-                        {family.technology}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="button-row board-action-row-compact">
-                  <Link href={`/services/${service.slug}`} className="primary-button">
-                    Open service view
-                  </Link>
-                </div>
-              </article>
-            ))}
+          <div className="reviews-table-scroll service-table-shell">
+            <table className="enterprise-table">
+              <thead>
+                <tr>
+                  <th scope="col">Service</th>
+                  <th scope="col">Guidance posture</th>
+                  <th scope="col">Region context</th>
+                  <th scope="col">Review relevance</th>
+                  <th scope="col">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredServices.map((service) => (
+                  <tr key={service.slug}>
+                    <td>
+                      <div className="enterprise-table-primary">
+                        <strong>{service.service}</strong>
+                        <p>{service.description}</p>
+                        <div className="enterprise-table-inline-meta">
+                          <span>{service.categories.slice(0, 2).join(", ") || "General"}</span>
+                          {service.aliases.length > 0 ? <span>Also seen as {service.aliases.slice(0, 2).join(", ")}</span> : null}
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="enterprise-table-metric-stack">
+                        <strong>{service.familyCount.toLocaleString()} families</strong>
+                        <p>
+                          {service.gaFamilyCount.toLocaleString()} GA-ready · {service.previewFamilyCount.toLocaleString()} preview
+                        </p>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="enterprise-table-metric-stack">
+                        <strong>
+                          {service.regionalFitSummary?.mapped
+                            ? service.regionalFitSummary.isGlobalService
+                              ? "Global / non-regional"
+                              : `${service.regionalFitSummary.availableRegionCount.toLocaleString()} available regions`
+                            : "Mapping pending"}
+                        </strong>
+                        <p>
+                          {service.regionalFitSummary?.restrictedRegionCount
+                            ? `${service.regionalFitSummary.restrictedRegionCount.toLocaleString()} restricted regions`
+                            : "No restricted-region signal highlighted"}
+                        </p>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="enterprise-table-metric-stack">
+                        <strong>{service.itemCount.toLocaleString()} findings</strong>
+                        <p>{service.whatThisMeans}</p>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="enterprise-action-stack">
+                        <Link href={`/services/${service.slug}`} className="primary-button">
+                          Open service
+                        </Link>
+                        <div className="button-row board-action-row-compact">
+                          {service.families.slice(0, 2).map((family) => (
+                            <Link key={family.slug} href={`/technologies/${family.slug}`} className="ghost-button">
+                              {family.technology}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : (
           <section className="filter-card board-stage-panel">

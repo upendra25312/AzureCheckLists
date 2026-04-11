@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Azure Review Assistant - Optimized UI Mockup</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+
+      :root {
+        --bg: #eff4fb;
+        --bg-deep: #dce9f8;
+        --panel: rgba(255, 255, 255, 0.78);
+        --panel-strong: rgba(255, 255, 255, 0.92);
+        --line: rgba(28, 53, 87, 0.12);
+        --text: #13243d;
+        --muted: #5f738f;
+        --brand: #0a66d6;
+        --brand-strong: #003b8e;
+        --brand-soft: #d8e9ff;
+        --mint: #d9f5ec;
+        --mint-strong: #12815a;
+        --amber: #ffe5b4;
+        --amber-strong: #9a5f00;
+        --rose: #ffd6d8;
+        --rose-strong: #a62b41;
+        --shadow: 0 32px 80px rgba(32, 54, 84, 0.12);
+        --radius-xl: 30px;
+        --content-width: min(1280px, calc(100vw - 32px));
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(0, 102, 214, 0.16), transparent 28%),
+          radial-gradient(circle at 85% 12%, rgba(255, 184, 77, 0.18), transparent 22%),
+          linear-gradient(180deg, #f8fbff 0%, var(--bg) 54%, var(--bg-deep) 100%);
+        font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .page-shell {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .ambient-orb {
+        position: absolute;
+        border-radius: 999px;
+        filter: blur(20px);
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      .ambient-orb.one {
+        top: 120px;
+        left: -80px;
+        width: 220px;
+        height: 220px;
+        background: rgba(0, 102, 214, 0.14);
+      }
+
+      .ambient-orb.two {
+        top: 420px;
+        right: -90px;
+        width: 300px;
+        height: 300px;
+        background: rgba(255, 173, 72, 0.16);
+      }
+
+      .ambient-orb.three {
+        bottom: 180px;
+        left: 8%;
+        width: 260px;
+        height: 260px;
+        background: rgba(19, 129, 90, 0.12);
+      }
+
+      .container {
+        width: var(--content-width);
+        margin: 0 auto;
+      }
+
+      .shell-panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+      }
+
+      .eyebrow {
+        margin: 0 0 10px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--brand-strong);
+      }
+
+      .section-title {
+        margin: 0;
+        font-family: "Space Grotesk", "Segoe UI", sans-serif;
+        font-size: clamp(1.8rem, 3vw, 3rem);
+        line-height: 1.05;
+        letter-spacing: -0.04em;
+      }
+
+      .section-copy {
+        margin: 14px 0 0;
+        max-width: 760px;
+        color: var(--muted);
+        line-height: 1.75;
+        font-size: 1rem;
+      }
+
+      .site-header {
+        position: sticky;
+        top: 16px;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 18px 24px;
+        margin: 20px auto 0;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+      }
+
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        background: linear-gradient(145deg, rgba(10, 102, 214, 1), rgba(0, 59, 142, 0.92));
+        color: #ffffff;
+        font-family: "Space Grotesk", "Segoe UI", sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+      }
+
+      .brand-copy span {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .brand-copy strong {
+        display: block;
+        font-size: 1rem;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .header-nav {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .header-nav a,
+      .header-actions a,
+      .cta-row a,
+      .lane-actions a,
+      .decision-actions a,
+      .mini-link {
+        transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
+      }
+
+      .header-nav a {
+        padding: 10px 14px;
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+
+      .header-nav a.active {
+        background: rgba(10, 102, 214, 0.1);
+        color: var(--brand-strong);
+      }
+
+      .header-nav a:hover,
+      .header-actions a:hover,
+      .cta-row a:hover,
+      .lane-actions a:hover,
+      .decision-actions a:hover,
+      .mini-link:hover {
+        transform: translateY(-1px);
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .ghost-link,
+      .solid-link,
+      .soft-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 11px 16px;
+        border-radius: 999px;
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+
+      .ghost-link {
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.7);
+      }
+
+      .solid-link {
+        color: #ffffff;
+        background: linear-gradient(135deg, var(--brand) 0%, var(--brand-strong) 100%);
+        box-shadow: 0 16px 32px rgba(10, 102, 214, 0.22);
+      }
+
+      .soft-link {
+        border: 1px solid rgba(10, 102, 214, 0.15);
+        background: var(--brand-soft);
+        color: var(--brand-strong);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.2fr 0.95fr;
+        gap: 26px;
+        padding: 42px 0 26px;
+        align-items: stretch;
+      }
+
+      .hero-copy,
+      .hero-preview {
+        padding: 34px;
+      }
+
+      .hero-copy h1 {
+        margin: 0;
+        font-family: "Space Grotesk", "Segoe UI", sans-serif;
+        font-size: clamp(2.8rem, 6vw, 5.25rem);
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+      }
+
+      .hero-copy p {
+        margin: 18px 0 0;
+        max-width: 760px;
+        color: var(--muted);
+        line-height: 1.78;
+        font-size: 1.04rem;
+      }
+
+      .hero-highlight {
+        display: inline-block;
+        margin-top: 18px;
+        padding: 12px 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.64);
+        border: 1px solid rgba(10, 102, 214, 0.14);
+        color: var(--brand-strong);
+        font-weight: 700;
+      }
+
+      .cta-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 28px;
+        flex-wrap: wrap;
+      }
+
+      .stat-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 28px;
+      }
+
+      .stat-card {
+        padding: 18px 18px 16px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(19, 36, 61, 0.08);
+      }
+
+      .stat-card span {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      .stat-card strong {
+        display: block;
+        font-size: 1.4rem;
+        font-weight: 800;
+      }
+
+      .hero-preview {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(244, 249, 255, 0.92) 100%);
+      }
+
+      .hero-preview-head,
+      .section-head,
+      .workspace-top,
+      .canvas-card-head,
+      .trust-card-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: start;
+      }
+
+      .hero-preview h2,
+      .panel-title,
+      .lane-card h3,
+      .workspace-top h3,
+      .trust-card h3,
+      .decision-card h3,
+      .table-card h3,
+      .knowledge-card h3,
+      .footer-card h3 {
+        margin: 0;
+        font-family: "Space Grotesk", "Segoe UI", sans-serif;
+        letter-spacing: -0.04em;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 36px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 0.84rem;
+        font-weight: 800;
+      }
+
+      .status-pill.good {
+        color: var(--mint-strong);
+        background: var(--mint);
+      }
+
+      .status-pill.brand {
+        color: var(--brand-strong);
+        background: var(--brand-soft);
+      }
+
+      .status-pill.warn {
+        color: var(--amber-strong);
+        background: var(--amber);
+      }
+
+      .status-pill.risk {
+        color: var(--rose-strong);
+        background: var(--rose);
+      }
+
+      .preview-stack {
+        display: grid;
+        gap: 14px;
+        margin-top: 24px;
+      }
+
+      .preview-card {
+        padding: 18px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.86);
+        border: 1px solid var(--line);
+      }
+
+      .preview-card-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .preview-card span,
+      .micro-label {
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      .preview-card strong {
+        display: block;
+        margin-top: 10px;
+        font-size: 1.22rem;
+        font-weight: 800;
+      }
+
+      .preview-card p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.65;
+        font-size: 0.96rem;
+      }
+
+      .progress-row,
+      .metric-grid,
+      .signal-inline-grid,
+      .knowledge-grid,
+      .footer-grid,
+      .decision-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .progress-row {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-top: 18px;
+      }
+
+      .progress-card,
+      .metric-card,
+      .signal-card,
+      .decision-metric {
+        padding: 16px;
+        border-radius: 18px;
+        background: rgba(239, 244, 251, 0.9);
+        border: 1px solid rgba(19, 36, 61, 0.07);
+      }
+
+      .mode-section,
+      .workspace-section,
+      .ops-section,
+      .trust-section,
+      .footer-section {
+        padding: 18px 0 26px;
+      }
+
+      .section-head {
+        align-items: end;
+        margin-bottom: 18px;
+      }
+
+      .lane-grid,
+      .canvas-grid,
+      .ops-grid,
+      .trust-grid {
+        display: grid;
+        gap: 18px;
+      }
+
+      .lane-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .lane-card,
+      .stage-card,
+      .summary-card,
+      .canvas-card,
+      .table-card,
+      .decision-card,
+      .trust-card,
+      .knowledge-card,
+      .footer-card {
+        padding: 20px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.84);
+        box-shadow: var(--shadow);
+      }
+
+      .lane-card.highlight {
+        background: linear-gradient(180deg, rgba(230, 242, 255, 0.98) 0%, rgba(255, 255, 255, 0.92) 100%);
+        border-color: rgba(10, 102, 214, 0.22);
+      }
+
+      .lane-card h3 {
+        font-size: 1.55rem;
+      }
+
+      .lane-card p,
+      .stage-item p,
+      .summary-list p,
+      .metric-card p,
+      .signal-card p,
+      .table-card p,
+      .decision-card p,
+      .knowledge-card p,
+      .footer-card p {
+        margin: 10px 0 0;
+        color: var(--muted);
+        line-height: 1.68;
+        font-size: 0.93rem;
+      }
+
+      .lane-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(19, 36, 61, 0.06);
+        color: var(--text);
+        font-size: 0.88rem;
+        font-weight: 700;
+      }
+
+      .lane-list,
+      .decision-list,
+      .trust-list,
+      .footer-list {
+        margin: 18px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 12px;
+      }
+
+      .lane-list li,
+      .decision-list li,
+      .trust-list li,
+      .footer-list li {
+        position: relative;
+        padding-left: 18px;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .lane-list li::before,
+      .decision-list li::before,
+      .trust-list li::before,
+      .footer-list li::before {
+        content: "";
+        position: absolute;
+        top: 11px;
+        left: 0;
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: var(--brand);
+      }
+
+      .lane-actions,
+      .decision-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 22px;
+        flex-wrap: wrap;
+      }
+
+      .workspace-shell {
+        display: grid;
+        grid-template-columns: 240px 1fr 300px;
+        gap: 18px;
+        padding: 18px;
+      }
+
+      .stage-list,
+      .summary-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      .stage-item {
+        display: grid;
+        grid-template-columns: 34px 1fr;
+        gap: 12px;
+        align-items: start;
+        padding: 12px;
+        border-radius: 18px;
+        background: rgba(239, 244, 251, 0.9);
+        border: 1px solid rgba(19, 36, 61, 0.06);
+      }
+
+      .stage-item.active {
+        background: rgba(216, 233, 255, 0.9);
+        border-color: rgba(10, 102, 214, 0.18);
+      }
+
+      .stage-number {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        background: rgba(19, 36, 61, 0.08);
+        font-size: 0.9rem;
+        font-weight: 800;
+      }
+
+      .stage-item.active .stage-number {
+        background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+        color: #ffffff;
+      }
+
+      .stage-item strong,
+      .summary-list strong,
+      .metric-card strong,
+      .signal-card strong,
+      .decision-metric strong {
+        display: block;
+        font-size: 1rem;
+        font-weight: 800;
+      }
+
+      .workspace-main {
+        display: grid;
+        gap: 18px;
+      }
+
+      .workspace-top p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .metric-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .canvas-grid {
+        grid-template-columns: 1.1fr 0.9fr;
+      }
+
+      .mini-link {
+        color: var(--brand-strong);
+        font-weight: 800;
+        font-size: 0.92rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 13px 0;
+        border-bottom: 1px solid rgba(19, 36, 61, 0.08);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        font-size: 0.8rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-weight: 800;
+        color: var(--muted);
+      }
+
+      td strong {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 0.98rem;
+      }
+
+      td p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.55;
+        font-size: 0.9rem;
+      }
+
+      .signal-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .signal-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .progress-bar {
+        height: 10px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(19, 36, 61, 0.08);
+        margin-top: 12px;
+      }
+
+      .progress-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--brand) 0%, #67b8ff 100%);
+      }
+
+      .summary-list div {
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(239, 244, 251, 0.9);
+        border: 1px solid rgba(19, 36, 61, 0.06);
+      }
+
+      .ops-grid {
+        grid-template-columns: 1.15fr 0.85fr;
+      }
+
+      .table-scroll {
+        overflow-x: auto;
+      }
+
+      .trust-grid {
+        grid-template-columns: 1.1fr 0.9fr;
+      }
+
+      .knowledge-grid,
+      .footer-grid,
+      .decision-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .footer-note {
+        margin: 24px 0 0;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      @media (max-width: 1200px) {
+        .hero,
+        .ops-grid,
+        .trust-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .workspace-shell {
+          grid-template-columns: 1fr;
+        }
+
+        .metric-grid,
+        .signal-inline-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 920px) {
+        .site-header,
+        .section-head,
+        .workspace-top,
+        .hero-preview-head,
+        .trust-card-header,
+        .canvas-card-head {
+          flex-direction: column;
+          align-items: start;
+        }
+
+        .lane-grid,
+        .canvas-grid,
+        .knowledge-grid,
+        .decision-grid,
+        .footer-grid,
+        .stat-row,
+        .progress-row {
+          grid-template-columns: 1fr;
+        }
+
+        .hero-copy,
+        .hero-preview,
+        .lane-card,
+        .stage-card,
+        .summary-card,
+        .canvas-card,
+        .table-card,
+        .decision-card,
+        .trust-card,
+        .knowledge-card,
+        .footer-card {
+          padding: 22px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .site-header {
+          top: 8px;
+          margin-top: 10px;
+          padding: 16px;
+        }
+
+        .hero {
+          padding-top: 24px;
+        }
+
+        .hero-copy h1 {
+          font-size: 2.5rem;
+        }
+
+        .metric-grid,
+        .signal-inline-grid,
+        .header-actions,
+        .cta-row,
+        .lane-actions,
+        .decision-actions {
+          grid-template-columns: 1fr;
+        }
+
+        .header-actions,
+        .cta-row,
+        .lane-actions,
+        .decision-actions {
+          width: 100%;
+        }
+
+        .header-actions a,
+        .cta-row a,
+        .lane-actions a,
+        .decision-actions a {
+          flex: 1 1 auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="ambient-orb one"></div>
+      <div class="ambient-orb two"></div>
+      <div class="ambient-orb three"></div>
+
+      <header class="site-header shell-panel container">
+        <div class="brand">
+          <div class="brand-mark">AR</div>
+          <div class="brand-copy">
+            <span>Optimized UI concept</span>
+            <strong>Azure Review Assistant</strong>
+          </div>
+        </div>
+
+        <nav class="header-nav" aria-label="Mockup navigation">
+          <a class="active" href="#hero">Dashboard</a>
+          <a href="#workspace">Review Workspace</a>
+          <a href="#reviews">Reviews</a>
+          <a href="#trust">Trust and Status</a>
+          <a href="#footer">Docs</a>
+        </nav>
+
+        <div class="header-actions">
+          <a class="ghost-link" href="#">Sign in</a>
+          <a class="solid-link" href="#">Start review</a>
+        </div>
+      </header>
+
+      <main class="container">
+        <section class="hero" id="hero">
+          <div class="hero-copy shell-panel">
+            <p class="eyebrow">Homepage direction</p>
+            <h1>From first glance to sign-off, the product feels sharper, calmer, and more obvious.</h1>
+            <p>
+              This optimized concept turns the website into a job-first Azure review product. Instead of mixing
+              discovery, scoping, uploads, and saved-review mechanics together, it gives users a clear start:
+              run a standard review fast, move into ARB-grade rigor only when needed, and always show the outputs
+              before asking for effort.
+            </p>
+            <div class="hero-highlight">
+              Primary shift: less "tool anatomy", more "what do you need to finish today?"
+            </div>
+
+            <div class="cta-row">
+              <a class="solid-link" href="#workspace">Open optimized review workspace</a>
+              <a class="soft-link" href="#modes">Compare review modes</a>
+              <a class="ghost-link" href="#trust">See trust signals</a>
+            </div>
+
+            <div class="stat-row">
+              <article class="stat-card">
+                <span>Fast start</span>
+                <strong>2-entry homepage</strong>
+              </article>
+              <article class="stat-card">
+                <span>Review shape</span>
+                <strong>Outputs shown early</strong>
+              </article>
+              <article class="stat-card">
+                <span>Product tone</span>
+                <strong>Premium, less admin-heavy</strong>
+              </article>
+            </div>
+          </div>
+
+          <aside class="hero-preview shell-panel">
+            <div class="hero-preview-head">
+              <div>
+                <p class="eyebrow">Live concept preview</p>
+                <h2>What the optimized experience foregrounds</h2>
+              </div>
+              <span class="status-pill good">Share-ready</span>
+            </div>
+
+            <div class="preview-stack">
+              <article class="preview-card">
+                <div class="preview-card-top">
+                  <span>Standard review</span>
+                  <span class="status-pill brand">Primary entry</span>
+                </div>
+                <strong>Scoped review pack in one guided workspace</strong>
+                <p>Start quickly, validate service fit, keep pricing and findings aligned, and export the pack.</p>
+              </article>
+
+              <article class="preview-card">
+                <div class="preview-card-top">
+                  <span>ARB-grade review</span>
+                  <span class="status-pill warn">Advanced mode</span>
+                </div>
+                <strong>Document-backed evidence and human sign-off</strong>
+                <p>Only step into ARB mode when the review needs uploaded material and explicit approval posture.</p>
+              </article>
+
+              <article class="preview-card">
+                <div class="preview-card-top">
+                  <span>Trust layer</span>
+                  <span class="status-pill good">Public safe</span>
+                </div>
+                <strong>Freshness, source state, and fallback posture stay visible</strong>
+                <p>The product feels credible without dumping internal implementation details onto public pages.</p>
+              </article>
+            </div>
+
+            <div class="progress-row">
+              <div class="progress-card">
+                <span>Services</span>
+                <strong>105 normalized</strong>
+              </div>
+              <div class="progress-card">
+                <span>Findings</span>
+                <strong>3,661 mapped</strong>
+              </div>
+              <div class="progress-card">
+                <span>Pricing</span>
+                <strong>April 11 refresh</strong>
+              </div>
+              <div class="progress-card">
+                <span>Reviews</span>
+                <strong>Resume-friendly</strong>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <section class="mode-section" id="modes">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Mode strategy</p>
+              <h2 class="section-title">The optimized website separates the jobs cleanly.</h2>
+              <p class="section-copy">
+                The homepage should not make new users learn internal product structure. It should route them into
+                the right path, make the value obvious, and keep advanced workflow depth tucked behind the point where it matters.
+              </p>
+            </div>
+            <span class="status-pill brand">Job-first IA</span>
+          </div>
+
+          <div class="lane-grid">
+            <article class="lane-card highlight">
+              <p class="eyebrow">Primary path</p>
+              <h3>Standard review workspace</h3>
+              <p>
+                This becomes the main entry for most users. It keeps service scope, findings, pricing, evidence notes,
+                and exports inside a single guided flow that feels fast rather than procedural.
+              </p>
+              <div class="lane-meta">
+                <span class="chip">Best for most architecture reviews</span>
+                <span class="chip">Fast first pass</span>
+                <span class="chip">Outputs visible early</span>
+              </div>
+              <ul class="lane-list">
+                <li>Start review from the hero without filling a form immediately.</li>
+                <li>Keep a compact summary rail visible during the whole review.</li>
+                <li>Make service selection, findings, and pricing feel like one coherent workspace.</li>
+              </ul>
+              <div class="lane-actions">
+                <a class="solid-link" href="#workspace">Open standard workspace view</a>
+              </div>
+            </article>
+
+            <article class="lane-card">
+              <p class="eyebrow">Advanced path</p>
+              <h3>ARB-grade review mode</h3>
+              <p>
+                ARB should feel like a stricter lane inside the same product, not a separate confusing product.
+                It gets stronger evidence handling, upload-first workflow, and decision-ready closeout.
+              </p>
+              <div class="lane-meta">
+                <span class="chip">Evidence-driven</span>
+                <span class="chip">Reviewer-owned</span>
+                <span class="chip">Decision-aware</span>
+              </div>
+              <ul class="lane-list">
+                <li>Position ARB as opt-in rigor, not the first thing every user sees.</li>
+                <li>Keep AI recommendation separate from human decision and sign-off.</li>
+                <li>Show upload, evidence mapping, scorecard, and conditions as one lane.</li>
+              </ul>
+              <div class="lane-actions">
+                <a class="soft-link" href="#reviews">See ARB governance preview</a>
+              </div>
+            </article>
+
+            <article class="lane-card">
+              <p class="eyebrow">Support path</p>
+              <h3>Services and guidance explorer</h3>
+              <p>
+                Discovery remains important, but it should support review work rather than dominate the homepage.
+                The optimized design gives it a cleaner, calmer role.
+              </p>
+              <div class="lane-meta">
+                <span class="chip">Pre-review discovery</span>
+                <span class="chip">Category filters</span>
+                <span class="chip">Open deeper details</span>
+              </div>
+              <ul class="lane-list">
+                <li>Let users browse services without creating a review.</li>
+                <li>Show posture, region context, and guidance depth in a clearer table view.</li>
+                <li>Use this as a supporting tool, not the product identity.</li>
+              </ul>
+              <div class="lane-actions">
+                <a class="ghost-link" href="#trust">See explorer and trust layer</a>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="workspace-section" id="workspace">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Core page mockup</p>
+              <h2 class="section-title">Optimized review workspace concept</h2>
+              <p class="section-copy">
+                The main page becomes a proper working surface: stage rail on the left, operational content in the middle,
+                and a persistent review summary on the right. It feels more like a premium product dashboard and less like a long form.
+              </p>
+            </div>
+            <span class="status-pill good">Single-screen coherence</span>
+          </div>
+
+          <div class="workspace-shell shell-panel">
+            <aside>
+              <section class="stage-card">
+                <span class="micro-label">Stage rail</span>
+                <div class="stage-list">
+                  <article class="stage-item active">
+                    <div class="stage-number">01</div>
+                    <div>
+                      <strong>Review basics</strong>
+                      <p>Name, mode, audience, notes.</p>
+                    </div>
+                  </article>
+                  <article class="stage-item">
+                    <div class="stage-number">02</div>
+                    <div>
+                      <strong>Scope services</strong>
+                      <p>Select what belongs in the design.</p>
+                    </div>
+                  </article>
+                  <article class="stage-item">
+                    <div class="stage-number">03</div>
+                    <div>
+                      <strong>Findings and evidence</strong>
+                      <p>Triage what matters.</p>
+                    </div>
+                  </article>
+                  <article class="stage-item">
+                    <div class="stage-number">04</div>
+                    <div>
+                      <strong>Pricing and exports</strong>
+                      <p>Ship the pack without rebuilding context.</p>
+                    </div>
+                  </article>
+                </div>
+              </section>
+            </aside>
+
+            <section class="workspace-main">
+              <section class="canvas-card">
+                <div class="workspace-top">
+                  <div>
+                    <p class="eyebrow">Working surface</p>
+                    <h3>Retail Banking Platform Refresh</h3>
+                    <p>
+                      The user can understand where they are, what is in scope, and what the next step is,
+                      without losing sight of review mode or output state.
+                    </p>
+                  </div>
+                  <div class="lane-meta">
+                    <span class="status-pill brand">Standard review</span>
+                    <span class="status-pill good">Pack coherent</span>
+                  </div>
+                </div>
+
+                <div class="metric-grid">
+                  <article class="metric-card">
+                    <span>Services in scope</span>
+                    <strong>7 services</strong>
+                    <p>AKS, APIM, Front Door, Entra ID and more.</p>
+                  </article>
+                  <article class="metric-card">
+                    <span>Included findings</span>
+                    <strong>18 selected</strong>
+                    <p>Only items that belong to the design.</p>
+                  </article>
+                  <article class="metric-card">
+                    <span>Pricing posture</span>
+                    <strong>$4,860 baseline</strong>
+                    <p>Retail snapshot with visible assumptions.</p>
+                  </article>
+                  <article class="metric-card">
+                    <span>Export readiness</span>
+                    <strong>Ready to share</strong>
+                    <p>Summary, CSV, pricing, continuity file.</p>
+                  </article>
+                </div>
+              </section>
+
+              <div class="canvas-grid">
+                <section class="canvas-card">
+                  <div class="canvas-card-head">
+                    <div>
+                      <span class="micro-label">Findings center</span>
+                      <h3 class="panel-title">Action-first findings table</h3>
+                    </div>
+                    <a class="mini-link" href="#">Open full findings</a>
+                  </div>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Finding</th>
+                        <th>Severity</th>
+                        <th>Owner</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>
+                          <strong>AKS monitoring coverage is incomplete</strong>
+                          <p>Workspace keeps guidance, rationale, and export state aligned.</p>
+                        </td>
+                        <td><span class="status-pill risk">High</span></td>
+                        <td><p>Platform engineering</p></td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <strong>APIM DR posture needs explicit failover notes</strong>
+                          <p>Decision pack should show missing evidence instead of hiding it.</p>
+                        </td>
+                        <td><span class="status-pill warn">Medium</span></td>
+                        <td><p>Architecture lead</p></td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <strong>Backup and retention assumptions need confirmation</strong>
+                          <p>Review notes stay visible next to selected findings.</p>
+                        </td>
+                        <td><span class="status-pill brand">Guidance</span></td>
+                        <td><p>Operations</p></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </section>
+
+                <section class="canvas-card">
+                  <div class="canvas-card-head">
+                    <div>
+                      <span class="micro-label">Evidence and pricing</span>
+                      <h3 class="panel-title">Trust cues stay local to the work</h3>
+                    </div>
+                    <a class="mini-link" href="#">Open trust panel</a>
+                  </div>
+                  <div class="signal-grid">
+                    <article class="signal-card">
+                      <div class="signal-row">
+                        <span>Evidence coverage</span>
+                        <strong>82%</strong>
+                      </div>
+                      <div class="progress-bar">
+                        <div class="progress-fill" style="width: 82%"></div>
+                      </div>
+                      <p>Users can see confidence without leaving the workspace.</p>
+                    </article>
+                    <article class="signal-card">
+                      <div class="signal-row">
+                        <span>Pricing freshness</span>
+                        <strong>April 11, 2026</strong>
+                      </div>
+                      <p>Retail baseline is explicit, current, and still framed as a baseline.</p>
+                    </article>
+                    <article class="signal-card">
+                      <div class="signal-row">
+                        <span>Source state</span>
+                        <strong>Scheduled cache</strong>
+                      </div>
+                      <p>Freshness state is visible without exposing internal service details.</p>
+                    </article>
+                  </div>
+                </section>
+              </div>
+            </section>
+
+            <aside>
+              <section class="summary-card">
+                <span class="micro-label">Persistent summary rail</span>
+                <div class="summary-list">
+                  <div>
+                    <span>Review mode</span>
+                    <strong>Standard review</strong>
+                    <p>Default for speed, ARB for stronger evidence discipline.</p>
+                  </div>
+                  <div>
+                    <span>Next action</span>
+                    <strong>Confirm service scope</strong>
+                    <p>Keep pricing, findings, and exports aligned to the same set.</p>
+                  </div>
+                  <div>
+                    <span>Decision posture</span>
+                    <strong>Not yet recorded</strong>
+                    <p>Decision Center appears only when the review actually needs it.</p>
+                  </div>
+                  <div>
+                    <span>Continuity</span>
+                    <strong>Ready to sync</strong>
+                    <p>Sign-in unlocks saved review continuity without dominating the public UI.</p>
+                  </div>
+                </div>
+              </section>
+            </aside>
+          </div>
+        </section>
+
+        <section class="ops-section" id="reviews">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Operational surfaces</p>
+              <h2 class="section-title">Reviews dashboard and Decision Center feel more deliberate.</h2>
+              <p class="section-copy">
+                Instead of card clutter, the optimized UI uses a clearer table and a stronger closeout surface.
+                Both are easier to scan and better matched to real review operations.
+              </p>
+            </div>
+            <span class="status-pill brand">Better queueing</span>
+          </div>
+
+          <div class="ops-grid">
+            <section class="table-card">
+              <div class="canvas-card-head">
+                <div>
+                  <span class="micro-label">Reviews dashboard</span>
+                  <h3>Saved reviews become a work queue</h3>
+                </div>
+                <a class="mini-link" href="#">Open full queue</a>
+              </div>
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Review</th>
+                      <th>Status</th>
+                      <th>Scope</th>
+                      <th>Updated</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <strong>Retail Banking Platform Refresh</strong>
+                        <p>Executive architecture review pack for phase 1 rollout.</p>
+                      </td>
+                      <td><span class="status-pill warn">In review</span></td>
+                      <td><p>7 services, 3 target regions</p></td>
+                      <td><p>16 minutes ago</p></td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <strong>Payments API North America</strong>
+                        <p>Scoped review with pricing and export pack already prepared.</p>
+                      </td>
+                      <td><span class="status-pill good">Ready to export</span></td>
+                      <td><p>5 services, 2 target regions</p></td>
+                      <td><p>Yesterday</p></td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <strong>ARB - Insurance Claims Core</strong>
+                        <p>Document-backed review waiting on evidence confirmation.</p>
+                      </td>
+                      <td><span class="status-pill brand">ARB-grade</span></td>
+                      <td><p>Upload and evidence mapping</p></td>
+                      <td><p>2 days ago</p></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="decision-card">
+              <div class="canvas-card-head">
+                <div>
+                  <span class="micro-label">Decision Center preview</span>
+                  <h3>Human-owned closeout, clearer than the current concept</h3>
+                </div>
+                <span class="status-pill warn">Advanced review only</span>
+              </div>
+
+              <div class="metric-card" style="background: linear-gradient(135deg, rgba(216, 233, 255, 1) 0%, rgba(255, 255, 255, 0.95) 100%); border-color: rgba(10, 102, 214, 0.18);">
+                <span>Decision recommendation</span>
+                <strong style="font-size: 1.45rem;">Approved with Conditions</strong>
+                <p>
+                  AI recommendation remains visible, but the reviewer owns conditions, rationale,
+                  and explicit sign-off.
+                </p>
+              </div>
+
+              <div class="decision-grid">
+                <article class="decision-metric">
+                  <span>Weighted score</span>
+                  <strong>81 / 100</strong>
+                </article>
+                <article class="decision-metric">
+                  <span>Critical blockers</span>
+                  <strong>0 open</strong>
+                </article>
+                <article class="decision-metric">
+                  <span>Conditions</span>
+                  <strong>3 must-fix items</strong>
+                </article>
+                <article class="decision-metric">
+                  <span>Evidence gaps</span>
+                  <strong>2 follow-ups</strong>
+                </article>
+              </div>
+
+              <ul class="decision-list">
+                <li>Use a stronger banner and fewer disconnected cards.</li>
+                <li>Keep score, conditions, blockers, and sign-off history in one tight stack.</li>
+                <li>Make it obvious that ARB is assistive and human-approved.</li>
+              </ul>
+
+              <div class="decision-actions">
+                <a class="soft-link" href="#">Open decision history</a>
+                <a class="ghost-link" href="#">View conditions</a>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="trust-section" id="trust">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Trust and discovery</p>
+              <h2 class="section-title">Freshness, explorer, and docs become cleaner support surfaces.</h2>
+              <p class="section-copy">
+                The optimized website should prove credibility while staying calm. That means stronger trust cues,
+                better service exploration, and docs that explain workflows without internal product jargon.
+              </p>
+            </div>
+            <span class="status-pill good">Public-safe confidence</span>
+          </div>
+
+          <div class="trust-grid">
+            <div class="trust-card">
+              <div class="trust-card-header">
+                <div>
+                  <span class="micro-label">Trust and Status page</span>
+                  <h3>Freshness and fallback state at a glance</h3>
+                </div>
+                <span class="status-pill good">Healthy</span>
+              </div>
+              <div class="signal-inline-grid">
+                <article class="signal-card">
+                  <span>Availability freshness</span>
+                  <strong>April 11, 2026</strong>
+                  <p>Latest successful source refresh for regional availability.</p>
+                </article>
+                <article class="signal-card">
+                  <span>Pricing freshness</span>
+                  <strong>April 11, 2026</strong>
+                  <p>Retail baseline source date remains visible and easy to trust.</p>
+                </article>
+                <article class="signal-card">
+                  <span>Fallback posture</span>
+                  <strong>Normal</strong>
+                  <p>No current degraded mode being reported to public users.</p>
+                </article>
+              </div>
+              <ul class="trust-list">
+                <li>Use product language, not infrastructure language.</li>
+                <li>Show users whether the platform is trustworthy enough for review work.</li>
+                <li>Keep internal backend details off the public page.</li>
+              </ul>
+            </div>
+
+            <div class="knowledge-card">
+              <div class="canvas-card-head">
+                <div>
+                  <span class="micro-label">Docs and explorer</span>
+                  <h3>Cleaner support surfaces</h3>
+                </div>
+                <span class="status-pill brand">Workflow-first</span>
+              </div>
+              <div class="knowledge-grid">
+                <article class="signal-card">
+                  <span>Services explorer</span>
+                  <strong>Table-first browse mode</strong>
+                  <p>Discover services with posture, region context, and guidance depth.</p>
+                </article>
+                <article class="signal-card">
+                  <span>Docs page</span>
+                  <strong>Intent first</strong>
+                  <p>Explain workflows without the user learning internal product language.</p>
+                </article>
+                <article class="signal-card">
+                  <span>Sign-in</span>
+                  <strong>Unlocks continuity</strong>
+                  <p>Keep account UX quiet until it actually adds value.</p>
+                </article>
+                <article class="signal-card">
+                  <span>Visual tone</span>
+                  <strong>Premium and calm</strong>
+                  <p>Glass panels, strong type, bright Azure-forward palette, less clutter.</p>
+                </article>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="footer-section" id="footer">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Outcome of the mockup</p>
+              <h2 class="section-title">This concept treats the website like a product, not a pile of routes.</h2>
+              <p class="section-copy">
+                If you like this direction, the next step would be turning this mockup into a real Next.js page
+                or breaking it into reusable components for the live app.
+              </p>
+            </div>
+            <span class="status-pill brand">Implementation-ready direction</span>
+          </div>
+
+          <div class="footer-grid">
+            <article class="footer-card">
+              <h3>What improves immediately</h3>
+              <ul class="footer-list">
+                <li>Homepage message becomes much clearer.</li>
+                <li>Review workspace feels more premium and guided.</li>
+                <li>Saved reviews and trust pages become easier to scan.</li>
+              </ul>
+            </article>
+
+            <article class="footer-card">
+              <h3>What stays honest</h3>
+              <ul class="footer-list">
+                <li>Human sign-off remains explicit.</li>
+                <li>Pricing remains a baseline, not a promise.</li>
+                <li>Freshness and fallback state stay visible.</li>
+              </ul>
+            </article>
+
+            <article class="footer-card">
+              <h3>Good next build step</h3>
+              <ul class="footer-list">
+                <li>Implement this homepage and workspace shell first.</li>
+                <li>Then port the reviews table and trust page layout.</li>
+                <li>Finally refine the ARB-grade lane and Decision Center.</li>
+              </ul>
+            </article>
+          </div>
+
+          <p class="footer-note">
+            Mockup file created for local review. Open this HTML directly in a browser to inspect the layout and responsive behavior.
+          </p>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

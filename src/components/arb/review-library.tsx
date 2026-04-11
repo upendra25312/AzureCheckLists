@@ -169,34 +169,34 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
         <div className="board-card-head">
           <div className="board-card-head-copy">
             <p className="board-card-subtitle">
-              {focus === "decision" ? "Decision Center" : "Review Library"}
+              {focus === "decision" ? "ARB-grade review decision queue" : "ARB-grade review mode"}
             </p>
             <h2 className="section-title">
               {focus === "decision"
                 ? "Sign in to see decision-ready reviews, scorecards, and human sign-off history."
-                : "Sign in to create and resume evidence-backed architecture reviews."}
+                : "Sign in to use the advanced review flow with uploaded evidence and stricter reviewer steps."}
             </h2>
           </div>
         </div>
         <div className="arb-signin-grid">
           <article className="future-card">
-            <h3>Persisted review queue</h3>
+            <h3>Advanced mode</h3>
             <p className="section-copy">
-              Save active ARB reviews to your account so upload, findings, score, and decision
-              state stay together across sessions.
+              ARB-grade review mode adds uploaded evidence, stricter reviewer checkpoints, and
+              decision-ready workflow steps inside the same product.
             </p>
             <a href={buildLoginUrl("aad")} className="primary-link">
               Sign in with Microsoft
             </a>
           </article>
           <article className="trace-card">
-            <h3>Demo route still available</h3>
+            <h3>Start with the main review flow</h3>
             <p className="section-copy">
-              You can still inspect the live ARB scaffold without signing in by opening the demo
-              review route.
+              If you do not need uploaded evidence yet, begin with the standard review workspace and
+              step up later only when the review needs ARB-grade rigor.
             </p>
-            <Link href="/arb/demo-review/upload" className="secondary-button">
-              Open demo review
+            <Link href="/review-package" className="secondary-button">
+              Open standard review
             </Link>
           </article>
         </div>
@@ -255,8 +255,8 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
               >
                 {saving ? "Creating review..." : "Create ARB review"}
               </button>
-              <Link href="/arb/demo-review/upload" className="secondary-button">
-                Open demo review
+              <Link href="/review-package" className="secondary-button">
+                Open standard review
               </Link>
             </div>
 
@@ -321,8 +321,8 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
         <section className="empty-state-card">
           <h2>No saved ARB reviews yet</h2>
           <p className="empty-note">
-            Create your first ARB review above or open the demo route to explore the upload-first
-            workflow before you persist anything.
+            Create your first ARB review above when the work needs uploaded evidence and stricter
+            reviewer sign-off.
           </p>
         </section>
       ) : (

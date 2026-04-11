@@ -56,7 +56,9 @@ export function DataHealthView() {
       cache: "no-store"
     })
       .then(async (response) => {
-        const body = (await response.json()) as HealthPayload;
+        const contentType = response.headers.get("content-type") ?? "";
+        const isJson = contentType.toLowerCase().includes("application/json");
+        const body = isJson ? ((await response.json()) as HealthPayload) : null;
 
         if (!active) {
           return;
@@ -64,7 +66,22 @@ export function DataHealthView() {
 
         if (!response.ok) {
           setPayload(body);
-          setError(body.error ?? `Health check failed with status ${response.status}.`);
+
+          if (body?.error) {
+            setError(body.error);
+            return;
+          }
+
+          setError(
+            response.status === 404
+              ? "The dedicated backend is not available in this environment yet. Freshness indicators and live status require the deployed API host."
+              : `Health check failed with status ${response.status}.`
+          );
+          return;
+        }
+
+        if (!body) {
+          setError("The backend returned an unexpected response. Refresh status could not be verified.");
           return;
         }
 
@@ -88,16 +105,17 @@ export function DataHealthView() {
       <section className="review-command-panel">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Data health</p>
-            <h1 className="review-command-title">See when availability and pricing were last refreshed.</h1>
+            <p className="eyebrow">Trust and status</p>
+            <h1 className="review-command-title">See source freshness, service status, and fallback posture.</h1>
             <p className="review-command-summary">
-              This page proves the app is using a real Azure Function backend, and it shows whether
-              the backend is serving fresh data, scheduled cache, or the last successful fallback.
+              This page shows whether Azure guidance, availability, and pricing are current enough to
+              trust for review work. It stays public-safe by focusing on freshness and degraded mode,
+              not internal implementation details.
             </p>
           </div>
           <div className="button-row">
             <Link href="/review-package" className="secondary-button">
-              Open project review
+              Start a review
             </Link>
             <Link href="/services" className="ghost-button">
               Browse services
@@ -108,33 +126,33 @@ export function DataHealthView() {
         {payload ? (
           <div className="package-stats-grid">
             <article className="hero-metric-card">
-              <span>Backend status</span>
+              <span>Product status</span>
               <strong>{payload.status}</strong>
               <p>{payload.backendMode}</p>
             </article>
             <article className="hero-metric-card">
-              <span>Function App</span>
-              <strong>{payload.functionAppName ?? "Unknown"}</strong>
-              <p>Dedicated backend visible in Azure portal.</p>
+              <span>Availability freshness</span>
+              <strong>{formatDate(payload.availability?.lastSuccessfulRefreshAt)}</strong>
+              <p>Latest successful source refresh for regional availability.</p>
             </article>
             <article className="hero-metric-card">
-              <span>Refresh cadence</span>
-              <strong>{payload.refreshSchedule}</strong>
-              <p>Timer-trigger schedule used by the commercial-data refresh job.</p>
+              <span>Pricing freshness</span>
+              <strong>{formatDate(payload.pricing?.lastSuccessfulRefreshAt)}</strong>
+              <p>Latest successful source refresh for pricing context.</p>
             </article>
             <article className="hero-metric-card">
-              <span>Copilot model</span>
-              <strong>{payload.copilotConfigured ? payload.copilotModelName ?? "Configured" : "Not configured"}</strong>
+              <span>Fallback posture</span>
+              <strong>{payload.pricing?.lastError || payload.availability?.lastError ? "Degraded" : "Normal"}</strong>
               <p>
-                {payload.copilotConfigured
-                  ? payload.copilotDeployment ?? "Deployment name not published"
-                  : "Azure OpenAI is not yet wired into the dedicated backend."}
+                {payload.pricing?.lastError || payload.availability?.lastError
+                  ? "One or more sources fell back to cache or need review."
+                  : "No current source degradation is being reported."}
               </p>
             </article>
             <article className="hero-metric-card">
               <span>Last checked</span>
               <strong>{formatDate(payload.checkedAt)}</strong>
-              <p>Latest backend health read from the Function App.</p>
+              <p>Latest public status read for the product.</p>
             </article>
           </div>
         ) : (
@@ -151,7 +169,7 @@ export function DataHealthView() {
           <>
             <div className="traceability-grid">
               <article className="trace-card">
-                <strong>Availability cache</strong>
+                <strong>Availability source state</strong>
                 <p>
                   {payload.availability?.ok ? "Ready" : "Waiting"}
                   {payload.availability?.publicRegionCount
@@ -160,7 +178,7 @@ export function DataHealthView() {
                 </p>
               </article>
               <article className="trace-card">
-                <strong>Pricing cache</strong>
+                <strong>Pricing source state</strong>
                 <p>
                   {payload.pricing?.ok ? "Ready" : "Warming on demand"}
                   {payload.pricing?.lastWarmCount
@@ -169,20 +187,20 @@ export function DataHealthView() {
                 </p>
               </article>
               <article className="trace-card">
-                <strong>Application Insights</strong>
-                <p>{payload.applicationInsightsConfigured ? "Enabled" : "Missing"}</p>
+                <strong>Source freshness model</strong>
+                <p>Live refresh, scheduled cache, and fallback cache are all surfaced explicitly.</p>
               </article>
               <article className="trace-card">
-                <strong>Project review copilot</strong>
-                <p>{payload.copilotConfigured ? "Configured" : "Not configured"}</p>
+                <strong>Pricing assumptions</strong>
+                <p>Retail pricing remains a baseline, not a negotiated estimate.</p>
               </article>
               <article className="trace-card">
-                <strong>Blob storage</strong>
-                <p>{payload.storageConfigured ? "Configured" : "Missing"}</p>
+                <strong>Public-safe posture</strong>
+                <p>Internal service names and admin-only implementation details stay off this page.</p>
               </article>
               <article className="trace-card">
-                <strong>Table storage</strong>
-                <p>{payload.tableStorageConfigured ? "Configured" : "Missing"}</p>
+                <strong>Review readiness</strong>
+                <p>{payload.availability?.ok && payload.pricing?.ok ? "Ready for product use" : "Use with caution until sources recover"}</p>
               </article>
             </div>
 
@@ -196,16 +214,12 @@ export function DataHealthView() {
                 <p>{formatDate(payload.pricing?.lastSuccessfulRefreshAt)}</p>
               </article>
               <article className="trace-card">
-                <strong>Manual refresh</strong>
-                <p>{payload.manualRefreshEnabled ? "Enabled" : "Disabled"}</p>
+                <strong>Service status</strong>
+                <p>{payload.availability?.ok && payload.pricing?.ok ? "Healthy" : "Degraded or partial"}</p>
               </article>
               <article className="trace-card">
-                <strong>Warm catalog</strong>
-                <p>
-                  {payload.warmServiceIndexUrl
-                    ? `${payload.warmServiceLimit ?? 0} services from configured index`
-                    : "No scheduled pricing warm catalog configured"}
-                </p>
+                <strong>Fallback mode</strong>
+                <p>{payload.pricing?.lastError || payload.availability?.lastError ? "Active for at least one source" : "Not active"}</p>
               </article>
             </div>
 
@@ -245,16 +259,8 @@ export function DataHealthView() {
                 </p>
               </article>
               <article className="trace-card">
-                <strong>Last pricing service</strong>
-                <p>{payload.pricing?.lastServiceSlug ?? "Not refreshed yet"}</p>
-              </article>
-              <article className="trace-card">
-                <strong>Copilot endpoint</strong>
-                <p>{payload.copilotEndpoint ?? "Not configured"}</p>
-              </article>
-              <article className="trace-card">
-                <strong>Health endpoint</strong>
-                <p>/api/health</p>
+                <strong>Refresh cadence</strong>
+                <p>{payload.refreshSchedule}</p>
               </article>
             </div>
           </>

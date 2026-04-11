@@ -7,17 +7,17 @@ export default function DecisionCenterPage() {
       <section className="review-command-panel">
         <div className="review-command-copy">
           <p className="header-badge">Decision Center</p>
-          <h1 className="review-command-title">Review score, conditions, and human sign-off in one place</h1>
+          <h1 className="review-command-title">Review score, conditions, and human sign-off in one place.</h1>
           <p className="review-command-summary">
-            Decision Center is where reviewers compare the weighted score with blockers, missing
-            evidence, and recommendation posture before recording an explicit outcome.
+            Decision Center is the closeout surface for advanced reviews. It keeps weighted score,
+            blockers, evidence gaps, and the human decision in one reviewer-owned queue.
           </p>
         </div>
 
         <div className="review-command-metrics">
           <article className="review-command-metric">
             <span>Recommendation</span>
-            <strong>AI posture</strong>
+            <strong>AI recommendation</strong>
             <p>Keep the AI recommendation visible, but separate from the reviewer-owned decision.</p>
           </article>
           <article className="review-command-metric">
@@ -40,10 +40,10 @@ export default function DecisionCenterPage() {
         <div className="review-command-band">
           <div className="review-command-band-actions">
             <Link href="/arb" className="primary-link review-command-button">
-              Back to Review Workspace
+              Back to ARB-grade review mode
             </Link>
             <Link href="/services" className="secondary-button review-command-secondary">
-              Open Knowledge Hub
+              Open services explorer
             </Link>
           </div>
         </div>

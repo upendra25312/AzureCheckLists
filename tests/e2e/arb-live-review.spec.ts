@@ -82,6 +82,32 @@ const mockOpenActions = [
 ] as const;
 
 test.describe("ARB live review routes", () => {
+  test("surfaces a working Microsoft sign-in link when the review API requires auth", async ({
+    page
+  }) => {
+    await page.route("**/api/arb/reviews/demo-review**", async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: "Sign in is required before saving or exporting Azure-backed review records."
+        })
+      });
+    });
+
+    await page.goto("/arb/demo-review/upload");
+
+    await expect(
+      page.getByText("Sign in is required before saving or exporting Azure-backed review records.")
+    ).toBeVisible();
+
+    const continueLink = page.getByRole("link", { name: "Continue with Microsoft" });
+    await expect(continueLink).toBeVisible();
+    await expect(
+      continueLink
+    ).toHaveAttribute("href", /\/\.auth\/login\/aad\?post_login_redirect_uri=/);
+  });
+
   test("stages review files locally on the upload step and enforces the readiness gate", async ({
     page
   }) => {

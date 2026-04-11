@@ -62,6 +62,7 @@ import type {
   ChecklistItem,
   ProjectReviewCopilotContext,
   ReviewDraft,
+  ReviewMode,
   ReviewPackage,
   ReviewPackageAudience,
   ReviewServiceEstimateInputValue,
@@ -81,6 +82,8 @@ const AUDIENCES: ReviewPackageAudience[] = [
   "Senior Director",
   "Cloud Engineer"
 ];
+
+const REVIEW_MODES: ReviewMode[] = ["Standard review", "ARB-grade review"];
 
 function normalizeList(value: string) {
   return value
@@ -486,6 +489,7 @@ function matchesPackageService(
 
 type PackageFormState = {
   name: string;
+  reviewMode: ReviewMode;
   audience: ReviewPackageAudience;
   businessScope: string;
   targetRegions: string;
@@ -496,6 +500,7 @@ type PackageActionTone = "neutral" | "success";
 function createFormState(reviewPackage?: ReviewPackage): PackageFormState {
   return {
     name: reviewPackage?.name ?? "",
+    reviewMode: reviewPackage?.reviewMode ?? "Standard review",
     audience: reviewPackage?.audience ?? "Cloud Architect",
     businessScope: reviewPackage?.businessScope ?? "",
     targetRegions: reviewPackage?.targetRegions.join(", ") ?? ""
@@ -524,6 +529,7 @@ function parseHomepagePackagePreset(search: URLSearchParams): PackageFormState |
 
   return {
     name,
+    reviewMode: "Standard review",
     audience,
     businessScope,
     targetRegions
@@ -561,6 +567,7 @@ function shouldShowSetupDetails(reviewPackage: ReviewPackage | null | undefined)
   }
 
   return (
+    reviewPackage.reviewMode !== "Standard review" ||
     reviewPackage.audience !== "Cloud Architect" ||
     reviewPackage.targetRegions.length > 0 ||
     reviewPackage.businessScope.trim().length > 0
@@ -696,6 +703,7 @@ export function ReviewPackageWorkbench({
 
     setForm((current) => ({
       name: requestedHomepagePackagePreset.name || current.name,
+      reviewMode: requestedHomepagePackagePreset.reviewMode ?? current.reviewMode,
       audience: requestedHomepagePackagePreset.audience ?? current.audience,
       businessScope: requestedHomepagePackagePreset.businessScope || current.businessScope,
       targetRegions: requestedHomepagePackagePreset.targetRegions || current.targetRegions
@@ -1121,10 +1129,10 @@ export function ReviewPackageWorkbench({
       {
         id: "project-review-setup",
         label: "Setup",
-        title: "Create the review shell",
+        title: "Review setup",
         detail: activePackage
           ? `${activePackage.name} is active.`
-          : "Create an active review before anything else unlocks.",
+          : "Create the active review before the guided workflow opens up.",
         complete: Boolean(activePackage),
         available: true,
         optional: false
@@ -1240,6 +1248,30 @@ export function ReviewPackageWorkbench({
     "project-review-cloud-continuity",
     false
   );
+  const currentWorkspaceStage =
+    workspaceStages.find((stage) => stage.status === "current") ?? workspaceStages[0];
+  const reviewStatusLabel = !activePackage
+    ? "Not started"
+    : allScopedFindingsResolved
+      ? "Ready to export"
+      : selectedServices.length === 0
+        ? "Setup in progress"
+        : pendingCount > 0
+          ? "In review"
+          : "Draft";
+  const evidenceLevelLabel =
+    packageItems.length === 0
+      ? "No findings in scope yet"
+      : pendingCount === 0
+        ? "All scoped findings reviewed"
+        : `${reviewedDecisionCount.toLocaleString()} of ${packageItems.length.toLocaleString()} findings reviewed`;
+  const nextActionLabel = !activePackage
+    ? "Create the review basics"
+    : selectedServices.length === 0
+      ? "Add services to scope"
+      : pendingCount > 0
+        ? "Review findings and rationale"
+        : "Export the review pack";
 
   function toggleStageExpansion(stageId: string, complete: boolean) {
     setStageExpansion((current) => ({
@@ -2163,6 +2195,7 @@ export function ReviewPackageWorkbench({
     const nextPackage = upsertPackage(
       createReviewPackage({
         name: resolvePackageName(requestedHomepagePackagePreset.name),
+        reviewMode: requestedHomepagePackagePreset.reviewMode ?? "Standard review",
         audience: requestedHomepagePackagePreset.audience,
         businessScope: requestedHomepagePackagePreset.businessScope,
         targetRegions: normalizeList(requestedHomepagePackagePreset.targetRegions)
@@ -2236,6 +2269,7 @@ export function ReviewPackageWorkbench({
     const nextPackage = upsertPackage(
       createReviewPackage({
         name: nextName,
+        reviewMode: form.reviewMode,
         audience: form.audience,
         businessScope: form.businessScope,
         targetRegions: normalizeList(form.targetRegions)
@@ -2276,6 +2310,7 @@ export function ReviewPackageWorkbench({
     const savedPackage = upsertPackage({
       ...activePackage,
       name: resolvePackageName(form.name),
+      reviewMode: form.reviewMode,
       audience: form.audience,
       businessScope: form.businessScope.trim(),
       targetRegions: normalizeList(form.targetRegions)
@@ -2747,17 +2782,59 @@ export function ReviewPackageWorkbench({
   return (
     <main className="section-stack">
       <section className="review-command-panel">
-        <div className="review-command-copy">
-          <p className="eyebrow">Project review workspace</p>
-          <h1 className="review-command-title">START A STRUCTURED PROJECT REVIEW</h1>
-          <p className="review-command-summary">
-            Create the review shell first, keep the service boundary honest, then use the matrix,
-            copilot, pricing, and exports only for the architecture that is actually in scope.
-          </p>
+        <div className="review-workspace-header-row">
+          <div className="review-command-copy">
+            <p className="eyebrow">Review workspace</p>
+            <h1 className="review-command-title">Run a guided Azure review with scope, pricing, findings, evidence, and export in one place.</h1>
+            <p className="review-command-summary">
+              Start with review basics, scope only the services that belong to the design, then move
+              through regions, pricing, findings, evidence, and exports with a clear next action.
+            </p>
+          </div>
+
+          <div className="button-row review-workspace-header-actions">
+            <a href="#project-review-local-exports" className="secondary-button">
+              Export review pack
+            </a>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => void handleSavePackageDetails()}
+              disabled={!activePackage}
+            >
+              Save review
+            </button>
+          </div>
         </div>
 
-        <div className="review-command-metrics">
-          {reviewWorkspaceMetrics.map((metric) => (
+        <div className="review-command-metrics review-workspace-summary-strip">
+          {[
+            {
+              label: "Services in scope",
+              value: selectedServices.length.toLocaleString(),
+              detail: "Only the services that belong to this architecture."
+            },
+            {
+              label: "Regions selected",
+              value: activePackage?.targetRegions.length.toLocaleString() ?? "0",
+              detail: "Used to focus region fit and pricing comparisons."
+            },
+            {
+              label: "Findings in scope",
+              value: packageItems.length.toLocaleString(),
+              detail: "Scoped findings currently available in the review."
+            },
+            {
+              label: "Evidence level",
+              value: evidenceLevelLabel,
+              detail: "Shows how much of the scoped review has been explicitly worked."
+            },
+            {
+              label: "Review status",
+              value: reviewStatusLabel,
+              detail: currentWorkspaceStage?.detail ?? "Follow the guided workflow to complete the review."
+            }
+          ].map((metric) => (
             <article className="review-command-metric" key={metric.label}>
               <span>{metric.label}</span>
               <strong>{metric.value}</strong>
@@ -2765,60 +2842,15 @@ export function ReviewPackageWorkbench({
             </article>
           ))}
         </div>
-
-        <div className="review-command-band">
-          <div className="review-command-band-actions">
-            <a href="#project-review-setup" className="home-init-button review-command-button">
-              Open setup stage
-            </a>
-            <Link href="/services" className="secondary-button review-command-secondary">
-              Browse services
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="review-stage-preview-grid" aria-label="Project review stage preview">
-        {workspaceStages
-          .filter((stage) => !stage.optional)
-          .slice(0, 3)
-          .map((stage, index) => (
-            <article className="home-reference-card review-stage-preview-card" key={stage.id}>
-              <div className="review-stage-preview-head">
-                <div>
-                  <p className="eyebrow">Step 0{index + 1}</p>
-                  <h2>{stage.title}</h2>
-                  <p>{stage.label}</p>
-                </div>
-                <span className={`review-progress-pill review-progress-pill-${stage.status}`}>
-                  {stage.status}
-                </span>
-              </div>
-              <p className="microcopy">{stage.detail}</p>
-              <div className="button-row">
-                <a
-                  href={`#${stage.id}`}
-                  className="home-finding-action home-finding-action-primary"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    openStage(stage.id);
-                  }}
-                >
-                  {stage.complete ? "Reopen stage" : "Open stage"}
-                </a>
-              </div>
-            </article>
-          ))}
       </section>
 
       <div className="review-workspace-shell">
         <aside className="review-progress-rail">
           <section className="surface-panel review-progress-card board-toolbar-card">
-            <p className="eyebrow">Review stages</p>
-            <h2 className="review-progress-title">Keep the workflow oriented as the page grows.</h2>
+            <p className="eyebrow">Workflow steps</p>
+            <h2 className="review-progress-title">Follow the review from setup to export.</h2>
             <p className="microcopy">
-              This rail stays focused on the current review path: setup, scope, signals, outputs,
-              and optional continuity.
+              Each step keeps the next best action visible so the review never feels like a blank workspace.
             </p>
             <div className="review-progress-list">
               {workspaceStages.map((stage, index) => (
@@ -2855,15 +2887,15 @@ export function ReviewPackageWorkbench({
         <div className="section-head">
           <div>
             <p className="eyebrow">Step 1</p>
-            <h2 className="section-title">Create or activate the project review that should receive notes.</h2>
+            <h2 className="section-title">Set up the review basics before you scope services.</h2>
             <p className="section-copy">
-              Start with the project review name. Audience, regions, and business scope can be added
-              now or later once the review shell exists.
+              Start with a review name, choose the review mode, and capture the region or architecture
+              notes that matter to the first pass.
             </p>
           </div>
           <div className="chip-row">
             <span className="chip">Only the name is required to start</span>
-            <span className="chip">Cloud save stays optional</span>
+            <span className="chip">ARB-grade review stays available inside the same flow</span>
           </div>
           <div className="button-row review-stage-head-actions">
             <button
@@ -2897,7 +2929,7 @@ export function ReviewPackageWorkbench({
               </label>
 
               <label>
-                <span className="microcopy">Project review name</span>
+                <span className="microcopy">Review name</span>
                 <input
                   className="field-input"
                   value={form.name}
@@ -2905,10 +2937,40 @@ export function ReviewPackageWorkbench({
                   placeholder="Contoso edge review"
                 />
               </label>
+              <label>
+                <span className="microcopy">Review mode</span>
+                <select
+                  className="field-select"
+                  value={form.reviewMode}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      reviewMode: event.target.value as ReviewMode
+                    }))
+                  }
+                >
+                  {REVIEW_MODES.map((reviewMode) => (
+                    <option key={reviewMode} value={reviewMode}>
+                      {reviewMode}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span className="microcopy">Target regions</span>
+                <input
+                  className="field-input"
+                  value={form.targetRegions}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, targetRegions: event.target.value }))
+                  }
+                  placeholder="East US, West Europe, UAE Central"
+                />
+              </label>
               {showSetupDetails ? (
                 <>
                   <p className="microcopy" style={{ gridColumn: "1 / -1" }}>
-                    Rename project review: update the name above, then click <strong>Save review details</strong>.
+                    Update the review basics above, then click <strong>Save review details</strong>.
                   </p>
 
                   <label>
@@ -2930,21 +2992,8 @@ export function ReviewPackageWorkbench({
                       ))}
                     </select>
                   </label>
-
                   <label>
-                    <span className="microcopy">Target regions</span>
-                    <input
-                      className="field-input"
-                      value={form.targetRegions}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, targetRegions: event.target.value }))
-                      }
-                      placeholder="East US, West Europe, UAE Central"
-                    />
-                  </label>
-
-                  <label>
-                    <span className="microcopy">Business scope</span>
+                    <span className="microcopy">Architecture notes</span>
                     <textarea
                       className="field-textarea"
                       value={form.businessScope}
@@ -2957,7 +3006,7 @@ export function ReviewPackageWorkbench({
                 </>
               ) : (
                 <p className="microcopy" style={{ gridColumn: "1 / -1" }}>
-                  Audience, target regions, and business scope are optional for the first pass. Add them when you are ready to tighten the review.
+                  Audience and architecture notes can stay lightweight on the first pass. Open ARB-grade review later when you need document upload and stricter evidence handling.
                 </p>
               )}
             </div>
@@ -2987,9 +3036,16 @@ export function ReviewPackageWorkbench({
                 className="ghost-button"
                 onClick={() => setShowSetupDetails((current) => !current)}
               >
-                {showSetupDetails ? "Hide optional setup fields" : "Show optional setup fields"}
+                {showSetupDetails ? "Hide extra setup fields" : "Show extra setup fields"}
               </button>
             </div>
+
+            {form.reviewMode === "ARB-grade review" ? (
+              <p className="microcopy">
+                ARB-grade reviews use the same saved review foundation, then move into document-backed evidence steps in the advanced workflow.
+                <Link href="/arb" className="muted-link"> Open ARB-grade review mode.</Link>
+              </p>
+            ) : null}
 
             {packageActionMessage ? (
               <p
@@ -3009,6 +3065,11 @@ export function ReviewPackageWorkbench({
                 <span>Services in scope</span>
                 <strong>{activePackage?.selectedServiceSlugs.length.toLocaleString() ?? "0"}</strong>
                 <p>Only these services are exported as part of the project handoff.</p>
+              </article>
+              <article className="hero-metric-card">
+                <span>Review mode</span>
+                <strong>{activePackage?.reviewMode ?? form.reviewMode}</strong>
+                <p>Use standard mode for speed or ARB-grade mode for stronger evidence discipline.</p>
               </article>
               <article className="hero-metric-card">
                 <span>Included findings</span>
@@ -3101,7 +3162,7 @@ export function ReviewPackageWorkbench({
                 ? "Keep the list tight so pricing, copilot answers, and exports stay aligned to the actual architecture."
                 : activePackage
                   ? "Open the stage again when you are ready to add the Azure services that truly belong to the design."
-                  : "Create the review shell first, then this step unlocks automatically."}
+                  : "Create the review basics first, then this step unlocks automatically."}
             </p>
             <div className="button-row">
               <button
@@ -3116,7 +3177,7 @@ export function ReviewPackageWorkbench({
         ) : !activePackage ? (
           <section className="filter-card">
             <p className="eyebrow">Create the review first</p>
-            <h3>The service picker unlocks after Step 1 creates the review shell.</h3>
+            <h3>The service picker unlocks after Step 1 creates the review.</h3>
             <p className="microcopy">
               This keeps the first pass focused on one solution. If you want to browse broadly before
               scoping the review, use the services directory instead of selecting services here yet.
@@ -4048,7 +4109,7 @@ export function ReviewPackageWorkbench({
             <p className="microcopy">
               {activePackage
                 ? "This stage is intentionally optional. Keep the workflow local-first until you actually need save, restore, or a cloud-generated CSV."
-                : "Create the review shell first, then sign in later only if you need continuity across sessions."}
+                : "Create the review basics first, then sign in later only if you need continuity across sessions."}
             </p>
             <div className="button-row">
               <button
@@ -4509,6 +4570,46 @@ export function ReviewPackageWorkbench({
           activePackageName={activePackage?.name ?? null}
         />
       ) : null}
+        <aside className="review-summary-rail">
+          <section className="surface-panel review-summary-card board-toolbar-card">
+            <p className="eyebrow">Review summary</p>
+            <h2 className="review-progress-title">Keep context visible while you work.</h2>
+            <div className="review-summary-list">
+              <div>
+                <span>Review name</span>
+                <strong>{activePackage?.name ?? "No active review"}</strong>
+              </div>
+              <div>
+                <span>Review mode</span>
+                <strong>{activePackage?.reviewMode ?? form.reviewMode}</strong>
+              </div>
+              <div>
+                <span>Services in scope</span>
+                <strong>{selectedServices.length.toLocaleString()}</strong>
+              </div>
+              <div>
+                <span>Findings in scope</span>
+                <strong>{packageItems.length.toLocaleString()}</strong>
+              </div>
+              <div>
+                <span>Status</span>
+                <strong>{reviewStatusLabel}</strong>
+              </div>
+              <div>
+                <span>Next action</span>
+                <strong>{nextActionLabel}</strong>
+              </div>
+            </div>
+            <div className="chip-row compact-chip-row">
+              <span className="chip">{activePackage?.targetRegions.length.toLocaleString() ?? "0"} regions</span>
+              <span className="chip">{reviewedDecisionCount.toLocaleString()} reviewed</span>
+              <span className="chip">{pendingCount.toLocaleString()} pending</span>
+            </div>
+            <p className="microcopy">
+              {currentWorkspaceStage?.detail ?? "Move through the steps in order to keep the review pack coherent."}
+            </p>
+          </section>
+        </aside>
         </div>
       </div>
     </main>
