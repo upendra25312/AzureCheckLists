@@ -254,25 +254,25 @@ export function DashboardHome({
   const artifacts = [
     {
       title: "Design notes",
-      copy: "Documentation for design packs.",
+      copy: "Narrative for design reviews.",
       href: "/review-package#project-review-local-exports" as const,
       icon: <HomeDocIcon />
     },
     {
       title: "Checklist CSV",
-      copy: "Actionable task list with findings.",
+      copy: "Action list for owners.",
       href: "/review-package#project-review-local-exports" as const,
       icon: <HomeSheetIcon />
     },
     {
       title: "Pricing snapshot",
-      copy: "Scoped retail pricing summary.",
+      copy: "Retail baseline for the scoped review.",
       href: "/review-package#project-review-pricing" as const,
       icon: <HomeSnapshotIcon />
     },
     {
       title: "Continuity file",
-      copy: "Save or restore to continue work.",
+      copy: "Resume the same review later.",
       href: "/my-project-reviews" as const,
       icon: <HomeContinuityIcon />
     }
@@ -282,12 +282,36 @@ export function DashboardHome({
     <main className="home-reference-main">
       <HomepageReviewInitializer />
 
+      <section className="home-workflow-intro" aria-label="How to use this homepage">
+        <div className="home-workflow-copy">
+          <p className="home-step-label">Recommended flow</p>
+          <h2>Three steps. One scoped review.</h2>
+          <p>Start the review, confirm fit, then capture decisions for what is actually in scope.</p>
+        </div>
+
+        <div className="home-workflow-metrics" aria-label="Homepage summary metrics">
+          <article className="home-workflow-metric">
+            <strong>{serviceIndex.services.length.toLocaleString()}</strong>
+            <span>normalized Azure services</span>
+          </article>
+          <article className="home-workflow-metric">
+            <strong>{summary.itemCount.toLocaleString()}</strong>
+            <span>review findings in the catalog</span>
+          </article>
+          <article className="home-workflow-metric">
+            <strong>{pricingGeneratedDate}</strong>
+            <span>latest pricing refresh</span>
+          </article>
+        </div>
+      </section>
+
       <section className="home-card-grid" aria-label="Review workflow cards">
         <article className="home-reference-card">
           <div className="home-card-head">
             <div>
-              <h2>1. Validate Service &amp; Region Fit</h2>
-              <p>Check availability &amp; constraints</p>
+              <p className="home-step-label">Step 1</p>
+              <h2>Validate service and region fit</h2>
+              <p className="home-card-summary">Search services and check regional constraints.</p>
             </div>
             <div className="home-card-icon home-card-icon-region">
               <HomeGlobeIcon />
@@ -304,8 +328,9 @@ export function DashboardHome({
         <article className="home-reference-card">
           <div className="home-card-head">
             <div>
-              <h2>2. Assess Retail Pricing Posture</h2>
-              <p>Review public SKU &amp; meter data</p>
+              <p className="home-step-label">Step 2</p>
+              <h2>Assess retail pricing posture</h2>
+              <p className="home-card-summary">Review a first-pass retail baseline.</p>
             </div>
             <div className="home-card-icon home-card-icon-pricing">
               <HomePricingIcon />
@@ -315,7 +340,7 @@ export function DashboardHome({
           <div className="home-pricing-table">
             <div className="home-pricing-row home-pricing-row-head">
               <span>Service</span>
-              <span>Approx. Monthly</span>
+              <span>Estimated Monthly</span>
             </div>
             {pricingSnapshot.rows.length > 0 ? (
               pricingSnapshot.rows.map((row) => (
@@ -342,7 +367,7 @@ export function DashboardHome({
                         currency: row.currencyCode,
                         maximumFractionDigits: 6
                       }).format(row.retailPrice)}{" "}
-                      / {row.unitOfMeasure || "unit"}
+                      retail rate / {row.unitOfMeasure || "unit"}
                     </span>
                   </div>
                 </div>
@@ -373,8 +398,9 @@ export function DashboardHome({
         <article className="home-reference-card">
           <div className="home-card-head">
             <div>
-              <h2>3. Audit Design Findings</h2>
-              <p>Document architecture decisions</p>
+              <p className="home-step-label">Step 3</p>
+              <h2>Audit design findings</h2>
+              <p className="home-card-summary">Capture only the findings that matter to this review.</p>
             </div>
             <div className="home-card-icon home-card-icon-findings">
               <HomeFindingsIcon />
@@ -411,19 +437,19 @@ export function DashboardHome({
 
       <section className="home-artifacts-panel">
         <div className="home-artifacts-copy">
-          <h2>Export Scoped Artifacts</h2>
-          <p>
-            Create a reusable, consistent starting point built around practical Azure patterns.
-          </p>
+          <p className="home-step-label">Outputs</p>
+          <h2>Export scoped artifacts</h2>
+          <p>Share the review in the format the next audience needs.</p>
         </div>
 
         <div className="home-artifacts-grid">
           {artifacts.map((artifact) => (
             <Link href={artifact.href} className="home-artifact-link" key={artifact.title}>
               <div className="home-artifact-icon">{artifact.icon}</div>
-              <div>
+              <div className="home-artifact-copy">
                 <strong>{artifact.title}</strong>
                 <p>{artifact.copy}</p>
+                <span>Open</span>
               </div>
             </Link>
           ))}

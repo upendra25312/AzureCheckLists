@@ -114,8 +114,8 @@ export function HomepageServiceBrowser({
   const helperCopy = normalizedSearch
     ? topMatch
       ? `Press Enter to open ${topMatch.service}.`
-      : "No matching service found yet. Open the full service directory instead."
-    : "Search by service name, alias, category, or checklist family.";
+      : "No match yet. Open the full catalog."
+    : "Find the Azure service you want to review.";
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -137,7 +137,7 @@ export function HomepageServiceBrowser({
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Add Azure Service (e.g., Cosmos DB)"
+            placeholder="Search a service (e.g., Cosmos DB)"
             aria-label="Search Azure services"
           />
         </label>
@@ -165,7 +165,7 @@ export function HomepageServiceBrowser({
         </div>
       ) : (
         <div className="home-card-empty">
-          <p>No matching services were found in the current catalog.</p>
+          <p>No matching services found.</p>
           <Link href="/services" className="home-inline-link">
             Browse Services
           </Link>

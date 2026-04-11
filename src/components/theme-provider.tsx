@@ -58,10 +58,26 @@ const PRIMARY_TAB_ITEMS: NavItem[] = [
   { href: "/my-project-reviews" as Route, label: "My Reviews" }
 ] as const;
 
+const HOME_PRIMARY_TAB_ITEMS: NavItem[] = [
+  { href: "/" as Route, label: "Home" },
+  {
+    href: "/arb" as Route,
+    label: "Review Workspace",
+    matches: isReviewWorkspacePath
+  },
+  { href: "/my-project-reviews" as Route, label: "My Reviews" }
+] as const;
+
 const SECONDARY_LINK_ITEMS: NavItem[] = [
   { href: "/data-health" as Route, label: "Data Health" },
   { href: "/how-to-use" as Route, label: "How It Works" },
   { href: "/admin/copilot" as Route, label: "Admin", matchPrefixes: ["/admin"] }
+] as const;
+
+const HOME_SECONDARY_LINK_ITEMS: NavItem[] = [
+  { href: "/services" as Route, label: "Browse Services", matchPrefixes: ["/services", "/technologies"] },
+  { href: "/data-health" as Route, label: "Data Health" },
+  { href: "/how-to-use" as Route, label: "How It Works" }
 ] as const;
 
 function isActiveHref(pathname: string, href: string) {
@@ -102,7 +118,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("light");
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const utilityLinks: NavItem[] = [...SECONDARY_LINK_ITEMS];
+  const primaryTabItems = isHome ? HOME_PRIMARY_TAB_ITEMS : PRIMARY_TAB_ITEMS;
+  const utilityLinks: NavItem[] = isHome ? [...HOME_SECONDARY_LINK_ITEMS] : [...SECONDARY_LINK_ITEMS];
 
   useEffect(() => {
     const initialTheme = resolveInitialTheme();
@@ -126,7 +143,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           </Link>
 
           <nav className="home-tab-nav" aria-label="Primary sections">
-            {PRIMARY_TAB_ITEMS.map((item) => (
+            {primaryTabItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}

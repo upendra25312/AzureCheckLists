@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { trackReviewTelemetry } from "@/lib/review-telemetry";
 
-const DEFAULT_REGIONS = ["UAE Central", "East US", "UK South"];
+const DEFAULT_REGIONS: string[] = [];
+const REGION_SUGGESTIONS = ["East US", "UK South", "West Europe", "UAE Central"];
 
 function normalizeRegion(value: string) {
   return value.trim().replace(/\s+/g, " ");
@@ -63,7 +65,7 @@ export function HomepageReviewInitializer() {
     const trimmedName = projectName.trim();
 
     if (!trimmedName) {
-      setError("Project name is required before the review workspace can be initialized.");
+      setError("Project name is required before the review workspace can be created.");
       return;
     }
 
@@ -99,80 +101,104 @@ export function HomepageReviewInitializer() {
   return (
     <section className="home-init-panel">
       <div className="home-init-copy">
+        <p className="home-init-kicker">Start here</p>
         <h1 className="home-init-title">Start a Structured Azure Review</h1>
-        <p className="home-init-summary">
-          Define your project scope to create a reusable design artifact with validated
-          service-level context, region-fit signals, and documented decisions.
-        </p>
+        <p className="home-init-summary">Create the review shell first, then refine the scope inside the workspace.</p>
       </div>
 
       <form className="home-init-form" onSubmit={handleSubmit}>
-        <div className="home-init-field-grid">
-          <label className="home-init-field">
-            <span>Project Name (e.g., Greenfield AKS Cluster)</span>
-            <input
-              className="field-input home-init-input"
-              value={projectName}
-              onChange={(event) => setProjectName(event.target.value)}
-              placeholder="Greenfield AKS Cluster"
-            />
-          </label>
+        <label className="home-init-field home-init-field-primary">
+          <span>Project name</span>
+          <input
+            className="field-input home-init-input"
+            value={projectName}
+            onChange={(event) => setProjectName(event.target.value)}
+            placeholder="Greenfield AKS Cluster"
+          />
+          <small className="home-init-hint">Required. Everything else can be refined inside the workspace.</small>
+        </label>
 
-          <label className="home-init-field">
-            <span>Primary Problem Statement / Business Case</span>
-            <textarea
-              className="field-textarea home-init-textarea"
-              value={businessScope}
-              onChange={(event) => setBusinessScope(event.target.value)}
-              placeholder="Summarize the problem, target architecture, and the business goal."
-            />
-          </label>
+        <details className="home-init-optional">
+          <summary>Optional context</summary>
 
-          <label className="home-init-field">
-            <span>Target Azure Regions</span>
-            <div className="home-region-field">
-              <div className="home-region-chip-list">
-                {resolvedRegions.map((region) => (
+          <div className="home-init-optional-grid">
+            <label className="home-init-field">
+              <span>Business case</span>
+              <textarea
+                className="field-textarea home-init-textarea"
+                value={businessScope}
+                onChange={(event) => setBusinessScope(event.target.value)}
+                placeholder="Summarize the problem, target architecture, and the business goal."
+              />
+              <small className="home-init-hint">Short is enough. Expand it later in the review.</small>
+            </label>
+
+            <label className="home-init-field">
+              <span>Target regions</span>
+              <div className="home-region-field">
+                <div className="home-region-chip-list">
+                  {resolvedRegions.map((region) => (
+                    <button
+                      type="button"
+                      key={region}
+                      className="home-region-chip"
+                      onClick={() => removeRegion(region)}
+                      title={`Remove ${region}`}
+                    >
+                      {region} <span>x</span>
+                    </button>
+                  ))}
+                  <input
+                    className="home-region-input"
+                    value={regionDraft}
+                    onChange={(event) => setRegionDraft(event.target.value)}
+                    onBlur={commitRegionDraft}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === ",") {
+                        event.preventDefault();
+                        commitRegionDraft();
+                      }
+                    }}
+                    placeholder={resolvedRegions.length === 0 ? "Add a region" : ""}
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="home-region-caret"
+                  onClick={commitRegionDraft}
+                  aria-label="Add typed region"
+                >
+                  Add
+                </button>
+              </div>
+              <div className="home-region-suggestions" aria-label="Suggested regions">
+                {REGION_SUGGESTIONS.map((region) => (
                   <button
                     type="button"
                     key={region}
-                    className="home-region-chip"
-                    onClick={() => removeRegion(region)}
-                    title={`Remove ${region}`}
+                    className="home-region-suggestion"
+                    onClick={() => addRegion(region)}
                   >
-                    {region} <span>x</span>
+                    {region}
                   </button>
                 ))}
-                <input
-                  className="home-region-input"
-                  value={regionDraft}
-                  onChange={(event) => setRegionDraft(event.target.value)}
-                  onBlur={commitRegionDraft}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === ",") {
-                      event.preventDefault();
-                      commitRegionDraft();
-                    }
-                  }}
-                  placeholder={resolvedRegions.length === 0 ? "Add a region" : ""}
-                />
               </div>
-              <button
-                type="button"
-                className="home-region-caret"
-                onClick={commitRegionDraft}
-                aria-label="Add typed region"
-              >
-                v
-              </button>
-            </div>
-          </label>
-        </div>
+              <small className="home-init-hint">Optional. Add regions now only if they matter to the first pass.</small>
+            </label>
+          </div>
+        </details>
 
         <div className="home-init-button-band">
+          <p className="home-init-button-caption">Creates the review shell and opens the structured review workspace.</p>
           <button type="submit" className="home-init-button" disabled={isPending}>
-            {isPending ? "Opening Project Review..." : "Initialize Project Review"}
+            {isPending ? "Creating Review Workspace..." : "Create Review Workspace"}
           </button>
+        </div>
+
+        <div className="home-init-secondary-actions">
+          <Link href="/my-project-reviews" className="home-init-secondary-link">
+            Open saved reviews
+          </Link>
         </div>
 
         {error ? <p className="home-init-error">{error}</p> : null}
