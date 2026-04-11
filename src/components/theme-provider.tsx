@@ -61,6 +61,11 @@ const PRIMARY_TAB_ITEMS: NavItem[] = [
 const HOME_PRIMARY_TAB_ITEMS: NavItem[] = [
   { href: "/" as Route, label: "Home" },
   {
+    href: "/services" as Route,
+    label: "Knowledge Hub",
+    matchPrefixes: ["/services", "/technologies"]
+  },
+  {
     href: "/arb" as Route,
     label: "Review Workspace",
     matches: isReviewWorkspacePath

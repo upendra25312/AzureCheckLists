@@ -196,6 +196,9 @@ export function HomepageReviewInitializer() {
         </div>
 
         <div className="home-init-secondary-actions">
+          <Link href="/arb" className="home-init-secondary-link">
+            Upload ARB artifacts
+          </Link>
           <Link href="/my-project-reviews" className="home-init-secondary-link">
             Open saved reviews
           </Link>
