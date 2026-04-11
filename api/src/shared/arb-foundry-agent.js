@@ -20,8 +20,10 @@ function getAiServicesBaseEndpoint() {
 }
 
 function getFoundryConfiguration() {
+  // Configured if we have a project endpoint (Bearer token via managed identity).
+  // FOUNDRY_API_KEY is only needed for the Chat Completions fallback path.
   return {
-    configured: Boolean(FOUNDRY_PROJECT_ENDPOINT && FOUNDRY_API_KEY),
+    configured: Boolean(FOUNDRY_PROJECT_ENDPOINT),
     endpoint: FOUNDRY_PROJECT_ENDPOINT,
     agentId: FOUNDRY_AGENT_ID || null,
     useAgent: Boolean(FOUNDRY_AGENT_ID)
@@ -452,7 +454,7 @@ function parseAgentResponse(responseText) {
 async function runArbAgentReview({ review, files, requirements, evidence, searchChunks }) {
   const config = getFoundryConfiguration();
   if (!config.configured) {
-    return { success: false, reason: "Foundry not configured — FOUNDRY_PROJECT_ENDPOINT or FOUNDRY_API_KEY missing" };
+    return { success: false, reason: "Foundry not configured — FOUNDRY_PROJECT_ENDPOINT missing" };
   }
 
   // Fetch real-time Microsoft Learn documentation — best-effort, never blocks the review
@@ -462,17 +464,15 @@ async function runArbAgentReview({ review, files, requirements, evidence, search
   try {
     let responseText;
 
-    if (config.useAgent) {
-      // Use the pre-configured Azure-ARB-Agent (has Microsoft Learn MCP tool + optional Bing grounding)
-      // Authenticated via Function App managed identity → Azure AD token → Foundry Agents API
-      responseText = await runViaFoundryAgent(userMessage);
-    } else {
-      // Fallback: direct Chat Completions with the system prompt embedded in the request
-      responseText = await chatCompletionsRequest([
-        { role: "system", content: ARB_SYSTEM_PROMPT },
-        { role: "user", content: userMessage }
-      ]);
-    }
+    // Use Chat Completions with model-router (same model as Azure-ARB-Agent in Foundry portal)
+    // plus direct Microsoft Learn MCP grounding already injected into userMessage above.
+    // The New Foundry agents REST API does not yet support programmatic invocation with
+    // portal-created agent IDs — the portal agent config (instructions + MCP tool) is
+    // kept in sync with ARB_SYSTEM_PROMPT and the learnDocs grounding below.
+    responseText = await chatCompletionsRequest([
+      { role: "system", content: ARB_SYSTEM_PROMPT },
+      { role: "user", content: userMessage }
+    ]);
 
     if (!responseText) {
       return { success: false, reason: "Model returned an empty response" };
