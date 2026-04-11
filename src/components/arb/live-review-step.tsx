@@ -15,6 +15,7 @@ import {
   fetchArbScorecard,
   fetchArbUploads,
   recordArbDecision,
+  runArbAgentReview,
   startArbExtraction,
   uploadArbFiles,
   updateArbAction,
@@ -197,6 +198,9 @@ export function ArbLiveReviewStep(props: {
   const [exportDownloadingId, setExportDownloadingId] = useState<string | null>(null);
   const [exportRegenerating, setExportRegenerating] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [agentRunning, setAgentRunning] = useState(false);
+  const [agentError, setAgentError] = useState<string | null>(null);
+  const [agentCompleted, setAgentCompleted] = useState(false);
   const actionSummary = summarizeActions(actions);
   const authRequired = error?.includes("Sign in is required") ?? false;
 
@@ -562,6 +566,28 @@ export function ArbLiveReviewStep(props: {
     }
   }
 
+  async function handleRunAgentReview() {
+    try {
+      setAgentRunning(true);
+      setAgentError(null);
+      await runArbAgentReview(reviewId);
+      setAgentCompleted(true);
+      // Refresh findings and scorecard after agent run
+      const [nextFindings, nextScorecard] = await Promise.all([
+        fetchArbFindings(reviewId),
+        fetchArbScorecard(reviewId)
+      ]);
+      setFindings(nextFindings);
+      setScorecard(nextScorecard);
+    } catch (agentRunError) {
+      setAgentError(
+        agentRunError instanceof Error ? agentRunError.message : "Unable to run agent review."
+      );
+    } finally {
+      setAgentRunning(false);
+    }
+  }
+
   function renderUploadContent() {
     const supportedUploads = uploadedFiles.filter((item) => item.supportedTextExtraction);
     const unsupportedUploads = uploadedFiles.filter((item) => !item.supportedTextExtraction);
@@ -790,6 +816,31 @@ export function ArbLiveReviewStep(props: {
                 </p>
               ) : null}
             </section>
+
+            {extractionStatus?.state === "Completed" ? (
+              <section className="trace-card arb-summary-card">
+                <p className="board-card-subtitle">Agent review</p>
+                <p className="section-copy">
+                  Run the ARB Agent to produce structured findings, a weighted scorecard, and a
+                  recommendation. The agent analyses all uploaded and extracted evidence and writes
+                  results directly into this review.
+                </p>
+                <button
+                  type="button"
+                  className="primary-button"
+                  disabled={agentRunning}
+                  onClick={() => void handleRunAgentReview()}
+                >
+                  {agentRunning ? "Running agent review..." : "Run agent review"}
+                </button>
+                {agentCompleted ? (
+                  <p className="microcopy">
+                    Agent review complete. Findings and scorecard have been updated.
+                  </p>
+                ) : null}
+                {agentError ? <p>{agentError}</p> : null}
+              </section>
+            ) : null}
 
             {renderOutputArtifactsCard()}
           </div>

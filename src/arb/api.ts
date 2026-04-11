@@ -389,6 +389,27 @@ export async function fetchArbExports(reviewId: string): Promise<ArbExportArtifa
   return payload.exports;
 }
 
+export async function runArbAgentReview(reviewId: string): Promise<{
+  agentReviewCompleted: boolean;
+  findingsCount: number;
+  recommendation: string;
+  overallScore: number | null;
+  confidenceLevel: string | null;
+}> {
+  const response = await fetch(`/api/arb/reviews/${reviewId}/run-agent-review`, {
+    method: "POST",
+    headers: { Accept: "application/json" }
+  });
+
+  return readJsonResponse<{
+    agentReviewCompleted: boolean;
+    findingsCount: number;
+    recommendation: string;
+    overallScore: number | null;
+    confidenceLevel: string | null;
+  }>(response, `Unable to run ARB agent review (${response.status}).`);
+}
+
 export async function downloadArbExport(reviewId: string, exportArtifact: ArbExportArtifact) {
   const response = await fetch(
     `/api/arb/reviews/${reviewId}/exports/${exportArtifact.exportId}/download`,
