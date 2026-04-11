@@ -10,6 +10,7 @@ const {
   uploadTextBlob
 } = require("./storage");
 const { getCopilotConfiguration, runCopilot } = require("./copilot");
+const { ensureArbSearchIndex, indexArbDocumentChunks, getSearchConfiguration } = require("./arb-search");
 const {
   ARB_REVIEW_TABLE_NAME,
   encodeTableKey,
@@ -1508,6 +1509,16 @@ async function startArbExtraction(principal, reviewId) {
   const nextFiles = [];
   const extractionErrors = [];
   const fileTexts = new Map();
+  let searchIndexed = false;
+
+  if (getSearchConfiguration().configured) {
+    try {
+      await ensureArbSearchIndex();
+      searchIndexed = true;
+    } catch {
+      // Search indexing is best-effort; extraction continues without it
+    }
+  }
 
   for (const file of files) {
     if (!file.supportedTextExtraction) {
@@ -1540,6 +1551,11 @@ async function startArbExtraction(principal, reviewId) {
         extractionStatus: "Completed",
         extractionError: null
       });
+
+      // Index text chunks into Azure AI Search (best-effort)
+      if (searchIndexed) {
+        indexArbDocumentChunks(reviewId, file.fileId, file.fileName, file.logicalCategory, text).catch(() => {});
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown extraction error.";
       nextFiles.push({
@@ -1584,7 +1600,13 @@ async function startArbExtraction(principal, reviewId) {
     reviewId,
     jobId,
     state: extractionState,
-    completedSteps: ["files-registered", "blob-read", "requirements-normalized", "evidence-normalized"],
+    completedSteps: [
+      "files-registered",
+      "blob-read",
+      "requirements-normalized",
+      "evidence-normalized",
+      ...(searchIndexed ? ["search-indexed"] : [])
+    ],
     failedSteps: extractionErrors.length > 0 ? ["text-extraction"] : [],
     evidenceReadinessState,
     extractionErrors,
