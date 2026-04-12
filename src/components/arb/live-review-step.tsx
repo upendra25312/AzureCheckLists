@@ -763,6 +763,7 @@ export function ArbLiveReviewStep(props: {
         </div>
 
         <section
+          id="upload-documents"
           className={`surface-panel arb-upload-dropzone${
             uploadDropActive ? " arb-upload-dropzone-active" : ""
           }`}
@@ -871,7 +872,7 @@ export function ArbLiveReviewStep(props: {
         </section>
 
         {/* Confidentiality confirmation + Start extraction CTA */}
-        <section className="surface-panel arb-action-panel">
+        <section id="run-ai-analysis" className="surface-panel arb-action-panel">
           <label className="arb-inline-check">
             <input
               aria-label="Confirm uploaded files can be used for review extraction"

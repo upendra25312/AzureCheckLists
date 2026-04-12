@@ -30,7 +30,8 @@ function getActiveStep(review: ArbReviewSummary): number {
 
 function getStepHref(review: ArbReviewSummary): Route {
   const step = getActiveStep(review);
-  if (step <= 4) return `/arb/${review.reviewId}/upload` as Route;
+  if (step <= 3) return `/arb/${review.reviewId}/upload#upload-documents` as Route;
+  if (step === 4) return `/arb/${review.reviewId}/upload#run-ai-analysis` as Route;
   if (step === 5) return `/arb/${review.reviewId}/decision` as Route;
   return `/arb/${review.reviewId}` as Route;
 }
