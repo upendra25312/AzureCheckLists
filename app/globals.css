@@ -3991,6 +3991,71 @@ button.chip:disabled:hover {
   gap: 12px;
 }
 
+.arb-shell-metric {
+  display: grid;
+  gap: 4px;
+}
+
+.arb-shell-metric-label {
+  margin: 0;
+  color: var(--brand);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.arb-shell-metric-value {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.arb-shell-score {
+  font-size: 1.5rem;
+  line-height: 1.1;
+}
+
+.arb-shell-score-pending {
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.arb-shell-score-good {
+  color: #0b7d4f;
+}
+
+.arb-shell-score-warning {
+  color: #9b5d08;
+}
+
+.arb-shell-score-risk {
+  color: #b7402a;
+}
+
+[data-theme="dark"] .arb-shell-score-good {
+  color: #6ad19a;
+}
+
+[data-theme="dark"] .arb-shell-score-warning {
+  color: #f0b25c;
+}
+
+[data-theme="dark"] .arb-shell-score-risk {
+  color: #ff8a7a;
+}
+
+.arb-shell-posture-note {
+  margin: 4px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
 .arb-shell-sidecar-metrics span,
 .arb-summary-list span {
   color: var(--brand);

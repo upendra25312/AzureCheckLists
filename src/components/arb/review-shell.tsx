@@ -63,6 +63,38 @@ function getStepGuidance(activeStep: string) {
   }
 }
 
+function getPostureActionHint(review: ArbReviewSummary) {
+  if (review.finalDecision) {
+    return "Decision recorded. Confirm rationale and export the board pack.";
+  }
+
+  if (review.recommendation === "Needs Revision") {
+    return "Prioritize unresolved evidence gaps before final sign-off.";
+  }
+
+  if (review.workflowState === "Evidence Ready") {
+    return "Evidence is staged. Run findings and verify domain score impact.";
+  }
+
+  return "Advance the active workflow stage to keep findings and scorecard current.";
+}
+
+function getScoreClass(score: number | null | undefined) {
+  if (score === null || score === undefined) {
+    return "arb-shell-score-pending";
+  }
+
+  if (score >= 85) {
+    return "arb-shell-score-good";
+  }
+
+  if (score >= 70) {
+    return "arb-shell-score-warning";
+  }
+
+  return "arb-shell-score-risk";
+}
+
 export function ArbReviewShell(props: {
   review: ArbReviewSummary;
   steps: ArbReviewStep[];
@@ -74,6 +106,9 @@ export function ArbReviewShell(props: {
   const { review, steps, activeStep, title, description, children } = props;
   const activeStepIndex = steps.findIndex((step) => step.key === activeStep);
   const guidance = getStepGuidance(activeStep);
+  const activeStepLabel = steps.find((step) => step.key === activeStep)?.label ?? "Overview";
+  const postureActionHint = getPostureActionHint(review);
+  const recommendationValue = review.finalDecision ?? review.recommendation ?? "Pending";
 
   return (
     <main className="arb-page-stack">
@@ -105,23 +140,26 @@ export function ArbReviewShell(props: {
           <aside className="detail-command-sidecar future-card arb-shell-sidecar-card">
             <p className="board-card-subtitle">Current posture</p>
             <div className="arb-shell-sidecar-metrics">
-              <div>
-                <span>Workflow</span>
-                <strong>{review.workflowState}</strong>
+              <div className="arb-shell-metric">
+                <p className="arb-shell-metric-label">Workflow</p>
+                <p className="arb-shell-metric-value">{review.workflowState}</p>
               </div>
-              <div>
-                <span>Evidence</span>
-                <strong>{review.evidenceReadinessState}</strong>
+              <div className="arb-shell-metric">
+                <p className="arb-shell-metric-label">Evidence</p>
+                <p className="arb-shell-metric-value">{review.evidenceReadinessState}</p>
               </div>
-              <div>
-                <span>Recommendation</span>
-                <strong>{review.finalDecision ?? review.recommendation}</strong>
+              <div className="arb-shell-metric">
+                <p className="arb-shell-metric-label">Recommendation</p>
+                <p className="arb-shell-metric-value">{recommendationValue}</p>
               </div>
-              <div>
-                <span>Score</span>
-                <strong>{review.overallScore ?? "Pending"}</strong>
+              <div className="arb-shell-metric">
+                <p className="arb-shell-metric-label">Score</p>
+                <p className={`arb-shell-metric-value arb-shell-score ${getScoreClass(review.overallScore)}`}>
+                  {review.overallScore ?? "Pending"}
+                </p>
               </div>
             </div>
+            <p className="arb-shell-posture-note">{postureActionHint}</p>
           </aside>
         </div>
 
@@ -153,24 +191,20 @@ export function ArbReviewShell(props: {
             <p className="board-card-subtitle">Review summary</p>
             <ul className="arb-summary-list">
               <li>
-                <span>Workflow State</span>
-                <strong>{review.workflowState}</strong>
+                <span>Active Stage</span>
+                <strong>{activeStepLabel}</strong>
               </li>
               <li>
-                <span>Evidence State</span>
-                <strong>{review.evidenceReadinessState}</strong>
-              </li>
-              <li>
-                <span>Recommendation</span>
-                <strong>{review.recommendation}</strong>
-              </li>
-              <li>
-                <span>Score</span>
-                <strong>{review.overallScore ?? "TBD"}</strong>
-              </li>
-              <li>
-                <span>Reviewer</span>
+                <span>Assigned Reviewer</span>
                 <strong>{review.assignedReviewer ?? "Unassigned"}</strong>
+              </li>
+              <li>
+                <span>Final Decision</span>
+                <strong>{review.finalDecision ?? "Pending"}</strong>
+              </li>
+              <li>
+                <span>Review ID</span>
+                <strong>{review.reviewId}</strong>
               </li>
               <li>
                 <span>Updated</span>
