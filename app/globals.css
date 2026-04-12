@@ -8973,6 +8973,96 @@ button.chip:disabled:hover {
   background: #F3F4F6;
 }
 
+/* ── Homepage: hero upload zone ── */
+.hero-upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 180px;
+  border: 2px dashed #93C5FD;
+  border-radius: 16px;
+  background: #EFF6FF;
+  padding: 32px 24px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-decoration: none;
+  color: inherit;
+  box-sizing: border-box;
+}
+
+.hero-upload-zone:hover,
+.hero-upload-zone--active {
+  border-color: #0078D4;
+  background: #DBEAFE;
+}
+
+.hero-upload-zone--uploading {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.hero-upload-zone--loading {
+  cursor: default;
+  border-style: solid;
+  background: #F9FAFB;
+  border-color: #E5E7EB;
+}
+
+.hero-upload-zone--signin {
+  border-color: #60A5FA;
+  background: #F0F9FF;
+}
+
+.hero-upload-zone--signin:hover {
+  border-color: #0078D4;
+  background: #DBEAFE;
+}
+
+.hero-upload-input {
+  display: none;
+}
+
+.hero-upload-icon {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.hero-upload-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1e3a5f;
+  text-align: center;
+}
+
+.hero-upload-sub {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #6B7280;
+  text-align: center;
+}
+
+.hero-upload-link {
+  color: #0078D4;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.hero-upload-error {
+  margin: 8px 0 0;
+  font-size: 0.875rem;
+  color: #DC2626;
+  text-align: center;
+}
+
+.impact-auth-loading {
+  font-size: 0.875rem;
+  color: #6B7280;
+}
+
 @media (max-width: 980px) {
   .impact-home {
     padding: 24px 18px 56px;

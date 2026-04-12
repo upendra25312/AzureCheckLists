@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { useEffect, useState } from "react";
-import { listArbReviews } from "@/arb/api";
+import { useEffect, useRef, useState } from "react";
+import { createArbReview, listArbReviews, uploadArbFiles } from "@/arb/api";
 import type { ArbReviewSummary } from "@/arb/types";
 import { buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
 
@@ -67,6 +67,10 @@ const frameworkCoverage = [
 export default function HomePage() {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [latestReview, setLatestReview] = useState<ArbReviewSummary | null>(null);
+  const [dropActive, setDropActive] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchClientPrincipal()
@@ -80,12 +84,27 @@ export default function HomePage() {
             );
             setLatestReview(sorted[0] ?? null);
           } catch {
-            // non-fatal — just don't show the live step indicator
+            // non-fatal
           }
         }
       })
       .catch(() => setSignedIn(false));
   }, []);
+
+  async function handleFiles(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return;
+    try {
+      setUploading(true);
+      setUploadError(null);
+      const firstName = fileList[0].name.replace(/\.[^.]+$/, "").slice(0, 80);
+      const review = await createArbReview({ projectName: firstName || "Architecture Review", customerName: "" });
+      await uploadArbFiles({ reviewId: review.reviewId, files: Array.from(fileList) });
+      window.location.href = `/arb/${encodeURIComponent(review.reviewId)}/upload`;
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed — please try again.");
+      setUploading(false);
+    }
+  }
 
   return (
     <main className="impact-home">
@@ -97,30 +116,69 @@ export default function HomePage() {
           Upload architecture docs. Get board-ready Azure findings in minutes.
         </h1>
         <p className="impact-subline">
-          One workflow for scope, evidence, region fit, pricing context, and exportable review packs.
+          Drop your SOW or design document — the AI agent reads it and checks it against WAF, CAF, ALZ, HA/DR, Security, Networking, and Monitoring.
         </p>
 
-        <div className="impact-hero-cta-row">
-          {signedIn === null ? (
+        {/* Upload zone — the action IS the page */}
+        {signedIn === null ? (
+          <div className="hero-upload-zone hero-upload-zone--loading">
             <span className="impact-auth-loading">Checking sign-in status…</span>
-          ) : signedIn ? (
-            <>
-              <Link href="/arb" className="impact-btn impact-btn-primary">
-                Start Board Review
-              </Link>
-              <Link href="/services" className="impact-btn impact-btn-secondary">
-                Explore Azure Services
-              </Link>
-            </>
-          ) : (
-            <>
-              <a href={signInHref} className="impact-btn impact-btn-primary">
-                Start Board Review
-              </a>
-              <Link href="/services" className="impact-btn impact-btn-secondary">
-                Explore Azure Services
-              </Link>
-            </>
+          </div>
+        ) : signedIn ? (
+          <div
+            className={`hero-upload-zone${dropActive ? " hero-upload-zone--active" : ""}${uploading ? " hero-upload-zone--uploading" : ""}`}
+            onDragOver={(e) => { e.preventDefault(); setDropActive(true); }}
+            onDragLeave={() => setDropActive(false)}
+            onDrop={(e) => { e.preventDefault(); setDropActive(false); void handleFiles(e.dataTransfer.files); }}
+            onClick={() => !uploading && fileInputRef.current?.click()}
+            role="button"
+            tabIndex={0}
+            aria-label="Upload architecture documents"
+            onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.ppt,.pptx,.md,.txt,.xls,.xlsx"
+              className="hero-upload-input"
+              aria-hidden="true"
+              onChange={(e) => { void handleFiles(e.target.files); e.currentTarget.value = ""; }}
+            />
+            {uploading ? (
+              <>
+                <span className="hero-upload-icon">⏳</span>
+                <p className="hero-upload-title">Creating review and uploading…</p>
+                <p className="hero-upload-sub">You will be taken to the analysis page automatically.</p>
+              </>
+            ) : (
+              <>
+                <span className="hero-upload-icon">📄</span>
+                <p className="hero-upload-title">Drop your SOW or design doc here</p>
+                <p className="hero-upload-sub">or <span className="hero-upload-link">click to select files</span> · PDF, Word, PowerPoint, Markdown</p>
+              </>
+            )}
+          </div>
+        ) : (
+          <a href={buildLoginUrl("aad", "/")} className="hero-upload-zone hero-upload-zone--signin">
+            <span className="hero-upload-icon">🔐</span>
+            <p className="hero-upload-title">Sign in with Microsoft to upload your documents</p>
+            <p className="hero-upload-sub">Free · Microsoft account or Azure AD · No credit card</p>
+          </a>
+        )}
+
+        {uploadError ? (
+          <p className="hero-upload-error">{uploadError}</p>
+        ) : null}
+
+        <div className="impact-hero-cta-row" style={{ marginTop: 16 }}>
+          <Link href="/services" className="impact-btn impact-btn-secondary">
+            Explore Azure services — no sign-in required
+          </Link>
+          {signedIn && latestReview && (
+            <Link href={getStepHref(latestReview)} className="impact-btn impact-btn-secondary">
+              Continue: {WORKFLOW_STEPS[getActiveStep(latestReview) - 1]?.label} →
+            </Link>
           )}
         </div>
       </section>
