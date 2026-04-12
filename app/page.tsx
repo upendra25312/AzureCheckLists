@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { useEffect, useRef, useState } from "react";
 import { createArbReview, listArbReviews, uploadArbFiles } from "@/arb/api";
+import { getArbStepHref } from "@/arb/routes";
 import type { ArbReviewSummary } from "@/arb/types";
 import { buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
 
@@ -30,10 +31,10 @@ function getActiveStep(review: ArbReviewSummary): number {
 
 function getStepHref(review: ArbReviewSummary): Route {
   const step = getActiveStep(review);
-  if (step <= 3) return `/arb/${review.reviewId}/upload#upload-documents` as Route;
-  if (step === 4) return `/arb/${review.reviewId}/upload#run-ai-analysis` as Route;
-  if (step === 5) return `/arb/${review.reviewId}/decision` as Route;
-  return `/arb/${review.reviewId}` as Route;
+  if (step <= 3) return getArbStepHref(review.reviewId, "upload", "upload-documents");
+  if (step === 4) return getArbStepHref(review.reviewId, "upload", "run-ai-analysis");
+  if (step === 5) return getArbStepHref(review.reviewId, "decision");
+  return getArbStepHref(review.reviewId, "overview");
 }
 
 const serviceCards = [
@@ -99,7 +100,7 @@ export default function HomePage() {
       const firstName = fileList[0].name.replace(/\.[^.]+$/, "").slice(0, 80);
       const review = await createArbReview({ projectName: firstName || "Architecture Review", customerName: "" });
       await uploadArbFiles({ reviewId: review.reviewId, files: Array.from(fileList) });
-      window.location.href = `/arb/${encodeURIComponent(review.reviewId)}/upload`;
+      window.location.href = getArbStepHref(review.reviewId, "upload", "upload-documents");
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Upload failed — please try again.");
       setUploading(false);

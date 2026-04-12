@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   createArbExport,
   createArbAction,
@@ -23,6 +24,7 @@ import {
   updateArbFinding
 } from "@/arb/api";
 import { getArbReviewSteps } from "@/arb/mock-review";
+import { getArbStepHref } from "@/arb/routes";
 import { buildLoginUrl } from "@/lib/review-cloud";
 import type {
   ArbAction,
@@ -238,6 +240,7 @@ export function ArbLiveReviewStep(props: {
   description: string;
 }) {
   const { reviewId, activeStep, title, description } = props;
+  const router = useRouter();
   const [review, setReview] = useState<ArbReviewSummary | null>(null);
   const [findings, setFindings] = useState<ArbFinding[]>([]);
   const [actions, setActions] = useState<ArbAction[]>([]);
@@ -693,6 +696,8 @@ export function ArbLiveReviewStep(props: {
       ]);
       setFindings(nextFindings);
       setScorecard(nextScorecard);
+      // Auto-navigate to findings once agent review completes
+      router.push(getArbStepHref(reviewId, "findings"));
     } catch (agentRunError) {
       setAgentError(
         agentRunError instanceof Error ? agentRunError.message : "Unable to run agent review."
@@ -979,7 +984,7 @@ export function ArbLiveReviewStep(props: {
             {agentCompleted ? (
               <p className="arb-upload-status arb-upload-status-done">
                 AI review complete — findings and scorecard updated.{" "}
-                <a href={`/arb/${reviewId}/findings`} className="arb-inline-link">View findings →</a>
+                <a href={getArbStepHref(reviewId, "findings")} className="arb-inline-link">View findings →</a>
               </p>
             ) : null}
             {agentError ? <p className="arb-upload-error">{agentError}</p> : null}
@@ -1126,7 +1131,7 @@ export function ArbLiveReviewStep(props: {
               "Results appear here automatically — typically 1–3 minutes"
             ]}
             footer={
-              <a href={`/arb/${reviewId}/upload`} className="primary-button">
+              <a href={getArbStepHref(reviewId, "upload", "upload-documents")} className="primary-button">
                 Go to Upload — Run AI review →
               </a>
             }

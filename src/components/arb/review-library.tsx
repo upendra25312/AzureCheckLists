@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { useEffect, useMemo, useState } from "react";
 import { createArbReview, listArbReviews } from "@/arb/api";
+import { getArbStepHref } from "@/arb/routes";
 import type { ArbReviewSummary } from "@/arb/types";
 import { buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
 import type { StaticWebAppClientPrincipal } from "@/types";
@@ -67,12 +68,12 @@ function formatDate(value: string | undefined) {
 }
 
 function getPrimaryHref(review: ArbReviewSummary, focus: ArbReviewLibraryFocus): Route {
-  if (focus === "decision") return `/arb/${review.reviewId}/decision` as Route;
+  if (focus === "decision") return getArbStepHref(review.reviewId, "decision");
   const step = getActiveStep(review);
-  if (step <= 2) return `/arb/${review.reviewId}/upload` as Route;
-  if (step === 3) return `/arb/${review.reviewId}/upload` as Route;
-  if (step === 4) return `/arb/${review.reviewId}/findings` as Route;
-  return `/arb/${review.reviewId}` as Route;
+  if (step <= 2) return getArbStepHref(review.reviewId, "upload", "upload-documents");
+  if (step === 3) return getArbStepHref(review.reviewId, "upload", "run-ai-analysis");
+  if (step === 4) return getArbStepHref(review.reviewId, "findings");
+  return getArbStepHref(review.reviewId, "overview");
 }
 
 function getPrimaryLabel(review: ArbReviewSummary, focus: ArbReviewLibraryFocus) {
@@ -148,7 +149,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
       setSaving(true);
       setError(null);
       const review = await createArbReview({ projectName, customerName });
-      window.location.href = `/arb/${encodeURIComponent(review.reviewId)}/upload`;
+      window.location.href = getArbStepHref(review.reviewId, "upload", "upload-documents");
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Unable to create review.");
     } finally {
@@ -261,7 +262,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
                     <Link href={getPrimaryHref(review, focus)} className="arb-table-open">
                       {getPrimaryLabel(review, focus)}
                     </Link>
-                    <Link href={`/arb/${review.reviewId}/findings` as Route} className="arb-table-secondary">
+                    <Link href={getArbStepHref(review.reviewId, "findings")} className="arb-table-secondary">
                       Findings
                     </Link>
                   </div>

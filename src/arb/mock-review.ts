@@ -1,15 +1,15 @@
-import type { Route } from "next";
+import { getArbStepHref } from "@/arb/routes";
 import type { ArbReviewStep, ArbReviewSummary } from "@/arb/types";
 
 export function getArbReviewSteps(reviewId: string): ArbReviewStep[] {
   return [
-    { key: "overview", label: "Overview", href: `/arb/${reviewId}` as Route },
-    { key: "upload", label: "Upload", href: `/arb/${reviewId}/upload` as Route },
-    { key: "requirements", label: "Requirements", href: `/arb/${reviewId}/requirements` as Route },
-    { key: "evidence", label: "Evidence", href: `/arb/${reviewId}/evidence` as Route },
-    { key: "findings", label: "Findings", href: `/arb/${reviewId}/findings` as Route },
-    { key: "scorecard", label: "Scorecard", href: `/arb/${reviewId}/scorecard` as Route },
-    { key: "decision", label: "Decision", href: `/arb/${reviewId}/decision` as Route }
+    { key: "overview", label: "Overview", href: getArbStepHref(reviewId, "overview") },
+    { key: "upload", label: "Upload", href: getArbStepHref(reviewId, "upload") },
+    { key: "requirements", label: "Requirements", href: getArbStepHref(reviewId, "requirements") },
+    { key: "evidence", label: "Evidence", href: getArbStepHref(reviewId, "evidence") },
+    { key: "findings", label: "Findings", href: getArbStepHref(reviewId, "findings") },
+    { key: "scorecard", label: "Scorecard", href: getArbStepHref(reviewId, "scorecard") },
+    { key: "decision", label: "Decision", href: getArbStepHref(reviewId, "decision") }
   ];
 }
 
