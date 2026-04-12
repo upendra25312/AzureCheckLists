@@ -138,6 +138,47 @@ async function handleArbRunAgentReview(request, context) {
       durationMs: Date.now() - t0
     });
 
+    // Resolve evidence-to-finding traceability:
+    // The agent returns evidenceIds[] referencing IDs from the evidence list shown in the
+    // prompt. Cross-reference them here so each finding carries structured evidence links
+    // (evidenceId, summary, sourceFileName) rather than just a free-text evidenceBasis.
+    if (agentResult.findings && evidenceList.length > 0) {
+      const evidenceById = new Map(evidenceList.map((e) => [e.evidenceId, e]));
+      for (const finding of agentResult.findings) {
+        const ids = Array.isArray(finding.evidenceIds) ? finding.evidenceIds : [];
+        finding.evidenceFound = ids
+          .map((id) => evidenceById.get(id))
+          .filter(Boolean)
+          .map((e) => ({
+            evidenceId: e.evidenceId,
+            summary: e.summary,
+            sourceFileName: e.sourceFileName,
+            sourceFileId: e.sourceFileId,
+            factType: e.factType
+          }));
+        // Fallback: if agent returned no IDs, do a keyword match against evidenceBasis
+        if (finding.evidenceFound.length === 0 && finding.evidenceBasis) {
+          const basis = finding.evidenceBasis.toLowerCase();
+          finding.evidenceFound = evidenceList
+            .filter((e) => {
+              const summary = (e.summary ?? "").toLowerCase();
+              // Match if >3 words from the evidenceBasis appear in this evidence summary
+              const words = basis.split(/\s+/).filter((w) => w.length > 4);
+              return words.filter((w) => summary.includes(w)).length >= 3;
+            })
+            .slice(0, 5)
+            .map((e) => ({
+              evidenceId: e.evidenceId,
+              summary: e.summary,
+              sourceFileName: e.sourceFileName,
+              sourceFileId: e.sourceFileId,
+              factType: e.factType
+            }));
+        }
+        delete finding.evidenceIds; // not stored — resolved into evidenceFound
+      }
+    }
+
     // Persist agent findings and scorecard into Table Storage
     const client = await getTableClient(ARB_REVIEW_TABLE_NAME);
     const now = new Date().toISOString();

@@ -15,6 +15,11 @@ const { getCopilotConfiguration, runCopilot } = require("./copilot");
 const { ensureArbSearchIndex, indexArbDocumentChunks, getSearchConfiguration } = require("./arb-search");
 const { describeImageForReview, getFoundryConfiguration } = require("./arb-foundry-agent");
 const {
+  getDocumentIntelligenceConfiguration,
+  supportsDocumentIntelligenceExtraction,
+  extractDocumentText
+} = require("./arb-document-intelligence");
+const {
   ARB_REVIEW_TABLE_NAME,
   encodeTableKey,
   getTableClient
@@ -1547,12 +1552,12 @@ async function uploadArbFiles(principal, reviewId, filesInput = []) {
       uploadedBy: principal.userDetails || principal.userId,
       uploadedAt: now,
       contentHash,
-      extractionStatus: (supportsTextExtraction(fileName) || supportsSpreadsheetExtraction(fileName) || supportsImageExtraction(fileName)) ? "Pending" : "Limited Evidence",
+      extractionStatus: (supportsTextExtraction(fileName) || supportsSpreadsheetExtraction(fileName) || supportsImageExtraction(fileName) || supportsDocumentIntelligenceExtraction(fileName)) ? "Pending" : "Limited Evidence",
       extractionError: null,
       sourceRole: normalizeNullableString(file.sourceRole) || inferSourceRole(logicalCategory),
       sizeBytes: contentBuffer.byteLength,
       contentType,
-      supportedTextExtraction: supportsTextExtraction(fileName) || supportsSpreadsheetExtraction(fileName) || supportsImageExtraction(fileName)
+      supportedTextExtraction: supportsTextExtraction(fileName) || supportsSpreadsheetExtraction(fileName) || supportsImageExtraction(fileName) || supportsDocumentIntelligenceExtraction(fileName)
     });
   }
 
@@ -1757,6 +1762,61 @@ async function startArbExtraction(principal, reviewId) {
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown image analysis error.";
+        nextFiles.push({ ...file, extractionStatus: "Failed", extractionError: message });
+        extractionErrors.push(`${file.fileName}: ${message}`);
+      }
+      continue;
+    }
+
+    // ── Azure AI Document Intelligence (PDF, DOCX, PPTX, DOC, PPT) ─────────
+    if (supportsDocumentIntelligenceExtraction(file.fileName)) {
+      const diConfig = getDocumentIntelligenceConfiguration();
+
+      if (!diConfig.configured) {
+        // DI not configured — mark as Limited Evidence with a helpful message
+        nextFiles.push({
+          ...file,
+          extractionStatus: "Limited Evidence",
+          extractionError:
+            "Azure AI Document Intelligence is not configured (AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT missing). " +
+            "Text extraction is unavailable for this file format."
+        });
+        continue;
+      }
+
+      try {
+        const buffer = await readBinaryBlob(inputContainer, file.blobPath);
+
+        if (!buffer || buffer.length === 0) {
+          nextFiles.push({
+            ...file,
+            extractionStatus: "Failed",
+            extractionError: "Document file could not be read from storage."
+          });
+          extractionErrors.push(`${file.fileName}: empty blob.`);
+          continue;
+        }
+
+        const text = await extractDocumentText(buffer, file.contentType, file.fileName);
+
+        if (!text || !text.trim()) {
+          nextFiles.push({
+            ...file,
+            extractionStatus: "Failed",
+            extractionError: "Azure AI Document Intelligence returned no text for this document."
+          });
+          extractionErrors.push(`${file.fileName}: Document Intelligence returned no text.`);
+          continue;
+        }
+
+        fileTexts.set(file.fileId, text);
+        nextFiles.push({ ...file, extractionStatus: "Completed", extractionError: null });
+
+        if (searchIndexed) {
+          indexArbDocumentChunks(reviewId, file.fileId, file.fileName, file.logicalCategory, text).catch(() => {});
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown Document Intelligence error.";
         nextFiles.push({ ...file, extractionStatus: "Failed", extractionError: message });
         extractionErrors.push(`${file.fileName}: ${message}`);
       }

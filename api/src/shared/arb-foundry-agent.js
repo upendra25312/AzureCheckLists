@@ -215,7 +215,8 @@ Respond ONLY with a valid JSON object in this exact shape:
       "title": "string",
       "findingStatement": "string",
       "whyItMatters": "string — explain risk in business and technical terms",
-      "evidenceBasis": "string — quote or reference from the uploaded document",
+      "evidenceBasis": "string — direct quote or paraphrase from the uploaded document that supports this finding",
+      "evidenceIds": ["string — ID values from the Extracted Evidence Facts section that support this finding, e.g. 'review-1-ev-3'"],
       "recommendation": "string — specific actionable fix referencing Microsoft Learn URL where applicable",
       "learnMoreUrl": "string — relevant learn.microsoft.com link",
       "suggestedOwner": "string"
@@ -393,8 +394,9 @@ function buildUserMessage(review, files, requirements, evidence, searchChunks, l
 
   if (evidence.length > 0) {
     parts.push(`## Extracted Evidence Facts (${Math.min(evidence.length, 30)} shown)`);
+    parts.push(`Each fact has an ID. When citing evidence in a finding's evidenceIds array, use these exact IDs.`);
     for (const e of evidence.slice(0, 30)) {
-      parts.push(`- [${e.factType ?? "Fact"}] ${e.summary} (${e.sourceFileName || "Document"})`);
+      parts.push(`- [ID:${e.evidenceId}][${e.factType ?? "Fact"}] ${e.summary} (source: ${e.sourceFileName || "Document"})`);
     }
     parts.push(``);
   }
@@ -457,10 +459,11 @@ function parseAgentResponse(responseText) {
     findingStatement: String(f.findingStatement ?? ""),
     whyItMatters: String(f.whyItMatters ?? ""),
     evidenceBasis: String(f.evidenceBasis ?? ""),
+    evidenceIds: Array.isArray(f.evidenceIds) ? f.evidenceIds.map(String) : [],
     recommendation: String(f.recommendation ?? ""),
     learnMoreUrl: String(f.learnMoreUrl ?? ""),
     suggestedOwner: String(f.suggestedOwner ?? ""),
-    evidenceFound: [],
+    evidenceFound: [],  // resolved in arbRunAgentReview after parse
     status: "Open",
     source: "agent"
   }));
