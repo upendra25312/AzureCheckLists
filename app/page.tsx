@@ -80,7 +80,15 @@ const serviceCards = [
 ] as const;
 
 const frameworkCoverage = [
-  "WAF", "CAF", "ALZ", "HA/DR", "Backup", "Security", "Networking", "Monitoring", "Governance",
+  { name: "WAF",        status: "complete" },
+  { name: "CAF",        status: "complete" },
+  { name: "ALZ",        status: "complete" },
+  { name: "HA/DR",      status: "partial"  },
+  { name: "Backup",     status: "partial"  },
+  { name: "Security",   status: "complete" },
+  { name: "Networking", status: "complete" },
+  { name: "Monitoring", status: "partial"  },
+  { name: "Governance", status: "complete" },
 ] as const;
 
 export default function HomePage() {
@@ -283,6 +291,60 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── TWO MODES ── */}
+      <section className="impact-section" id="two-modes">
+        <span className="impact-kicker">Two ways to review</span>
+        <h2 className="impact-section-title">Standard or ARB mode — choose what fits your work</h2>
+        <div className="impact-mode-grid">
+          <article className="impact-mode-card">
+            <div className="impact-mode-header">
+              <span className="impact-mode-badge impact-mode-badge--standard">Standard</span>
+              <span className="impact-mode-tag">No sign-in required</span>
+            </div>
+            <h3 className="impact-mode-title">Instant service findings</h3>
+            <p className="impact-small">
+              Browse 100+ Azure services. Pick your stack and get immediate WAF, CAF, and ALZ findings with Microsoft Learn links.
+            </p>
+            <ul className="impact-mode-list">
+              <li>Anonymous — no account needed</li>
+              <li>Per-service best-practice checks</li>
+              <li>Regional availability signals</li>
+              <li>Export as CSV or HTML</li>
+            </ul>
+            <div>
+              <Link href="/services" className="impact-btn impact-btn-secondary">
+                Explore services ↗
+              </Link>
+            </div>
+          </article>
+
+          <div className="impact-mode-divider" aria-hidden="true">vs</div>
+
+          <article className="impact-mode-card impact-mode-card--arb">
+            <div className="impact-mode-header">
+              <span className="impact-mode-badge impact-mode-badge--arb">ARB Grade</span>
+              <span className="impact-mode-tag">Sign-in required</span>
+            </div>
+            <h3 className="impact-mode-title">Full architecture review</h3>
+            <p className="impact-small">
+              Upload your SOW or design doc. The AI agent reads it and checks every page against 11 Microsoft frameworks.
+            </p>
+            <ul className="impact-mode-list">
+              <li>Document evidence grounded in your own files</li>
+              <li>All 11 frameworks in one pass</li>
+              <li>Weighted scorecard 0–100</li>
+              <li>Human sign-off checkpoint with decision record</li>
+              <li>Export as executive summary, action list, or full ARB pack</li>
+            </ul>
+            <div>
+              <Link href="/arb" className="impact-btn impact-btn-primary">
+                Start AI Review →
+              </Link>
+            </div>
+          </article>
+        </div>
+      </section>
+
       {/* ── BOARD REVIEW PREVIEW ── */}
       <section className="impact-section" id="board-review">
         <span className="impact-kicker">Architecture Board Review</span>
@@ -300,30 +362,36 @@ export default function HomePage() {
                 <strong>AKS monitoring not enabled · Severity: High</strong>
                 <p className="impact-small">Framework: WAF Reliability</p>
                 <a href="https://learn.microsoft.com/en-us/azure/aks/monitor-aks" target="_blank" rel="noreferrer">
-                  learn.microsoft.com/azure/aks/monitor-aks
+                  learn.microsoft.com/azure/aks/monitor-aks ↗
                 </a>
               </li>
               <li className="impact-evidence-item">
                 <strong>No zone redundancy in gateway layer · Severity: High</strong>
                 <p className="impact-small">Framework: HA/DR and CAF</p>
                 <a href="https://learn.microsoft.com/en-us/azure/well-architected/reliability/" target="_blank" rel="noreferrer">
-                  learn.microsoft.com/azure/well-architected/reliability
+                  learn.microsoft.com/azure/well-architected/reliability ↗
                 </a>
               </li>
               <li className="impact-evidence-item">
                 <strong>Missing tagging policy alignment · Severity: Medium</strong>
                 <p className="impact-small">Framework: ALZ Governance</p>
                 <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/landing-zone/" target="_blank" rel="noreferrer">
-                  learn.microsoft.com/azure/cloud-adoption-framework
+                  learn.microsoft.com/azure/cloud-adoption-framework ↗
                 </a>
               </li>
             </ul>
 
             <div className="impact-framework-grid">
-              {frameworkCoverage.map((name) => (
-                <div key={name} className="impact-framework-item">{name}</div>
+              {frameworkCoverage.map(({ name, status }) => (
+                <div key={name} className="impact-framework-item">
+                  <span className={`impact-framework-state${status === "complete" ? " impact-framework-state-complete" : " impact-framework-state-partial"}`}>
+                    {status === "complete" ? "✓" : "~"}
+                  </span>
+                  <span>{name}</span>
+                </div>
               ))}
             </div>
+            <p className="impact-framework-summary">6 of 9 frameworks complete · 78% coverage</p>
           </article>
 
           <article className="impact-panel">
@@ -340,14 +408,21 @@ export default function HomePage() {
                 </div>
               );
             })}
-            <div className="impact-decision-model">
-              <span className="impact-decision-chip">Approved</span>
-              <span className="impact-decision-chip impact-decision-chip-active">Needs Revision</span>
-              <span className="impact-decision-chip">Rejected</span>
+            <div className="impact-signoff-block">
+              <p className="impact-signoff-label">ARB sign-off checkpoint</p>
+              <div className="impact-signoff-meta">
+                <span className="impact-signoff-field">👤 Senior Cloud Architect</span>
+                <span className="impact-signoff-field">📅 13 Apr 2026 · 14:32 UTC</span>
+              </div>
+              <div className="impact-decision-model">
+                <span className="impact-decision-chip">Approved</span>
+                <span className="impact-decision-chip impact-decision-chip-active">Needs Revision</span>
+                <span className="impact-decision-chip">Rejected</span>
+              </div>
+              <p className="impact-small" style={{ marginTop: 8 }}>
+                AI recommends a posture. The named reviewer records the final human decision.
+              </p>
             </div>
-            <p className="impact-small" style={{ marginTop: 12 }}>
-              AI recommends a posture. Reviewers record the final decision and export the full ARB pack.
-            </p>
             <div className="impact-format-chips">
               <span className="impact-format-chip">CSV Export</span>
               <span className="impact-format-chip">HTML Export</span>
@@ -381,7 +456,7 @@ export default function HomePage() {
               <p className="impact-small" style={{ color: "var(--t1)", fontWeight: 600 }}>{card.finding}</p>
               <div className="impact-service-actions">
                 <Link href={card.href} className="impact-btn impact-btn-secondary">
-                  View Findings
+                  {signedIn ? "View findings · Add to review" : "View instant findings ↗"}
                 </Link>
               </div>
             </article>
