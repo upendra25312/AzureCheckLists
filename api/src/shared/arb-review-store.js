@@ -1053,6 +1053,8 @@ function toDecisionEntity(reviewId, userId, decision) {
     aiRecommendation: decision.aiRecommendation,
     reviewerDecision: decision.reviewerDecision,
     rationale: decision.rationale,
+    reviewerName: decision.reviewerName ?? null,
+    reviewerRole: decision.reviewerRole ?? null,
     recordedAt: decision.recordedAt
   };
 }
@@ -2120,6 +2122,8 @@ async function getArbDecision(principal, reviewId) {
     aiRecommendation: decisionEntity.aiRecommendation,
     reviewerDecision: decisionEntity.reviewerDecision,
     rationale: decisionEntity.rationale,
+    reviewerName: decisionEntity.reviewerName ?? null,
+    reviewerRole: decisionEntity.reviewerRole ?? null,
     recordedAt: decisionEntity.recordedAt
   };
 }
@@ -2145,6 +2149,8 @@ async function recordArbDecision(principal, reviewId, input = {}) {
     rationale:
       String(input.rationale ?? "").trim() ||
       "Decision recorded against the persisted ARB review.",
+    reviewerName: normalizeNullableString(input.reviewerName) || principal.userDetails || null,
+    reviewerRole: normalizeNullableString(input.reviewerRole) || null,
     recordedAt
   };
 

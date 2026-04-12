@@ -239,6 +239,8 @@ export async function recordArbDecision(input: {
   reviewId: string;
   finalDecision: string;
   rationale: string;
+  reviewerName?: string;
+  reviewerRole?: string;
 }): Promise<ArbDecision> {
   const response = await fetch(`/api/arb/reviews/${input.reviewId}/decision`, {
     method: "POST",
@@ -248,7 +250,9 @@ export async function recordArbDecision(input: {
     },
     body: JSON.stringify({
       finalDecision: input.finalDecision,
-      rationale: input.rationale
+      rationale: input.rationale,
+      reviewerName: input.reviewerName ?? null,
+      reviewerRole: input.reviewerRole ?? null
     })
   });
 

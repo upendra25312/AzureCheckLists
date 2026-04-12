@@ -28,6 +28,37 @@
       "statusCode": 404
     },
     {
+      "route": "/explorer",
+      "redirect": "/services",
+      "statusCode": 301
+    },
+    {
+      "route": "/review-package",
+      "redirect": "/arb",
+      "statusCode": 301
+    },
+    {
+      "route": "/my-project-reviews",
+      "redirect": "/arb",
+      "statusCode": 301
+    },
+    {
+      "route": "/decision-center",
+      "redirect": "/arb",
+      "statusCode": 301
+    },
+    {
+      "route": "/how-to-use",
+      "redirect": "/arb",
+      "statusCode": 301
+    },
+    {
+      "route": "/data-health",
+      "allowedRoles": [
+        "admin"
+      ]
+    },
+    {
       "route": "/admin*",
       "allowedRoles": [
         "admin"
@@ -37,6 +68,12 @@
       "route": "/api/admin*",
       "allowedRoles": [
         "admin"
+      ]
+    },
+    {
+      "route": "/api/arb/*",
+      "allowedRoles": [
+        "authenticated"
       ]
     },
     {

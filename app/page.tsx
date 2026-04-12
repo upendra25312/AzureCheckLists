@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import type { Route } from "next";
 import { useEffect, useState } from "react";
+import { listArbReviews } from "@/arb/api";
+import type { ArbReviewSummary } from "@/arb/types";
 import { buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
 
 const signInHref = buildLoginUrl("aad", "/arb");
@@ -14,6 +17,24 @@ const WORKFLOW_STEPS = [
   { id: 5, label: "Review findings", detail: "Scored 0–100, linked to Microsoft Learn" },
   { id: 6, label: "Sign off & export", detail: "CSV, HTML, Markdown — board-ready pack" },
 ];
+
+function getActiveStep(review: ArbReviewSummary): number {
+  const s = review.workflowState;
+  if (s === "Draft") return 2;
+  if (s === "Evidence Ready") return 3;
+  if (s === "Review In Progress") return 4;
+  if (s === "Decision Recorded" || s === "Approved" || s === "Approved with Conditions" || s === "Needs Improvement") return 5;
+  if (s === "Review Complete" || s === "Closed") return 6;
+  return 1;
+}
+
+function getStepHref(review: ArbReviewSummary): Route {
+  const step = getActiveStep(review);
+  if (step <= 3) return `/arb/${review.reviewId}/upload` as Route;
+  if (step === 4) return `/arb/${review.reviewId}/findings` as Route;
+  if (step === 5) return `/arb/${review.reviewId}/decision` as Route;
+  return `/arb/${review.reviewId}` as Route;
+}
 
 const serviceCards = [
   {
@@ -45,10 +66,24 @@ const frameworkCoverage = [
 
 export default function HomePage() {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
+  const [latestReview, setLatestReview] = useState<ArbReviewSummary | null>(null);
 
   useEffect(() => {
     fetchClientPrincipal()
-      .then((p) => setSignedIn(Boolean(p)))
+      .then(async (p) => {
+        setSignedIn(Boolean(p));
+        if (p) {
+          try {
+            const payload = await listArbReviews();
+            const sorted = [...payload.reviews].sort(
+              (a, b) => new Date(b.lastUpdated ?? 0).getTime() - new Date(a.lastUpdated ?? 0).getTime()
+            );
+            setLatestReview(sorted[0] ?? null);
+          } catch {
+            // non-fatal — just don't show the live step indicator
+          }
+        }
+      })
       .catch(() => setSignedIn(false));
   }, []);
 
@@ -94,33 +129,55 @@ export default function HomePage() {
       <section className="impact-section">
         <span className="impact-kicker">How it works</span>
         <h2 className="impact-section-title">Six steps from document to board-ready pack</h2>
-        <p className="impact-small">
-          Once you sign in, each step follows automatically — upload triggers analysis,
-          analysis produces findings, findings feed the scorecard, and the scorecard
-          feeds the export pack.
-        </p>
+        {signedIn && latestReview ? (
+          <p className="impact-small">
+            You are currently on <strong>step {getActiveStep(latestReview)}: {WORKFLOW_STEPS[getActiveStep(latestReview) - 1]?.label}</strong> for <strong>{latestReview.projectName}</strong>.{" "}
+            <Link href={getStepHref(latestReview)} className="impact-inline-link">Continue →</Link>
+          </p>
+        ) : (
+          <p className="impact-small">
+            Once you sign in, each step follows automatically — upload triggers analysis,
+            analysis produces findings, findings feed the scorecard, and the scorecard
+            feeds the export pack.
+          </p>
+        )}
 
         <ol className="impact-workflow-steps">
-          {WORKFLOW_STEPS.map((step) => (
-            <li key={step.id} className="impact-workflow-step">
-              <span className="impact-step-num">{step.id}</span>
-              <div>
-                <strong>{step.label}</strong>
-                <p className="impact-small">{step.detail}</p>
-              </div>
-            </li>
-          ))}
+          {WORKFLOW_STEPS.map((step) => {
+            const activeStep = latestReview ? getActiveStep(latestReview) : (signedIn ? 2 : 1);
+            const isDone = step.id < activeStep;
+            const isCurrent = step.id === activeStep;
+            return (
+              <li
+                key={step.id}
+                className={`impact-workflow-step${isDone ? " impact-workflow-step--done" : ""}${isCurrent ? " impact-workflow-step--current" : ""}`}
+              >
+                <span className={`impact-step-num${isDone ? " impact-step-num--done" : ""}${isCurrent ? " impact-step-num--current" : ""}`}>
+                  {isDone ? "✓" : step.id}
+                </span>
+                <div>
+                  <strong>{step.label}</strong>
+                  <p className="impact-small">{step.detail}</p>
+                </div>
+              </li>
+            );
+          })}
         </ol>
 
         <div className="impact-hero-cta-row" style={{ marginTop: 24 }}>
           {signedIn === false && (
             <a href={signInHref} className="impact-btn impact-btn-primary">
-              Sign in to start step 1 →
+              Sign in to start →
             </a>
           )}
-          {signedIn === true && (
+          {signedIn === true && latestReview && (
+            <Link href={getStepHref(latestReview)} className="impact-btn impact-btn-primary">
+              Continue: {WORKFLOW_STEPS[getActiveStep(latestReview) - 1]?.label} →
+            </Link>
+          )}
+          {signedIn === true && !latestReview && (
             <Link href="/arb" className="impact-btn impact-btn-primary">
-              Continue your review →
+              Create your first review →
             </Link>
           )}
         </div>

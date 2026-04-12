@@ -17,6 +17,7 @@ import {
   saveScopedReviews,
   upsertPackage
 } from "@/lib/review-storage";
+import { buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
 import type { ChecklistItem, ReviewDraft, ReviewPackage, ServicePayload } from "@/types";
 
 type ExportFormat = "csv" | "json" | "text";
@@ -91,6 +92,7 @@ function buildServiceFindingsText(
 export function ServicePageView({ payload }: { payload: ServicePayload }) {
   const [selectedGuid, setSelectedGuid] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [reviews, setReviews] = useState<Record<string, ReviewDraft>>({});
   const [activePackage, setActivePackage] = useState<ReviewPackage | null>(null);
   const [storageReady, setStorageReady] = useState(false);
@@ -102,6 +104,12 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
   const deprecatedFamilies = payload.service.families.filter(
     (family) => family.maturityBucket === "Deprecated"
   );
+
+  useEffect(() => {
+    fetchClientPrincipal()
+      .then((p) => setSignedIn(Boolean(p)))
+      .catch(() => setSignedIn(false));
+  }, []);
 
   useEffect(() => {
     const packageId = loadActivePackageId();
@@ -229,21 +237,15 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
             <Link href="/services" className="secondary-button">
               Back to services
             </Link>
-            {activePackage ? (
-              isServiceInActivePackage ? (
-                <Link href="/review-package" className="ghost-button">
-                  Open project review
-                </Link>
-              ) : (
-                <button type="button" className="primary-button" onClick={addServiceToActivePackage}>
-                  Add to project review
-                </button>
-              )
-            ) : (
-              <Link href="/review-package" className="primary-button">
-                Start project review
+            {signedIn === true ? (
+              <Link href="/arb" className="primary-button">
+                Start AI review with this service →
               </Link>
-            )}
+            ) : signedIn === false ? (
+              <a href={buildLoginUrl("aad", "/arb")} className="primary-button">
+                Sign in to start a review →
+              </a>
+            ) : null}
           </div>
         </div>
 

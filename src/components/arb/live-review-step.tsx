@@ -249,6 +249,8 @@ export function ArbLiveReviewStep(props: {
   const [findingError, setFindingError] = useState<string | null>(null);
   const [decisionChoice, setDecisionChoice] = useState("Approved with Conditions");
   const [decisionRationale, setDecisionRationale] = useState("");
+  const [decisionReviewerName, setDecisionReviewerName] = useState("");
+  const [decisionReviewerRole, setDecisionReviewerRole] = useState("");
   const [decisionResult, setDecisionResult] = useState<ArbDecision | null>(null);
   const [decisionSaving, setDecisionSaving] = useState(false);
   const [decisionError, setDecisionError] = useState<string | null>(null);
@@ -500,6 +502,8 @@ export function ArbLiveReviewStep(props: {
           setDecisionResult(decisionResponse);
           setDecisionChoice(decisionResponse?.reviewerDecision || "Approved with Conditions");
           setDecisionRationale(decisionResponse?.rationale || "");
+          setDecisionReviewerName(decisionResponse?.reviewerName || "");
+          setDecisionReviewerRole(decisionResponse?.reviewerRole || "");
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -562,12 +566,16 @@ export function ArbLiveReviewStep(props: {
       const nextDecision = await recordArbDecision({
         reviewId,
         finalDecision: decisionChoice,
-        rationale: decisionRationale
+        rationale: decisionRationale,
+        reviewerName: decisionReviewerName.trim() || undefined,
+        reviewerRole: decisionReviewerRole.trim() || undefined
       });
 
       setDecisionResult(nextDecision);
       setDecisionChoice(nextDecision.reviewerDecision);
       setDecisionRationale(nextDecision.rationale);
+      setDecisionReviewerName(nextDecision.reviewerName || "");
+      setDecisionReviewerRole(nextDecision.reviewerRole || "");
       setReview((currentReview) =>
         currentReview
           ? {
@@ -700,7 +708,7 @@ export function ArbLiveReviewStep(props: {
     const unsupportedUploads = uploadedFiles.filter((item) => !item.supportedTextExtraction);
     const readinessChecks = [
       {
-        label: "At least one uploaded source file is persisted",
+        label: "At least one document has been uploaded",
         complete: supportedUploads.length > 0
       },
       {
@@ -715,12 +723,12 @@ export function ArbLiveReviewStep(props: {
     const extractionPreview =
       supportedUploads.length === 0
         ? [
-            "Requirements and scope from the SOW or design narrative",
-            "Topology, service, network, and security evidence from architecture docs",
-            "Cost, support, and runbook signals from workbooks or appendices"
+            "Scope and requirements from your SOW or design narrative",
+            "Architecture topology, services, network, and security posture",
+            "Cost, support, and operational readiness signals"
           ]
         : Array.from(new Set(supportedUploads.map((item) => item.logicalCategory))).map(
-            (category) => `Extraction will inspect: ${category}`
+            (category) => `AI will analyse: ${category}`
           );
     const canStartExtraction = readinessChecks.every((check) => check.complete) && !uploadSaving;
 
@@ -728,31 +736,33 @@ export function ArbLiveReviewStep(props: {
       <div className="arb-page-stack">
         <div className="arb-summary-grid">
           <article className="future-card">
-            <p className="board-card-subtitle">Files persisted for extraction</p>
+            <p className="board-card-subtitle">Files uploaded</p>
             <strong>{supportedUploads.length}</strong>
             <p className="section-copy">
-              Supported files are stored in Blob Storage and ready to feed deterministic extraction.
+              Text-based files (PDF, Word, Markdown) are ready for AI analysis.
             </p>
           </article>
           <article className="future-card">
-            <p className="board-card-subtitle">Limited evidence files</p>
+            <p className="board-card-subtitle">Visual / binary files</p>
             <strong>{unsupportedUploads.length}</strong>
             <p className="section-copy">
-              Binary formats are stored and tracked, but only text-first formats are extracted in this budget path.
+              Images, diagrams, and spreadsheets are stored and tracked but not text-extracted.
             </p>
           </article>
           <article className="future-card">
-            <p className="board-card-subtitle">Readiness gate</p>
-            <strong>{canStartExtraction ? "Ready" : "In progress"}</strong>
+            <p className="board-card-subtitle">Ready to analyse</p>
+            <strong>{canStartExtraction ? "Yes" : "Not yet"}</strong>
             <p className="section-copy">
-              Required evidence and reviewer confirmation gate extraction so downstream findings remain grounded.
+              Upload at least one document and confirm it can be used for review.
             </p>
           </article>
           <article className="future-card">
-            <p className="board-card-subtitle">Extraction state</p>
-            <strong>{extractionStatus?.state ?? "Not Started"}</strong>
+            <p className="board-card-subtitle">Analysis status</p>
+            <strong>{extractionStatus?.state ?? "Not started"}</strong>
             <p className="section-copy">
-              {extractionStatus?.completedSteps.length ?? 0} completed steps across the current package.
+              {extractionStatus?.completedSteps?.length
+                ? `${extractionStatus.completedSteps.length} steps complete`
+                : "Start analysis to extract requirements and evidence."}
             </p>
           </article>
         </div>
@@ -774,14 +784,14 @@ export function ArbLiveReviewStep(props: {
         >
           <div className="board-card-head">
             <div className="board-card-head-copy">
-              <p className="board-card-subtitle">Upload</p>
-              <h2 className="section-title">Stage the review package before extraction begins</h2>
+              <p className="board-card-subtitle">Upload documents</p>
+              <h2 className="section-title">Add your design documents, SOW, and supporting material</h2>
             </div>
           </div>
 
           <p className="section-copy">
-            Drag files here or use the file picker. Uploaded files are persisted to Blob Storage,
-            registered against this review, and then made available to the extraction step.
+            Drag files here or click to select. The AI agent will read these documents and check them
+            against WAF, CAF, ALZ, HA/DR, Security, Networking, and Monitoring frameworks.
           </p>
 
           <div className="pill-row">
@@ -808,9 +818,8 @@ export function ArbLiveReviewStep(props: {
             }}
           />
           <p className="microcopy">
-            Accepted types: PDF, Office docs, spreadsheets, images, SVG, VSDX, text, and Markdown.
-            Text-first files extract immediately in this ARB cost-constrained path; other files stay
-            visible as limited-evidence artifacts.
+            Accepted: PDF, Word, PowerPoint, Excel, images, diagrams (VSDX/SVG), Markdown, and plain text.
+            PDF and Word documents produce the richest findings. Images and spreadsheets are tracked but not text-analysed.
           </p>
           {uploadSaving ? (
             <p className="arb-upload-status arb-upload-status-progress">Uploading files…</p>
@@ -826,14 +835,13 @@ export function ArbLiveReviewStep(props: {
         <section className="surface-panel">
           <div className="board-card-head">
             <div className="board-card-head-copy">
-              <p className="board-card-subtitle">Staged files</p>
-              <h2 className="section-title">Review the package contents before extraction</h2>
+              <p className="board-card-subtitle">Uploaded files</p>
+              <h2 className="section-title">Documents in this review</h2>
             </div>
           </div>
           {uploadedFiles.length === 0 ? (
             <p className="section-copy">
-              No files uploaded yet. Add the SOW, architecture pack, diagram, or workbook to start
-              the review package.
+              No files uploaded yet. Add your SOW, architecture design, diagrams, or workbook above to get started.
             </p>
           ) : (
             <div className="arb-upload-file-list">
@@ -915,18 +923,33 @@ export function ArbLiveReviewStep(props: {
                 setUploadError(
                   startFailure instanceof Error
                     ? startFailure.message
-                    : "Unable to start extraction."
+                    : "Unable to start analysis. Please try again."
                 );
               } finally {
                 setExtractionStarting(false);
               }
             }}
           >
-            {extractionStarting ? "Starting analysis… this may take a minute" : "Start analysis →"}
+            {extractionStarting ? (
+              <><span className="arb-spinner" aria-hidden="true" /> Analysing documents… typically 30–90 seconds per file</>
+            ) : extractionStatus?.state === "Failed" ? (
+              "Retry analysis →"
+            ) : (
+              "Start analysis →"
+            )}
           </button>
-          {extractionStatus ? (
+          <p className="microcopy">Typically 30–90 seconds per document. The agent reads every page.</p>
+          {extractionStarting ? (
             <p className="arb-upload-status arb-upload-status-progress">
-              Analysis state: {extractionStatus.state} · Evidence readiness: {extractionStatus.evidenceReadinessState}
+              Analysis running — do not close this page. Results will appear automatically.
+            </p>
+          ) : extractionStatus?.state === "Failed" ? (
+            <p className="arb-upload-error">
+              Analysis failed. Check that your files are not password-protected and try again.
+            </p>
+          ) : extractionStatus ? (
+            <p className="arb-upload-status arb-upload-status-progress">
+              Status: {extractionStatus.state} · Evidence readiness: {extractionStatus.evidenceReadinessState}
             </p>
           ) : null}
         </section>
@@ -938,7 +961,7 @@ export function ArbLiveReviewStep(props: {
             <p className="section-copy">
               Run the ARB Agent to produce structured findings, a weighted scorecard, and a
               recommendation. The agent checks all evidence against WAF, CAF, ALZ, HA/DR, Security,
-              Networking, and Monitoring.
+              Networking, and Monitoring. Typically takes 1–3 minutes.
             </p>
             <button
               type="button"
@@ -946,8 +969,17 @@ export function ArbLiveReviewStep(props: {
               disabled={agentRunning}
               onClick={() => void handleRunAgentReview()}
             >
-              {agentRunning ? "Running AI review… this may take a few minutes" : "Run AI review →"}
+              {agentRunning ? (
+                <><span className="arb-spinner" aria-hidden="true" /> Running AI review… 1–3 minutes</>
+              ) : (
+                "Run AI review →"
+              )}
             </button>
+            {agentRunning ? (
+              <p className="arb-upload-status arb-upload-status-progress">
+                The agent is reading your documents and checking against all 11 Azure frameworks. Do not close this page.
+              </p>
+            ) : null}
             {agentCompleted ? (
               <p className="arb-upload-status arb-upload-status-done">
                 AI review complete — findings and scorecard updated.{" "}
@@ -962,7 +994,7 @@ export function ArbLiveReviewStep(props: {
         <div className="arb-upload-layout">
           <div className="arb-sidecar-stack">
             <section className="future-card arb-summary-card">
-              <p className="board-card-subtitle">What will be extracted</p>
+              <p className="board-card-subtitle">What the AI will check</p>
               <ul className="arb-checklist">
                 {extractionPreview.map((item) => (
                   <li key={item}>{item}</li>
@@ -1696,11 +1728,16 @@ export function ArbLiveReviewStep(props: {
               <p>No open actions remain for this review.</p>
             )}
             {decisionResult ? (
-              <div className="trace-card arb-summary-card">
-                <p>Recorded at: {decisionResult.recordedAt}</p>
-                <p>AI recommendation: {decisionResult.aiRecommendation}</p>
-                <p>Reviewer decision: {decisionResult.reviewerDecision}</p>
-                <p>Rationale: {decisionResult.rationale}</p>
+              <div className="trace-card arb-summary-card arb-decision-recorded">
+                <p className="board-card-subtitle">Decision recorded</p>
+                <div className="arb-decision-recorded-grid">
+                  <div><span className="microcopy">Decision</span><strong>{decisionResult.reviewerDecision}</strong></div>
+                  <div><span className="microcopy">AI recommendation</span><strong>{decisionResult.aiRecommendation}</strong></div>
+                  {decisionResult.reviewerName && <div><span className="microcopy">Reviewer</span><strong>{decisionResult.reviewerName}</strong></div>}
+                  {decisionResult.reviewerRole && <div><span className="microcopy">Role</span><strong>{decisionResult.reviewerRole}</strong></div>}
+                  <div><span className="microcopy">Recorded at</span><strong>{new Date(decisionResult.recordedAt).toLocaleString()}</strong></div>
+                </div>
+                {decisionResult.rationale && <p className="section-copy" style={{ marginTop: 8 }}>{decisionResult.rationale}</p>}
               </div>
             ) : null}
           </section>
@@ -1709,8 +1746,30 @@ export function ArbLiveReviewStep(props: {
             <div className="board-card-head">
               <div className="board-card-head-copy">
                 <p className="board-card-subtitle">Reviewer sign-off</p>
-                <h2 className="section-title">Separate the human decision from the AI recommendation</h2>
+                <h2 className="section-title">Record the human decision — separate from the AI recommendation</h2>
               </div>
+            </div>
+            <div className="arb-form-grid">
+              <label className="filter-field">
+                <span>Reviewer name</span>
+                <input
+                  className="field-input"
+                  aria-label="Reviewer name"
+                  placeholder="Your name"
+                  value={decisionReviewerName}
+                  onChange={(event) => setDecisionReviewerName(event.target.value)}
+                />
+              </label>
+              <label className="filter-field">
+                <span>Reviewer role</span>
+                <input
+                  className="field-input"
+                  aria-label="Reviewer role"
+                  placeholder="e.g. Principal Architect, Cloud Director"
+                  value={decisionReviewerRole}
+                  onChange={(event) => setDecisionReviewerRole(event.target.value)}
+                />
+              </label>
             </div>
             <label className="filter-field">
               <span>Final decision</span>
@@ -1725,12 +1784,13 @@ export function ArbLiveReviewStep(props: {
                 <option value="Needs Improvement">Needs Improvement</option>
               </select>
             </label>
-            {decisionGateMessage ? <p>{decisionGateMessage}</p> : null}
+            {decisionGateMessage ? <p className="arb-upload-error">{decisionGateMessage}</p> : null}
             <label className="filter-field">
               <span>Decision rationale</span>
               <textarea
                 className="field-textarea"
                 aria-label="Decision rationale"
+                placeholder="Summarise the basis for this decision, any conditions, and what must happen before approval is unconditional."
                 value={decisionRationale}
                 onChange={(event) => setDecisionRationale(event.target.value)}
               />
@@ -1745,7 +1805,7 @@ export function ArbLiveReviewStep(props: {
                 {decisionSaving ? "Recording decision..." : "Record decision"}
               </button>
             </div>
-            {decisionError ? <p>{decisionError}</p> : null}
+            {decisionError ? <p className="arb-upload-error">{decisionError}</p> : null}
           </section>
         </div>
 

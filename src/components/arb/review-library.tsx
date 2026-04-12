@@ -181,7 +181,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
           <li>AI checks WAF · CAF · ALZ · HA/DR · Backup · Security · Networking · Monitoring</li>
           <li>Findings scored 0–100, every finding linked to Microsoft Learn</li>
           <li>Export board-ready pack as CSV, HTML, or Markdown</li>
-          <li>Reviews saved for 7 days — auto-deleted after</li>
+          <li>Reviews retained for 30 days — delete any review manually at any time</li>
         </ul>
       </div>
     );

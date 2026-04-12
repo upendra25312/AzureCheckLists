@@ -206,5 +206,7 @@ export interface ArbDecision {
   aiRecommendation: string;
   reviewerDecision: string;
   rationale: string;
+  reviewerName: string | null;
+  reviewerRole: string | null;
   recordedAt: string;
 }
