@@ -1,5 +1,5 @@
 const { app } = require("@azure/functions");
-const { jsonResponse, requireAuthenticated } = require("../shared/auth");
+const { jsonResponse, requireAuthenticated, safeErrorResponse } = require("../shared/auth");
 const { getArbScorecard } = require("../shared/arb-review-store");
 
 async function handleArbGetScorecard(request, context) {
@@ -16,9 +16,7 @@ async function handleArbGetScorecard(request, context) {
       scorecard: await getArbScorecard(auth.principal, reviewId)
     });
   } catch (error) {
-    return jsonResponse(error?.statusCode === 404 ? 404 : 500, {
-      error: error instanceof Error ? error.message : "Unable to load the ARB scorecard."
-    });
+    return safeErrorResponse(error, "Unable to load the ARB scorecard.", context);
   }
 }
 

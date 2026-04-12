@@ -65,6 +65,14 @@ export interface ArbFindingReference {
   relevance?: string;
 }
 
+export interface ArbEvidenceLink {
+  evidenceId: string;
+  summary: string;
+  sourceFileName: string | null;
+  sourceFileId: string | null;
+  factType: string | null;
+}
+
 export interface ArbFinding {
   findingId: string;
   reviewId: string;
@@ -74,9 +82,11 @@ export interface ArbFinding {
   title: string;
   findingStatement: string;
   whyItMatters: string;
-  evidenceFound: string[];
+  evidenceBasis: string;
+  evidenceFound: ArbEvidenceLink[];
   missingEvidence: string[];
   recommendation: string;
+  learnMoreUrl: string;
   references: ArbFindingReference[];
   confidence: string;
   criticalBlocker: boolean;
@@ -86,6 +96,7 @@ export interface ArbFinding {
   dueDate: string | null;
   reviewerNote: string | null;
   status: string;
+  source: string;
 }
 
 export interface ArbAction {

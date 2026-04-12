@@ -1,5 +1,5 @@
 const { app } = require("@azure/functions");
-const { jsonResponse, requireAuthenticated } = require("../shared/auth");
+const { jsonResponse, requireAuthenticated, safeErrorResponse } = require("../shared/auth");
 const { createArbReview } = require("../shared/arb-review-store");
 
 async function handleArbCreateReview(request) {
@@ -17,9 +17,7 @@ async function handleArbCreateReview(request) {
       message: "ARB review persisted to Azure Table Storage."
     });
   } catch (error) {
-    return jsonResponse(error?.statusCode === 404 || error?.statusCode === 409 ? error.statusCode : 500, {
-      error: error instanceof Error ? error.message : "Unable to create the ARB review."
-    });
+    return safeErrorResponse(error, "Unable to create the ARB review.", context);
   }
 }
 

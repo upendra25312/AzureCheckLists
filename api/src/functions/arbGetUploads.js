@@ -1,5 +1,5 @@
 const { app } = require("@azure/functions");
-const { jsonResponse, requireAuthenticated } = require("../shared/auth");
+const { jsonResponse, requireAuthenticated, safeErrorResponse } = require("../shared/auth");
 const { getArbExtractionStatus, getArbFiles } = require("../shared/arb-review-store");
 
 async function handleArbGetUploads(request, context) {
@@ -16,9 +16,7 @@ async function handleArbGetUploads(request, context) {
       extraction: await getArbExtractionStatus(auth.principal, reviewId)
     });
   } catch (error) {
-    return jsonResponse(error?.statusCode === 404 ? 404 : 500, {
-      error: error instanceof Error ? error.message : "Unable to load the ARB upload inventory."
-    });
+    return safeErrorResponse(error, "Unable to load the ARB upload inventory.", context);
   }
 }
 

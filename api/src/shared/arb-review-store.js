@@ -15,6 +15,11 @@ const { getCopilotConfiguration, runCopilot } = require("./copilot");
 const { ensureArbSearchIndex, indexArbDocumentChunks, getSearchConfiguration } = require("./arb-search");
 const { describeImageForReview, getFoundryConfiguration } = require("./arb-foundry-agent");
 const {
+  getDocumentIntelligenceConfiguration,
+  supportsDocumentIntelligenceExtraction,
+  extractDocumentText
+} = require("./arb-document-intelligence");
+const {
   ARB_REVIEW_TABLE_NAME,
   encodeTableKey,
   getTableClient
@@ -1474,6 +1479,10 @@ async function uploadArbFiles(principal, reviewId, filesInput = []) {
     throw createHttpError(404, `ARB review ${reviewId} was not found.`);
   }
 
+  const MAX_FILES_PER_REVIEW = 30;
+  const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;  // 50 MB per file
+  const MAX_TOTAL_SIZE_BYTES = 200 * 1024 * 1024; // 200 MB per review
+
   const files = Array.isArray(filesInput) ? filesInput : [];
 
   if (files.length === 0) {
@@ -1482,6 +1491,18 @@ async function uploadArbFiles(principal, reviewId, filesInput = []) {
 
   const existingFilesEntity = await getEntity(client, reviewId, getRowKey(FILES_ROW_KEY, principal.userId));
   const existingFiles = fromFilesEntity(existingFilesEntity);
+
+  if (existingFiles.length + files.length > MAX_FILES_PER_REVIEW) {
+    throw createHttpError(400, `Upload limit reached. A review may contain at most ${MAX_FILES_PER_REVIEW} files.`);
+  }
+
+  const existingTotalBytes = existingFiles.reduce((sum, f) => sum + (f.sizeBytes ?? 0), 0);
+  const incomingTotalBytes = files.reduce((sum, f) => sum + (Buffer.isBuffer(f.contentBuffer) ? f.contentBuffer.byteLength : 0), 0);
+
+  if (existingTotalBytes + incomingTotalBytes > MAX_TOTAL_SIZE_BYTES) {
+    throw createHttpError(400, `Total upload size would exceed the ${MAX_TOTAL_SIZE_BYTES / (1024 * 1024)} MB review limit.`);
+  }
+
   const inputContainer = await getContainerClient(ARB_INPUT_CONTAINER_NAME);
   const now = new Date().toISOString();
   const persistedFiles = [];
@@ -1496,6 +1517,14 @@ async function uploadArbFiles(principal, reviewId, filesInput = []) {
     const contentBuffer = Buffer.isBuffer(file.contentBuffer)
       ? file.contentBuffer
       : Buffer.from(file.contentBuffer || []);
+
+    if (contentBuffer.byteLength > MAX_FILE_SIZE_BYTES) {
+      throw createHttpError(400, `File ${fileName} exceeds the ${MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB per-file limit.`);
+    }
+
+    if (contentBuffer.byteLength === 0) {
+      throw createHttpError(400, `File ${fileName} is empty and cannot be uploaded.`);
+    }
     const contentHash = `sha256:${crypto.createHash("sha256").update(contentBuffer).digest("hex")}`;
     const logicalCategory = normalizeLogicalCategory(file.logicalCategory, inferLogicalCategory(fileName));
 
@@ -1523,12 +1552,12 @@ async function uploadArbFiles(principal, reviewId, filesInput = []) {
       uploadedBy: principal.userDetails || principal.userId,
       uploadedAt: now,
       contentHash,
-      extractionStatus: (supportsTextExtraction(fileName) || supportsSpreadsheetExtraction(fileName) || supportsImageExtraction(fileName)) ? "Pending" : "Limited Evidence",
+      extractionStatus: (supportsTextExtraction(fileName) || supportsSpreadsheetExtraction(fileName) || supportsImageExtraction(fileName) || supportsDocumentIntelligenceExtraction(fileName)) ? "Pending" : "Limited Evidence",
       extractionError: null,
       sourceRole: normalizeNullableString(file.sourceRole) || inferSourceRole(logicalCategory),
       sizeBytes: contentBuffer.byteLength,
       contentType,
-      supportedTextExtraction: supportsTextExtraction(fileName) || supportsSpreadsheetExtraction(fileName) || supportsImageExtraction(fileName)
+      supportedTextExtraction: supportsTextExtraction(fileName) || supportsSpreadsheetExtraction(fileName) || supportsImageExtraction(fileName) || supportsDocumentIntelligenceExtraction(fileName)
     });
   }
 
@@ -1733,6 +1762,61 @@ async function startArbExtraction(principal, reviewId) {
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown image analysis error.";
+        nextFiles.push({ ...file, extractionStatus: "Failed", extractionError: message });
+        extractionErrors.push(`${file.fileName}: ${message}`);
+      }
+      continue;
+    }
+
+    // ── Azure AI Document Intelligence (PDF, DOCX, PPTX, DOC, PPT) ─────────
+    if (supportsDocumentIntelligenceExtraction(file.fileName)) {
+      const diConfig = getDocumentIntelligenceConfiguration();
+
+      if (!diConfig.configured) {
+        // DI not configured — mark as Limited Evidence with a helpful message
+        nextFiles.push({
+          ...file,
+          extractionStatus: "Limited Evidence",
+          extractionError:
+            "Azure AI Document Intelligence is not configured (AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT missing). " +
+            "Text extraction is unavailable for this file format."
+        });
+        continue;
+      }
+
+      try {
+        const buffer = await readBinaryBlob(inputContainer, file.blobPath);
+
+        if (!buffer || buffer.length === 0) {
+          nextFiles.push({
+            ...file,
+            extractionStatus: "Failed",
+            extractionError: "Document file could not be read from storage."
+          });
+          extractionErrors.push(`${file.fileName}: empty blob.`);
+          continue;
+        }
+
+        const text = await extractDocumentText(buffer, file.contentType, file.fileName);
+
+        if (!text || !text.trim()) {
+          nextFiles.push({
+            ...file,
+            extractionStatus: "Failed",
+            extractionError: "Azure AI Document Intelligence returned no text for this document."
+          });
+          extractionErrors.push(`${file.fileName}: Document Intelligence returned no text.`);
+          continue;
+        }
+
+        fileTexts.set(file.fileId, text);
+        nextFiles.push({ ...file, extractionStatus: "Completed", extractionError: null });
+
+        if (searchIndexed) {
+          indexArbDocumentChunks(reviewId, file.fileId, file.fileName, file.logicalCategory, text).catch(() => {});
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown Document Intelligence error.";
         nextFiles.push({ ...file, extractionStatus: "Failed", extractionError: message });
         extractionErrors.push(`${file.fileName}: ${message}`);
       }
