@@ -7,13 +7,13 @@ const mockReview = {
   workflowState: "Review In Progress",
   evidenceReadinessState: "Ready with Gaps",
   overallScore: 78,
-  recommendation: "Approved with Conditions",
+  recommendation: "Needs Revision",
   assignedReviewer: null
 } as const;
 
 const mockScorecard = {
   overallScore: 78,
-  recommendation: "Approved with Conditions",
+  recommendation: "Needs Revision",
   confidence: "Medium",
   criticalBlockers: 0,
   evidenceReadinessState: "Ready with Gaps",
@@ -324,17 +324,18 @@ test.describe("ARB live review routes", () => {
     await expect(page.getByText("Review In Progress").first()).toBeVisible();
     await expect(page.getByText("Know whether this review is ready for sign-off.")).toBeVisible();
     await expect(page.locator(".arb-score-hero-value strong")).toHaveText("78");
-    await expect(page.getByText("Approved with Conditions")).toBeVisible();
-    await expect(page.getByText("Ready with Gaps")).toBeVisible();
+    await expect(page.locator(".arb-score-recommendation")).toHaveText("Needs Revision");
+    await expect(page.locator(".arb-score-hero-list")).toContainText("Ready with Gaps");
     await expect(page.getByText("Requirements Coverage")).toBeVisible();
     await expect(page.getByText("80% (16/20)")).toBeVisible();
-    await expect(page.getByText("Security")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Security" })).toBeVisible();
     await expect(page.getByText("60% (12/20)")).toBeVisible();
     await expect(page.getByText("find-001")).toBeVisible();
-    await expect(page.getByText("Assign a documented ingress owner before final approval.")).toBeVisible();
-    await expect(page.getByText("Platform Lead")).toBeVisible();
-    await expect(page.getByText("2026-04-24")).toBeVisible();
-    await expect(page.getByText("Blocked")).toBeVisible();
+    const conditionsTable = page.locator(".arb-conditions-table");
+    await expect(conditionsTable).toContainText("Assign a documented ingress owner before final approval.");
+    await expect(conditionsTable).toContainText("Platform Lead");
+    await expect(conditionsTable).toContainText("2026-04-24");
+    await expect(conditionsTable).toContainText("Blocked");
   });
 
   test("records a decision through the live stub API", async ({ page }) => {
@@ -362,16 +363,18 @@ test.describe("ARB live review routes", () => {
         rationale?: string;
       };
 
-      expect(payload).toEqual({
+      expect(payload).toMatchObject({
         finalDecision: "Approved",
-        rationale: "Ready for pilot rollout after evidence review."
+        rationale: "Ready for pilot rollout after evidence review.",
+        reviewerName: null,
+        reviewerRole: null
       });
 
       await route.fulfill({
         json: {
           reviewId: mockReview.reviewId,
           decision: {
-            aiRecommendation: "Approved with Conditions",
+            aiRecommendation: "Needs Revision",
             reviewerDecision: payload.finalDecision,
             rationale: payload.rationale,
             recordedAt: "2026-04-10T08:30:00.000Z"
@@ -401,12 +404,12 @@ test.describe("ARB live review routes", () => {
       .fill("Ready for pilot rollout after evidence review.");
     await page.getByRole("button", { name: "Record decision" }).click();
 
-    await expect(page.getByText("AI recommendation: Approved with Conditions")).toBeVisible();
-    await expect(page.getByText("Reviewer decision: Approved")).toBeVisible();
-    await expect(
-      page.getByText("Rationale: Ready for pilot rollout after evidence review.")
-    ).toBeVisible();
-    await expect(page.getByText("Recorded at: 2026-04-10T08:30:00.000Z")).toBeVisible();
+    const recordedCard = page.locator(".arb-decision-recorded");
+    await expect(recordedCard).toContainText("Approved");
+    await expect(recordedCard).toContainText("Needs Revision");
+    await expect(recordedCard).toContainText("Ready for pilot rollout after evidence review.");
+    await expect(recordedCard).toContainText("Recorded at");
+    await expect(recordedCard).toContainText("4/10/2026");
   });
 
   test("blocks decision submission while blocked or verification-required actions remain open", async ({ page }) => {
@@ -470,7 +473,7 @@ test.describe("ARB live review routes", () => {
         json: {
           reviewId: mockReview.reviewId,
           decision: {
-            aiRecommendation: "Approved with Conditions",
+            aiRecommendation: "Needs Revision",
             reviewerDecision: "Approved",
             rationale: "Previously recorded reviewer decision.",
             recordedAt: "2026-04-10T09:45:00.000Z"
@@ -496,7 +499,11 @@ test.describe("ARB live review routes", () => {
     await expect(page.getByLabel("Decision rationale")).toHaveValue(
       "Previously recorded reviewer decision."
     );
-    await expect(page.getByText("Recorded at: 2026-04-10T09:45:00.000Z")).toBeVisible();
-    await expect(page.getByText("Reviewer decision: Approved")).toBeVisible();
+    const recordedCard = page.locator(".arb-decision-recorded");
+    await expect(recordedCard).toContainText("Approved");
+    await expect(recordedCard).toContainText("Needs Revision");
+    await expect(recordedCard).toContainText("Previously recorded reviewer decision.");
+    await expect(recordedCard).toContainText("Recorded at");
+    await expect(recordedCard).toContainText("4/10/2026");
   });
 });

@@ -368,7 +368,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
                   <th>Recommendation</th>
                   <th>Learn</th>
                   <th>Review</th>
-                  <th />
+                  <th>Open</th>
                 </tr>
               </thead>
               <tbody>

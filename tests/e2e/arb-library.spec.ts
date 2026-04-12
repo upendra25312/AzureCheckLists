@@ -27,7 +27,7 @@ test.describe("ARB review library", () => {
                 workflowState: "Review In Progress",
                 evidenceReadinessState: "Ready with Gaps",
                 overallScore: 78,
-                recommendation: "Approved with Conditions",
+                recommendation: "Needs Revision",
                 assignedReviewer: null,
                 createdByUserId: "arb-user-1",
                 lastUpdated: "2026-04-10T09:00:00.000Z",
@@ -44,14 +44,17 @@ test.describe("ARB review library", () => {
 
     await page.goto("/arb");
 
-    await expect(page.getByRole("heading", { name: "Start an evidence-backed architecture review" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Create a new ARB review or resume an upload-first review already in progress." })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Open workspace" })).toHaveAttribute(
+    await expect(page.getByRole("heading", { name: "AI Architecture Review" })).toBeVisible();
+    await expect(
+      page.getByText("Upload your design documents and get findings checked against all Azure frameworks.")
+    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your reviews" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Review findings →" })).toHaveAttribute(
       "href",
-      "/arb/arb-contoso-hadr"
+      "/arb/arb-contoso-hadr/findings"
     );
-    await expect(page.getByText("Workflow: Review In Progress")).toBeVisible();
-    await expect(page.getByText("Evidence: Ready with Gaps")).toBeVisible();
+    await expect(page.getByText("Review In Progress")).toBeVisible();
+    await expect(page.getByText("Score: 78")).toBeVisible();
   });
 
   test("creates a new ARB review from the landing page", async ({ page }) => {
@@ -84,7 +87,7 @@ test.describe("ARB review library", () => {
             workflowState: "Review In Progress",
             evidenceReadinessState: "Ready with Gaps",
             overallScore: 78,
-            recommendation: "Approved with Conditions",
+            recommendation: "Needs Revision",
             assignedReviewer: null
           }
         }
@@ -94,7 +97,7 @@ test.describe("ARB review library", () => {
     await page.goto("/arb");
     await page.getByLabel("Project name").fill("Fabrikam data platform");
     await page.getByLabel("Customer name").fill("Fabrikam");
-    await page.getByRole("button", { name: "Create ARB review" }).click();
+    await page.getByRole("button", { name: "Create review and upload documents →" }).click();
 
     await expect(page).toHaveURL(/\/arb\/fabrikam-data-platform\/upload$/);
   });

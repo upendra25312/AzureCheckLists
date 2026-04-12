@@ -27,8 +27,8 @@ function getActiveStep(review: ArbReviewSummary): number {
   if (
     s === "Decision Recorded" ||
     s === "Approved" ||
-    s === "Approved with Conditions" ||
-    s === "Needs Improvement"
+    s === "Needs Revision" ||
+    s === "Rejected"
   ) return 5;
   if (s === "Review Complete" || s === "Closed") return 6;
   return 1;
@@ -87,9 +87,9 @@ function getPrimaryLabel(review: ArbReviewSummary, focus: ArbReviewLibraryFocus)
 
 function StatusBadge({ state }: { state: string }) {
   const cls =
-    state === "Approved" || state === "Approved with Conditions"
+    state === "Approved"
       ? "arb-status-badge arb-status-approved"
-      : state === "Needs Improvement"
+      : state === "Needs Revision" || state === "Rejected"
       ? "arb-status-badge arb-status-needs-work"
       : state === "Draft"
       ? "arb-status-badge arb-status-draft"

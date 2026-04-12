@@ -226,7 +226,7 @@ Respond ONLY with a valid JSON object in this exact shape:
     "missingEvidenceCount": 0,
     "confidenceLevel": "High|Medium|Low"
   },
-  "recommendation": "Approved|Approved with Conditions|Needs Revision|Insufficient Evidence",
+  "recommendation": "Approved|Needs Revision|Rejected",
   "nextActions": ["string — specific action with framework reference and owner type"]
 }
 
@@ -384,7 +384,7 @@ function parseSeverity(value) {
 
 function parseRecommendation(value) {
   const v = String(value ?? "").trim();
-  const valid = ["Approved", "Approved with Conditions", "Needs Revision", "Insufficient Evidence"];
+  const valid = ["Approved", "Needs Revision", "Rejected"];
   return valid.includes(v) ? v : "Needs Revision";
 }
 

@@ -23,7 +23,7 @@ function getActiveStep(review: ArbReviewSummary): number {
   if (s === "Draft") return 2;
   if (s === "Evidence Ready") return 3;
   if (s === "Review In Progress") return 4;
-  if (s === "Decision Recorded" || s === "Approved" || s === "Approved with Conditions" || s === "Needs Improvement") return 5;
+  if (s === "Decision Recorded" || s === "Approved" || s === "Needs Revision" || s === "Rejected") return 5;
   if (s === "Review Complete" || s === "Closed") return 6;
   return 1;
 }
@@ -106,19 +106,19 @@ export default function HomePage() {
           ) : signedIn ? (
             <>
               <Link href="/arb" className="impact-btn impact-btn-primary">
-                Go to Board Review →
+                Start Board Review
               </Link>
               <Link href="/services" className="impact-btn impact-btn-secondary">
-                Explore services
+                Explore Azure Services
               </Link>
             </>
           ) : (
             <>
               <a href={signInHref} className="impact-btn impact-btn-primary">
-                Sign In with Microsoft to Start →
+                Start Board Review
               </a>
               <Link href="/services" className="impact-btn impact-btn-secondary">
-                Explore services — no sign-in required
+                Explore Azure Services
               </Link>
             </>
           )}
@@ -167,7 +167,7 @@ export default function HomePage() {
         <div className="impact-hero-cta-row" style={{ marginTop: 24 }}>
           {signedIn === false && (
             <a href={signInHref} className="impact-btn impact-btn-primary">
-              Sign in to start →
+              Start Board Review
             </a>
           )}
           {signedIn === true && latestReview && (
@@ -177,7 +177,7 @@ export default function HomePage() {
           )}
           {signedIn === true && !latestReview && (
             <Link href="/arb" className="impact-btn impact-btn-primary">
-              Create your first review →
+              Start Board Review
             </Link>
           )}
         </div>
@@ -255,7 +255,7 @@ export default function HomePage() {
             </div>
             <div style={{ marginTop: 16 }}>
               <Link href="/arb" className="impact-btn impact-btn-primary">
-                Open Board Review
+                Start Board Review
               </Link>
             </div>
           </article>
@@ -281,7 +281,7 @@ export default function HomePage() {
               <p className="impact-small" style={{ color: "var(--t1)", fontWeight: 600 }}>{card.finding}</p>
               <div className="impact-service-actions">
                 <Link href={card.href} className="impact-btn impact-btn-secondary">
-                  View findings →
+                  View Findings
                 </Link>
               </div>
             </article>
@@ -290,7 +290,7 @@ export default function HomePage() {
 
         <div style={{ marginTop: 20 }}>
           <Link href="/services" className="impact-btn impact-btn-secondary">
-            Browse all services →
+            Explore Azure Services
           </Link>
         </div>
       </section>

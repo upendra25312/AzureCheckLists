@@ -250,7 +250,7 @@ test("ARB review lifecycle persists summary, findings, scorecard, and decision s
     assert.equal(findings.length, 2);
     assert.equal(findings[0].reviewId, created.reviewId);
     assert.equal(scorecard.overallScore, 78);
-    assert.equal(scorecard.recommendation, "Approved with Conditions");
+    assert.equal(scorecard.recommendation, "Needs Revision");
     assert.equal(scorecard.evidenceReadinessState, "Ready with Gaps");
     assert.equal(scorecard.reviewerOverride, null);
     assert.equal(scorecard.domainScores[1].linkedFindings[0], `${created.reviewId}-find-001`);

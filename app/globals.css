@@ -443,13 +443,13 @@ pre {
 }
 
 .topbar-nav-item--active {
-  background: var(--brand-dim);
-  color: var(--brand);
+  background: #e6f1fa;
+  color: #005a9e;
 }
 
 .topbar-nav-item--active:hover {
-  background: var(--brand-dim);
-  color: var(--brand);
+  background: #dcecf9;
+  color: #005a9e;
 }
 
 .topbar-nav-badge {
@@ -599,21 +599,21 @@ pre {
 }
 
 .sev-badge--high {
-  border-left-color: var(--high);
-  background: var(--high-dim);
-  color: var(--high);
+  border-left-color: #b42318;
+  background: #fdeeee;
+  color: #991b1b;
 }
 
 .sev-badge--medium {
-  border-left-color: var(--med);
-  background: var(--med-dim);
-  color: var(--med);
+  border-left-color: #b45309;
+  background: #fcf3ea;
+  color: #8a4b08;
 }
 
 .sev-badge--low {
-  border-left-color: var(--low);
-  background: var(--low-dim);
-  color: var(--low);
+  border-left-color: #15803d;
+  background: #edf7f0;
+  color: #166534;
 }
 
 .sev-badge--none {
@@ -7306,8 +7306,8 @@ button.chip:disabled:hover {
   border-radius: 4px;
   background: var(--surf-2);
   font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--t3);
+  font-weight: 700;
+  color: var(--t2);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -7339,9 +7339,10 @@ button.chip:disabled:hover {
   align-items: center;
   align-self: flex-start;
   padding: 7px 14px;
+  border: 1px solid #b9d5ee;
   border-radius: 5px;
-  background: var(--brand-dim);
-  color: var(--brand);
+  background: #f3f8fd;
+  color: #005a9e;
   font-size: 0.85rem;
   font-weight: 700;
   text-decoration: none;
@@ -8515,7 +8516,7 @@ button.chip:disabled:hover {
 
 .impact-evidence-item a,
 .impact-service-findings a {
-  color: #005ea8;
+  color: #00538f;
   font-size: 0.78rem;
   font-weight: 700;
   text-decoration: underline;
@@ -8608,9 +8609,9 @@ button.chip:disabled:hover {
 }
 
 .impact-decision-chip-active {
-  border-color: #8bc6f3;
-  background: #ecf7ff;
-  color: #0a4f87;
+  border-color: #b7d4ef;
+  background: #e8f2ff;
+  color: #005a9e;
 }
 
 .impact-card {
@@ -8840,7 +8841,7 @@ button.chip:disabled:hover {
 }
 
 .impact-evidence-item a {
-  color: #0078D4;
+  color: #00538f;
   font-size: 0.8rem;
   text-decoration: none;
 }
@@ -8890,9 +8891,9 @@ button.chip:disabled:hover {
 }
 
 .impact-decision-chip-active {
-  background: #EFF6FF;
-  color: #0078D4;
-  border-color: #BFDBFE;
+  background: #E8F2FF;
+  color: #005A9E;
+  border-color: #B7D4EF;
 }
 
 .impact-format-chips {

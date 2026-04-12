@@ -125,6 +125,19 @@
       color: #004c94;
     }
 
+    .prototype-banner {
+      background: #fef3c7;
+      border-bottom: 2px solid #f59e0b;
+      padding: 12px 24px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #92400e;
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+
     .page {
       max-width: var(--content-max);
       margin: 0 auto;
@@ -1063,6 +1076,7 @@
   </style>
 </head>
 <body>
+  <div class="prototype-banner">⚠️ Prototype Mode — File upload and AI analysis are not yet live. This shows the planned user interface.</div>
   <header class="top-nav">
     <div class="nav-wrap">
       <a class="brand" href="#home" aria-label="Azure Review Assistant Home">
@@ -1131,7 +1145,7 @@
       <div class="grid-two">
         <article class="panel">
           <h3 class="panel-title">Step 2: Upload documents</h3>
-          <div class="upload-locked" id="uploadLockMessage">Upload locked: complete Microsoft sign-in first.</div>
+          <div class="upload-locked" id="uploadLockMessage">Upload locked: complete sign-in first.</div>
           <div class="upload-zone locked" id="uploadZone">
             <div>
               <strong>Drop files here</strong>
@@ -1143,70 +1157,7 @@
             <span class="format-chip">HTML Export</span>
             <span class="format-chip">Markdown Export</span>
           </div>
-        </article>
-
-        <article class="panel">
-          <h3 class="panel-title">Step 3: Evidence and outputs</h3>
-          <div class="progress">
-            <div class="progress-item active">Upload</div>
-            <div class="progress-item">Analyze</div>
-            <div class="progress-item">Findings</div>
-            <div class="progress-item">Export</div>
-          </div>
-          <ul class="evidence-list" aria-label="Traceable findings preview">
-            <li class="evidence-item">
-              <strong>AKS monitoring not enabled • Severity: High</strong>
-              <p class="small">Framework: WAF Reliability</p>
-              <a href="https://learn.microsoft.com/en-us/azure/aks/monitor-aks" target="_blank" rel="noopener noreferrer">Source: learn.microsoft.com/azure/aks/monitor-aks</a>
-            </li>
-            <li class="evidence-item">
-              <strong>No zone redundancy in gateway layer • Severity: High</strong>
-              <p class="small">Framework: HA/DR + CAF</p>
-              <a href="https://learn.microsoft.com/en-us/azure/well-architected/reliability/" target="_blank" rel="noopener noreferrer">Source: learn.microsoft.com/azure/well-architected/reliability</a>
-            </li>
-            <li class="evidence-item">
-              <strong>Missing tagging policy alignment • Severity: Medium</strong>
-              <p class="small">Framework: ALZ Governance</p>
-              <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/landing-zone/" target="_blank" rel="noopener noreferrer">Source: learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone</a>
-            </li>
-          </ul>
-          <div class="framework-grid" aria-label="Framework coverage">
-            <div class="framework-item"><span>WAF</span><span class="framework-state complete">Complete</span></div>
-            <div class="framework-item"><span>CAF</span><span class="framework-state complete">Complete</span></div>
-            <div class="framework-item"><span>ALZ</span><span class="framework-state complete">Complete</span></div>
-            <div class="framework-item"><span>HA/DR</span><span class="framework-state partial">Partial</span></div>
-            <div class="framework-item"><span>Backup</span><span class="framework-state partial">Partial</span></div>
-            <div class="framework-item"><span>Security</span><span class="framework-state complete">Complete</span></div>
-            <div class="framework-item"><span>Networking</span><span class="framework-state complete">Complete</span></div>
-            <div class="framework-item"><span>Monitoring</span><span class="framework-state partial">Partial</span></div>
-            <div class="framework-item"><span>Governance</span><span class="framework-state complete">Complete</span></div>
-          </div>
-          <div class="framework-summary">Framework coverage: 6 Complete, 3 Partial, 0 Missing.</div>
-          <div class="workspace-strip" aria-label="Unified workspace outputs">
-            <span class="workspace-item">Executive Summary</span>
-            <span class="workspace-item">Action Plan</span>
-            <span class="workspace-item">Pricing Snapshot</span>
-            <span class="workspace-item">Full ARB Pack</span>
-          </div>
-          <div class="arb-panel" id="arbPanel" aria-label="ARB scorecard and sign-off">
-            <div class="score-row"><span>Reliability</span><div class="score-bar"><div class="score-fill" style="width: 78%"></div></div><span>78</span></div>
-            <div class="score-row"><span>Security</span><div class="score-bar"><div class="score-fill" style="width: 64%"></div></div><span>64</span></div>
-            <div class="score-row"><span>Cost</span><div class="score-bar"><div class="score-fill" style="width: 71%"></div></div><span>71</span></div>
-            <div class="decision-model" aria-label="Decision states">
-              <span class="decision-chip">Approved</span>
-              <span class="decision-chip active">Needs Revision</span>
-              <span class="decision-chip">Rejected</span>
-            </div>
-            <div class="reviewer-meta">Reviewer: Cloud Architecture Board • Checkpoint: Pending • Last update: Apr 12, 2026</div>
-            <div class="signoff-box">Human sign-off required before ARB export.</div>
-          </div>
-          <div class="cards">
-            <article class="card"><h3>Executive Summary</h3><p class="small">Board-ready recommendation.</p></article>
-            <article class="card"><h3>Action List</h3><p class="small">Owners and due dates.</p></article>
-            <article class="card"><h3>Pricing Snapshot</h3><p class="small">Region and assumptions.</p></article>
-            <article class="card"><h3>Decision Log</h3><p class="small">Human sign-off trail.</p></article>
-          </div>
-          <a class="btn btn-primary sticky-action requires-auth" href="#" data-auth-target="#board-review">Submit to ARB</a>
+          <p class="small" style="margin-top: 16px; color: #4f647b; font-style: italic;">Note: This is an interactive mockup. In the live product, analysis will occur after upload and findings will appear here with framework coverage, scoring, and decision options.</p>
         </article>
       </div>
     </section>

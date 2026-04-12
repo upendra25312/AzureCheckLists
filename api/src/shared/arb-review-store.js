@@ -814,7 +814,7 @@ function buildDefaultReview(reviewId, principal, input = {}) {
     targetReviewDate: normalizeNullableString(input.targetReviewDate),
     notes: normalizeNullableString(input.notes),
     overallScore: Number.isFinite(Number(input.overallScore)) ? Number(input.overallScore) : 78,
-    recommendation: String(input.recommendation ?? "").trim() || "Approved with Conditions",
+    recommendation: String(input.recommendation ?? "").trim() || "Needs Revision",
     finalDecision: input.finalDecision ? String(input.finalDecision).trim() : null,
     requiredEvidencePresent: readiness.requiredEvidencePresent,
     recommendedEvidenceCoverage: readiness.recommendedEvidenceCoverage,
@@ -1249,17 +1249,17 @@ function buildDerivedScorecard(review, findings, decision) {
     (finding) => finding.criticalBlocker && isActiveFinding(finding)
   ).length;
 
-  let recommendation = "Approved with Conditions";
+  let recommendation = "Needs Revision";
   let confidence = "Medium";
 
-  if (review.evidenceReadinessState === "Insufficient Evidence") {
-    recommendation = "Insufficient Evidence";
+  if (review.evidenceReadinessState === "Insufficient Evidence" || overallScore < 55) {
+    recommendation = "Rejected";
     confidence = "Low";
   } else if (criticalBlockers > 0 || overallScore < 70) {
-    recommendation = "Needs Improvement";
+    recommendation = "Needs Revision";
     confidence = "Medium";
   } else if (overallScore >= 85 && review.evidenceReadinessState === "Ready for Review") {
-    recommendation = "ARB Approved";
+    recommendation = "Approved";
     confidence = "High";
   }
 
@@ -2145,7 +2145,7 @@ async function recordArbDecision(principal, reviewId, input = {}) {
   const recordedAt = new Date().toISOString();
   const decision = {
     aiRecommendation: review.recommendation,
-    reviewerDecision: String(input.finalDecision ?? "").trim() || "Approved with Conditions",
+    reviewerDecision: String(input.finalDecision ?? "").trim() || "Needs Revision",
     rationale:
       String(input.rationale ?? "").trim() ||
       "Decision recorded against the persisted ARB review.",

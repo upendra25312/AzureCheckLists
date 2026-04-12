@@ -21,7 +21,7 @@ export function getMockArbReviewSummary(reviewId: string): ArbReviewSummary {
     workflowState: "Review In Progress",
     evidenceReadinessState: "Ready with Gaps",
     overallScore: 78,
-    recommendation: "Approved with Conditions",
+    recommendation: "Needs Revision",
     assignedReviewer: null
   };
 }

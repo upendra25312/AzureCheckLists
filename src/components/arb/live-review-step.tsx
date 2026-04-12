@@ -205,7 +205,7 @@ function getRecommendationTone(recommendation: string) {
     return "approved";
   }
 
-  if (normalized.includes("improvement") || normalized.includes("revision")) {
+  if (normalized.includes("rejected") || normalized.includes("improvement") || normalized.includes("revision")) {
     return "attention";
   }
 
@@ -247,7 +247,7 @@ export function ArbLiveReviewStep(props: {
   const [actionSavingFindingId, setActionSavingFindingId] = useState<string | null>(null);
   const [actionSavingId, setActionSavingId] = useState<string | null>(null);
   const [findingError, setFindingError] = useState<string | null>(null);
-  const [decisionChoice, setDecisionChoice] = useState("Approved with Conditions");
+  const [decisionChoice, setDecisionChoice] = useState("Needs Revision");
   const [decisionRationale, setDecisionRationale] = useState("");
   const [decisionReviewerName, setDecisionReviewerName] = useState("");
   const [decisionReviewerRole, setDecisionReviewerRole] = useState("");
@@ -288,7 +288,7 @@ export function ArbLiveReviewStep(props: {
       "Reviewer verification is still required for at least one open action before a final decision can be recorded.";
   } else if (decisionChoice === "Approved" && actionSummary.openCount > 0) {
     decisionGateMessage =
-      "Approved decisions require all remediation actions to be closed first. Use Approved with Conditions while open actions remain.";
+      "Approved decisions require all remediation actions to be closed first. Use Needs Revision while open actions remain.";
   }
 
   function updateLocalFinding(findingId: string, updater: (current: ArbFinding) => ArbFinding) {
@@ -500,7 +500,7 @@ export function ArbLiveReviewStep(props: {
           setActions(actionsResponse);
           setScorecard(scorecardResponse);
           setDecisionResult(decisionResponse);
-          setDecisionChoice(decisionResponse?.reviewerDecision || "Approved with Conditions");
+          setDecisionChoice(decisionResponse?.reviewerDecision || "Needs Revision");
           setDecisionRationale(decisionResponse?.rationale || "");
           setDecisionReviewerName(decisionResponse?.reviewerName || "");
           setDecisionReviewerRole(decisionResponse?.reviewerRole || "");
@@ -1780,8 +1780,8 @@ export function ArbLiveReviewStep(props: {
                 onChange={(event) => setDecisionChoice(event.target.value)}
               >
                 <option value="Approved">Approved</option>
-                <option value="Approved with Conditions">Approved with Conditions</option>
-                <option value="Needs Improvement">Needs Improvement</option>
+                <option value="Needs Revision">Needs Revision</option>
+                <option value="Rejected">Rejected</option>
               </select>
             </label>
             {decisionGateMessage ? <p className="arb-upload-error">{decisionGateMessage}</p> : null}

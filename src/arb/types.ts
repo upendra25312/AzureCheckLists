@@ -7,8 +7,8 @@ export type ArbWorkflowState =
   | "Decision Recorded"
   | "Review Complete"
   | "Approved"
-  | "Approved with Conditions"
-  | "Needs Improvement"
+  | "Needs Revision"
+  | "Rejected"
   | "Closed";
 
 export type ArbEvidenceReadiness =
