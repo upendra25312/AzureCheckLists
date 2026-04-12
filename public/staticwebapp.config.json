@@ -67,12 +67,6 @@
       ]
     },
     {
-      "route": "/api/admin/*",
-      "allowedRoles": [
-        "admin"
-      ]
-    },
-    {
       "route": "/api/arb/*",
       "allowedRoles": [
         "authenticated"
