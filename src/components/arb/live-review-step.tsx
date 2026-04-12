@@ -712,10 +712,6 @@ export function ArbLiveReviewStep(props: {
         complete: supportedUploads.length > 0
       },
       {
-        label: "Required upload categories are present",
-        complete: Boolean(review?.requiredEvidencePresent)
-      },
-      {
         label: "Confidentiality and handling note is acknowledged",
         complete: confidentialityConfirmed
       }
