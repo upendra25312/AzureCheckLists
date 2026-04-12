@@ -102,14 +102,21 @@ export function ArbLandingRouter() {
           <li>
             <span>01</span>
             <div>
-              <strong>Upload review material</strong>
-              <p>Bring the design pack, diagrams, and supporting material into the review.</p>
+              <strong>Create review</strong>
+              <p>Name your project and customer so findings, decisions, and exports stay scoped correctly.</p>
             </div>
           </li>
           <li>
             <span>02</span>
             <div>
-              <strong>Run AI agent review</strong>
+              <strong>Upload review material</strong>
+              <p>Bring the design pack, diagrams, and supporting material into the review.</p>
+            </div>
+          </li>
+          <li>
+            <span>03</span>
+            <div>
+              <strong>Architecture Assurance Assessment</strong>
               <p>
                 The Azure ARB Agent reads your documents and checks them against WAF, CAF, ALZ,
                 HA/DR, Security, Networking, and Monitoring using live Microsoft Learn docs.
@@ -117,14 +124,14 @@ export function ArbLandingRouter() {
             </div>
           </li>
           <li>
-            <span>03</span>
+            <span>04</span>
             <div>
               <strong>Review findings and scorecard</strong>
               <p>Every finding is grounded in evidence from your documents and linked to a Microsoft Learn URL.</p>
             </div>
           </li>
           <li>
-            <span>04</span>
+            <span>05</span>
             <div>
               <strong>Human sign-off and export</strong>
               <p>
