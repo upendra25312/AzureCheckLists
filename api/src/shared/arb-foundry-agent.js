@@ -531,6 +531,84 @@ function parseAgentResponse(responseText) {
   return { findings, scorecard, recommendation: scorecard.recommendation };
 }
 
+function buildFallbackAgentReview({ review, requirements, evidence, reason }) {
+  const evidenceGaps = [];
+  if (!requirements.length) {
+    evidenceGaps.push("Requirements extraction results are empty.");
+  }
+  if (!evidence.length) {
+    evidenceGaps.push("Evidence mapping results are empty.");
+  }
+  if (review.evidenceReadinessState && review.evidenceReadinessState !== "Sufficient") {
+    evidenceGaps.push(`Evidence readiness reported as ${review.evidenceReadinessState}.`);
+  }
+
+  const missingEvidence = evidenceGaps.length > 0
+    ? evidenceGaps
+    : ["Additional architecture evidence is needed for complete framework coverage."];
+
+  const baseScore = missingEvidence.length > 1 ? 62 : 72;
+  const now = new Date().toISOString();
+  const dimensions = [
+    "Architecture Completeness",
+    "Security and Compliance",
+    "Reliability and Resilience",
+    "Operational Readiness",
+    "Cost and Commercial Fit",
+    "Governance and Controls",
+    "Delivery Feasibility",
+    "Documentation Quality"
+  ].map((name) => ({
+    name,
+    score: baseScore,
+    weight: 12.5,
+    rationale: "Fallback scoring applied due to unavailable model output. Validate manually before final sign-off.",
+    blockers: missingEvidence.slice(0, 2)
+  }));
+
+  return {
+    findings: [
+      {
+        findingId: "fallback-finding-1",
+        severity: "High",
+        domain: "Architecture",
+        framework: "WAF",
+        frameworkPillar: "WAF:Operational Excellence",
+        title: "AI review fallback was triggered",
+        findingStatement: "Automated model output was unavailable for this run, so a deterministic fallback assessment was generated.",
+        whyItMatters: "Without full AI output, recommendations can miss service-specific gaps and should be reviewed manually before board submission.",
+        evidenceBasis: `Fallback trigger: ${reason}`,
+        recommendation: "Re-run AI review after validating Foundry model availability, then confirm findings before decision sign-off.",
+        learnMoreUrl: "https://learn.microsoft.com/azure/well-architected/operational-excellence/",
+        suggestedOwner: "Cloud Architecture Lead",
+        evidenceFound: [],
+        status: "Open",
+        source: "agent"
+      }
+    ],
+    scorecard: {
+      overallScore: baseScore,
+      recommendation: "Needs Revision",
+      criticalBlockerCount: missingEvidence.length,
+      missingEvidenceCount: missingEvidence.length,
+      confidenceLevel: "Low",
+      dimensionScores: dimensions,
+      reviewSummary:
+        "A deterministic fallback ARB assessment was generated because the AI model response was unavailable for this run. Treat this output as provisional and re-run the full AI review once model availability is restored.",
+      strengths: ["Review workflow and evidence pipeline are active."],
+      missingEvidence,
+      criticalBlockers: missingEvidence,
+      nextActions: [
+        "Validate Foundry model endpoint and credentials.",
+        "Re-run AI review and compare outputs before recording final decision."
+      ],
+      source: "agent",
+      generatedAt: now
+    },
+    recommendation: "Needs Revision"
+  };
+}
+
 const IMAGE_MIME_TYPES = {
   ".png": "image/png",
   ".jpg": "image/jpeg",
@@ -611,7 +689,13 @@ async function runArbAgentReview({ review, files, requirements, evidence, search
     ]);
 
     if (!responseText) {
-      return { success: false, reason: "Model returned an empty response" };
+      const fallback = buildFallbackAgentReview({
+        review,
+        requirements,
+        evidence,
+        reason: "Model returned an empty response"
+      });
+      return { success: true, ...fallback, fallbackUsed: true };
     }
 
     let parsed = parseAgentResponse(responseText);
@@ -634,7 +718,13 @@ async function runArbAgentReview({ review, files, requirements, evidence, search
     }
 
     if (!parsed) {
-      return { success: false, reason: "Model response could not be parsed as structured JSON", rawResponse: responseText };
+      const fallback = buildFallbackAgentReview({
+        review,
+        requirements,
+        evidence,
+        reason: "Model response could not be parsed as structured JSON"
+      });
+      return { success: true, ...fallback, fallbackUsed: true, rawResponse: responseText };
     }
 
     return { success: true, ...parsed };

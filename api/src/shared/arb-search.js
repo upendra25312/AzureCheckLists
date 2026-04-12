@@ -4,6 +4,26 @@ const INDEX_NAME = process.env.AZURE_SEARCH_INDEX_NAME || "arb-documents";
 const SEARCH_API_VERSION = "2024-07-01"; // supports semantic ranking
 
 const SEMANTIC_CONFIG_NAME = "arb-semantic";
+const SEARCH_TIMEOUT_MS = 15000;
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = SEARCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+  } catch (error) {
+    if (error && error.name === "AbortError") {
+      throw new Error(`Azure AI Search request timed out after ${Math.round(timeoutMs / 1000)}s`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 const INDEX_SCHEMA = {
   name: INDEX_NAME,
@@ -40,7 +60,7 @@ function getSearchConfiguration() {
 
 async function searchRequest(path, method, body) {
   const url = `${SEARCH_ENDPOINT}/${path}?api-version=${SEARCH_API_VERSION}`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method,
     headers: {
       "Content-Type": "application/json",
