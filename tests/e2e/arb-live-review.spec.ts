@@ -322,25 +322,19 @@ test.describe("ARB live review routes", () => {
     await expect(page.getByText("Review ID: demo-review")).toBeVisible();
     await expect(page.getByText("Workflow State").first()).toBeVisible();
     await expect(page.getByText("Review In Progress").first()).toBeVisible();
-    await expect(page.getByText("Overall score: 78")).toBeVisible();
-    await expect(
-      page.getByText("Recommendation: Approved with Conditions (Medium confidence)")
-    ).toBeVisible();
-    await expect(page.getByText("Evidence readiness: Ready with Gaps")).toBeVisible();
-    await expect(
-      page.getByText(
-        "Requirements Coverage: 16/20 - Baseline requirement mapping scaffold."
-      )
-    ).toBeVisible();
-    await expect(
-      page.getByText("Security: 12/20 - Security rationale scaffold. (linked findings: find-001)")
-    ).toBeVisible();
-    await expect(page.getByText("Open actions: 1")).toBeVisible();
-    await expect(page.getByText("Blocked actions: 1")).toBeVisible();
-    await expect(page.getByText("Reviewer verification required: 1")).toBeVisible();
-    await expect(
-      page.getByText("Assign a documented ingress owner before final approval. (Blocked) - owner: Platform Lead")
-    ).toBeVisible();
+    await expect(page.getByText("Know whether this review is ready for sign-off.")).toBeVisible();
+    await expect(page.locator(".arb-score-hero-value strong")).toHaveText("78");
+    await expect(page.getByText("Approved with Conditions")).toBeVisible();
+    await expect(page.getByText("Ready with Gaps")).toBeVisible();
+    await expect(page.getByText("Requirements Coverage")).toBeVisible();
+    await expect(page.getByText("80% (16/20)")).toBeVisible();
+    await expect(page.getByText("Security")).toBeVisible();
+    await expect(page.getByText("60% (12/20)")).toBeVisible();
+    await expect(page.getByText("find-001")).toBeVisible();
+    await expect(page.getByText("Assign a documented ingress owner before final approval.")).toBeVisible();
+    await expect(page.getByText("Platform Lead")).toBeVisible();
+    await expect(page.getByText("2026-04-24")).toBeVisible();
+    await expect(page.getByText("Blocked")).toBeVisible();
   });
 
   test("records a decision through the live stub API", async ({ page }) => {

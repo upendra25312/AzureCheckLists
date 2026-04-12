@@ -10,17 +10,12 @@ import type { StaticWebAppClientPrincipal } from "@/types";
 
 type ArbReviewLibraryFocus = "workspace" | "decision";
 
-function formatTimestamp(value: string | undefined) {
-  if (!value) {
-    return "Awaiting first save";
-  }
-
-  return new Date(value).toLocaleString("en-US", {
+function formatDate(value: string | undefined) {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit"
+    year: "numeric"
   });
 }
 
@@ -28,7 +23,6 @@ function getPrimaryHref(review: ArbReviewSummary, focus: ArbReviewLibraryFocus):
   if (focus === "decision") {
     return `/arb/${review.reviewId}/decision` as Route;
   }
-
   return review.workflowState === "Draft"
     ? (`/arb/${review.reviewId}/upload` as Route)
     : (`/arb/${review.reviewId}` as Route);
@@ -38,8 +32,17 @@ function getPrimaryLabel(review: ArbReviewSummary, focus: ArbReviewLibraryFocus)
   if (focus === "decision") {
     return review.finalDecision ? "Review decision" : "Open decision";
   }
+  return review.workflowState === "Draft" ? "Continue upload" : "Open";
+}
 
-  return review.workflowState === "Draft" ? "Continue upload" : "Open workspace";
+function StatusBadge({ state }: { state: string }) {
+  const cls =
+    state === "Approved" ? "arb-status-badge arb-status-approved"
+    : state === "Approved with Conditions" ? "arb-status-badge arb-status-approved"
+    : state === "Needs Improvement" ? "arb-status-badge arb-status-needs-work"
+    : state === "Draft" ? "arb-status-badge arb-status-draft"
+    : "arb-status-badge arb-status-in-progress";
+  return <span className={cls}>{state}</span>;
 }
 
 export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
@@ -58,98 +61,44 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
     async function load() {
       try {
         const nextPrincipal = await fetchClientPrincipal();
-
-        if (!active) {
-          return;
-        }
-
+        if (!active) return;
         setPrincipal(nextPrincipal);
-
-        if (!nextPrincipal) {
-          setLoading(false);
-          return;
-        }
-
+        if (!nextPrincipal) { setLoading(false); return; }
         const payload = await listArbReviews();
-
-        if (!active) {
-          return;
-        }
-
+        if (!active) return;
         setReviews(payload.reviews);
       } catch (loadError) {
-        if (!active) {
-          return;
-        }
-
-        setError(loadError instanceof Error ? loadError.message : "Unable to load ARB reviews.");
+        if (!active) return;
+        setError(loadError instanceof Error ? loadError.message : "Unable to load reviews.");
       } finally {
-        if (active) {
-          setLoading(false);
-        }
+        if (active) setLoading(false);
       }
     }
 
     void load();
-
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, []);
 
   const filteredReviews = useMemo(() => {
     if (focus === "decision") {
-      return [...reviews].sort((left, right) => {
-        const leftDecisionWeight = left.finalDecision ? 1 : 0;
-        const rightDecisionWeight = right.finalDecision ? 1 : 0;
-
-        if (leftDecisionWeight !== rightDecisionWeight) {
-          return leftDecisionWeight - rightDecisionWeight;
-        }
-
-        return (right.overallScore ?? -1) - (left.overallScore ?? -1);
+      return [...reviews].sort((a, b) => {
+        const aw = a.finalDecision ? 1 : 0;
+        const bw = b.finalDecision ? 1 : 0;
+        if (aw !== bw) return aw - bw;
+        return (b.overallScore ?? -1) - (a.overallScore ?? -1);
       });
     }
-
     return reviews;
   }, [focus, reviews]);
-
-  const queueMetrics = useMemo(() => {
-    const activeCount = reviews.filter((review) => !review.finalDecision).length;
-    const decisionReadyCount = reviews.filter(
-      (review) =>
-        review.workflowState === "Decision Recorded" ||
-        review.workflowState === "Approved" ||
-        review.workflowState === "Approved with Conditions" ||
-        review.workflowState === "Needs Improvement" ||
-        review.overallScore !== null
-    ).length;
-    const approvedCount = reviews.filter((review) => review.finalDecision?.includes("Approved")).length;
-    const evidenceGapCount = reviews.filter(
-      (review) => review.evidenceReadinessState !== "Ready for Review"
-    ).length;
-
-    return {
-      activeCount,
-      decisionReadyCount,
-      approvedCount,
-      evidenceGapCount
-    };
-  }, [reviews]);
 
   async function handleCreateReview() {
     try {
       setSaving(true);
       setError(null);
-
-      const review = await createArbReview({
-        projectName,
-        customerName
-      });
-
+      const review = await createArbReview({ projectName, customerName });
       window.location.href = `/arb/${encodeURIComponent(review.reviewId)}/upload`;
     } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "Unable to create ARB review.");
+      setError(createError instanceof Error ? createError.message : "Unable to create review.");
     } finally {
       setSaving(false);
     }
@@ -157,230 +106,127 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
 
   if (loading) {
     return (
-      <section className="surface-panel arb-library-stack">
-        <p className="section-copy">Loading ARB review library...</p>
-      </section>
+      <div className="arb-library-loading">
+        <p>Loading reviews…</p>
+      </div>
     );
   }
 
+  /* ── Signed-out state ── */
   if (!principal) {
     return (
-      <section className="surface-panel arb-library-stack">
-        <div className="board-card-head">
-          <div className="board-card-head-copy">
-            <p className="board-card-subtitle">
-              {focus === "decision" ? "ARB-grade review decision queue" : "ARB-grade review mode"}
-            </p>
-            <h2 className="section-title">
-              {focus === "decision"
-                ? "Sign in to see decision-ready reviews, scorecards, and human sign-off history."
-                : "Sign in to use the advanced review flow with uploaded evidence and stricter reviewer steps."}
-            </h2>
-          </div>
-        </div>
-        <div className="arb-signin-grid">
-          <article className="future-card">
-            <h3>Advanced mode</h3>
-            <p className="section-copy">
-              ARB-grade review mode adds uploaded evidence, stricter reviewer checkpoints, and
-              decision-ready workflow steps inside the same product.
-            </p>
-            <a href={buildLoginUrl("aad")} className="primary-link">
-              Sign in with Microsoft
-            </a>
-          </article>
-          <article className="trace-card">
-            <h3>Start with the main review flow</h3>
-            <p className="section-copy">
-              If you do not need uploaded evidence yet, begin with the standard review workspace and
-              step up later only when the review needs ARB-grade rigor.
-            </p>
-            <Link href="/review-package" className="secondary-button">
-              Open standard review
-            </Link>
-          </article>
-        </div>
-      </section>
+      <div className="arb-signin-hero">
+        <p className="arb-signin-kicker">ARB-grade review mode</p>
+        <h1 className="arb-signin-headline">
+          Upload your design documents and get an AI-powered architecture review in minutes.
+        </h1>
+        <p className="arb-signin-sub">
+          Sign in with your Microsoft account to create a review, upload SOW or design docs,
+          and let the Azure ARB Agent check them against WAF, CAF, ALZ, HA/DR, Security,
+          Networking, and Monitoring — with findings linked to live Microsoft Learn guidance.
+        </p>
+        <a href={buildLoginUrl("aad")} className="arb-signin-cta">
+          Sign in with Microsoft to start →
+        </a>
+        <ul className="arb-signin-bullets">
+          <li>PDF, Word, or PowerPoint — drag and drop your documents</li>
+          <li>AI checks WAF · CAF · ALZ · HA/DR · Backup · Security · Networking · Monitoring</li>
+          <li>Findings scored 0–100, every finding linked to Microsoft Learn</li>
+          <li>Export board-ready pack as CSV, HTML, or Markdown</li>
+          <li>Reviews saved for 7 days — auto-deleted after</li>
+        </ul>
+      </div>
     );
   }
 
+  /* ── Signed-in state ── */
   return (
     <div className="arb-library-stack">
-      <section className="review-command-panel library-command-panel">
-        <div className="detail-command-grid">
-          <div className="detail-command-copy">
-            <p className="header-badge">
-              {focus === "decision" ? "Decision queue" : "Review library"}
-            </p>
-            <h2 className="section-title">
-              {focus === "decision"
-                ? "Open the scorecard and decision steps that need reviewer sign-off."
-                : "Create a new ARB review or resume an upload-first review already in progress."}
-            </h2>
-            <p className="section-copy">
-              {focus === "decision"
-                ? "Decision Center keeps the weighted score, recommendation, open blockers, and final reviewer outcome in one operating queue."
-                : "The Review Workspace starts with evidence intake, then moves through requirements, findings, scorecard, and final decision."}
-            </p>
 
-            <div className="arb-form-grid">
-              <label className="filter-field">
-                <span>Project name</span>
-                <input
-                  className="field-input"
-                  aria-label="Project name"
-                  value={projectName}
-                  onChange={(event) => setProjectName(event.target.value)}
-                  placeholder="Contoso landing zone modernization"
-                />
-              </label>
-              <label className="filter-field">
-                <span>Customer name</span>
-                <input
-                  className="field-input"
-                  aria-label="Customer name"
-                  value={customerName}
-                  onChange={(event) => setCustomerName(event.target.value)}
-                  placeholder="Contoso"
-                />
-              </label>
-            </div>
-
-            <div className="button-row">
-              <button
-                type="button"
-                className="primary-button"
-                onClick={() => void handleCreateReview()}
-                disabled={saving || !projectName.trim()}
-              >
-                {saving ? "Creating review..." : "Create ARB review"}
-              </button>
-              <Link href="/review-package" className="secondary-button">
-                Open standard review
-              </Link>
-            </div>
-
-            {error ? <p className="microcopy">{error}</p> : null}
-          </div>
-
-          <aside className="detail-command-sidecar future-card arb-user-card">
-            <p className="board-card-subtitle">Signed in</p>
-            <strong>{principal.userDetails}</strong>
-            <p className="section-copy">
-              Reviews persist to your account. Use this queue to keep upload, findings, score,
-              and decision work connected.
-            </p>
-          </aside>
+      {/* Create form */}
+      <section className="arb-create-card">
+        <div className="arb-create-fields">
+          <label className="arb-field">
+            <span>Project name</span>
+            <input
+              className="arb-field-input"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              placeholder="Contoso landing zone modernization"
+              aria-label="Project name"
+            />
+          </label>
+          <label className="arb-field">
+            <span>Customer / organisation</span>
+            <input
+              className="arb-field-input"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              placeholder="Contoso"
+              aria-label="Customer name"
+            />
+          </label>
+          <button
+            type="button"
+            className="arb-create-btn"
+            onClick={() => void handleCreateReview()}
+            disabled={saving || !projectName.trim()}
+          >
+            {saving ? "Creating…" : "Create review and upload documents →"}
+          </button>
         </div>
-
-        <div className="review-command-metrics">
-          <article className="review-command-metric">
-            <span>Active reviews</span>
-            <strong>{queueMetrics.activeCount}</strong>
-            <p>Reviews still moving through upload, findings, or decision preparation.</p>
-          </article>
-          <article className="review-command-metric">
-            <span>Decision-ready</span>
-            <strong>{queueMetrics.decisionReadyCount}</strong>
-            <p>Reviews with score or decision posture ready for reviewer attention.</p>
-          </article>
-          <article className="review-command-metric">
-            <span>Approved posture</span>
-            <strong>{queueMetrics.approvedCount}</strong>
-            <p>Reviews already carrying an approved or approved-with-conditions outcome.</p>
-          </article>
-          <article className="review-command-metric">
-            <span>Evidence gaps</span>
-            <strong>{queueMetrics.evidenceGapCount}</strong>
-            <p>Reviews that still need stronger evidence before final sign-off.</p>
-          </article>
-        </div>
+        {error ? <p className="arb-create-error">{error}</p> : null}
       </section>
 
-      <div className="library-state-grid">
-        <article className="surface-panel library-state-card">
-          <p className="board-card-subtitle">Queue focus</p>
-          <h3>{focus === "decision" ? "Decision Center" : "Review Workspace"}</h3>
-          <p className="section-copy">
-            {focus === "decision"
-              ? "Use this view when you need score visibility, decision traceability, and reviewer-owned outcomes."
-              : "Use this view when you need to start from source evidence and move steadily toward findings and score."}
-          </p>
-        </article>
-        <article className="surface-panel library-state-card">
-          <p className="board-card-subtitle">Human sign-off</p>
-          <h3>AI recommends. Humans decide.</h3>
-          <p className="section-copy">
-            Findings and score stay assistive. Decision state, conditions, and final approval
-            remain explicit reviewer actions.
-          </p>
-        </article>
-      </div>
-
+      {/* Review list */}
       {filteredReviews.length === 0 ? (
-        <section className="empty-state-card">
-          <h2>No saved ARB reviews yet</h2>
-          <p className="empty-note">
-            Create your first ARB review above when the work needs uploaded evidence and stricter
-            reviewer sign-off.
+        <section className="arb-empty-state">
+          <p className="arb-empty-title">No reviews yet</p>
+          <p className="arb-empty-sub">
+            Create your first review above — you&apos;ll be taken straight to the upload page.
           </p>
         </section>
       ) : (
-        <div className="library-review-grid">
-          {filteredReviews.map((review) => (
-            <article key={`${review.reviewId}-${review.createdByUserId ?? "user"}`} className="surface-panel library-review-card">
-              <div className="review-stage-preview-head">
-                <div>
-                  <p className="board-card-subtitle">
-                    {review.customerName || "Customer pending"} · {review.reviewId}
-                  </p>
-                  <h3 className="section-title arb-review-card-title">{review.projectName}</h3>
-                </div>
-                <div className="board-card-icon-pill" aria-hidden="true">
-                  ARB
-                </div>
-              </div>
-
-              <div className="board-summary-row">
-                <span className="pill">Workflow: {review.workflowState}</span>
-                <span className="pill">Evidence: {review.evidenceReadinessState}</span>
-                <span className="pill">
-                  Decision: {review.finalDecision ?? review.recommendation}
-                </span>
-              </div>
-
-              <div className="library-review-stats">
-                <article className="library-review-stat">
-                  <span>Score</span>
-                  <strong>{review.overallScore ?? "Pending"}</strong>
-                </article>
-                <article className="library-review-stat">
-                  <span>Reviewer</span>
-                  <strong>{review.assignedReviewer ?? "Unassigned"}</strong>
-                </article>
-                <article className="library-review-stat">
-                  <span>Updated</span>
-                  <strong>{formatTimestamp(review.lastUpdated)}</strong>
-                </article>
-              </div>
-
-              <div className="button-row arb-review-actions">
-                <Link href={getPrimaryHref(review, focus)} className="primary-link">
-                  {getPrimaryLabel(review, focus)}
-                </Link>
-                <Link href={`/arb/${review.reviewId}/findings` as Route} className="secondary-button">
-                  Findings
-                </Link>
-                <Link href={`/arb/${review.reviewId}/scorecard` as Route} className="ghost-button">
-                  Scorecard
-                </Link>
-                <Link href={`/arb/${review.reviewId}/decision` as Route} className="ghost-button">
-                  Decision
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
+        <section className="arb-review-table-wrap">
+          <h2 className="arb-review-table-heading">Your reviews</h2>
+          <div className="arb-review-table-scroll">
+            <table className="arb-review-table">
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th>Customer</th>
+                  <th>Status</th>
+                  <th>Score</th>
+                  <th>Updated</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredReviews.map((review) => (
+                  <tr key={`${review.reviewId}-${review.createdByUserId ?? "user"}`}>
+                    <td className="arb-table-project">{review.projectName}</td>
+                    <td className="arb-table-customer">{review.customerName || "—"}</td>
+                    <td><StatusBadge state={review.workflowState} /></td>
+                    <td className="arb-table-score">
+                      {review.overallScore !== null && review.overallScore !== undefined
+                        ? review.overallScore
+                        : "—"}
+                    </td>
+                    <td className="arb-table-date">{formatDate(review.lastUpdated)}</td>
+                    <td className="arb-table-actions">
+                      <Link href={getPrimaryHref(review, focus)} className="arb-table-open">
+                        {getPrimaryLabel(review, focus)}
+                      </Link>
+                      <Link href={`/arb/${review.reviewId}/findings` as Route} className="arb-table-secondary">
+                        Findings
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
     </div>
   );

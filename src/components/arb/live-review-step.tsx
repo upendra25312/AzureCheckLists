@@ -26,6 +26,7 @@ import { buildLoginUrl } from "@/lib/review-cloud";
 import type {
   ArbAction,
   ArbDecision,
+  ArbDomainScore,
   ArbEvidenceFact,
   ArbExportArtifact,
   ArbExportFormat,
@@ -39,6 +40,7 @@ import type {
 } from "@/arb/types";
 import { ArbPlaceholderPage } from "@/components/arb/placeholder-page";
 import { ArbReviewShell } from "@/components/arb/review-shell";
+import { SeverityBadge } from "@/components/severity-badge";
 
 const SUPPORTED_UPLOAD_EXTENSIONS = [
   ".pdf",
@@ -163,6 +165,72 @@ function formatExportLabel(format: string) {
   return ".csv";
 }
 
+function toSeverityLevel(value: string | undefined): "High" | "Medium" | "Low" | undefined {
+  if (value === "High" || value === "Medium" || value === "Low") {
+    return value;
+  }
+
+  return undefined;
+}
+
+function getFindingPrimaryReference(finding: ArbFinding) {
+  return finding.references.find((reference) => Boolean(reference.url)) ?? finding.references[0] ?? null;
+}
+
+function getDomainScorePercent(domainScore: ArbDomainScore) {
+  if (!Number.isFinite(domainScore.weight) || domainScore.weight <= 0) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(100, Math.round((domainScore.score / domainScore.weight) * 100)));
+}
+
+function getPercentTone(percent: number) {
+  if (percent >= 85) {
+    return "strong";
+  }
+
+  if (percent >= 70) {
+    return "steady";
+  }
+
+  return "attention";
+}
+
+function getRecommendationTone(recommendation: string) {
+  const normalized = recommendation.trim().toLowerCase();
+
+  if (normalized.includes("approved")) {
+    return "approved";
+  }
+
+  if (normalized.includes("improvement") || normalized.includes("revision")) {
+    return "attention";
+  }
+
+  if (normalized.includes("insufficient")) {
+    return "neutral";
+  }
+
+  return "neutral";
+}
+
+function getScoreBandLabel(score: number | null) {
+  if (score === null || score === undefined) {
+    return "Awaiting score";
+  }
+
+  if (score >= 85) {
+    return "Board-ready";
+  }
+
+  if (score >= 70) {
+    return "Needs follow-through";
+  }
+
+  return "Needs remediation";
+}
+
 export function ArbLiveReviewStep(props: {
   reviewId: string;
   activeStep: ArbReviewStepKey;
@@ -201,6 +269,7 @@ export function ArbLiveReviewStep(props: {
   const [agentRunning, setAgentRunning] = useState(false);
   const [agentError, setAgentError] = useState<string | null>(null);
   const [agentCompleted, setAgentCompleted] = useState(false);
+  const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
   const actionSummary = summarizeActions(actions);
   const authRequired = error?.includes("Sign in is required") ?? false;
 
@@ -428,6 +497,23 @@ export function ArbLiveReviewStep(props: {
       cancelled = true;
     };
   }, [reviewId, activeStep]);
+
+  useEffect(() => {
+    if (activeStep !== "findings") {
+      return;
+    }
+
+    setSelectedFindingId((currentSelectedFindingId) => {
+      if (
+        currentSelectedFindingId &&
+        findings.some((finding) => finding.findingId === currentSelectedFindingId)
+      ) {
+        return currentSelectedFindingId;
+      }
+
+      return findings[0]?.findingId ?? null;
+    });
+  }, [activeStep, findings]);
 
   const shellReview =
     review ??
@@ -954,6 +1040,27 @@ export function ArbLiveReviewStep(props: {
       (total, finding) => total + finding.missingEvidence.length,
       0
     );
+    const selectedFinding =
+      findings.find((finding) => finding.findingId === selectedFindingId) ?? findings[0] ?? null;
+    const selectedFindingAction = selectedFinding
+      ? actions.find((action) => action.sourceFindingId === selectedFinding.findingId) ?? null
+      : null;
+
+    if (findings.length === 0) {
+      return (
+        <div className="arb-page-stack">
+          <ArbPlaceholderPage
+            intro="No AI findings are available yet. Finish extraction and run the review to populate this page."
+            bullets={[
+              "Upload the core design documents",
+              "Start extraction once the package is ready",
+              "Run AI review to generate findings, actions, and scorecard data"
+            ]}
+          />
+          {renderOutputArtifactsCard()}
+        </div>
+      );
+    }
 
     return (
       <div className="arb-page-stack">
@@ -979,44 +1086,170 @@ export function ArbLiveReviewStep(props: {
           </article>
         </div>
 
-        {findingError ? (
-          <section className="trace-card arb-summary-card">
-            <p>{findingError}</p>
-          </section>
-        ) : null}
+          {findingError ? (
+            <section className="trace-card arb-summary-card">
+              <p>{findingError}</p>
+            </section>
+          ) : null}
 
-        <div className="arb-finding-grid">
-          {findings.map((finding) => (
-            <section key={finding.findingId} className="surface-panel arb-finding-card">
+        <section className="surface-panel arb-findings-table-panel">
+          <div className="board-card-head">
+            <div className="board-card-head-copy">
+              <p className="board-card-subtitle">Findings table</p>
+              <h2 className="section-title">Scan the findings first, then open one item to work it through.</h2>
+            </div>
+          </div>
+          <div className="arb-review-table-scroll">
+            <table className="arb-findings-table">
+              <thead>
+                <tr>
+                  <th>Severity</th>
+                  <th>Finding</th>
+                  <th>Framework</th>
+                  <th>Recommendation</th>
+                  <th>Learn link</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {findings.map((finding) => {
+                  const primaryReference = getFindingPrimaryReference(finding);
+                  const selected = selectedFinding?.findingId === finding.findingId;
+
+                  return (
+                    <tr
+                      key={finding.findingId}
+                      className={selected ? "arb-findings-table-row-active" : undefined}
+                    >
+                      <td>
+                        <SeverityBadge severity={toSeverityLevel(finding.severity)} compact />
+                      </td>
+                      <td>
+                        <div className="arb-findings-table-main">
+                          <strong>{finding.title}</strong>
+                          <span>{finding.findingStatement}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="arb-findings-table-framework">
+                          <span>{finding.domain}</span>
+                          <small>{finding.findingType}</small>
+                        </div>
+                      </td>
+                      <td className="arb-findings-table-recommendation">{finding.recommendation}</td>
+                      <td>
+                        {primaryReference?.url ? (
+                          <a
+                            href={primaryReference.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="arb-findings-table-link"
+                          >
+                            {primaryReference.title || "Open guidance"}
+                          </a>
+                        ) : (
+                          <span className="arb-findings-table-empty">—</span>
+                        )}
+                      </td>
+                      <td>
+                        <span className="arb-findings-table-status">{finding.status}</span>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className={`arb-findings-open${selected ? " arb-findings-open-active" : ""}`}
+                          onClick={() => setSelectedFindingId(finding.findingId)}
+                        >
+                          {selected ? "Editing" : "Open"}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {selectedFinding ? (
+          <section className="surface-panel arb-finding-focus">
+            <div className="board-card-head">
+              <div className="board-card-head-copy">
+                <p className="board-card-subtitle">Selected finding</p>
+                <h2 className="section-title arb-finding-title">{selectedFinding.title}</h2>
+              </div>
+              <div className="arb-finding-focus-meta">
+                <SeverityBadge severity={toSeverityLevel(selectedFinding.severity)} />
+                <span className="arb-finding-focus-chip">{selectedFinding.domain}</span>
+                <span className="arb-finding-focus-chip">{selectedFinding.findingType}</span>
+              </div>
+            </div>
+
+            <div className="arb-score-grid">
+              <article className="trace-card">
+                <strong>What the AI found</strong>
+                <p>{selectedFinding.findingStatement}</p>
+              </article>
+              <article className="trace-card">
+                <strong>Why it matters</strong>
+                <p>{selectedFinding.whyItMatters}</p>
+              </article>
+              <article className="trace-card">
+                <strong>Recommended fix</strong>
+                <p>{selectedFinding.recommendation}</p>
+              </article>
+            </div>
+
+            {selectedFinding.missingEvidence.length > 0 ? (
+              <section className="trace-card arb-summary-card">
+                <p className="board-card-subtitle">Missing evidence</p>
+                <ul className="arb-checklist">
+                  {selectedFinding.missingEvidence.map((missingEvidence) => (
+                    <li key={missingEvidence}>{missingEvidence}</li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+
+            {selectedFinding.references.length > 0 ? (
+              <section className="trace-card arb-summary-card">
+                <p className="board-card-subtitle">Grounding links</p>
+                <div className="arb-reference-list">
+                  {selectedFinding.references.map((reference) => (
+                    <a
+                      key={`${selectedFinding.findingId}-${reference.title}-${reference.url ?? "ref"}`}
+                      href={reference.url ?? "#"}
+                      target={reference.url ? "_blank" : undefined}
+                      rel={reference.url ? "noreferrer" : undefined}
+                      className={`arb-reference-item${reference.url ? "" : " arb-reference-item-disabled"}`}
+                    >
+                      <strong>{reference.title}</strong>
+                      <span>{reference.relevance ?? "Grounding reference"}</span>
+                    </a>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            <section className="surface-panel arb-summary-card arb-finding-editor">
               <div className="board-card-head">
                 <div className="board-card-head-copy">
-                  <p className="board-card-subtitle">
-                    {finding.severity} · {finding.domain} · {finding.findingType}
-                  </p>
-                  <h2 className="section-title arb-finding-title">{finding.title}</h2>
-                </div>
-                <div className="board-card-icon-pill" aria-hidden="true">
-                  {finding.severity.slice(0, 1)}
+                  <p className="board-card-subtitle">Review action</p>
+                  <h3 className="section-title">Record the owner, status, and note for this finding.</h3>
                 </div>
               </div>
-
-              <p className="section-copy">{finding.findingStatement}</p>
-              <p>Why it matters: {finding.whyItMatters}</p>
-              <p>Recommendation: {finding.recommendation}</p>
-              {finding.missingEvidence.length > 0 ? (
-                <p>Missing evidence: {finding.missingEvidence.join(", ")}</p>
-              ) : null}
 
               <div className="arb-field-grid">
                 <label className="filter-field">
                   <span>Status</span>
                   <select
                     className="field-select"
-                    aria-label={`Status for ${finding.title}`}
-                    value={finding.status}
+                    aria-label={`Status for ${selectedFinding.title}`}
+                    value={selectedFinding.status}
                     onChange={(event) => {
                       const nextStatus = event.target.value;
-                      updateLocalFinding(finding.findingId, (current) => ({
+                      updateLocalFinding(selectedFinding.findingId, (current) => ({
                         ...current,
                         status: nextStatus
                       }));
@@ -1034,12 +1267,12 @@ export function ArbLiveReviewStep(props: {
                   <span>Owner</span>
                   <input
                     className="field-input"
-                    aria-label={`Owner for ${finding.title}`}
-                    value={finding.owner ?? ""}
-                    placeholder={finding.suggestedOwner ?? "Assign owner"}
+                    aria-label={`Owner for ${selectedFinding.title}`}
+                    value={selectedFinding.owner ?? ""}
+                    placeholder={selectedFinding.suggestedOwner ?? "Assign owner"}
                     onChange={(event) => {
                       const nextOwner = event.target.value;
-                      updateLocalFinding(finding.findingId, (current) => ({
+                      updateLocalFinding(selectedFinding.findingId, (current) => ({
                         ...current,
                         owner: nextOwner || null
                       }));
@@ -1050,12 +1283,12 @@ export function ArbLiveReviewStep(props: {
                   <span>Due date</span>
                   <input
                     className="field-input"
-                    aria-label={`Due date for ${finding.title}`}
+                    aria-label={`Due date for ${selectedFinding.title}`}
                     type="date"
-                    value={finding.dueDate ?? ""}
+                    value={selectedFinding.dueDate ?? ""}
                     onChange={(event) => {
                       const nextDueDate = event.target.value;
-                      updateLocalFinding(finding.findingId, (current) => ({
+                      updateLocalFinding(selectedFinding.findingId, (current) => ({
                         ...current,
                         dueDate: nextDueDate || null
                       }));
@@ -1068,11 +1301,11 @@ export function ArbLiveReviewStep(props: {
                 <span>Reviewer note</span>
                 <textarea
                   className="field-textarea"
-                  aria-label={`Reviewer note for ${finding.title}`}
-                  value={finding.reviewerNote ?? ""}
+                  aria-label={`Reviewer note for ${selectedFinding.title}`}
+                  value={selectedFinding.reviewerNote ?? ""}
                   onChange={(event) => {
                     const nextReviewerNote = event.target.value;
-                    updateLocalFinding(finding.findingId, (current) => ({
+                    updateLocalFinding(selectedFinding.findingId, (current) => ({
                       ...current,
                       reviewerNote: nextReviewerNote || null
                     }));
@@ -1082,12 +1315,12 @@ export function ArbLiveReviewStep(props: {
 
               <label className="arb-inline-check">
                 <input
-                  aria-label={`Critical blocker for ${finding.title}`}
+                  aria-label={`Critical blocker for ${selectedFinding.title}`}
                   type="checkbox"
-                  checked={finding.criticalBlocker}
+                  checked={selectedFinding.criticalBlocker}
                   onChange={(event) => {
                     const nextCriticalBlocker = event.target.checked;
-                    updateLocalFinding(finding.findingId, (current) => ({
+                    updateLocalFinding(selectedFinding.findingId, (current) => ({
                       ...current,
                       criticalBlocker: nextCriticalBlocker
                     }));
@@ -1100,57 +1333,34 @@ export function ArbLiveReviewStep(props: {
                 <button
                   type="button"
                   className="primary-button"
-                  onClick={() => void saveFinding(finding)}
-                  disabled={findingSavingId === finding.findingId}
+                  onClick={() => void saveFinding(selectedFinding)}
+                  disabled={findingSavingId === selectedFinding.findingId}
                 >
-                  {findingSavingId === finding.findingId ? "Saving finding..." : "Save finding"}
-                </button>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => void createActionForFinding(finding)}
-                  disabled={
-                    actionSavingFindingId === finding.findingId ||
-                    actions.some((action) => action.sourceFindingId === finding.findingId)
-                  }
-                >
-                  {actions.some((action) => action.sourceFindingId === finding.findingId)
-                    ? "Action created"
-                    : actionSavingFindingId === finding.findingId
-                      ? "Creating action..."
-                      : "Create action"}
+                  {findingSavingId === selectedFinding.findingId ? "Saving finding..." : "Save finding"}
                 </button>
               </div>
             </section>
-          ))}
-        </div>
 
-        <section className="surface-panel arb-summary-card">
-          <div className="board-card-head">
-            <div className="board-card-head-copy">
-              <p className="board-card-subtitle">Action summary</p>
-              <h2 className="section-title">Tracked remediation actions</h2>
-            </div>
-          </div>
+            <section className="surface-panel arb-summary-card arb-finding-editor">
+              <div className="board-card-head">
+                <div className="board-card-head-copy">
+                  <p className="board-card-subtitle">Remediation action</p>
+                  <h3 className="section-title">Track one follow-up action tied to this finding.</h3>
+                </div>
+              </div>
 
-          {actions.length === 0 ? (
-            <p>No ARB actions created yet.</p>
-          ) : (
-            <div className="arb-action-list">
-              {actions.map((action) => (
-                <section key={action.actionId} className="trace-card arb-action-card">
-                  <h3>{action.actionSummary}</h3>
-                  <p>Severity: {action.severity}</p>
+              {selectedFindingAction ? (
+                <>
                   <div className="arb-field-grid">
                     <label className="filter-field">
                       <span>Action status</span>
                       <select
                         className="field-select"
-                        aria-label={`Status for ${action.actionSummary}`}
-                        value={action.status}
+                        aria-label={`Status for ${selectedFindingAction.actionSummary}`}
+                        value={selectedFindingAction.status}
                         onChange={(event) => {
                           const nextStatus = event.target.value;
-                          updateLocalAction(action.actionId, (current) => ({
+                          updateLocalAction(selectedFindingAction.actionId, (current) => ({
                             ...current,
                             status: nextStatus
                           }));
@@ -1167,11 +1377,11 @@ export function ArbLiveReviewStep(props: {
                       <span>Action owner</span>
                       <input
                         className="field-input"
-                        aria-label={`Owner for ${action.actionSummary}`}
-                        value={action.owner ?? ""}
+                        aria-label={`Owner for ${selectedFindingAction.actionSummary}`}
+                        value={selectedFindingAction.owner ?? ""}
                         onChange={(event) => {
                           const nextOwner = event.target.value;
-                          updateLocalAction(action.actionId, (current) => ({
+                          updateLocalAction(selectedFindingAction.actionId, (current) => ({
                             ...current,
                             owner: nextOwner || null
                           }));
@@ -1182,12 +1392,12 @@ export function ArbLiveReviewStep(props: {
                       <span>Action due date</span>
                       <input
                         className="field-input"
-                        aria-label={`Due date for ${action.actionSummary}`}
+                        aria-label={`Due date for ${selectedFindingAction.actionSummary}`}
                         type="date"
-                        value={action.dueDate ?? ""}
+                        value={selectedFindingAction.dueDate ?? ""}
                         onChange={(event) => {
                           const nextDueDate = event.target.value;
-                          updateLocalAction(action.actionId, (current) => ({
+                          updateLocalAction(selectedFindingAction.actionId, (current) => ({
                             ...current,
                             dueDate: nextDueDate || null
                           }));
@@ -1199,11 +1409,11 @@ export function ArbLiveReviewStep(props: {
                     <span>Closure notes</span>
                     <textarea
                       className="field-textarea"
-                      aria-label={`Closure notes for ${action.actionSummary}`}
-                      value={action.closureNotes ?? ""}
+                      aria-label={`Closure notes for ${selectedFindingAction.actionSummary}`}
+                      value={selectedFindingAction.closureNotes ?? ""}
                       onChange={(event) => {
                         const nextClosureNotes = event.target.value;
-                        updateLocalAction(action.actionId, (current) => ({
+                        updateLocalAction(selectedFindingAction.actionId, (current) => ({
                           ...current,
                           closureNotes: nextClosureNotes || null
                         }));
@@ -1212,12 +1422,12 @@ export function ArbLiveReviewStep(props: {
                   </label>
                   <label className="arb-inline-check">
                     <input
-                      aria-label={`Reviewer verification required for ${action.actionSummary}`}
+                      aria-label={`Reviewer verification required for ${selectedFindingAction.actionSummary}`}
                       type="checkbox"
-                      checked={action.reviewerVerificationRequired}
+                      checked={selectedFindingAction.reviewerVerificationRequired}
                       onChange={(event) => {
                         const nextReviewerVerificationRequired = event.target.checked;
-                        updateLocalAction(action.actionId, (current) => ({
+                        updateLocalAction(selectedFindingAction.actionId, (current) => ({
                           ...current,
                           reviewerVerificationRequired: nextReviewerVerificationRequired
                         }));
@@ -1229,17 +1439,30 @@ export function ArbLiveReviewStep(props: {
                     <button
                       type="button"
                       className="primary-button"
-                      onClick={() => void saveAction(action)}
-                      disabled={actionSavingId === action.actionId}
+                      onClick={() => void saveAction(selectedFindingAction)}
+                      disabled={actionSavingId === selectedFindingAction.actionId}
                     >
-                      {actionSavingId === action.actionId ? "Saving action..." : "Save action"}
+                      {actionSavingId === selectedFindingAction.actionId ? "Saving action..." : "Save action"}
                     </button>
                   </div>
-                </section>
-              ))}
-            </div>
-          )}
-        </section>
+                </>
+              ) : (
+                <div className="button-row">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => void createActionForFinding(selectedFinding)}
+                    disabled={actionSavingFindingId === selectedFinding.findingId}
+                  >
+                    {actionSavingFindingId === selectedFinding.findingId
+                      ? "Creating action..."
+                      : "Create remediation action"}
+                  </button>
+                </div>
+              )}
+            </section>
+          </section>
+        ) : null}
 
         {renderOutputArtifactsCard()}
       </div>
@@ -1256,76 +1479,119 @@ export function ArbLiveReviewStep(props: {
       );
     }
 
+    const recommendationTone = getRecommendationTone(scorecard.recommendation);
+    const overallScoreLabel = getScoreBandLabel(scorecard.overallScore);
+
     return (
       <div className="arb-page-stack">
-        <div className="arb-summary-grid">
-          <article className="future-card">
-            <p className="board-card-subtitle">Overall score</p>
-            <strong>{scorecard.overallScore ?? "TBD"}</strong>
-            <p>Overall score: {scorecard.overallScore ?? "TBD"}</p>
-          </article>
-          <article className="future-card">
-            <p className="board-card-subtitle">Recommendation</p>
-            <strong>{scorecard.recommendation}</strong>
-            <p>
-              Recommendation: {scorecard.recommendation} ({scorecard.confidence} confidence)
-            </p>
-          </article>
-          <article className="future-card">
-            <p className="board-card-subtitle">Critical blockers</p>
-            <strong>{scorecard.criticalBlockers}</strong>
-            <p>Critical blockers: {scorecard.criticalBlockers}</p>
-          </article>
-          <article className="future-card">
-            <p className="board-card-subtitle">Evidence readiness</p>
-            <strong>{scorecard.evidenceReadinessState}</strong>
-            <p>Evidence readiness: {scorecard.evidenceReadinessState}</p>
-          </article>
-          <article className="future-card">
-            <p className="board-card-subtitle">Open actions</p>
-            <strong>{actionSummary.openCount}</strong>
-            <p>Open actions: {actionSummary.openCount}</p>
-          </article>
-          <article className="future-card">
-            <p className="board-card-subtitle">Blocked actions</p>
-            <strong>{actionSummary.blockedCount}</strong>
-            <p>Blocked actions: {actionSummary.blockedCount}</p>
-          </article>
-          <article className="future-card">
-            <p className="board-card-subtitle">Reviewer verification</p>
-            <strong>{actionSummary.reviewerVerificationCount}</strong>
-            <p>Reviewer verification required: {actionSummary.reviewerVerificationCount}</p>
-          </article>
-        </div>
+        <section className="surface-panel arb-summary-card arb-score-hero">
+          <div className="arb-score-hero-main">
+            <div>
+              <p className="board-card-subtitle">Review posture</p>
+              <h2 className="section-title">Know whether this review is ready for sign-off.</h2>
+              <p className="section-copy">
+                One score, one recommendation, and the few conditions that still affect the final
+                human decision.
+              </p>
+            </div>
+            <div className="arb-score-hero-value">
+              <strong>{scorecard.overallScore ?? "TBD"}</strong>
+              <span>{overallScoreLabel}</span>
+            </div>
+          </div>
+
+          <div className="arb-score-hero-summary">
+            <span
+              className={`arb-score-recommendation arb-score-recommendation--${recommendationTone}`}
+            >
+              {scorecard.recommendation}
+            </span>
+            <div className="arb-score-hero-list">
+              <article className="future-card">
+                <p className="board-card-subtitle">Confidence</p>
+                <strong>{scorecard.confidence}</strong>
+              </article>
+              <article className="future-card">
+                <p className="board-card-subtitle">Critical blockers</p>
+                <strong>{scorecard.criticalBlockers}</strong>
+              </article>
+              <article className="future-card">
+                <p className="board-card-subtitle">Evidence state</p>
+                <strong>{scorecard.evidenceReadinessState}</strong>
+              </article>
+              <article className="future-card">
+                <p className="board-card-subtitle">Open actions</p>
+                <strong>{actionSummary.openCount}</strong>
+              </article>
+              <article className="future-card">
+                <p className="board-card-subtitle">Blocked actions</p>
+                <strong>{actionSummary.blockedCount}</strong>
+              </article>
+              <article className="future-card">
+                <p className="board-card-subtitle">Reviewer verification</p>
+                <strong>{actionSummary.reviewerVerificationCount}</strong>
+              </article>
+            </div>
+          </div>
+        </section>
 
         <section className="surface-panel arb-summary-card">
           <div className="board-card-head">
             <div className="board-card-head-copy">
-              <p className="board-card-subtitle">Weighted score table</p>
-              <h2 className="section-title">Explain the score before any decision is recorded</h2>
+              <p className="board-card-subtitle">Weighted domain scores</p>
+              <h2 className="section-title">See where the score is strong and where it still needs proof.</h2>
             </div>
           </div>
 
-          <div className="arb-score-grid">
+          <div className="arb-score-bar-list">
             {scorecard.domainScores.map((domainScore) => (
-              <article key={domainScore.domain} className="trace-card arb-score-card">
-                <h3>{domainScore.domain}</h3>
-                <p>
-                  {domainScore.domain}: {domainScore.score}/{domainScore.weight} - {domainScore.reason}
-                  {domainScore.linkedFindings.length > 0
-                    ? ` (linked findings: ${domainScore.linkedFindings.join(", ")})`
-                    : ""}
-                </p>
+              <article key={domainScore.domain} className="trace-card arb-score-bar-row">
+                <div className="arb-score-bar-head">
+                  <div>
+                    <h3>{domainScore.domain}</h3>
+                    <p className="microcopy">{domainScore.reason}</p>
+                  </div>
+                  <strong>
+                    {getDomainScorePercent(domainScore)}% ({domainScore.score}/{domainScore.weight})
+                  </strong>
+                </div>
+                <div className="arb-score-bar-track" aria-hidden="true">
+                  <span
+                    className={`arb-score-bar-fill arb-score-bar-fill--${getPercentTone(
+                      getDomainScorePercent(domainScore)
+                    )}`}
+                    style={{ width: `${getDomainScorePercent(domainScore)}%` }}
+                  />
+                </div>
+                {domainScore.linkedFindings.length > 0 ? (
+                  <div className="arb-score-linked-list">
+                    {domainScore.linkedFindings.map((linkedFindingId) => (
+                      <span key={linkedFindingId} className="arb-score-linked-chip">
+                        {linkedFindingId}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </article>
             ))}
           </div>
 
           {scorecard.reviewerOverride ? (
-            <div className="trace-card arb-summary-card">
-              <p>Reviewer override: {scorecard.reviewerOverride.overrideDecision}</p>
-              <p>Override rationale: {scorecard.reviewerOverride.overrideRationale}</p>
-              <p>Override recorded at: {scorecard.reviewerOverride.overriddenAt}</p>
-            </div>
+            <article className="trace-card arb-summary-card">
+              <p className="board-card-subtitle">Reviewer override</p>
+              <strong>{scorecard.reviewerOverride.overrideDecision}</strong>
+              <p>{scorecard.reviewerOverride.overrideRationale}</p>
+              <p className="microcopy">
+                Recorded by {scorecard.reviewerOverride.reviewerName} on{" "}
+                {new Date(scorecard.reviewerOverride.overriddenAt).toLocaleString("en-US", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit"
+                })}
+              </p>
+            </article>
           ) : null}
         </section>
 
@@ -1333,18 +1599,27 @@ export function ArbLiveReviewStep(props: {
           <section className="surface-panel arb-summary-card">
             <div className="board-card-head">
               <div className="board-card-head-copy">
-                <p className="board-card-subtitle">Open remediation actions</p>
-                <h2 className="section-title">Conditions that still affect sign-off</h2>
+                <p className="board-card-subtitle">Conditions to close</p>
+                <h2 className="section-title">These actions still affect whether sign-off is realistic.</h2>
               </div>
             </div>
-            <ul className="arb-checklist">
+
+            <div className="arb-conditions-table" role="table" aria-label="Open remediation actions">
+              <div className="arb-conditions-row arb-conditions-row-head" role="row">
+                <span role="columnheader">Action</span>
+                <span role="columnheader">Owner</span>
+                <span role="columnheader">Due</span>
+                <span role="columnheader">Status</span>
+              </div>
               {actionSummary.openActions.map((action) => (
-                <li key={action.actionId}>
-                  {action.actionSummary} ({action.status})
-                  {action.owner ? ` - owner: ${action.owner}` : ""}
-                </li>
+                <div key={action.actionId} className="arb-conditions-row" role="row">
+                  <span role="cell">{action.actionSummary}</span>
+                  <span role="cell">{action.owner ?? "Unassigned"}</span>
+                  <span role="cell">{action.dueDate ?? "No date"}</span>
+                  <span role="cell">{action.status}</span>
+                </div>
               ))}
-            </ul>
+            </div>
           </section>
         ) : null}
 

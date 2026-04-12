@@ -1,0 +1,1402 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Azure Architecture Review Board — Review Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f6f9fc;
+      --surface: #ffffff;
+      --surface-soft: #f0f5fb;
+      --text: #0d1b2a;
+      --text-muted: #4f647b;
+      --line: #d7e3f0;
+      --brand: #0078d4;
+      --brand-strong: #005fb8;
+      --ok: #198754;
+      --warn: #b45309;
+      --danger: #cc2f2f;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --shadow: 0 14px 34px rgba(11, 58, 96, 0.12);
+      --shadow-soft: 0 6px 18px rgba(11, 58, 96, 0.08);
+      --content-max: 1180px;
+      --nav-h: 72px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at 10% 0%, #e8f2ff 0%, #f6f9fc 45%), var(--bg);
+      color: var(--text);
+      font-family: Manrope, "Segoe UI", sans-serif;
+      scroll-behavior: smooth;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 3px solid #79beff;
+      outline-offset: 2px;
+    }
+
+    .top-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+      background: rgba(246, 249, 252, 0.92);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .nav-wrap {
+      max-width: var(--content-max);
+      margin: 0 auto;
+      height: var(--nav-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--brand) 0%, #1ea4ff 100%);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-link {
+      padding: 10px 14px;
+      border-radius: 999px;
+      color: #1f3852;
+      font-weight: 600;
+      font-size: 14px;
+      transition: 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .nav-link:hover,
+    .nav-link[aria-current="true"] {
+      background: #e6f2ff;
+      border-color: #c9e3ff;
+      color: #003f7d;
+    }
+
+    .sign-in {
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 14px;
+      border: 1px solid #b7d8f7;
+      background: #eaf5ff;
+      color: #004c94;
+    }
+
+    .page {
+      max-width: var(--content-max);
+      margin: 0 auto;
+      padding: 32px 24px 72px;
+    }
+
+    section {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow-soft);
+      padding: 34px;
+      margin-top: 22px;
+      scroll-margin-top: calc(var(--nav-h) + 20px);
+      opacity: 0;
+      transform: translateY(12px);
+      animation: rise 0.6s ease forwards;
+    }
+
+    section:nth-child(2) { animation-delay: 0.08s; }
+    section:nth-child(3) { animation-delay: 0.16s; }
+    section:nth-child(4) { animation-delay: 0.24s; }
+
+    @keyframes rise {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 6px 12px;
+      background: #edf6ff;
+      border: 1px solid #d0e8ff;
+      color: #074d89;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2 {
+      font-family: "Space Grotesk", sans-serif;
+      margin: 16px 0 8px;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    h1 {
+      font-size: clamp(34px, 5vw, 52px);
+      max-width: 920px;
+    }
+
+    h2 {
+      font-size: clamp(26px, 4vw, 36px);
+    }
+
+    .subline {
+      color: var(--text-muted);
+      max-width: 760px;
+      font-size: clamp(16px, 2.3vw, 19px);
+      margin: 0;
+    }
+
+    .hero-actions {
+      margin-top: 22px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .persona-row {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .persona-chip {
+      border: 1px solid #d4e6f7;
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #274763;
+      background: #f6fbff;
+    }
+
+    .persona-chip:hover {
+      background: #edf6ff;
+      border-color: #b8d9f2;
+    }
+
+    .differentiator-strip {
+      margin-top: 12px;
+      border: 1px solid #d7e5f3;
+      border-radius: 12px;
+      background: #fbfdff;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .differentiator-item {
+      font-size: 12px;
+      font-weight: 700;
+      color: #32516a;
+      border: 1px solid #e3eef8;
+      border-radius: 10px;
+      padding: 8px;
+      background: #fff;
+      text-align: center;
+    }
+
+    .hero-input-shell {
+      margin-top: 14px;
+      border: 1px solid #cfe2f5;
+      border-radius: 14px;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      background: #fff;
+      box-shadow: 0 8px 20px rgba(21, 92, 145, 0.08);
+    }
+
+    .hero-input {
+      height: 44px;
+      border: 1px solid #d3e5f7;
+      border-radius: 10px;
+      padding: 0 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #183a58;
+      background: #f9fcff;
+    }
+
+    .hero-upload {
+      display: grid;
+      gap: 8px;
+    }
+
+    .hero-upload-label {
+      font-size: 12px;
+      font-weight: 800;
+      color: #2b4a64;
+    }
+
+    .hero-file {
+      border: 1px solid #d3e5f7;
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: #f9fcff;
+      font-size: 13px;
+      color: #23435d;
+    }
+
+    .hero-file:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .btn {
+      height: 46px;
+      padding: 0 18px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 800;
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--brand) 0%, #1690f4 100%);
+      color: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--brand-strong) 0%, #097fdc 100%);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #ffffff;
+      color: #0b4b82;
+      border-color: #bedcf7;
+    }
+
+    .btn-secondary:hover {
+      background: #f0f7ff;
+      border-color: #9fcbf2;
+      transform: translateY(-1px);
+    }
+
+    .chips {
+      margin-top: 22px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .chip {
+      border: 1px solid #d7e7f8;
+      border-radius: var(--radius-sm);
+      padding: 12px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      background: #f7fbff;
+      text-align: center;
+      color: #174368;
+    }
+
+    .steps {
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .step {
+      border: 1px solid #d7e3f0;
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      background: #fff;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #eaf5ff;
+      border: 1px solid #c4e1fb;
+      color: #07518f;
+      font-weight: 800;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .step p,
+    .small {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .proof {
+      margin-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .proof-item {
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      border: 1px solid #dbe7f3;
+      color: #35526d;
+      background: #f8fbff;
+      font-weight: 700;
+    }
+
+    .signin-banner {
+      margin-top: 16px;
+      border: 1px solid #c5def6;
+      background: linear-gradient(180deg, #f3faff 0%, #eaf5ff 100%);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .signin-banner strong {
+      font-size: 14px;
+      color: #0d3f69;
+    }
+
+    .signin-banner .small {
+      font-size: 13px;
+    }
+
+    .grid-two {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      background: #fff;
+      box-shadow: 0 8px 18px rgba(9, 72, 122, 0.06);
+    }
+
+    .upload-locked {
+      margin-bottom: 10px;
+      border: 1px solid #f0d6b0;
+      background: #fff8ed;
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: #7c4a07;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .upload-zone.locked {
+      filter: saturate(0.35);
+      opacity: 0.8;
+      cursor: not-allowed;
+    }
+
+    .upload-zone.unlocked {
+      border-color: #7cc3f8;
+      background: linear-gradient(180deg, #f5fcff 0%, #e9f7ff 100%);
+    }
+
+    .panel-title {
+      margin: 0 0 10px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 20px;
+    }
+
+    .upload-zone {
+      border: 2px dashed #9fcaef;
+      border-radius: 14px;
+      min-height: 190px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      background: linear-gradient(180deg, #f6fbff 0%, #edf7ff 100%);
+      padding: 18px;
+    }
+
+    .upload-zone strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 18px;
+      color: #0d3a63;
+    }
+
+    .auth-shell {
+      display: grid;
+      place-items: center;
+      margin-top: 14px;
+    }
+
+    .auth-card {
+      width: min(540px, 100%);
+      border: 1px solid #cfe2f4;
+      background: linear-gradient(180deg, #f7fbff 0%, #eef7ff 100%);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .auth-title {
+      margin: 0 0 6px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 24px;
+    }
+
+    .auth-fields {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .auth-note {
+      margin-top: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #32516a;
+    }
+
+    .auth-state {
+      margin-top: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f6a40;
+      display: none;
+    }
+
+    .auth-state.visible {
+      display: block;
+    }
+
+    .auth-state.error {
+      color: #8a4d07;
+      display: block;
+    }
+
+    .progress {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .progress-item {
+      padding: 10px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      border: 1px solid #d9e7f3;
+      color: #385770;
+      background: #f8fbff;
+    }
+
+    .progress-item.active {
+      border-color: #6eb7f1;
+      background: #e9f5ff;
+      color: #04508c;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .card {
+      border: 1px solid #dbe7f3;
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+      transition: 0.2s ease;
+    }
+
+    .card:hover {
+      border-color: #c3dbef;
+      box-shadow: 0 7px 16px rgba(12, 77, 127, 0.08);
+    }
+
+    .card h3 {
+      margin: 0 0 4px;
+      font-size: 16px;
+      font-family: "Space Grotesk", sans-serif;
+    }
+
+    .sticky-action {
+      margin-top: 12px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .mode-toggle {
+      margin-top: 12px;
+      display: inline-flex;
+      border: 1px solid #cadff3;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #f7fbff;
+    }
+
+    .mode-pill {
+      border: 0;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #2f4e69;
+      background: transparent;
+    }
+
+    .mode-pill.active {
+      background: #e8f4ff;
+      color: #064f8b;
+      border-left: 1px solid #cadff3;
+      border-right: 1px solid #cadff3;
+    }
+
+    .evidence-list {
+      margin: 10px 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 8px;
+    }
+
+    .evidence-item {
+      border: 1px solid #d7e5f3;
+      border-radius: 10px;
+      padding: 10px;
+      background: #fbfdff;
+    }
+
+    .evidence-item strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 3px;
+      color: #163a58;
+    }
+
+    .evidence-item a {
+      color: #005ea8;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: underline;
+    }
+
+    .framework-grid {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .framework-item {
+      border: 1px solid #d8e6f4;
+      border-radius: 10px;
+      background: #f8fcff;
+      padding: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #274863;
+      text-align: center;
+    }
+
+    .workspace-strip {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .workspace-item {
+      border: 1px solid #d4e6f7;
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #2a4862;
+      background: #f5fbff;
+    }
+
+    .arb-panel {
+      margin-top: 10px;
+      border: 1px solid #d5e6f7;
+      border-radius: 12px;
+      padding: 10px;
+      background: #f8fcff;
+      display: grid;
+      gap: 8px;
+    }
+
+    .score-row {
+      display: grid;
+      grid-template-columns: 120px 1fr 42px;
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #2d4d66;
+    }
+
+    .score-bar {
+      height: 8px;
+      border-radius: 999px;
+      background: #dceaf7;
+      overflow: hidden;
+    }
+
+    .score-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0f80dc 0%, #33a5ff 100%);
+      border-radius: inherit;
+    }
+
+    .signoff-box {
+      border: 1px solid #c9dff3;
+      border-radius: 10px;
+      padding: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #2a4862;
+      background: #fff;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .mode-note {
+      margin-top: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #385870;
+    }
+
+    .decision-model {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .decision-chip {
+      border: 1px solid #cfe2f4;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #2c4b65;
+      background: #fff;
+    }
+
+    .decision-chip.active {
+      border-color: #8bc6f3;
+      background: #ecf7ff;
+      color: #0a4f87;
+    }
+
+    .reviewer-meta {
+      margin-top: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #45657f;
+    }
+
+    .framework-item {
+      display: grid;
+      gap: 5px;
+      place-items: center;
+    }
+
+    .framework-state {
+      font-size: 10px;
+      font-weight: 800;
+      border: 1px solid #cfe2f4;
+      border-radius: 999px;
+      padding: 4px 7px;
+      background: #fff;
+      color: #3c5d78;
+    }
+
+    .framework-state.complete {
+      border-color: #b9e4cb;
+      background: #eefaf2;
+      color: #0f6a40;
+    }
+
+    .framework-state.partial {
+      border-color: #efd8b3;
+      background: #fff7ea;
+      color: #8a4d07;
+    }
+
+    .framework-summary {
+      margin-top: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #30506a;
+    }
+
+    .export-formats {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .format-chip {
+      border: 1px solid #cde1f4;
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #234764;
+      background: #f4faff;
+    }
+
+    .retention-note {
+      margin-top: 10px;
+      border: 1px solid #d9e7f4;
+      background: #f8fbff;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #3d5a73;
+    }
+
+    .search-row {
+      display: grid;
+      grid-template-columns: 1.8fr 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .field {
+      border: 1px solid #cfe0f0;
+      border-radius: 10px;
+      height: 42px;
+      padding: 0 12px;
+      background: #fff;
+      color: #173651;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .service-grid {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .status {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+      border: 1px solid;
+    }
+
+    .status.ok {
+      color: #0f6a40;
+      background: #eaf8ef;
+      border-color: #cdecd8;
+    }
+
+    .status.warn {
+      color: #8a4d07;
+      background: #fff5e6;
+      border-color: #f2dbb0;
+    }
+
+    .status.preview {
+      color: #8c1f1f;
+      background: #fdeeee;
+      border-color: #f3c4c4;
+    }
+
+    .service-meta {
+      margin: 8px 0 10px;
+      padding: 0;
+      list-style: none;
+      font-size: 13px;
+      color: #48637b;
+      display: grid;
+      gap: 4px;
+    }
+
+    .public-note {
+      margin-top: 8px;
+      display: inline-flex;
+      border: 1px solid #cde3f7;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #1f4767;
+      background: #f4faff;
+    }
+
+    .scope-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 10px;
+      border: 1.5px solid #00a36c;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #0a5c3c;
+      background: #edfaf4;
+      letter-spacing: 0.01em;
+    }
+
+    .service-findings {
+      margin: 0 0 10px;
+      padding-left: 16px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .service-findings li {
+      font-size: 12px;
+      color: #3f5f78;
+    }
+
+    .service-findings a {
+      color: #005ea8;
+      text-decoration: underline;
+      font-weight: 700;
+    }
+
+    .service-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .trust-grid {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .trust {
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid #d7e5f3;
+      background: #fff;
+      box-shadow: 0 5px 14px rgba(15, 70, 111, 0.05);
+    }
+
+    .trust strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    .unlock {
+      margin-top: 12px;
+      border: 1px solid #c7def3;
+      background: linear-gradient(180deg, #f4faff 0%, #ebf6ff 100%);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .unlock-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .unlock-list span {
+      background: #fff;
+      border: 1px solid #d3e6f8;
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #274661;
+    }
+
+    footer {
+      max-width: var(--content-max);
+      margin: 16px auto 40px;
+      padding: 0 24px;
+      color: #55708a;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    @media (max-width: 980px) {
+      .chips,
+      .steps,
+      .cards,
+      .service-grid,
+      .trust-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .differentiator-strip,
+      .framework-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid-two,
+      .search-row,
+      .hero-input-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-wrap {
+        height: auto;
+        flex-wrap: wrap;
+        padding: 14px 20px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 18px 14px 40px;
+      }
+
+      section {
+        padding: 20px;
+        border-radius: 18px;
+      }
+
+      .chips,
+      .steps,
+      .cards,
+      .service-grid,
+      .trust-grid,
+      .differentiator-strip,
+      .framework-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-actions .btn,
+      .sticky-action,
+      .service-actions .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .nav-links {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="top-nav">
+    <div class="nav-wrap">
+      <a class="brand" href="#home" aria-label="Azure Review Assistant Home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Azure Review Assistant</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a class="nav-link requires-auth" href="#board-review" data-auth-target="#board-review">Board Review</a>
+        <a class="nav-link" href="#service-explorer">Service Explorer</a>
+      </nav>
+      <a class="sign-in" href="#sign-in" id="headerSignIn">Sign In with Microsoft</a>
+    </div>
+  </header>
+
+  <main class="page">
+    <section id="home">
+      <span class="kicker">Architecture reviews that ship</span>
+      <h1>Upload architecture docs. Get board-ready Azure findings in minutes.</h1>
+      <p class="subline">One workflow for scope, evidence, region fit, pricing context, and exportable review packs.</p>
+      <div class="hero-input-shell" aria-label="Primary input">
+        <div class="hero-upload">
+          <label class="hero-upload-label" for="heroFileInput">Primary input: select architecture documents</label>
+          <input class="hero-file" id="heroFileInput" type="file" aria-label="Select architecture documents" multiple disabled />
+        </div>
+        <a class="btn btn-primary requires-auth" href="#board-review" data-auth-target="#board-review">Start Review</a>
+      </div>
+
+      <div class="signin-banner" role="note" aria-label="Sign in requirement">
+        <div>
+          <strong>Sign in with your Outlook email or Azure login.</strong>
+          <p class="small">Upload is locked until Microsoft sign-in is complete.</p>
+        </div>
+        <a class="btn btn-secondary" href="#sign-in">Go to Sign In</a>
+      </div>
+
+      <div class="hero-actions">
+        <a class="btn btn-secondary" href="#service-explorer">Explore services</a>
+      </div>
+    </section>
+
+    <section id="sign-in">
+      <span class="kicker">Sign In First</span>
+      <h2>Sign in with your Outlook email or Azure login.</h2>
+      <p class="small">Quick sign-in unlocks upload, saved reviews, and board workflow.</p>
+
+      <div class="auth-shell">
+        <article class="auth-card">
+          <h3 class="auth-title">Sign in to continue</h3>
+          <p class="small">Use your Outlook email or Azure login to continue.</p>
+          <div class="auth-fields">
+            <input class="field" type="email" placeholder="name@company.com" aria-label="Work email" />
+            <input class="field" type="password" placeholder="Password" aria-label="Password" />
+            <button class="btn btn-primary" id="signInContinue" type="button">Sign in and continue to upload</button>
+          </div>
+          <p class="auth-note">Accepted: Outlook email or Azure login. Mock sign-in flow for prototype.</p>
+          <p class="auth-state" id="authState">Signed in. Redirecting to upload workspace...</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="board-review">
+      <span class="kicker">Architecture Board Review</span>
+      <h2>Submit for board review</h2>
+      <p class="small">Structured ARB-grade workflow with weighted scorecard, framework coverage, and mandatory reviewer sign-off gate.</p>
+
+      <div class="grid-two">
+        <article class="panel">
+          <h3 class="panel-title">Step 2: Upload documents</h3>
+          <div class="upload-locked" id="uploadLockMessage">Upload locked: complete Microsoft sign-in first.</div>
+          <div class="upload-zone locked" id="uploadZone">
+            <div>
+              <strong>Drop files here</strong>
+              <span class="small">PDF, DOCX, PPTX, MD<br />Max 25 MB • Multi-file supported</span>
+            </div>
+          </div>
+          <div class="export-formats" aria-label="Export formats">
+            <span class="format-chip">CSV Export</span>
+            <span class="format-chip">HTML Export</span>
+            <span class="format-chip">Markdown Export</span>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h3 class="panel-title">Step 3: Evidence and outputs</h3>
+          <div class="progress">
+            <div class="progress-item active">Upload</div>
+            <div class="progress-item">Analyze</div>
+            <div class="progress-item">Findings</div>
+            <div class="progress-item">Export</div>
+          </div>
+          <ul class="evidence-list" aria-label="Traceable findings preview">
+            <li class="evidence-item">
+              <strong>AKS monitoring not enabled • Severity: High</strong>
+              <p class="small">Framework: WAF Reliability</p>
+              <a href="https://learn.microsoft.com/en-us/azure/aks/monitor-aks" target="_blank" rel="noopener noreferrer">Source: learn.microsoft.com/azure/aks/monitor-aks</a>
+            </li>
+            <li class="evidence-item">
+              <strong>No zone redundancy in gateway layer • Severity: High</strong>
+              <p class="small">Framework: HA/DR + CAF</p>
+              <a href="https://learn.microsoft.com/en-us/azure/well-architected/reliability/" target="_blank" rel="noopener noreferrer">Source: learn.microsoft.com/azure/well-architected/reliability</a>
+            </li>
+            <li class="evidence-item">
+              <strong>Missing tagging policy alignment • Severity: Medium</strong>
+              <p class="small">Framework: ALZ Governance</p>
+              <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/landing-zone/" target="_blank" rel="noopener noreferrer">Source: learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone</a>
+            </li>
+          </ul>
+          <div class="framework-grid" aria-label="Framework coverage">
+            <div class="framework-item"><span>WAF</span><span class="framework-state complete">Complete</span></div>
+            <div class="framework-item"><span>CAF</span><span class="framework-state complete">Complete</span></div>
+            <div class="framework-item"><span>ALZ</span><span class="framework-state complete">Complete</span></div>
+            <div class="framework-item"><span>HA/DR</span><span class="framework-state partial">Partial</span></div>
+            <div class="framework-item"><span>Backup</span><span class="framework-state partial">Partial</span></div>
+            <div class="framework-item"><span>Security</span><span class="framework-state complete">Complete</span></div>
+            <div class="framework-item"><span>Networking</span><span class="framework-state complete">Complete</span></div>
+            <div class="framework-item"><span>Monitoring</span><span class="framework-state partial">Partial</span></div>
+            <div class="framework-item"><span>Governance</span><span class="framework-state complete">Complete</span></div>
+          </div>
+          <div class="framework-summary">Framework coverage: 6 Complete, 3 Partial, 0 Missing.</div>
+          <div class="workspace-strip" aria-label="Unified workspace outputs">
+            <span class="workspace-item">Executive Summary</span>
+            <span class="workspace-item">Action Plan</span>
+            <span class="workspace-item">Pricing Snapshot</span>
+            <span class="workspace-item">Full ARB Pack</span>
+          </div>
+          <div class="arb-panel" id="arbPanel" aria-label="ARB scorecard and sign-off">
+            <div class="score-row"><span>Reliability</span><div class="score-bar"><div class="score-fill" style="width: 78%"></div></div><span>78</span></div>
+            <div class="score-row"><span>Security</span><div class="score-bar"><div class="score-fill" style="width: 64%"></div></div><span>64</span></div>
+            <div class="score-row"><span>Cost</span><div class="score-bar"><div class="score-fill" style="width: 71%"></div></div><span>71</span></div>
+            <div class="decision-model" aria-label="Decision states">
+              <span class="decision-chip">Approved</span>
+              <span class="decision-chip active">Needs Revision</span>
+              <span class="decision-chip">Rejected</span>
+            </div>
+            <div class="reviewer-meta">Reviewer: Cloud Architecture Board • Checkpoint: Pending • Last update: Apr 12, 2026</div>
+            <div class="signoff-box">Human sign-off required before ARB export.</div>
+          </div>
+          <div class="cards">
+            <article class="card"><h3>Executive Summary</h3><p class="small">Board-ready recommendation.</p></article>
+            <article class="card"><h3>Action List</h3><p class="small">Owners and due dates.</p></article>
+            <article class="card"><h3>Pricing Snapshot</h3><p class="small">Region and assumptions.</p></article>
+            <article class="card"><h3>Decision Log</h3><p class="small">Human sign-off trail.</p></article>
+          </div>
+          <a class="btn btn-primary sticky-action requires-auth" href="#" data-auth-target="#board-review">Submit to ARB</a>
+        </article>
+      </div>
+    </section>
+
+    <section id="service-explorer">
+      <span class="kicker">Service Explorer · Standard Quick Scope</span>
+      <h2>Explore Azure services — no sign-in required.</h2>
+      <p class="small">Search any Azure service to get instant findings, regional availability, and risk indicators. No document upload required.</p>
+      <div class="scope-badge" aria-label="Mode indicator">Standard Quick Scope &nbsp;&middot;&nbsp; Anonymous &nbsp;&middot;&nbsp; No document upload required</div>
+
+      <div class="search-row">
+        <input class="field" type="text" value="Azure Kubernetes Service" aria-label="Search service" />
+        <select class="field" aria-label="Filter by region">
+          <option>All regions</option>
+          <option>East US</option>
+          <option>West Europe</option>
+        </select>
+        <select class="field" aria-label="Filter by category">
+          <option>All categories</option>
+          <option>Compute</option>
+          <option>Integration</option>
+        </select>
+      </div>
+
+      <div class="service-grid">
+        <article class="card">
+          <span class="status ok">AVAILABLE</span>
+          <h3>Azure Kubernetes Service</h3>
+          <ul class="service-meta">
+            <li>55 mapped regions</li>
+            <li>42 findings available</li>
+            <li>Source refreshed Apr 11</li>
+          </ul>
+          <ul class="service-findings">
+            <li>Enable cluster insights - <a href="https://learn.microsoft.com/en-us/azure/aks/monitor-aks" target="_blank" rel="noopener noreferrer">source</a></li>
+            <li>Use node pool availability zones - <a href="https://learn.microsoft.com/en-us/azure/aks/availability-zones-overview" target="_blank" rel="noopener noreferrer">source (opens in new tab)</a></li>
+          </ul>
+          <div class="service-actions">
+            <a class="btn btn-secondary" href="#">View findings</a>
+            <a class="btn btn-secondary requires-auth add-review-action" href="#board-review" data-auth-target="#board-review">Add to board review</a>
+          </div>
+        </article>
+
+        <article class="card">
+          <span class="status warn">RESTRICTED</span>
+          <h3>API Management</h3>
+          <ul class="service-meta">
+            <li>9 restricted regions</li>
+            <li>28 findings available</li>
+            <li>Source refreshed Apr 11</li>
+          </ul>
+          <ul class="service-findings">
+            <li>Enable diagnostics logging - <a href="https://learn.microsoft.com/en-us/azure/api-management/api-management-howto-use-azure-monitor" target="_blank" rel="noopener noreferrer">source</a></li>
+            <li>Use zone redundancy where available - <a href="https://learn.microsoft.com/en-us/azure/reliability/reliability-api-management" target="_blank" rel="noopener noreferrer">source (opens in new tab)</a></li>
+          </ul>
+          <div class="service-actions">
+            <a class="btn btn-secondary" href="#">View findings</a>
+            <a class="btn btn-secondary requires-auth add-review-action" href="#board-review" data-auth-target="#board-review">Add to board review</a>
+          </div>
+        </article>
+
+        <article class="card">
+          <span class="status preview">PREVIEW</span>
+          <h3>Azure App Service</h3>
+          <ul class="service-meta">
+            <li>4 preview checklist families</li>
+            <li>19 findings available</li>
+            <li>Source refreshed Apr 11</li>
+          </ul>
+          <ul class="service-findings">
+            <li>Enable authentication and authorization - <a href="https://learn.microsoft.com/en-us/azure/app-service/overview-authentication-authorization" target="_blank" rel="noopener noreferrer">source</a></li>
+            <li>Use deployment slots for safe rollout - <a href="https://learn.microsoft.com/en-us/azure/app-service/deploy-staging-slots" target="_blank" rel="noopener noreferrer">source (opens in new tab)</a></li>
+          </ul>
+          <div class="service-actions">
+            <a class="btn btn-secondary" href="#">View findings</a>
+            <a class="btn btn-secondary requires-auth add-review-action" href="#board-review" data-auth-target="#board-review">Add to board review</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="trust">
+      <span class="kicker">Trust and Freshness</span>
+      <h2>Public-safe transparency before sign-in.</h2>
+      <p class="small">Review confidence starts with visible source and freshness state.</p>
+
+      <div class="trust-grid">
+        <article class="trust">
+          <strong>Catalog Freshness</strong>
+          <p class="small">Last refresh: April 11, 2026</p>
+        </article>
+        <article class="trust">
+          <strong>Pricing Refresh</strong>
+          <p class="small">Retail snapshots with visible source date.</p>
+        </article>
+        <article class="trust">
+          <strong>Source Lineage</strong>
+          <p class="small">Each finding tied to Microsoft guidance links.</p>
+        </article>
+      </div>
+
+      <div class="unlock">
+        <div>
+          <strong>Sign in to unlock ARB-grade workflow</strong>
+          <p class="small">Save reviews, assign actions, and capture human sign-off.</p>
+        </div>
+        <div class="unlock-list" aria-label="Sign-in unlocks">
+          <span>Saved Reviews</span>
+          <span>Scorecard</span>
+          <span>Team Sharing</span>
+          <span>Decision Log</span>
+        </div>
+        <a class="btn btn-primary requires-auth" href="#board-review" data-auth-target="#board-review">Start Board Review</a>
+      </div>
+      <div class="retention-note">Data policy: uploaded review artifacts are retained for 7 days, then permanently deleted.</div>
+    </section>
+  </main>
+
+  <footer>
+    Mockup for target experience: easy navigation, minimal text, maximum impact.
+  </footer>
+
+  <script>
+    let isSignedIn = false;
+
+    const links = Array.from(document.querySelectorAll('.nav-link'));
+    const sections = Array.from(document.querySelectorAll('main section'));
+    const authLinks = Array.from(document.querySelectorAll('.requires-auth'));
+    const signInButton = document.getElementById('signInContinue');
+    const authState = document.getElementById('authState');
+    const headerSignIn = document.getElementById('headerSignIn');
+    const uploadZone = document.getElementById('uploadZone');
+    const uploadLockMessage = document.getElementById('uploadLockMessage');
+    const arbPanel = document.getElementById('arbPanel');
+    const heroFileInput = document.getElementById('heroFileInput');
+    const addReviewActions = Array.from(document.querySelectorAll('.add-review-action'));
+
+    function setSignedInUi() {
+      if (!uploadZone || !uploadLockMessage) return;
+      uploadZone.classList.remove('locked');
+      uploadZone.classList.add('unlocked');
+      uploadLockMessage.textContent = 'Upload unlocked: Microsoft sign-in complete.';
+      uploadLockMessage.style.borderColor = '#ccead8';
+      uploadLockMessage.style.background = '#edf9f2';
+      uploadLockMessage.style.color = '#0f6a40';
+      if (heroFileInput) {
+        heroFileInput.disabled = false;
+      }
+      addReviewActions.forEach((action) => {
+        action.textContent = 'Add to board review';
+      });
+    }
+
+    function navigateTo(target) {
+      const section = document.querySelector(target);
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    authLinks.forEach((link) => {
+      link.addEventListener('click', (event) => {
+        if (isSignedIn) return;
+        event.preventDefault();
+        navigateTo('#sign-in');
+      });
+    });
+
+    signInButton.addEventListener('click', () => {
+      isSignedIn = true;
+      authState.classList.add('visible');
+      headerSignIn.textContent = 'Signed In';
+      setSignedInUi();
+      setTimeout(() => {
+        navigateTo('#board-review');
+      }, 500);
+    });
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const id = entry.target.getAttribute('id');
+        links.forEach((a) => {
+          const active = a.getAttribute('href') === `#${id}`;
+          a.setAttribute('aria-current', active ? 'true' : 'false');
+        });
+      });
+    }, { threshold: 0.42 });
+
+    sections.forEach((s) => io.observe(s));
+  </script>
+</body>
+</html>

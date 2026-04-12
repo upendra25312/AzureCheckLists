@@ -52,7 +52,7 @@ export function AuthStatusChip() {
   if (!principal) {
     return (
       <a href={buildLoginUrl("aad")} className="auth-chip" title="Continue with Microsoft">
-        Sign in
+        Sign In with Microsoft
       </a>
     );
   }

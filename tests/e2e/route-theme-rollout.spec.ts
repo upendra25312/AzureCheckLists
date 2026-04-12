@@ -70,10 +70,10 @@ test.describe("route theme rollout smoke", () => {
 
     await page.goto("/services/azure-front-door");
 
-    await expect(page.locator(".review-command-panel")).toBeVisible();
+    await expect(page.locator(".svc-detail-header")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Azure Front Door" })).toBeVisible();
-    await expect(page.getByText("What to lead with on this page.")).toBeVisible();
-    await expect(page.getByText("Review the findings for this service without losing the related family context.")).toBeVisible();
+    await expect(page.getByText("Search this service, open a finding, and capture only the notes you need.")).toBeVisible();
+    await expect(page.getByText("Availability and regional fit")).toBeVisible();
   });
 
   test("renders the technology detail page in the board theme", async ({ page }) => {
@@ -113,7 +113,7 @@ test.describe("route theme rollout smoke", () => {
     });
 
     await page.goto("/services/azure-front-door");
-    await expect(page.locator(".review-command-panel")).toBeVisible();
+    await expect(page.locator(".svc-detail-header")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Azure Front Door" })).toBeVisible();
 
     await page.goto("/explorer");
