@@ -1,4 +1,11 @@
+const crypto = require("node:crypto");
 const { DefaultAzureCredential } = require("@azure/identity");
+const {
+  ARB_PROCESSING_CACHE_CONTAINER_NAME,
+  getContainerClient,
+  readJsonBlob,
+  uploadJsonBlob
+} = require("./storage");
 
 const FOUNDRY_PROJECT_ENDPOINT = (process.env.FOUNDRY_PROJECT_ENDPOINT || "").replace(/\/+$/, "");
 const FOUNDRY_API_KEY = process.env.FOUNDRY_API_KEY || "";
@@ -84,20 +91,26 @@ async function runViaFoundryAgent(userMessage) {
     additional_instructions: "Respond ONLY with the structured JSON as specified in your instructions."
   });
 
-  // Poll for completion (max 3 minutes, 5s intervals)
-  const maxAttempts = 36;
-  let attempts = 0;
-  let finalRun = run;
+  // Poll for completion with exponential backoff (max 4 minutes total)
+  // Backoff: 2s → 4s → 8s → 16s → 16s … capped at 16s, giving ~15 polls
+  const MAX_POLL_MS = 240_000;
   const terminal = ["completed", "failed", "cancelled", "expired"];
+  let elapsed = 0;
+  let delay = 2000;
+  let finalRun = run;
 
-  while (attempts < maxAttempts && !terminal.includes(finalRun.status)) {
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+  while (elapsed < MAX_POLL_MS && !terminal.includes(finalRun.status)) {
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    elapsed += delay;
+    delay = Math.min(delay * 2, 16_000);
     finalRun = await foundryAgentRequest(`/threads/${thread.id}/runs/${run.id}`, "GET");
-    attempts++;
   }
 
+  // Best-effort thread cleanup so Foundry isn't littered with orphaned threads
+  foundryAgentRequest(`/threads/${thread.id}`, "DELETE").catch(() => {});
+
   if (finalRun.status !== "completed") {
-    throw new Error(`Agent run ended with status: ${finalRun.status}`);
+    throw new Error(`Agent run ended with status: ${finalRun.status} after ${Math.round(elapsed / 1000)}s`);
   }
 
   // Get the last assistant message
@@ -308,18 +321,51 @@ function buildLearnQueries(review, requirements, evidence) {
   return queries;
 }
 
+const MCP_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+
+function buildMcpCacheKey(queries) {
+  const hash = crypto.createHash("sha256").update(queries.sort().join("|")).digest("hex").slice(0, 16);
+  return `mcp-learn-cache/${hash}.json`;
+}
+
 async function fetchMicrosoftLearnGrounding(review, requirements, evidence) {
   const queries = buildLearnQueries(review, requirements, evidence);
-  const results = await Promise.all(queries.map((q) => searchMicrosoftLearnDocs(q, 3)));
-  const allDocs = results.flat().filter(Boolean);
 
-  // Deduplicate by URL
-  const seen = new Set();
-  return allDocs.filter((doc) => {
-    if (!doc.url || seen.has(doc.url)) return false;
-    seen.add(doc.url);
-    return true;
-  });
+  // Try blob cache first
+  try {
+    const container = await getContainerClient(ARB_PROCESSING_CACHE_CONTAINER_NAME);
+    const cacheKey = buildMcpCacheKey(queries);
+    const cached = await readJsonBlob(container, cacheKey);
+
+    if (cached && cached.cachedAt && Date.now() - new Date(cached.cachedAt).getTime() < MCP_CACHE_TTL_MS) {
+      return cached.docs ?? [];
+    }
+
+    // Cache miss or stale — fetch live
+    const results = await Promise.all(queries.map((q) => searchMicrosoftLearnDocs(q, 3)));
+    const allDocs = results.flat().filter(Boolean);
+    const seen = new Set();
+    const docs = allDocs.filter((doc) => {
+      if (!doc.url || seen.has(doc.url)) return false;
+      seen.add(doc.url);
+      return true;
+    });
+
+    // Write back to cache (best-effort)
+    uploadJsonBlob(container, cacheKey, { cachedAt: new Date().toISOString(), docs }).catch(() => {});
+
+    return docs;
+  } catch {
+    // Storage unavailable — fall back to live call with no caching
+    const results = await Promise.all(queries.map((q) => searchMicrosoftLearnDocs(q, 3)));
+    const allDocs = results.flat().filter(Boolean);
+    const seen = new Set();
+    return allDocs.filter((doc) => {
+      if (!doc.url || seen.has(doc.url)) return false;
+      seen.add(doc.url);
+      return true;
+    });
+  }
 }
 
 function buildUserMessage(review, files, requirements, evidence, searchChunks, learnDocs = []) {

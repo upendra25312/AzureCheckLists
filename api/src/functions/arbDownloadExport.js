@@ -1,5 +1,5 @@
 const { app } = require("@azure/functions");
-const { jsonResponse, requireAuthenticated } = require("../shared/auth");
+const { jsonResponse, requireAuthenticated, safeErrorResponse } = require("../shared/auth");
 const { downloadArbExport } = require("../shared/arb-review-store");
 
 async function handleArbDownloadExport(request) {
@@ -29,9 +29,7 @@ async function handleArbDownloadExport(request) {
       }
     };
   } catch (error) {
-    return jsonResponse(error?.statusCode === 400 || error?.statusCode === 404 ? error.statusCode : 500, {
-      error: error instanceof Error ? error.message : "Unable to download the ARB reviewed output."
-    });
+    return safeErrorResponse(error, "Unable to download the ARB reviewed output.", context);
   }
 }
 

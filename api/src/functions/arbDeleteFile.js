@@ -1,5 +1,5 @@
 const { app } = require("@azure/functions");
-const { jsonResponse, requireAuthenticated } = require("../shared/auth");
+const { jsonResponse, requireAuthenticated, safeErrorResponse } = require("../shared/auth");
 const { deleteArbFile } = require("../shared/arb-review-store");
 
 async function handleArbDeleteFile(request, context) {
@@ -20,10 +20,7 @@ async function handleArbDeleteFile(request, context) {
 
     return jsonResponse(200, result);
   } catch (error) {
-    return jsonResponse(
-      error?.statusCode === 400 || error?.statusCode === 404 ? error.statusCode : 500,
-      { error: error instanceof Error ? error.message : "Unable to delete ARB file." }
-    );
+    return safeErrorResponse(error, "Unable to delete ARB file.", context);
   }
 }
 

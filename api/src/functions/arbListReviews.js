@@ -1,5 +1,5 @@
 const { app } = require("@azure/functions");
-const { jsonResponse, requireAuthenticated } = require("../shared/auth");
+const { jsonResponse, requireAuthenticated, safeErrorResponse } = require("../shared/auth");
 const { listArbReviews } = require("../shared/arb-review-store");
 
 async function handleArbListReviews(request) {
@@ -13,9 +13,7 @@ async function handleArbListReviews(request) {
       "Cache-Control": "no-store"
     });
   } catch (error) {
-    return jsonResponse(500, {
-      error: error instanceof Error ? error.message : "Unable to list ARB reviews."
-    });
+    return safeErrorResponse(error, "Unable to list ARB reviews.", context);
   }
 }
 

@@ -1,5 +1,5 @@
 const { app } = require("@azure/functions");
-const { jsonResponse, requireAuthenticated } = require("../shared/auth");
+const { jsonResponse, requireAuthenticated, safeErrorResponse } = require("../shared/auth");
 const { recordArbDecision } = require("../shared/arb-review-store");
 
 async function handleArbRecordDecision(request, context) {
@@ -17,9 +17,7 @@ async function handleArbRecordDecision(request, context) {
       decision: await recordArbDecision(auth.principal, reviewId, body)
     });
   } catch (error) {
-    return jsonResponse(error?.statusCode === 404 ? 404 : 500, {
-      error: error instanceof Error ? error.message : "Unable to record the ARB decision."
-    });
+    return safeErrorResponse(error, "Unable to record the ARB decision.", context);
   }
 }
 

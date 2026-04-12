@@ -1474,6 +1474,10 @@ async function uploadArbFiles(principal, reviewId, filesInput = []) {
     throw createHttpError(404, `ARB review ${reviewId} was not found.`);
   }
 
+  const MAX_FILES_PER_REVIEW = 30;
+  const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;  // 50 MB per file
+  const MAX_TOTAL_SIZE_BYTES = 200 * 1024 * 1024; // 200 MB per review
+
   const files = Array.isArray(filesInput) ? filesInput : [];
 
   if (files.length === 0) {
@@ -1482,6 +1486,18 @@ async function uploadArbFiles(principal, reviewId, filesInput = []) {
 
   const existingFilesEntity = await getEntity(client, reviewId, getRowKey(FILES_ROW_KEY, principal.userId));
   const existingFiles = fromFilesEntity(existingFilesEntity);
+
+  if (existingFiles.length + files.length > MAX_FILES_PER_REVIEW) {
+    throw createHttpError(400, `Upload limit reached. A review may contain at most ${MAX_FILES_PER_REVIEW} files.`);
+  }
+
+  const existingTotalBytes = existingFiles.reduce((sum, f) => sum + (f.sizeBytes ?? 0), 0);
+  const incomingTotalBytes = files.reduce((sum, f) => sum + (Buffer.isBuffer(f.contentBuffer) ? f.contentBuffer.byteLength : 0), 0);
+
+  if (existingTotalBytes + incomingTotalBytes > MAX_TOTAL_SIZE_BYTES) {
+    throw createHttpError(400, `Total upload size would exceed the ${MAX_TOTAL_SIZE_BYTES / (1024 * 1024)} MB review limit.`);
+  }
+
   const inputContainer = await getContainerClient(ARB_INPUT_CONTAINER_NAME);
   const now = new Date().toISOString();
   const persistedFiles = [];
@@ -1496,6 +1512,14 @@ async function uploadArbFiles(principal, reviewId, filesInput = []) {
     const contentBuffer = Buffer.isBuffer(file.contentBuffer)
       ? file.contentBuffer
       : Buffer.from(file.contentBuffer || []);
+
+    if (contentBuffer.byteLength > MAX_FILE_SIZE_BYTES) {
+      throw createHttpError(400, `File ${fileName} exceeds the ${MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB per-file limit.`);
+    }
+
+    if (contentBuffer.byteLength === 0) {
+      throw createHttpError(400, `File ${fileName} is empty and cannot be uploaded.`);
+    }
     const contentHash = `sha256:${crypto.createHash("sha256").update(contentBuffer).digest("hex")}`;
     const logicalCategory = normalizeLogicalCategory(file.logicalCategory, inferLogicalCategory(fileName));
 

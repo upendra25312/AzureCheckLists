@@ -1,5 +1,5 @@
 const { app } = require("@azure/functions");
-const { jsonResponse, requireAuthenticated } = require("../shared/auth");
+const { jsonResponse, requireAuthenticated, safeErrorResponse } = require("../shared/auth");
 const { createArbAction } = require("../shared/arb-review-store");
 
 async function handleArbCreateAction(request, context) {
@@ -17,14 +17,7 @@ async function handleArbCreateAction(request, context) {
       action: await createArbAction(auth.principal, reviewId, body)
     });
   } catch (error) {
-    return jsonResponse(
-      error?.statusCode === 400 || error?.statusCode === 404 || error?.statusCode === 409
-        ? error.statusCode
-        : 500,
-      {
-        error: error instanceof Error ? error.message : "Unable to create the ARB action."
-      }
-    );
+    return safeErrorResponse(error, "Unable to create the ARB action.", context);
   }
 }
 

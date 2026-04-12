@@ -44,8 +44,34 @@ function requireAuthenticated(request) {
   };
 }
 
+/**
+ * Returns a safe HTTP error response.
+ * - 400/404 errors are our own domain errors (createHttpError) — pass message through.
+ * - All other errors become 500 with a generic message so internal details never reach the client.
+ * - The raw message is always logged so it is observable in App Insights / Functions logs.
+ */
+function safeErrorResponse(error, fallbackMessage, context = null) {
+  const knownStatus = error?.statusCode === 400 || error?.statusCode === 404 ? error.statusCode : null;
+  const status = knownStatus ?? 500;
+  const clientMessage = knownStatus
+    ? (error instanceof Error ? error.message : fallbackMessage)
+    : fallbackMessage;
+
+  if (context && typeof context.log === "function") {
+    context.log(JSON.stringify({
+      msg: "ARB function error",
+      status,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack?.split("\n").slice(0, 5).join(" | ") : undefined
+    }));
+  }
+
+  return jsonResponse(status, { error: clientMessage });
+}
+
 module.exports = {
   getClientPrincipal,
   jsonResponse,
-  requireAuthenticated
+  requireAuthenticated,
+  safeErrorResponse
 };

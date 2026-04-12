@@ -1,5 +1,5 @@
 const { app } = require("@azure/functions");
-const { jsonResponse, requireAuthenticated } = require("../shared/auth");
+const { jsonResponse, requireAuthenticated, safeErrorResponse } = require("../shared/auth");
 const { createArbExport } = require("../shared/arb-review-store");
 
 async function handleArbCreateExport(request, context) {
@@ -16,9 +16,7 @@ async function handleArbCreateExport(request, context) {
       exportArtifact: await createArbExport(auth.principal, reviewId, body)
     });
   } catch (error) {
-    return jsonResponse(error?.statusCode === 400 || error?.statusCode === 404 ? error.statusCode : 500, {
-      error: error instanceof Error ? error.message : "Unable to generate the ARB export."
-    });
+    return safeErrorResponse(error, "Unable to generate the ARB export.", context);
   }
 }
 

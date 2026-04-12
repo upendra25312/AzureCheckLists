@@ -1,7 +1,9 @@
 const SEARCH_ENDPOINT = (process.env.AZURE_SEARCH_ENDPOINT || "").replace(/\/+$/, "");
 const SEARCH_KEY = process.env.AZURE_SEARCH_KEY || "";
 const INDEX_NAME = process.env.AZURE_SEARCH_INDEX_NAME || "arb-documents";
-const SEARCH_API_VERSION = "2023-11-01";
+const SEARCH_API_VERSION = "2024-07-01"; // supports semantic ranking
+
+const SEMANTIC_CONFIG_NAME = "arb-semantic";
 
 const INDEX_SCHEMA = {
   name: INDEX_NAME,
@@ -13,7 +15,19 @@ const INDEX_SCHEMA = {
     { name: "logicalCategory", type: "Edm.String", filterable: true, retrievable: true, searchable: false },
     { name: "chunkIndex", type: "Edm.Int32", filterable: true, sortable: true },
     { name: "content", type: "Edm.String", searchable: true, retrievable: true, analyzer: "en.microsoft" }
-  ]
+  ],
+  semanticSearch: {
+    defaultConfiguration: SEMANTIC_CONFIG_NAME,
+    configurations: [
+      {
+        name: SEMANTIC_CONFIG_NAME,
+        prioritizedFields: {
+          contentFields: [{ fieldName: "content" }],
+          keywordsFields: [{ fieldName: "fileName" }, { fieldName: "logicalCategory" }]
+        }
+      }
+    ]
+  }
 };
 
 function getSearchConfiguration() {
@@ -58,7 +72,7 @@ async function ensureArbSearchIndex() {
   await searchRequest("indexes", "POST", INDEX_SCHEMA);
 }
 
-function chunkText(text, maxChunkSize = 800) {
+function chunkText(text, maxChunkSize = 1200) {
   const lines = String(text ?? "")
     .split(/\r?\n/)
     .map((l) => l.trim())
@@ -123,23 +137,48 @@ async function searchArbDocuments(reviewId, queryText, topK = 10) {
   const config = getSearchConfiguration();
   if (!config.configured) return [];
 
+  const safeQuery = queryText && queryText.trim() ? queryText.trim() : "*";
+  const filter = `reviewId eq '${reviewId.replace(/'/g, "''")}'`;
+
+  // Attempt semantic ranking first (requires S1+ tier); fall back to simple
   try {
     const result = await searchRequest(`indexes/${INDEX_NAME}/docs/search`, "POST", {
-      search: queryText && queryText.trim() ? queryText.trim() : "*",
-      filter: `reviewId eq '${reviewId.replace(/'/g, "''")}'`,
+      search: safeQuery,
+      filter,
       top: topK,
       select: "content,fileName,logicalCategory,chunkIndex",
-      queryType: "simple"
+      queryType: "semantic",
+      semanticConfiguration: SEMANTIC_CONFIG_NAME,
+      captions: "extractive|highlight-false",
+      answers: "none"
     });
 
     return (result?.value ?? []).map((d) => ({
-      content: String(d.content ?? ""),
+      content: String(d["@search.captions"]?.[0]?.text ?? d.content ?? ""),
       fileName: String(d.fileName ?? ""),
       logicalCategory: String(d.logicalCategory ?? ""),
       chunkIndex: Number(d.chunkIndex ?? 0)
     }));
-  } catch {
-    return [];
+  } catch (semanticErr) {
+    // Semantic ranking not available (free/basic tier) — fall back silently
+    try {
+      const result = await searchRequest(`indexes/${INDEX_NAME}/docs/search`, "POST", {
+        search: safeQuery,
+        filter,
+        top: topK,
+        select: "content,fileName,logicalCategory,chunkIndex",
+        queryType: "simple"
+      });
+
+      return (result?.value ?? []).map((d) => ({
+        content: String(d.content ?? ""),
+        fileName: String(d.fileName ?? ""),
+        logicalCategory: String(d.logicalCategory ?? ""),
+        chunkIndex: Number(d.chunkIndex ?? 0)
+      }));
+    } catch {
+      return [];
+    }
   }
 }
 

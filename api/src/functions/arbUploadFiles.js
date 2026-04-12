@@ -1,6 +1,6 @@
 const { app } = require("@azure/functions");
 const { getBoundary, parse } = require("parse-multipart-data");
-const { jsonResponse, requireAuthenticated } = require("../shared/auth");
+const { jsonResponse, requireAuthenticated, safeErrorResponse } = require("../shared/auth");
 const { uploadArbFiles } = require("../shared/arb-review-store");
 
 async function parseMultipartFiles(request) {
@@ -57,9 +57,7 @@ async function handleArbUploadFiles(request, context) {
       readiness: result.readiness
     });
   } catch (error) {
-    return jsonResponse(error?.statusCode === 400 || error?.statusCode === 404 ? error.statusCode : 500, {
-      error: error instanceof Error ? error.message : "Unable to upload ARB files."
-    });
+    return safeErrorResponse(error, "Unable to upload ARB files.", context);
   }
 }
 
