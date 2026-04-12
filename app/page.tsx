@@ -30,8 +30,7 @@ function getActiveStep(review: ArbReviewSummary): number {
 
 function getStepHref(review: ArbReviewSummary): Route {
   const step = getActiveStep(review);
-  if (step <= 3) return `/arb/${review.reviewId}/upload` as Route;
-  if (step === 4) return `/arb/${review.reviewId}/findings` as Route;
+  if (step <= 4) return `/arb/${review.reviewId}/upload` as Route;
   if (step === 5) return `/arb/${review.reviewId}/decision` as Route;
   return `/arb/${review.reviewId}` as Route;
 }
@@ -140,7 +139,7 @@ export default function HomePage() {
               ref={fileInputRef}
               type="file"
               multiple
-              accept=".pdf,.doc,.docx,.ppt,.pptx,.md,.txt,.xls,.xlsx"
+              accept=".pdf,.doc,.docx,.rtf,.ppt,.pptx,.xls,.xlsx,.csv,.drawio,.vsdx,.svg,.png,.jpg,.jpeg,.gif,.webp,.bmp,.txt,.md,.markdown,.json,.xml,.yaml,.yml,.bicep,.tf,.zip"
               className="hero-upload-input"
               aria-hidden="true"
               onChange={(e) => { void handleFiles(e.target.files); e.currentTarget.value = ""; }}

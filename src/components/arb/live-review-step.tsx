@@ -44,23 +44,22 @@ import { ArbReviewShell } from "@/components/arb/review-shell";
 import { SeverityBadge } from "@/components/severity-badge";
 
 const SUPPORTED_UPLOAD_EXTENSIONS = [
-  ".pdf",
-  ".doc",
-  ".docx",
-  ".ppt",
-  ".pptx",
-  ".xls",
-  ".xlsx",
-  ".csv",
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".svg",
-  ".vsdx",
-  ".txt",
-  ".md",
-  ".markdown",
-  ".json"
+  // Documents
+  ".pdf", ".doc", ".docx", ".rtf",
+  // Presentations
+  ".ppt", ".pptx",
+  // Spreadsheets & data
+  ".xls", ".xlsx", ".csv",
+  // Diagrams
+  ".drawio", ".vsdx", ".svg",
+  // Images / screenshots
+  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp",
+  // Text & markup
+  ".txt", ".md", ".markdown",
+  // Structured / IaC
+  ".json", ".xml", ".yaml", ".yml", ".bicep", ".tf",
+  // Archives
+  ".zip"
 ] as const;
 
 function buildBullets(
@@ -1119,12 +1118,17 @@ export function ArbLiveReviewStep(props: {
       return (
         <div className="arb-page-stack">
           <ArbPlaceholderPage
-            intro="No AI findings are available yet. Finish extraction and run the review to populate this page."
+            intro="No AI findings yet — the AI agent hasn't run for this review."
             bullets={[
-              "Upload the core design documents",
-              "Start extraction once the package is ready",
-              "Run AI review to generate findings, actions, and scorecard data"
+              "Go back to the Upload step and click 'Run AI review →' to generate findings",
+              "The agent checks your documents against WAF, CAF, ALZ, HA/DR, Security, Networking, and Monitoring",
+              "Results appear here automatically — typically 1–3 minutes"
             ]}
+            footer={
+              <a href={`/arb/${reviewId}/upload`} className="primary-button">
+                Go to Upload — Run AI review →
+              </a>
+            }
           />
           {renderOutputArtifactsCard()}
         </div>

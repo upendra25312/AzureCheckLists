@@ -35,25 +35,35 @@ const RECOMMENDED_LOGICAL_CATEGORIES = [
   "dr_ha_note",
   "ops_monitoring_note"
 ];
-const TEXT_EXTRACTABLE_EXTENSIONS = new Set([".txt", ".md", ".markdown", ".csv", ".json"]);
+const TEXT_EXTRACTABLE_EXTENSIONS = new Set([
+  // Plain text
+  ".txt", ".md", ".markdown",
+  // Structured data
+  ".csv", ".json", ".xml", ".yaml", ".yml",
+  // IaC / config
+  ".bicep", ".tf",
+  // Diagrams (XML-based, fully readable)
+  ".drawio",
+  // Rich text
+  ".rtf"
+]);
 const SUPPORTED_UPLOAD_EXTENSIONS = new Set([
-  ".pdf",
-  ".doc",
-  ".docx",
-  ".ppt",
-  ".pptx",
-  ".xls",
-  ".xlsx",
-  ".csv",
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".svg",
-  ".vsdx",
-  ".txt",
-  ".md",
-  ".markdown",
-  ".json"
+  // Documents
+  ".pdf", ".doc", ".docx", ".rtf",
+  // Presentations
+  ".ppt", ".pptx",
+  // Spreadsheets & data
+  ".xls", ".xlsx", ".csv",
+  // Diagrams
+  ".drawio", ".vsdx", ".svg",
+  // Images / screenshots
+  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp",
+  // Text & markup
+  ".txt", ".md", ".markdown",
+  // Structured / IaC
+  ".json", ".xml", ".yaml", ".yml", ".bicep", ".tf",
+  // Archives
+  ".zip"
 ]);
 const EXTRACTION_KEYWORD_MAP = [
   ["security", "Security"],
@@ -123,32 +133,40 @@ function normalizeLogicalCategory(value, fallback = "supporting_artifact") {
 
 function inferLogicalCategory(fileName) {
   const lowered = String(fileName ?? "").toLowerCase();
+  const ext = lowered.slice(lowered.lastIndexOf("."));
 
-  if (lowered.includes("sow") || lowered.includes("statement-of-work")) {
+  // Extension-based overrides
+  if (ext === ".drawio" || ext === ".vsdx") return "diagram";
+  if (ext === ".bicep" || ext === ".tf") return "design_doc";
+  if (ext === ".yaml" || ext === ".yml") return "design_doc";
+  if (ext === ".zip") return "supporting_artifact";
+
+  // Filename keyword rules
+  if (lowered.includes("sow") || lowered.includes("statement-of-work") || lowered.includes("statement_of_work")) {
     return "sow";
   }
 
-  if (lowered.includes("diagram") || lowered.includes("drawio") || lowered.includes("vsdx")) {
+  if (lowered.includes("diagram") || lowered.includes("drawio") || lowered.includes("topology") || lowered.includes("network-map")) {
     return "diagram";
   }
 
-  if (lowered.includes("security")) {
+  if (lowered.includes("security") || lowered.includes("threat-model") || lowered.includes("pentest")) {
     return "security_note";
   }
 
-  if (lowered.includes("cost") || lowered.includes("pricing")) {
+  if (lowered.includes("cost") || lowered.includes("pricing") || lowered.includes("budget")) {
     return "cost_assumptions";
   }
 
-  if (lowered.includes("dr") || lowered.includes("ha") || lowered.includes("resilien")) {
+  if (lowered.includes("dr") || lowered.includes("ha") || lowered.includes("resilien") || lowered.includes("disaster") || lowered.includes("recovery")) {
     return "dr_ha_note";
   }
 
-  if (lowered.includes("ops") || lowered.includes("monitor") || lowered.includes("runbook")) {
+  if (lowered.includes("ops") || lowered.includes("monitor") || lowered.includes("runbook") || lowered.includes("alerting") || lowered.includes("observ")) {
     return "ops_monitoring_note";
   }
 
-  if (lowered.includes("design") || lowered.includes("hld") || lowered.includes("lld") || lowered.includes("architecture")) {
+  if (lowered.includes("design") || lowered.includes("hld") || lowered.includes("lld") || lowered.includes("architecture") || lowered.includes("landing-zone") || lowered.includes("landing_zone")) {
     return "design_doc";
   }
 
