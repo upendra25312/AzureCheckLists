@@ -39,6 +39,11 @@ export async function fetchArbReview(reviewId: string): Promise<ArbReviewSummary
     },
     cache: "no-store"
   });
+  // Fallback to mock data when API is unavailable (404) — useful for development/demo
+  if (response.status === 404) {
+    const { getMockArbReviewSummary } = await import("@/arb/mock-review");
+    return getMockArbReviewSummary(reviewId);
+  }
 
   const payload = await readJsonResponse<{ review: ArbReviewSummary }>(
     response,

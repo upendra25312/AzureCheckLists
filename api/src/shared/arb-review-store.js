@@ -2366,6 +2366,7 @@ module.exports = {
   getArbScorecard,
   recordArbDecision,
   startArbExtraction,
+  syncArbReviewedOutputs,
   uploadArbFiles,
   updateArbAction,
   updateArbFinding
