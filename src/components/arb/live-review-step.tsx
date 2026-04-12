@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   createArbExport,
   createArbAction,
+  deleteArbFile,
   downloadArbExport,
   fetchArbEvidence,
   fetchArbActions,
@@ -269,6 +270,8 @@ export function ArbLiveReviewStep(props: {
   const [agentRunning, setAgentRunning] = useState(false);
   const [agentError, setAgentError] = useState<string | null>(null);
   const [agentCompleted, setAgentCompleted] = useState(false);
+  const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
+  const [deleteFileError, setDeleteFileError] = useState<string | null>(null);
   const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
   const actionSummary = summarizeActions(actions);
   const authRequired = error?.includes("Sign in is required") ?? false;
@@ -331,6 +334,24 @@ export function ArbLiveReviewStep(props: {
       );
     } finally {
       setUploadSaving(false);
+    }
+  }
+
+  async function handleDeleteFile(fileId: string) {
+    try {
+      setDeletingFileId(fileId);
+      setDeleteFileError(null);
+      const result = await deleteArbFile(reviewId, fileId);
+      setUploadedFiles((current) => current.filter((f) => f.fileId !== fileId));
+      if (result.remainingCount === 0) {
+        setExtractionStatus(null);
+      }
+    } catch (deleteError) {
+      setDeleteFileError(
+        deleteError instanceof Error ? deleteError.message : "Unable to delete the file."
+      );
+    } finally {
+      setDeletingFileId(null);
     }
   }
 
@@ -791,40 +812,154 @@ export function ArbLiveReviewStep(props: {
             Text-first files extract immediately in this ARB cost-constrained path; other files stay
             visible as limited-evidence artifacts.
           </p>
-          {uploadSaving ? <p className="microcopy">Uploading files to Blob Storage...</p> : null}
-          {uploadError ? <p>{uploadError}</p> : null}
+          {uploadSaving ? (
+            <p className="arb-upload-status arb-upload-status-progress">Uploading files…</p>
+          ) : uploadedFiles.length > 0 && !uploadError ? (
+            <p className="arb-upload-status arb-upload-status-done">
+              {uploadedFiles.length} file{uploadedFiles.length !== 1 ? "s" : ""} uploaded — ready to start analysis
+            </p>
+          ) : null}
+          {uploadError ? <p className="arb-upload-error">{uploadError}</p> : null}
         </section>
 
-        <div className="arb-upload-layout">
-          <section className="surface-panel">
-            <div className="board-card-head">
-              <div className="board-card-head-copy">
-                <p className="board-card-subtitle">Staged files</p>
-                <h2 className="section-title">Review the package contents before extraction</h2>
-              </div>
+        {/* Staged files */}
+        <section className="surface-panel">
+          <div className="board-card-head">
+            <div className="board-card-head-copy">
+              <p className="board-card-subtitle">Staged files</p>
+              <h2 className="section-title">Review the package contents before extraction</h2>
             </div>
-            {uploadedFiles.length === 0 ? (
-              <p className="section-copy">
-                No files uploaded yet. Add the SOW, architecture pack, diagram, or workbook to start
-                the review package.
-              </p>
-            ) : (
-              <div className="arb-upload-file-list">
-                {uploadedFiles.map((upload) => (
-                  <article key={upload.fileId} className="trace-card arb-upload-file">
-                    <div className="arb-upload-file-copy">
-                      <strong>{upload.fileName}</strong>
-                      <p className="microcopy">
-                        {upload.logicalCategory} · {formatFileSize(upload.sizeBytes)} · {upload.extractionStatus}
-                      </p>
-                    </div>
+          </div>
+          {uploadedFiles.length === 0 ? (
+            <p className="section-copy">
+              No files uploaded yet. Add the SOW, architecture pack, diagram, or workbook to start
+              the review package.
+            </p>
+          ) : (
+            <div className="arb-upload-file-list">
+              {uploadedFiles.map((upload) => (
+                <article key={upload.fileId} className="trace-card arb-upload-file">
+                  <div className="arb-upload-file-copy">
+                    <strong>{upload.fileName}</strong>
+                    <p className="microcopy">
+                      {upload.logicalCategory} · {formatFileSize(upload.sizeBytes)} ·{" "}
+                      <span className={upload.extractionStatus === "Completed" ? "arb-status-done" : undefined}>
+                        {upload.extractionStatus}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="arb-upload-file-actions">
                     <span className="pill">{upload.supportedTextExtraction ? "Text-first" : "Limited"}</span>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
+                    <button
+                      type="button"
+                      className="arb-delete-file-btn"
+                      aria-label={`Delete ${upload.fileName}`}
+                      disabled={deletingFileId === upload.fileId}
+                      onClick={() => void handleDeleteFile(upload.fileId)}
+                    >
+                      {deletingFileId === upload.fileId ? "Deleting…" : "Delete"}
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+          {deleteFileError ? <p className="arb-upload-error">{deleteFileError}</p> : null}
+        </section>
 
+        {/* Confidentiality confirmation + Start extraction CTA */}
+        <section className="surface-panel arb-action-panel">
+          <label className="arb-inline-check">
+            <input
+              aria-label="Confirm uploaded files can be used for review extraction"
+              type="checkbox"
+              checked={confidentialityConfirmed}
+              onChange={(event) => setConfidentialityConfirmed(event.target.checked)}
+            />
+            <span>I confirm the uploaded files can be used for review extraction</span>
+          </label>
+          <ul className="arb-checklist arb-checklist-compact">
+            {readinessChecks.map((check) => (
+              <li key={check.label} className={check.complete ? "arb-check-done" : "arb-check-pending"}>
+                {check.complete ? "✓" : "○"} {check.label}
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            className="arb-cta-btn"
+            disabled={!canStartExtraction || extractionStarting}
+            onClick={async () => {
+              try {
+                setExtractionStarting(true);
+                setUploadError(null);
+                const nextExtraction = await startArbExtraction(reviewId);
+                setExtractionStatus(nextExtraction);
+                const nextRequirements = await fetchArbRequirements(reviewId);
+                const nextEvidence = await fetchArbEvidence(reviewId);
+                const nextExports = await fetchArbExports(reviewId);
+                setRequirements(nextRequirements);
+                setEvidenceFacts(nextEvidence);
+                setExportArtifacts(nextExports);
+                setReview((currentReview) =>
+                  currentReview
+                    ? {
+                        ...currentReview,
+                        workflowState: "Review In Progress",
+                        evidenceReadinessState:
+                          nextExtraction.evidenceReadinessState as ArbReviewSummary["evidenceReadinessState"]
+                      }
+                    : currentReview
+                );
+              } catch (startFailure) {
+                setUploadError(
+                  startFailure instanceof Error
+                    ? startFailure.message
+                    : "Unable to start extraction."
+                );
+              } finally {
+                setExtractionStarting(false);
+              }
+            }}
+          >
+            {extractionStarting ? "Starting analysis… this may take a minute" : "Start analysis →"}
+          </button>
+          {extractionStatus ? (
+            <p className="arb-upload-status arb-upload-status-progress">
+              Analysis state: {extractionStatus.state} · Evidence readiness: {extractionStatus.evidenceReadinessState}
+            </p>
+          ) : null}
+        </section>
+
+        {/* Run AI Review CTA — shown once extraction is complete */}
+        {extractionStatus?.state === "Completed" ? (
+          <section className="surface-panel arb-action-panel arb-action-panel-highlight">
+            <p className="arb-action-panel-label">Analysis complete — ready for AI review</p>
+            <p className="section-copy">
+              Run the ARB Agent to produce structured findings, a weighted scorecard, and a
+              recommendation. The agent checks all evidence against WAF, CAF, ALZ, HA/DR, Security,
+              Networking, and Monitoring.
+            </p>
+            <button
+              type="button"
+              className="arb-cta-btn"
+              disabled={agentRunning}
+              onClick={() => void handleRunAgentReview()}
+            >
+              {agentRunning ? "Running AI review… this may take a few minutes" : "Run AI review →"}
+            </button>
+            {agentCompleted ? (
+              <p className="arb-upload-status arb-upload-status-done">
+                AI review complete — findings and scorecard updated.{" "}
+                <a href={`/arb/${reviewId}/findings`} className="arb-inline-link">View findings →</a>
+              </p>
+            ) : null}
+            {agentError ? <p className="arb-upload-error">{agentError}</p> : null}
+          </section>
+        ) : null}
+
+        {/* Export outputs */}
+        <div className="arb-upload-layout">
           <div className="arb-sidecar-stack">
             <section className="future-card arb-summary-card">
               <p className="board-card-subtitle">What will be extracted</p>
@@ -834,100 +969,6 @@ export function ArbLiveReviewStep(props: {
                 ))}
               </ul>
             </section>
-
-            <section className="trace-card arb-summary-card">
-              <p className="board-card-subtitle">Confidentiality and readiness</p>
-              <p className="section-copy">
-                Upload only material that the review team is allowed to inspect and summarize.
-                Package readiness should be explicit before automated extraction starts.
-              </p>
-              <label className="arb-inline-check">
-                <input
-                  aria-label="Confirm uploaded files can be used for review extraction"
-                  type="checkbox"
-                  checked={confidentialityConfirmed}
-                  onChange={(event) => setConfidentialityConfirmed(event.target.checked)}
-                />
-                <span>Confirm uploaded files can be used for review extraction</span>
-              </label>
-              <ul className="arb-checklist">
-                {readinessChecks.map((check) => (
-                  <li key={check.label}>
-                    {check.complete ? "Ready" : "Pending"}: {check.label}
-                  </li>
-                ))}
-              </ul>
-              <button
-                type="button"
-                className="primary-button"
-                disabled={!canStartExtraction || extractionStarting}
-                onClick={async () => {
-                  try {
-                    setExtractionStarting(true);
-                    setUploadError(null);
-                    const nextExtraction = await startArbExtraction(reviewId);
-                    setExtractionStatus(nextExtraction);
-                    const nextRequirements = await fetchArbRequirements(reviewId);
-                    const nextEvidence = await fetchArbEvidence(reviewId);
-                    const nextExports = await fetchArbExports(reviewId);
-                    setRequirements(nextRequirements);
-                    setEvidenceFacts(nextEvidence);
-                    setExportArtifacts(nextExports);
-                    setReview((currentReview) =>
-                      currentReview
-                        ? {
-                            ...currentReview,
-                            workflowState: "Review In Progress",
-                            evidenceReadinessState:
-                              nextExtraction.evidenceReadinessState as ArbReviewSummary["evidenceReadinessState"]
-                          }
-                        : currentReview
-                    );
-                  } catch (startFailure) {
-                    setUploadError(
-                      startFailure instanceof Error
-                        ? startFailure.message
-                        : "Unable to start extraction."
-                    );
-                  } finally {
-                    setExtractionStarting(false);
-                  }
-                }}
-              >
-                {extractionStarting ? "Starting extraction..." : "Start extraction"}
-              </button>
-              {extractionStatus ? (
-                <p className="microcopy">
-                  Current extraction state: {extractionStatus.state}. Evidence readiness: {extractionStatus.evidenceReadinessState}.
-                </p>
-              ) : null}
-            </section>
-
-            {extractionStatus?.state === "Completed" ? (
-              <section className="trace-card arb-summary-card">
-                <p className="board-card-subtitle">Agent review</p>
-                <p className="section-copy">
-                  Run the ARB Agent to produce structured findings, a weighted scorecard, and a
-                  recommendation. The agent analyses all uploaded and extracted evidence and writes
-                  results directly into this review.
-                </p>
-                <button
-                  type="button"
-                  className="primary-button"
-                  disabled={agentRunning}
-                  onClick={() => void handleRunAgentReview()}
-                >
-                  {agentRunning ? "Running agent review..." : "Run agent review"}
-                </button>
-                {agentCompleted ? (
-                  <p className="microcopy">
-                    Agent review complete. Findings and scorecard have been updated.
-                  </p>
-                ) : null}
-                {agentError ? <p>{agentError}</p> : null}
-              </section>
-            ) : null}
-
             {renderOutputArtifactsCard()}
           </div>
         </div>

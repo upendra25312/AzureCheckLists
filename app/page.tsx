@@ -1,78 +1,62 @@
+"use client";
+
 import Link from "next/link";
-import { buildLoginUrl } from "@/lib/review-cloud";
+import { useEffect, useState } from "react";
+import { buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
 
 const signInHref = buildLoginUrl("aad", "/arb");
 
+const WORKFLOW_STEPS = [
+  { id: 1, label: "Sign in", detail: "Microsoft account — Outlook or Azure AD" },
+  { id: 2, label: "Create review", detail: "Name your project and customer" },
+  { id: 3, label: "Upload documents", detail: "PDF, Word, PowerPoint, Markdown" },
+  { id: 4, label: "Run AI analysis", detail: "WAF · CAF · ALZ · HA/DR · Security + more" },
+  { id: 5, label: "Review findings", detail: "Scored 0–100, linked to Microsoft Learn" },
+  { id: 6, label: "Sign off & export", detail: "CSV, HTML, Markdown — board-ready pack" },
+];
+
 const serviceCards = [
   {
-    status: "AVAILABLE",
     tone: "ok",
     title: "Azure Kubernetes Service",
     href: "/services/azure-kubernetes-service-aks",
-    meta: ["55 mapped regions", "42 findings available", "Source refreshed recently"],
-    findings: [
-      {
-        text: "Enable cluster insights",
-        href: "https://learn.microsoft.com/en-us/azure/aks/monitor-aks"
-      },
-      {
-        text: "Use node pool availability zones",
-        href: "https://learn.microsoft.com/en-us/azure/aks/availability-zones-overview"
-      }
-    ]
+    meta: "55 regions · 42 findings",
+    finding: "Enable cluster insights — WAF Reliability",
   },
   {
-    status: "RESTRICTED",
     tone: "warn",
     title: "API Management",
     href: "/services/api-management",
-    meta: ["9 restricted regions", "28 findings available", "Source refreshed recently"],
-    findings: [
-      {
-        text: "Enable diagnostics logging",
-        href: "https://learn.microsoft.com/en-us/azure/api-management/api-management-howto-use-azure-monitor"
-      },
-      {
-        text: "Use zone redundancy where available",
-        href: "https://learn.microsoft.com/en-us/azure/reliability/reliability-api-management"
-      }
-    ]
+    meta: "9 restricted regions · 28 findings",
+    finding: "Use zone redundancy where available — HA/DR",
   },
   {
-    status: "PREVIEW",
     tone: "preview",
     title: "Azure App Service",
     href: "/services/azure-app-service",
-    meta: ["4 preview checklist families", "19 findings available", "Source refreshed recently"],
-    findings: [
-      {
-        text: "Enable authentication and authorization",
-        href: "https://learn.microsoft.com/en-us/azure/app-service/overview-authentication-authorization"
-      },
-      {
-        text: "Use deployment slots for safer rollouts",
-        href: "https://learn.microsoft.com/en-us/azure/app-service/deploy-staging-slots"
-      }
-    ]
-  }
+    meta: "4 preview families · 19 findings",
+    finding: "Use deployment slots for safer rollouts — CAF",
+  },
 ] as const;
 
 const frameworkCoverage = [
-  ["WAF", "Complete"],
-  ["CAF", "Complete"],
-  ["ALZ", "Complete"],
-  ["HA/DR", "Partial"],
-  ["Backup", "Partial"],
-  ["Security", "Complete"],
-  ["Networking", "Complete"],
-  ["Monitoring", "Partial"],
-  ["Governance", "Complete"]
+  "WAF", "CAF", "ALZ", "HA/DR", "Backup", "Security", "Networking", "Monitoring", "Governance",
 ] as const;
 
 export default function HomePage() {
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetchClientPrincipal()
+      .then((p) => setSignedIn(Boolean(p)))
+      .catch(() => setSignedIn(false));
+  }, []);
+
   return (
     <main className="impact-home">
-      <section id="home" className="impact-section impact-section-hero">
+
+      {/* ── HERO ── */}
+      <section className="impact-section impact-section-hero">
         <span className="impact-kicker">Architecture reviews that ship</span>
         <h1 className="impact-headline">
           Upload architecture docs. Get board-ready Azure findings in minutes.
@@ -81,324 +65,179 @@ export default function HomePage() {
           One workflow for scope, evidence, region fit, pricing context, and exportable review packs.
         </p>
 
-        <div className="impact-hero-input-shell" aria-label="Primary input">
-          <div className="impact-hero-upload">
-            <label className="impact-hero-upload-label" htmlFor="heroFileInput">
-              Primary input: select architecture documents
-            </label>
-            <input
-              id="heroFileInput"
-              className="impact-hero-file"
-              type="file"
-              aria-label="Select architecture documents"
-              multiple
-              disabled
-            />
-          </div>
-          <Link href="/arb" className="impact-btn impact-btn-primary">
-            Start Review
-          </Link>
-        </div>
-
-        <div className="impact-signin-banner" role="note" aria-label="Sign in requirement">
-          <div>
-            <strong>Sign in with your Outlook email or Azure login.</strong>
-            <p className="impact-small">Upload is locked until Microsoft sign-in is complete.</p>
-          </div>
-          <a className="impact-btn impact-btn-secondary" href={signInHref}>
-            Go to Sign In
-          </a>
-        </div>
-
-        <div className="impact-hero-actions">
-          <Link href="/services" className="impact-btn impact-btn-secondary">
-            Explore services
-          </Link>
+        <div className="impact-hero-cta-row">
+          {signedIn === null ? (
+            <span className="impact-auth-loading">Checking sign-in status…</span>
+          ) : signedIn ? (
+            <>
+              <Link href="/arb" className="impact-btn impact-btn-primary">
+                Go to Board Review →
+              </Link>
+              <Link href="/services" className="impact-btn impact-btn-secondary">
+                Explore services
+              </Link>
+            </>
+          ) : (
+            <>
+              <a href={signInHref} className="impact-btn impact-btn-primary">
+                Sign In with Microsoft to Start →
+              </a>
+              <Link href="/services" className="impact-btn impact-btn-secondary">
+                Explore services — no sign-in required
+              </Link>
+            </>
+          )}
         </div>
       </section>
 
-      <section id="sign-in" className="impact-section">
-        <span className="impact-kicker">Sign In First</span>
-        <h2 className="impact-section-title">Sign in with your Outlook email or Azure login.</h2>
+      {/* ── HOW IT WORKS ── */}
+      <section className="impact-section">
+        <span className="impact-kicker">How it works</span>
+        <h2 className="impact-section-title">Six steps from document to board-ready pack</h2>
         <p className="impact-small">
-          Quick sign-in unlocks upload, saved reviews, and the full board workflow.
+          Once you sign in, each step follows automatically — upload triggers analysis,
+          analysis produces findings, findings feed the scorecard, and the scorecard
+          feeds the export pack.
         </p>
 
-        <div className="impact-auth-shell">
-          <article className="impact-auth-card">
-            <h3 className="impact-auth-title">Sign in to continue</h3>
-            <p className="impact-small">Use your Outlook email or Azure login to continue.</p>
-            <div className="impact-auth-fields">
-              <a className="impact-btn impact-btn-primary" href={signInHref}>
-                Sign In with Microsoft
-              </a>
-            </div>
-            <p className="impact-auth-note">
-              Accepted: Outlook email or Azure login through Azure Static Web Apps authentication.
-            </p>
-          </article>
+        <ol className="impact-workflow-steps">
+          {WORKFLOW_STEPS.map((step) => (
+            <li key={step.id} className="impact-workflow-step">
+              <span className="impact-step-num">{step.id}</span>
+              <div>
+                <strong>{step.label}</strong>
+                <p className="impact-small">{step.detail}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+
+        <div className="impact-hero-cta-row" style={{ marginTop: 24 }}>
+          {signedIn === false && (
+            <a href={signInHref} className="impact-btn impact-btn-primary">
+              Sign in to start step 1 →
+            </a>
+          )}
+          {signedIn === true && (
+            <Link href="/arb" className="impact-btn impact-btn-primary">
+              Continue your review →
+            </Link>
+          )}
         </div>
       </section>
 
-      <section id="board-review" className="impact-section">
+      {/* ── BOARD REVIEW PREVIEW ── */}
+      <section className="impact-section" id="board-review">
         <span className="impact-kicker">Architecture Board Review</span>
-        <h2 className="impact-section-title">Submit for board review</h2>
+        <h2 className="impact-section-title">What you get after uploading your documents</h2>
         <p className="impact-small">
-          Structured ARB-grade workflow with weighted scorecard, framework coverage, and human sign-off gate.
+          The AI agent checks every document against 11 Azure frameworks and returns scored findings
+          with evidence from your own docs and links to Microsoft Learn.
         </p>
 
         <div className="impact-grid-two">
           <article className="impact-panel">
-            <h3 className="impact-panel-title">Step 2: Upload documents</h3>
-            <div className="impact-upload-locked">
-              Upload locked until Microsoft sign-in is complete.
-            </div>
-            <div className="impact-upload-zone">
-              <div>
-                <strong>Drop files here</strong>
-                <span className="impact-small">PDF, DOCX, PPTX, MD. Multi-file supported.</span>
-              </div>
-            </div>
-            <div className="impact-format-chips" aria-label="Export formats">
-              <span className="impact-format-chip">CSV Export</span>
-              <span className="impact-format-chip">HTML Export</span>
-              <span className="impact-format-chip">Markdown Export</span>
-            </div>
-            <div className="impact-panel-actions">
-              <a className="impact-btn impact-btn-secondary" href={signInHref}>
-                Sign in to unlock upload
-              </a>
-            </div>
-          </article>
-
-          <article className="impact-panel">
-            <h3 className="impact-panel-title">Step 3: Evidence and outputs</h3>
-            <div className="impact-progress">
-              <div className="impact-progress-item impact-progress-item-active">Upload</div>
-              <div className="impact-progress-item">Analyze</div>
-              <div className="impact-progress-item">Findings</div>
-              <div className="impact-progress-item">Export</div>
-            </div>
-
-            <ul className="impact-evidence-list" aria-label="Traceable findings preview">
+            <h3 className="impact-panel-title">Traceable findings</h3>
+            <ul className="impact-evidence-list">
               <li className="impact-evidence-item">
-                <strong>AKS monitoring not enabled. Severity: High</strong>
+                <strong>AKS monitoring not enabled · Severity: High</strong>
                 <p className="impact-small">Framework: WAF Reliability</p>
-                <a
-                  href="https://learn.microsoft.com/en-us/azure/aks/monitor-aks"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Source: learn.microsoft.com/azure/aks/monitor-aks
+                <a href="https://learn.microsoft.com/en-us/azure/aks/monitor-aks" target="_blank" rel="noreferrer">
+                  learn.microsoft.com/azure/aks/monitor-aks
                 </a>
               </li>
               <li className="impact-evidence-item">
-                <strong>No zone redundancy in gateway layer. Severity: High</strong>
+                <strong>No zone redundancy in gateway layer · Severity: High</strong>
                 <p className="impact-small">Framework: HA/DR and CAF</p>
-                <a
-                  href="https://learn.microsoft.com/en-us/azure/well-architected/reliability/"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Source: learn.microsoft.com/azure/well-architected/reliability
+                <a href="https://learn.microsoft.com/en-us/azure/well-architected/reliability/" target="_blank" rel="noreferrer">
+                  learn.microsoft.com/azure/well-architected/reliability
                 </a>
               </li>
               <li className="impact-evidence-item">
-                <strong>Missing tagging policy alignment. Severity: Medium</strong>
+                <strong>Missing tagging policy alignment · Severity: Medium</strong>
                 <p className="impact-small">Framework: ALZ Governance</p>
-                <a
-                  href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/landing-zone/"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Source: learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone
+                <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/landing-zone/" target="_blank" rel="noreferrer">
+                  learn.microsoft.com/azure/cloud-adoption-framework
                 </a>
               </li>
             </ul>
 
-            <div className="impact-framework-grid" aria-label="Framework coverage">
-              {frameworkCoverage.map(([name, state]) => (
-                <div key={name} className="impact-framework-item">
-                  <span>{name}</span>
-                  <span
-                    className={`impact-framework-state${
-                      state === "Complete" ? " impact-framework-state-complete" : " impact-framework-state-partial"
-                    }`}
-                  >
-                    {state}
-                  </span>
-                </div>
+            <div className="impact-framework-grid">
+              {frameworkCoverage.map((name) => (
+                <div key={name} className="impact-framework-item">{name}</div>
               ))}
             </div>
+          </article>
 
-            <div className="impact-framework-summary">
-              Framework coverage: 6 complete, 3 partial, 0 missing.
-            </div>
-
-            <div className="impact-workspace-strip" aria-label="Unified workspace outputs">
-              <span className="impact-workspace-item">Executive Summary</span>
-              <span className="impact-workspace-item">Action Plan</span>
-              <span className="impact-workspace-item">Pricing Snapshot</span>
-              <span className="impact-workspace-item">Full ARB Pack</span>
-            </div>
-
-            <div className="impact-arb-panel" aria-label="ARB scorecard and sign-off">
-              <div className="impact-score-row">
-                <span>Reliability</span>
-                <div className="impact-score-bar">
-                  <div className="impact-score-fill" style={{ width: "78%" }} />
+          <article className="impact-panel">
+            <h3 className="impact-panel-title">Weighted scorecard + sign-off</h3>
+            {(["Reliability", "Security", "Cost Optimisation"] as const).map((domain, i) => {
+              const scores = [78, 64, 71];
+              return (
+                <div key={domain} className="impact-score-row">
+                  <span>{domain}</span>
+                  <div className="impact-score-bar">
+                    <div className="impact-score-fill" style={{ width: `${scores[i]}%` }} />
+                  </div>
+                  <span>{scores[i]}</span>
                 </div>
-                <span>78</span>
-              </div>
-              <div className="impact-score-row">
-                <span>Security</span>
-                <div className="impact-score-bar">
-                  <div className="impact-score-fill" style={{ width: "64%" }} />
-                </div>
-                <span>64</span>
-              </div>
-              <div className="impact-score-row">
-                <span>Cost</span>
-                <div className="impact-score-bar">
-                  <div className="impact-score-fill" style={{ width: "71%" }} />
-                </div>
-                <span>71</span>
-              </div>
-              <div className="impact-decision-model" aria-label="Decision states">
-                <span className="impact-decision-chip">Approved</span>
-                <span className="impact-decision-chip impact-decision-chip-active">Needs Revision</span>
-                <span className="impact-decision-chip">Rejected</span>
-              </div>
-              <div className="impact-reviewer-meta">
-                Reviewer: Cloud Architecture Board. Checkpoint: Pending. Human sign-off required before export.
-              </div>
+              );
+            })}
+            <div className="impact-decision-model">
+              <span className="impact-decision-chip">Approved</span>
+              <span className="impact-decision-chip impact-decision-chip-active">Needs Revision</span>
+              <span className="impact-decision-chip">Rejected</span>
             </div>
-
-            <div className="impact-cards">
-              <article className="impact-card">
-                <h3>Executive Summary</h3>
-                <p className="impact-small">Board-ready recommendation.</p>
-              </article>
-              <article className="impact-card">
-                <h3>Action List</h3>
-                <p className="impact-small">Owners and due dates.</p>
-              </article>
-              <article className="impact-card">
-                <h3>Pricing Snapshot</h3>
-                <p className="impact-small">Region and assumptions.</p>
-              </article>
-              <article className="impact-card">
-                <h3>Decision Log</h3>
-                <p className="impact-small">Human sign-off trail.</p>
-              </article>
+            <p className="impact-small" style={{ marginTop: 12 }}>
+              AI recommends a posture. Reviewers record the final decision and export the full ARB pack.
+            </p>
+            <div className="impact-format-chips">
+              <span className="impact-format-chip">CSV Export</span>
+              <span className="impact-format-chip">HTML Export</span>
+              <span className="impact-format-chip">Markdown Export</span>
             </div>
-
-            <Link href="/arb" className="impact-btn impact-btn-primary impact-sticky-action">
-              Open Board Review
-            </Link>
+            <div style={{ marginTop: 16 }}>
+              <Link href="/arb" className="impact-btn impact-btn-primary">
+                Open Board Review
+              </Link>
+            </div>
           </article>
         </div>
       </section>
 
-      <section id="service-explorer" className="impact-section">
+      {/* ── SERVICE EXPLORER PREVIEW ── */}
+      <section className="impact-section" id="service-explorer">
         <span className="impact-kicker">Service Explorer</span>
-        <h2 className="impact-section-title">Explore Azure services. No sign-in required.</h2>
+        <h2 className="impact-section-title">Explore Azure services — no sign-in required</h2>
         <p className="impact-small">
           Search any Azure service to get instant findings, regional availability, and risk indicators.
         </p>
-        <div className="impact-scope-badge">
-          Standard quick scope. Anonymous access. No document upload required.
-        </div>
-
-        <div className="impact-search-row">
-          <input
-            className="impact-field"
-            type="text"
-            defaultValue="Azure Kubernetes Service"
-            aria-label="Search service"
-            readOnly
-          />
-          <select className="impact-field" aria-label="Filter by region" defaultValue="All regions" disabled>
-            <option>All regions</option>
-          </select>
-          <select className="impact-field" aria-label="Filter by category" defaultValue="All categories" disabled>
-            <option>All categories</option>
-          </select>
-        </div>
 
         <div className="impact-service-grid">
           {serviceCards.map((card) => (
             <article key={card.title} className="impact-card">
-              <span className={`impact-status impact-status-${card.tone}`}>{card.status}</span>
+              <span className={`impact-status impact-status-${card.tone}`}>
+                {card.tone === "ok" ? "AVAILABLE" : card.tone === "warn" ? "RESTRICTED" : "PREVIEW"}
+              </span>
               <h3>{card.title}</h3>
-              <ul className="impact-service-meta">
-                {card.meta.map((entry) => (
-                  <li key={entry}>{entry}</li>
-                ))}
-              </ul>
-              <ul className="impact-service-findings">
-                {card.findings.map((finding) => (
-                  <li key={finding.text}>
-                    {finding.text}{" "}
-                    <a href={finding.href} target="_blank" rel="noreferrer">
-                      source
-                    </a>
-                  </li>
-                ))}
-              </ul>
+              <p className="impact-small">{card.meta}</p>
+              <p className="impact-small" style={{ color: "var(--t1)", fontWeight: 600 }}>{card.finding}</p>
               <div className="impact-service-actions">
                 <Link href={card.href} className="impact-btn impact-btn-secondary">
-                  View findings
+                  View findings →
                 </Link>
-                <a href={signInHref} className="impact-btn impact-btn-secondary">
-                  Add to board review
-                </a>
               </div>
             </article>
           ))}
         </div>
-      </section>
 
-      <section id="trust" className="impact-section">
-        <span className="impact-kicker">Trust and Freshness</span>
-        <h2 className="impact-section-title">Public-safe transparency before sign-in.</h2>
-        <p className="impact-small">
-          Review confidence starts with visible source and freshness state.
-        </p>
-
-        <div className="impact-trust-grid">
-          <article className="impact-trust">
-            <strong>Catalog freshness</strong>
-            <p className="impact-small">Service and finding previews stay visible without sign-in.</p>
-          </article>
-          <article className="impact-trust">
-            <strong>Pricing refresh</strong>
-            <p className="impact-small">Retail snapshots keep source context and assumptions visible.</p>
-          </article>
-          <article className="impact-trust">
-            <strong>Source lineage</strong>
-            <p className="impact-small">Each previewed finding still points back to Microsoft guidance.</p>
-          </article>
-        </div>
-
-        <div className="impact-unlock">
-          <div>
-            <strong>Sign in to unlock the ARB-grade workflow.</strong>
-            <p className="impact-small">
-              Save reviews, assign actions, and capture human sign-off.
-            </p>
-          </div>
-          <div className="impact-unlock-list" aria-label="Sign-in unlocks">
-            <span>Saved Reviews</span>
-            <span>Scorecard</span>
-            <span>Team Sharing</span>
-            <span>Decision Log</span>
-          </div>
-          <a className="impact-btn impact-btn-primary" href={signInHref}>
-            Start Board Review
-          </a>
+        <div style={{ marginTop: 20 }}>
+          <Link href="/services" className="impact-btn impact-btn-secondary">
+            Browse all services →
+          </Link>
         </div>
       </section>
+
     </main>
   );
 }

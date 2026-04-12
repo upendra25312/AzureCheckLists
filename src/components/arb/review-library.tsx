@@ -10,38 +10,90 @@ import type { StaticWebAppClientPrincipal } from "@/types";
 
 type ArbReviewLibraryFocus = "workspace" | "decision";
 
+const REVIEW_STEPS = [
+  { id: 1, key: "created",  label: "Created" },
+  { id: 2, key: "upload",   label: "Upload" },
+  { id: 3, key: "analysis", label: "Analysis" },
+  { id: 4, key: "findings", label: "Findings" },
+  { id: 5, key: "signoff",  label: "Sign-off" },
+  { id: 6, key: "export",   label: "Export" },
+] as const;
+
+function getActiveStep(review: ArbReviewSummary): number {
+  const s = review.workflowState;
+  if (s === "Draft") return 2;
+  if (s === "Evidence Ready") return 3;
+  if (s === "Review In Progress") return 4;
+  if (
+    s === "Decision Recorded" ||
+    s === "Approved" ||
+    s === "Approved with Conditions" ||
+    s === "Needs Improvement"
+  ) return 5;
+  if (s === "Review Complete" || s === "Closed") return 6;
+  return 1;
+}
+
+function ReviewProgress({ review }: { review: ArbReviewSummary }) {
+  const active = getActiveStep(review);
+  return (
+    <div className="arb-progress-strip" aria-label="Review progress">
+      {REVIEW_STEPS.map((step) => {
+        const done = step.id < active;
+        const current = step.id === active;
+        return (
+          <div
+            key={step.key}
+            className={`arb-progress-step${done ? " arb-progress-step--done" : ""}${current ? " arb-progress-step--current" : ""}`}
+          >
+            <span className="arb-progress-dot">
+              {done ? "✓" : step.id}
+            </span>
+            <span className="arb-progress-label">{step.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function formatDate(value: string | undefined) {
   if (!value) return "—";
   return new Date(value).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    year: "numeric"
+    year: "numeric",
   });
 }
 
 function getPrimaryHref(review: ArbReviewSummary, focus: ArbReviewLibraryFocus): Route {
-  if (focus === "decision") {
-    return `/arb/${review.reviewId}/decision` as Route;
-  }
-  return review.workflowState === "Draft"
-    ? (`/arb/${review.reviewId}/upload` as Route)
-    : (`/arb/${review.reviewId}` as Route);
+  if (focus === "decision") return `/arb/${review.reviewId}/decision` as Route;
+  const step = getActiveStep(review);
+  if (step <= 2) return `/arb/${review.reviewId}/upload` as Route;
+  if (step === 3) return `/arb/${review.reviewId}/upload` as Route;
+  if (step === 4) return `/arb/${review.reviewId}/findings` as Route;
+  return `/arb/${review.reviewId}` as Route;
 }
 
 function getPrimaryLabel(review: ArbReviewSummary, focus: ArbReviewLibraryFocus) {
-  if (focus === "decision") {
-    return review.finalDecision ? "Review decision" : "Open decision";
-  }
-  return review.workflowState === "Draft" ? "Continue upload" : "Open";
+  if (focus === "decision") return review.finalDecision ? "Review decision" : "Open decision";
+  const step = getActiveStep(review);
+  if (step <= 2) return "Upload documents →";
+  if (step === 3) return "Run analysis →";
+  if (step === 4) return "Review findings →";
+  if (step === 5) return "Sign off →";
+  return "Download export →";
 }
 
 function StatusBadge({ state }: { state: string }) {
   const cls =
-    state === "Approved" ? "arb-status-badge arb-status-approved"
-    : state === "Approved with Conditions" ? "arb-status-badge arb-status-approved"
-    : state === "Needs Improvement" ? "arb-status-badge arb-status-needs-work"
-    : state === "Draft" ? "arb-status-badge arb-status-draft"
-    : "arb-status-badge arb-status-in-progress";
+    state === "Approved" || state === "Approved with Conditions"
+      ? "arb-status-badge arb-status-approved"
+      : state === "Needs Improvement"
+      ? "arb-status-badge arb-status-needs-work"
+      : state === "Draft"
+      ? "arb-status-badge arb-status-draft"
+      : "arb-status-badge arb-status-in-progress";
   return <span className={cls}>{state}</span>;
 }
 
@@ -105,11 +157,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
   }
 
   if (loading) {
-    return (
-      <div className="arb-library-loading">
-        <p>Loading reviews…</p>
-      </div>
-    );
+    return <div className="arb-library-loading"><p>Loading reviews…</p></div>;
   }
 
   /* ── Signed-out state ── */
@@ -145,6 +193,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
 
       {/* Create form */}
       <section className="arb-create-card">
+        <p className="arb-create-label">Start a new review</p>
         <div className="arb-create-fields">
           <label className="arb-field">
             <span>Project name</span>
@@ -178,7 +227,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
         {error ? <p className="arb-create-error">{error}</p> : null}
       </section>
 
-      {/* Review list */}
+      {/* Review list with progress tracker */}
       {filteredReviews.length === 0 ? (
         <section className="arb-empty-state">
           <p className="arb-empty-title">No reviews yet</p>
@@ -189,42 +238,38 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
       ) : (
         <section className="arb-review-table-wrap">
           <h2 className="arb-review-table-heading">Your reviews</h2>
-          <div className="arb-review-table-scroll">
-            <table className="arb-review-table">
-              <thead>
-                <tr>
-                  <th>Project</th>
-                  <th>Customer</th>
-                  <th>Status</th>
-                  <th>Score</th>
-                  <th>Updated</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredReviews.map((review) => (
-                  <tr key={`${review.reviewId}-${review.createdByUserId ?? "user"}`}>
-                    <td className="arb-table-project">{review.projectName}</td>
-                    <td className="arb-table-customer">{review.customerName || "—"}</td>
-                    <td><StatusBadge state={review.workflowState} /></td>
-                    <td className="arb-table-score">
-                      {review.overallScore !== null && review.overallScore !== undefined
-                        ? review.overallScore
-                        : "—"}
-                    </td>
-                    <td className="arb-table-date">{formatDate(review.lastUpdated)}</td>
-                    <td className="arb-table-actions">
-                      <Link href={getPrimaryHref(review, focus)} className="arb-table-open">
-                        {getPrimaryLabel(review, focus)}
-                      </Link>
-                      <Link href={`/arb/${review.reviewId}/findings` as Route} className="arb-table-secondary">
-                        Findings
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="arb-review-list">
+            {filteredReviews.map((review) => (
+              <article
+                key={`${review.reviewId}-${review.createdByUserId ?? "user"}`}
+                className="arb-review-row"
+              >
+                {/* Top row: project name, status badge, score, date, action */}
+                <div className="arb-review-row-head">
+                  <div className="arb-review-row-meta">
+                    <span className="arb-review-row-project">{review.projectName}</span>
+                    {review.customerName && (
+                      <span className="arb-review-row-customer">{review.customerName}</span>
+                    )}
+                  </div>
+                  <div className="arb-review-row-right">
+                    <StatusBadge state={review.workflowState} />
+                    {review.overallScore !== null && review.overallScore !== undefined && (
+                      <span className="arb-review-row-score">Score: {review.overallScore}</span>
+                    )}
+                    <span className="arb-review-row-date">{formatDate(review.lastUpdated)}</span>
+                    <Link href={getPrimaryHref(review, focus)} className="arb-table-open">
+                      {getPrimaryLabel(review, focus)}
+                    </Link>
+                    <Link href={`/arb/${review.reviewId}/findings` as Route} className="arb-table-secondary">
+                      Findings
+                    </Link>
+                  </div>
+                </div>
+                {/* Progress tracker */}
+                <ReviewProgress review={review} />
+              </article>
+            ))}
           </div>
         </section>
       )}

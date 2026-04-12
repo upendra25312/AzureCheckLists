@@ -303,6 +303,20 @@ export async function uploadArbFiles(input: {
   }>(response, `Unable to upload ARB files (${response.status}).`);
 }
 
+export async function deleteArbFile(reviewId: string, fileId: string): Promise<{ deletedFileId: string; remainingCount: number }> {
+  const response = await fetch(`/api/arb/reviews/${reviewId}/uploads/${encodeURIComponent(fileId)}`, {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json"
+    }
+  });
+
+  return readJsonResponse<{ deletedFileId: string; remainingCount: number }>(
+    response,
+    `Unable to delete file (${response.status}).`
+  );
+}
+
 export async function startArbExtraction(reviewId: string): Promise<ArbExtractionStatus> {
   const response = await fetch(`/api/arb/reviews/${reviewId}/extract`, {
     method: "POST",

@@ -4061,6 +4061,218 @@ button.chip:disabled:hover {
   min-width: 0;
 }
 
+/* ── Upload file actions (delete button) ── */
+.arb-upload-file-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.arb-delete-file-btn {
+  padding: 4px 10px;
+  border: 1px solid #E5E7EB;
+  border-radius: 4px;
+  background: #FFF;
+  color: #B91C1C;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.arb-delete-file-btn:hover:not(:disabled) {
+  background: #FEF2F2;
+  border-color: #FCA5A5;
+}
+
+.arb-delete-file-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Upload status messages ── */
+.arb-upload-status {
+  margin-top: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.arb-upload-status-done {
+  background: #F0FDF4;
+  color: #166534;
+  border: 1px solid #BBF7D0;
+}
+
+.arb-upload-status-progress {
+  background: #EFF6FF;
+  color: #1E40AF;
+  border: 1px solid #BFDBFE;
+}
+
+.arb-upload-error {
+  margin-top: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #FEF2F2;
+  color: #991B1B;
+  border: 1px solid #FECACA;
+}
+
+.arb-status-done {
+  color: #166534;
+  font-weight: 700;
+}
+
+.arb-inline-link {
+  color: #0078D4;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.arb-inline-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Action panel (extraction + agent CTA) ── */
+.arb-action-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.arb-action-panel-highlight {
+  border: 2px solid #0078D4;
+}
+
+.arb-action-panel-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0078D4;
+  margin: 0;
+}
+
+.arb-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 28px;
+  background: #0078D4;
+  color: #FFF;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  width: 100%;
+}
+
+.arb-cta-btn:hover:not(:disabled) {
+  background: #005A9E;
+}
+
+.arb-cta-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Checklist compact variant ── */
+.arb-checklist-compact {
+  gap: 6px;
+  padding-left: 0;
+  list-style: none;
+}
+
+.arb-check-done {
+  color: #166534;
+  font-weight: 600;
+}
+
+.arb-check-pending {
+  color: #6B7280;
+}
+
+/* ── Progress strip (review-library) ── */
+.arb-progress-strip {
+  display: flex;
+  gap: 0;
+  margin-top: 10px;
+  border-top: 1px solid #E5E7EB;
+  padding-top: 10px;
+  overflow-x: auto;
+}
+
+.arb-progress-step {
+  flex: 1;
+  min-width: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 4px;
+  position: relative;
+}
+
+.arb-progress-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 60%;
+  background: #E5E7EB;
+}
+
+.arb-progress-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #F3F4F6;
+  color: #9CA3AF;
+  border: 2px solid #E5E7EB;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.arb-progress-step--done .arb-progress-dot {
+  background: #DCFCE7;
+  color: #166534;
+  border-color: #BBF7D0;
+}
+
+.arb-progress-step--current .arb-progress-dot {
+  background: #0078D4;
+  color: #FFF;
+  border-color: #0078D4;
+}
+
+.arb-progress-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #9CA3AF;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.arb-progress-step--done .arb-progress-label {
+  color: #16A34A;
+}
+
+.arb-progress-step--current .arb-progress-label {
+  color: #0078D4;
+}
+
 .arb-checklist {
   display: grid;
   gap: 10px;
@@ -8487,6 +8699,212 @@ button.chip:disabled:hover {
   color: #55708a;
   font-size: 0.78rem;
   font-weight: 700;
+}
+
+/* ── Homepage: hero CTA row ── */
+.impact-hero-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.impact-auth-loading {
+  font-size: 0.9rem;
+  color: #6B7280;
+  font-weight: 600;
+}
+
+/* ── Homepage: workflow steps ── */
+.impact-workflow-steps {
+  display: grid;
+  gap: 14px;
+  margin: 20px 0 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.impact-workflow-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #FFFFFF;
+}
+
+.impact-step-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #EFF6FF;
+  color: #0078D4;
+  font-size: 0.875rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.impact-small {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  color: #4B5563;
+  line-height: 1.5;
+}
+
+/* ── Homepage: evidence + score items ── */
+.impact-evidence-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.impact-evidence-item {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #FAFAFA;
+  display: grid;
+  gap: 4px;
+  font-size: 0.875rem;
+}
+
+.impact-evidence-item a {
+  color: #0078D4;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.impact-evidence-item a:hover {
+  text-decoration: underline;
+}
+
+.impact-score-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.875rem;
+  margin-bottom: 8px;
+}
+
+.impact-score-bar {
+  flex: 1;
+  height: 8px;
+  background: #E5E7EB;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.impact-score-fill {
+  height: 100%;
+  background: #0078D4;
+  border-radius: 4px;
+  transition: width 0.4s;
+}
+
+.impact-decision-model {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.impact-decision-chip {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #6B7280;
+  background: #F9FAFB;
+}
+
+.impact-decision-chip-active {
+  background: #EFF6FF;
+  color: #0078D4;
+  border-color: #BFDBFE;
+}
+
+.impact-format-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.impact-format-chip {
+  padding: 4px 10px;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  background: #F3F4F6;
+}
+
+/* ── Homepage: service cards ── */
+.impact-service-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.impact-card {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.impact-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.impact-status {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.impact-status-ok { background: #DCFCE7; color: #166534; }
+.impact-status-warn { background: #FEF9C3; color: #854D0E; }
+.impact-status-preview { background: #EDE9FE; color: #5B21B6; }
+
+.impact-service-actions {
+  margin-top: 4px;
+}
+
+/* ── Homepage: framework grid ── */
+.impact-framework-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.impact-framework-item {
+  padding: 4px 10px;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #374151;
+  background: #F3F4F6;
 }
 
 @media (max-width: 980px) {

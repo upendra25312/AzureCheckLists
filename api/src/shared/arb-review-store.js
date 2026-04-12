@@ -1494,6 +1494,53 @@ async function uploadArbFiles(principal, reviewId, filesInput = []) {
   };
 }
 
+async function deleteArbFile(principal, reviewId, fileId) {
+  const client = await getTableClient(ARB_REVIEW_TABLE_NAME);
+  const summaryEntity = await getOwnedSummaryEntity(client, principal, reviewId);
+
+  if (!summaryEntity) {
+    throw createHttpError(404, `ARB review ${reviewId} was not found.`);
+  }
+
+  const filesEntity = await getEntity(client, reviewId, getRowKey(FILES_ROW_KEY, principal.userId));
+  const existingFiles = fromFilesEntity(filesEntity);
+  const fileToDelete = existingFiles.find((f) => f.fileId === fileId);
+
+  if (!fileToDelete) {
+    throw createHttpError(404, `File ${fileId} was not found in review ${reviewId}.`);
+  }
+
+  const nextFiles = existingFiles.filter((f) => f.fileId !== fileId);
+
+  if (fileToDelete.blobPath) {
+    const inputContainer = await getContainerClient(ARB_INPUT_CONTAINER_NAME);
+    const { deleteBlobIfExists } = require("./storage");
+    await deleteBlobIfExists(inputContainer, fileToDelete.blobPath);
+  }
+
+  await client.upsertEntity(toFilesEntity(reviewId, principal.userId, nextFiles), "Replace");
+
+  const readiness = buildReadinessFromFiles(nextFiles);
+  const nextEvidenceState =
+    readiness.readinessOutcome === "Ready for Review"
+      ? "Ready for Review"
+      : readiness.readinessOutcome === "Insufficient Evidence"
+        ? "Insufficient Evidence"
+        : "Ready with Gaps";
+
+  await client.upsertEntity(
+    {
+      partitionKey: getPartitionKey(reviewId),
+      rowKey: getRowKey(SUMMARY_ROW_KEY, principal.userId),
+      workflowState: nextFiles.length > 0 ? "Evidence Ready" : "Draft",
+      evidenceReadinessState: nextEvidenceState,
+    },
+    "Merge"
+  );
+
+  return { deletedFileId: fileId, remainingCount: nextFiles.length };
+}
+
 async function startArbExtraction(principal, reviewId) {
   const client = await getTableClient(ARB_REVIEW_TABLE_NAME);
   const review = await getArbReview(principal, reviewId);
@@ -2128,6 +2175,7 @@ module.exports = {
   createArbExport,
   createArbAction,
   createArbReview,
+  deleteArbFile,
   downloadArbExport,
   getArbEvidence,
   getArbActions,

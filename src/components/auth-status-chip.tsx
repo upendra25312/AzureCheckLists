@@ -70,11 +70,11 @@ export function AuthStatusChip() {
             {principal.userDetails || principal.userId}.
           </p>
           <div className="auth-menu-actions">
-            <Link href="/my-project-reviews" className="secondary-button">
-              Reviews dashboard
+            <Link href="/arb" className="primary-button">
+              Board Review
             </Link>
-            <Link href="/review-package" className="ghost-button">
-              Start a review
+            <Link href="/services" className="secondary-button">
+              Service Explorer
             </Link>
             <a href="/.auth/logout" className="ghost-button">
               Sign out
