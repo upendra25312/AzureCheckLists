@@ -285,7 +285,7 @@ export default function HomePage() {
           )}
           {signedIn === true && !latestReview && (
             <Link href="/arb" className="impact-btn impact-btn-primary">
-              Start Review
+                Start AI Review →
             </Link>
           )}
         </div>
@@ -430,7 +430,7 @@ export default function HomePage() {
             </div>
             <div style={{ marginTop: 16 }}>
               <Link href="/arb" className="impact-btn impact-btn-primary">
-                Start Review
+                 Start AI Review →
               </Link>
             </div>
           </article>
