@@ -12,7 +12,7 @@ import type {
 } from "@/types";
 import { readBackendErrorMessage } from "@/lib/backend-error";
 
-export type AuthProvider = "aad";
+export type AuthProvider = "aad" | "google";
 
 type AuthMeResponse =
   | {

@@ -187,6 +187,9 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
         <a href={buildLoginUrl("aad")} className="arb-signin-cta">
           Sign in with Microsoft to start →
         </a>
+        <a href={buildLoginUrl("google")} className="arb-signin-cta" style={{ marginTop: 10 }}>
+          Sign in with Google to start →
+        </a>
         <ul className="arb-signin-bullets">
           <li>PDF, Word, or PowerPoint — drag and drop your documents</li>
           <li>AI checks WAF · CAF · ALZ · HA/DR · Backup · Security · Networking · Monitoring</li>

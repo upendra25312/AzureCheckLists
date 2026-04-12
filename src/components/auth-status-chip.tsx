@@ -60,9 +60,14 @@ export function AuthStatusChip() {
 
   if (!principal) {
     return (
-      <a href={buildLoginUrl("aad")} className="auth-chip" title="Continue with Microsoft">
-        Sign In with Microsoft
-      </a>
+      <div className="auth-chip-group">
+        <a href={buildLoginUrl("aad")} className="auth-chip" title="Continue with Microsoft">
+          Microsoft
+        </a>
+        <a href={buildLoginUrl("google")} className="auth-chip" title="Continue with Google">
+          Google
+        </a>
+      </div>
     );
   }
 

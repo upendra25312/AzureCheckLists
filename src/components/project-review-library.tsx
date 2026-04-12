@@ -409,9 +409,14 @@ export function ProjectReviewLibrary() {
               Start a new review
             </Link>
             {!principal ? (
-              <a href={buildLoginUrl("aad")} className="secondary-button review-command-secondary">
-                Sign in to sync reviews
-              </a>
+              <>
+                <a href={buildLoginUrl("aad")} className="secondary-button review-command-secondary">
+                  Sign in with Microsoft
+                </a>
+                <a href={buildLoginUrl("google")} className="secondary-button review-command-secondary">
+                  Sign in with Google
+                </a>
+              </>
             ) : (
               <a href={buildLogoutUrl("/")} className="secondary-button review-command-secondary">
                 Sign out
@@ -443,6 +448,9 @@ export function ProjectReviewLibrary() {
             <div className="button-row">
               <a href={buildLoginUrl("aad")} className="primary-button">
                 Continue with Microsoft
+              </a>
+              <a href={buildLoginUrl("google")} className="secondary-button">
+                Continue with Google
               </a>
             </div>
           </section>

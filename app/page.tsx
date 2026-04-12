@@ -173,8 +173,8 @@ export default function HomePage() {
         ) : (
           <a href={buildLoginUrl("aad")} className="hero-upload-zone hero-upload-zone--signin">
             <span className="hero-upload-icon">🔐</span>
-            <p className="hero-upload-title">Sign in with Microsoft to upload your documents</p>
-            <p className="hero-upload-sub">Free · Microsoft account or Azure AD · No credit card</p>
+            <p className="hero-upload-title">Sign in to upload your documents</p>
+            <p className="hero-upload-sub">Microsoft or Google account supported</p>
           </a>
         )}
 
@@ -240,9 +240,14 @@ export default function HomePage() {
 
         <div className="impact-hero-cta-row" style={{ marginTop: 24 }}>
           {signedIn === false && (
-            <a href={buildLoginUrl("aad")} className="impact-btn impact-btn-primary">
-              Start Board Review
-            </a>
+            <>
+              <a href={buildLoginUrl("aad")} className="impact-btn impact-btn-primary">
+                Start with Microsoft
+              </a>
+              <a href={buildLoginUrl("google")} className="impact-btn impact-btn-secondary">
+                Start with Google
+              </a>
+            </>
           )}
           {signedIn === true && latestReview && (
             <Link href={getStepHref(latestReview)} className="impact-btn impact-btn-primary">
