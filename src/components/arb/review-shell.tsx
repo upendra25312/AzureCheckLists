@@ -101,9 +101,10 @@ export function ArbReviewShell(props: {
   activeStep: string;
   title: string;
   description: string;
+  reviewSummary?: string | null;
   children: ReactNode;
 }) {
-  const { review, steps, activeStep, title, description, children } = props;
+  const { review, steps, activeStep, title, description, reviewSummary, children } = props;
   const activeStepIndex = steps.findIndex((step) => step.key === activeStep);
   const guidance = getStepGuidance(activeStep);
   const activeStepLabel = steps.find((step) => step.key === activeStep)?.label ?? "Overview";
@@ -154,9 +155,16 @@ export function ArbReviewShell(props: {
               </div>
               <div className="arb-shell-metric">
                 <p className="arb-shell-metric-label">Score</p>
-                <p className={`arb-shell-metric-value arb-shell-score ${getScoreClass(review.overallScore)}`}>
-                  {review.overallScore ?? "Pending"}
-                </p>
+                {review.evidenceReadinessState === "Insufficient Evidence" ? (
+                  <p className="arb-shell-metric-value arb-shell-score arb-shell-score-pending" title="Score is provisional — insufficient evidence to validate">
+                    {review.overallScore ?? "—"}
+                    <span className="arb-shell-score-caveat"> (provisional)</span>
+                  </p>
+                ) : (
+                  <p className={`arb-shell-metric-value arb-shell-score ${getScoreClass(review.overallScore)}`}>
+                    {review.overallScore ?? "Pending"}
+                  </p>
+                )}
               </div>
             </div>
             <p className="arb-shell-posture-note">{postureActionHint}</p>
@@ -187,6 +195,12 @@ export function ArbReviewShell(props: {
         <section className="surface-panel arb-shell-main">{children}</section>
 
         <aside className="arb-sidecar-stack">
+          {reviewSummary ? (
+            <section className="trace-card arb-summary-card">
+              <p className="board-card-subtitle">AI review summary</p>
+              <p className="section-copy arb-review-summary-text">{reviewSummary}</p>
+            </section>
+          ) : null}
           <section className="trace-card arb-summary-card">
             <p className="board-card-subtitle">Review summary</p>
             <ul className="arb-summary-list">

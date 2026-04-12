@@ -887,7 +887,9 @@ function buildDefaultReview(reviewId, principal, input = {}) {
     createdAt: now,
     workflowState: "Review In Progress",
     evidenceReadinessState: "Ready with Gaps",
-    assignedReviewer: input.assignedReviewer ? String(input.assignedReviewer).trim() : null,
+    assignedReviewer: input.assignedReviewer
+      ? String(input.assignedReviewer).trim()
+      : (principal.userDetails || principal.userId || null),
     targetReviewDate: normalizeNullableString(input.targetReviewDate),
     notes: normalizeNullableString(input.notes),
     overallScore: Number.isFinite(Number(input.overallScore)) ? Number(input.overallScore) : 78,
@@ -1209,7 +1211,12 @@ function fromScorecardEntity(entity, review) {
     criticalBlockers: Number(entity.criticalBlockers ?? 0),
     domainScores: entity.domainScoresJson ? JSON.parse(entity.domainScoresJson) : [],
     evidenceReadinessState: entity.evidenceReadinessState || review.evidenceReadinessState,
-    reviewerOverride: entity.reviewerOverrideJson ? JSON.parse(entity.reviewerOverrideJson) : null
+    reviewerOverride: entity.reviewerOverrideJson ? JSON.parse(entity.reviewerOverrideJson) : null,
+    reviewSummary: entity.reviewSummary || null,
+    strengths: entity.strengthsJson ? JSON.parse(entity.strengthsJson) : [],
+    missingEvidence: entity.missingEvidenceJson ? JSON.parse(entity.missingEvidenceJson) : [],
+    criticalBlockersList: entity.criticalBlockersJson ? JSON.parse(entity.criticalBlockersJson) : [],
+    nextActions: entity.nextActionsJson ? JSON.parse(entity.nextActionsJson) : []
   };
 }
 

@@ -1372,7 +1372,11 @@ export function ArbLiveReviewStep(props: {
                     className="field-input"
                     aria-label={`Due date for ${selectedFinding.title}`}
                     type="date"
-                    value={selectedFinding.dueDate ?? ""}
+                    value={selectedFinding.dueDate ?? (() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() + 7);
+                      return d.toISOString().slice(0, 10);
+                    })()}
                     onChange={(event) => {
                       const nextDueDate = event.target.value;
                       updateLocalFinding(selectedFinding.findingId, (current) => ({
@@ -1891,6 +1895,7 @@ export function ArbLiveReviewStep(props: {
       activeStep={activeStep}
       title={title}
       description={description}
+      reviewSummary={scorecard?.reviewSummary ?? null}
     >
       {loading ? (
         <p>Loading ARB review state...</p>

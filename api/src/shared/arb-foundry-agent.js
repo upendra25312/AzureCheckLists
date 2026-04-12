@@ -239,11 +239,16 @@ Respond ONLY with a valid JSON object in this exact shape:
       "evidenceIds": ["string — ID values from the Extracted Evidence Facts section that support this finding, e.g. 'review-1-ev-3'"],
       "recommendation": "string — specific actionable fix referencing Microsoft Learn URL where applicable",
       "learnMoreUrl": "string — relevant learn.microsoft.com link",
+      "criticalBlocker": false,
       "suggestedOwner": "string"
     }
   ],
-  "missingEvidence": ["string — describe the specific document or artefact absent"],
-  "criticalBlockers": ["string — WAF/CAF/ALZ violations that must be resolved before approval"],
+  "missingEvidence": [
+    "string — name the specific document, artefact, or evidence item that is absent and would change the assessment if present (minimum 5 items; aim for 8). Examples: 'No network topology diagram showing hub-spoke or Virtual WAN design', 'No Azure Policy assignment list or Bicep/Terraform IaC for policy', 'No DR runbook or RTO/RPO SLA commitment document', 'No identity design document covering AAD tenant, conditional access, PIM', 'No capacity model or load test results for peak traffic'"
+  ],
+  "criticalBlockers": [
+    "string — ONLY list here if the gap is a hard WAF/CAF/ALZ blocker that MUST be resolved before the board can approve: e.g. missing security baseline, unmitigated data exfiltration path, no RPO/RTO commitment for a Tier-1 workload, or a mandatory ALZ policy violation. Do NOT flag findings as critical blockers just because evidence is thin — reserve this for genuine show-stoppers. Typical reviews have 0-3 critical blockers, not 10+"
+  ],
   "scorecard": {
     "dimensions": [
       { "name": "Architecture Completeness", "score": 0, "rationale": "string", "blockers": ["string"] },
@@ -264,7 +269,13 @@ Respond ONLY with a valid JSON object in this exact shape:
   "nextActions": ["string — specific action with framework reference and owner type"]
 }
 
-Scores are 0-100. Ground every finding in evidence from the uploaded documents. Do not invent facts. When a framework requirement cannot be assessed due to missing documentation, list it in missingEvidence rather than inventing a finding.`;
+Scores are 0-100. Ground every finding in evidence from the uploaded documents. Do not invent facts. When a framework requirement cannot be assessed due to missing documentation, list it in missingEvidence rather than inventing a finding.
+
+**Critical finding calibration rules:**
+- Set criticalBlocker: true ONLY when the gap would cause a board to reject or defer approval — e.g. unmitigated internet-facing attack surface with no WAF/NSG, missing encryption for regulated data, no disaster recovery plan for Tier-1 workload, or a mandatory ALZ policy that cannot be waived. A missing diagram or incomplete documentation is NOT a critical blocker.
+- For a typical ARB review, 0-3 findings should have criticalBlocker: true. If you are flagging more than 4, reconsider whether each truly blocks approval.
+- Always generate at least 8-15 findings across all WAF pillars (Security, Reliability, Cost, Operations, Performance, Architecture). Do not stop at 2-3 findings — a shallow finding list is worse than an imperfect one.
+- missingEvidence must list at least 5 specific items. Generic phrases like "more evidence needed" are not acceptable — name the exact document, diagram, or data point that is missing.`;
 
 // ---------------------------------------------------------------------------
 // Microsoft Learn MCP integration — fetches real-time documentation grounding
