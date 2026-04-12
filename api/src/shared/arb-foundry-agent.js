@@ -14,6 +14,26 @@ const FOUNDRY_AGENT_MODEL = "model-router";
 const OPENAI_API_VERSION = "2025-01-01-preview";
 const AGENTS_API_VERSION = "2025-05-15-preview";
 const MICROSOFT_LEARN_MCP_ENDPOINT = "https://learn.microsoft.com/api/mcp";
+const DEFAULT_HTTP_TIMEOUT_MS = 45000;
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_HTTP_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+  } catch (error) {
+    if (error && error.name === "AbortError") {
+      throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 // Derive the base AI Services endpoint from the Foundry project endpoint
 // e.g. https://foo.services.ai.azure.com/api/projects/bar -> https://foo.services.ai.azure.com
@@ -52,14 +72,14 @@ async function getFoundryAgentToken() {
 async function foundryAgentRequest(path, method, body) {
   const token = await getFoundryAgentToken();
   const url = `${FOUNDRY_PROJECT_ENDPOINT}${path}?api-version=${AGENTS_API_VERSION}`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method,
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${token}`
     },
     body: body !== undefined ? JSON.stringify(body) : undefined
-  });
+  }, 30000);
 
   if (!res.ok) {
     const text = await res.text().catch(() => `HTTP ${res.status}`);
@@ -130,7 +150,7 @@ async function runViaFoundryAgent(userMessage) {
 async function chatCompletionsRequest(messages) {
   const base = getAiServicesBaseEndpoint();
   const url = `${base}/openai/deployments/${FOUNDRY_AGENT_MODEL}/chat/completions?api-version=${OPENAI_API_VERSION}`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -141,7 +161,7 @@ async function chatCompletionsRequest(messages) {
       max_tokens: 8192,
       temperature: 0.2
     })
-  });
+  }, 90000);
 
   if (!res.ok) {
     const text = await res.text().catch(() => `HTTP ${res.status}`);
@@ -252,11 +272,11 @@ Scores are 0-100. Ground every finding in evidence from the uploaded documents. 
 
 async function callMicrosoftLearnMcp(method, params) {
   try {
-    const res = await fetch(MICROSOFT_LEARN_MCP_ENDPOINT, {
+    const res = await fetchWithTimeout(MICROSOFT_LEARN_MCP_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params })
-    });
+    }, 12000);
     if (!res.ok) return null;
     const text = await res.text();
     // Response is Server-Sent Events: extract the data line
