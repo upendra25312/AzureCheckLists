@@ -18,7 +18,11 @@ const WORKFLOW_STEPS = [
   { id: 1, label: "Sign in", detail: "Use your supported account" },
   { id: 2, label: "Create review", detail: "Name your project and customer" },
   { id: 3, label: "Upload documents", detail: "PDF, Word, PowerPoint, Markdown" },
-  { id: 4, label: "Run AI analysis", detail: "WAF · CAF · ALZ · HA/DR · Security + more" },
+  {
+    id: 4,
+    label: "Architecture Assurance Assessment",
+    detail: "AI-driven validation across WAF, CAF, ALZ, HA/DR, Security + more"
+  },
   { id: 5, label: "Review findings", detail: "Scored 0–100, linked to Microsoft Learn" },
   { id: 6, label: "Sign off & export", detail: "CSV, HTML, Markdown — board-ready pack" },
 ];
