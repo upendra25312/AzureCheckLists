@@ -15,7 +15,7 @@ import {
 } from "@/lib/review-cloud";
 
 const WORKFLOW_STEPS = [
-  { id: 1, label: "Sign in", detail: "Use your supported Microsoft, GitHub, or Google account" },
+  { id: 1, label: "Sign in", detail: "Use your supported account" },
   { id: 2, label: "Create review", detail: "Name your project and customer" },
   { id: 3, label: "Upload documents", detail: "PDF, Word, PowerPoint, Markdown" },
   { id: 4, label: "Run AI analysis", detail: "WAF · CAF · ALZ · HA/DR · Security + more" },

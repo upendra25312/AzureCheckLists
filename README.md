@@ -188,7 +188,6 @@ The public UI is local-first and does not require sign-in. The dedicated backend
 Optional frontend environment variables (set in the Azure Static Web App configuration or a `.env.local` file for local development):
 
 - `NEXT_PUBLIC_ENABLE_GITHUB_AUTH` — GitHub sign-in is **enabled by default**; set to `false` to hide it from all sign-in prompts.
-- `NEXT_PUBLIC_ENABLE_GOOGLE_AUTH` — Google sign-in is **disabled by default**; set to `true` to expose it. Requires a Google OAuth app configured in the Static Web App authentication settings.
 
 Recommended defaults:
 

@@ -12,7 +12,7 @@ import type {
 } from "@/types";
 import { readBackendErrorMessage } from "@/lib/backend-error";
 
-export type AuthProvider = "aad" | "github" | "google";
+export type AuthProvider = "aad" | "github";
 
 type AuthProviderOption = {
   id: AuthProvider;
@@ -20,7 +20,6 @@ type AuthProviderOption = {
   enabled: boolean;
 };
 
-export const GOOGLE_AUTH_ENABLED = process.env.NEXT_PUBLIC_ENABLE_GOOGLE_AUTH === "true";
 export const GITHUB_AUTH_ENABLED = process.env.NEXT_PUBLIC_ENABLE_GITHUB_AUTH !== "false";
 
 const AUTH_PROVIDER_OPTIONS: AuthProviderOption[] = [
@@ -33,17 +32,11 @@ const AUTH_PROVIDER_OPTIONS: AuthProviderOption[] = [
     id: "github",
     label: "GitHub",
     enabled: GITHUB_AUTH_ENABLED
-  },
-  {
-    id: "google",
-    label: "Google",
-    enabled: GOOGLE_AUTH_ENABLED
   }
 ];
 
 export const ENABLED_AUTH_PROVIDERS = AUTH_PROVIDER_OPTIONS.filter((provider) => provider.enabled);
 export const PRIMARY_AUTH_PROVIDER = ENABLED_AUTH_PROVIDERS[0]?.id ?? "aad";
-export const PRIMARY_AUTH_PROVIDER_LABEL = ENABLED_AUTH_PROVIDERS[0]?.label ?? "Microsoft";
 
 type AuthMeResponse =
   | {
