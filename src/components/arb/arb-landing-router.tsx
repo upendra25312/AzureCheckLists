@@ -60,7 +60,14 @@ function getStepMeta(step: ArbReviewStepKey): { title: string; description: stri
 export function ArbLandingRouter() {
   const searchParams = useSearchParams();
 
-  const reviewId = useMemo(() => searchParams.get("reviewId")?.trim() ?? "", [searchParams]);
+  const reviewId = useMemo(() => {
+    const raw = searchParams.get("reviewId")?.trim() ?? "";
+    if (!raw || raw === "undefined" || raw === "null") {
+      return "";
+    }
+
+    return raw;
+  }, [searchParams]);
   const step = useMemo(() => getRequestedStep(searchParams.get("step")), [searchParams]);
   const stepMeta = useMemo(() => getStepMeta(step), [step]);
 

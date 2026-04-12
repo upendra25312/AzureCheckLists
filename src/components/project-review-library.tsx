@@ -6,6 +6,7 @@ import {
   activateCloudProjectReview,
   archiveCloudProjectReview,
   buildLoginUrl,
+  buildLogoutUrl,
   deleteCloudProjectReview,
   fetchClientPrincipal,
   listCloudProjectReviews,
@@ -412,7 +413,7 @@ export function ProjectReviewLibrary() {
                 Sign in to sync reviews
               </a>
             ) : (
-              <a href="/.auth/logout" className="secondary-button review-command-secondary">
+              <a href={buildLogoutUrl("/")} className="secondary-button review-command-secondary">
                 Sign out
               </a>
             )}

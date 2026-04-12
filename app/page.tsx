@@ -8,8 +8,6 @@ import { getArbStepHref } from "@/arb/routes";
 import type { ArbReviewSummary } from "@/arb/types";
 import { buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
 
-const signInHref = buildLoginUrl("aad", "/arb");
-
 const WORKFLOW_STEPS = [
   { id: 1, label: "Sign in", detail: "Microsoft account — Outlook or Azure AD" },
   { id: 2, label: "Create review", detail: "Name your project and customer" },
@@ -30,11 +28,21 @@ function getActiveStep(review: ArbReviewSummary): number {
 }
 
 function getStepHref(review: ArbReviewSummary): Route {
+  const resolvedReviewId = String(review.reviewId ?? "").trim();
+  if (!resolvedReviewId || resolvedReviewId === "undefined" || resolvedReviewId === "null") {
+    return "/arb" as Route;
+  }
+
   const step = getActiveStep(review);
-  if (step <= 3) return getArbStepHref(review.reviewId, "upload", "upload-documents");
-  if (step === 4) return getArbStepHref(review.reviewId, "upload", "run-ai-analysis");
-  if (step === 5) return getArbStepHref(review.reviewId, "decision");
-  return getArbStepHref(review.reviewId, "overview");
+  if (step <= 3) return getArbStepHref(resolvedReviewId, "upload", "upload-documents");
+  if (step === 4) return getArbStepHref(resolvedReviewId, "upload", "run-ai-analysis");
+  if (step === 5) return getArbStepHref(resolvedReviewId, "decision");
+  return getArbStepHref(resolvedReviewId, "overview");
+}
+
+function hasValidReviewId(review: ArbReviewSummary): boolean {
+  const reviewId = String(review.reviewId ?? "").trim();
+  return Boolean(reviewId) && reviewId !== "undefined" && reviewId !== "null";
 }
 
 const serviceCards = [
@@ -80,9 +88,11 @@ export default function HomePage() {
         if (p) {
           try {
             const payload = await listArbReviews();
-            const sorted = [...payload.reviews].sort(
+            const sorted = [...payload.reviews]
+              .filter(hasValidReviewId)
+              .sort(
               (a, b) => new Date(b.lastUpdated ?? 0).getTime() - new Date(a.lastUpdated ?? 0).getTime()
-            );
+              );
             setLatestReview(sorted[0] ?? null);
           } catch {
             // non-fatal
@@ -161,7 +171,7 @@ export default function HomePage() {
             )}
           </div>
         ) : (
-          <a href={buildLoginUrl("aad", "/")} className="hero-upload-zone hero-upload-zone--signin">
+          <a href={buildLoginUrl("aad")} className="hero-upload-zone hero-upload-zone--signin">
             <span className="hero-upload-icon">🔐</span>
             <p className="hero-upload-title">Sign in with Microsoft to upload your documents</p>
             <p className="hero-upload-sub">Free · Microsoft account or Azure AD · No credit card</p>
@@ -179,6 +189,11 @@ export default function HomePage() {
           {signedIn && latestReview && (
             <Link href={getStepHref(latestReview)} className="impact-btn impact-btn-secondary">
               Continue: {WORKFLOW_STEPS[getActiveStep(latestReview) - 1]?.label} →
+            </Link>
+          )}
+          {signedIn && !latestReview && (
+            <Link href="/arb" className="impact-btn impact-btn-secondary">
+              Start Board Review →
             </Link>
           )}
         </div>
@@ -225,7 +240,7 @@ export default function HomePage() {
 
         <div className="impact-hero-cta-row" style={{ marginTop: 24 }}>
           {signedIn === false && (
-            <a href={signInHref} className="impact-btn impact-btn-primary">
+            <a href={buildLoginUrl("aad")} className="impact-btn impact-btn-primary">
               Start Board Review
             </a>
           )}

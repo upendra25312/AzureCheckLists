@@ -91,10 +91,14 @@ function parseClientPrincipal(payload: AuthMeResponse) {
 }
 
 export async function fetchClientPrincipal() {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
   try {
     const response = await fetch("/.auth/me", {
       credentials: "same-origin",
-      cache: "no-store"
+      cache: "no-store",
+      signal: controller.signal
     });
 
     if (!response.ok) {
@@ -105,15 +109,24 @@ export async function fetchClientPrincipal() {
     return parseClientPrincipal(payload);
   } catch {
     return null;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
 export function buildLoginUrl(provider: AuthProvider, redirectUri?: string) {
-  const fallbackRedirect =
-    typeof window === "undefined" ? "/" : window.location.href;
-  const nextRedirect = redirectUri ?? fallbackRedirect;
+  const fallbackRedirect = typeof window === "undefined" ? "/" : window.location.href;
+  const requestedRedirect = (redirectUri ?? fallbackRedirect).trim();
+  const invalidRedirect =
+    !requestedRedirect || requestedRedirect.includes("reviewId=undefined") || requestedRedirect === "undefined";
+  const nextRedirect = invalidRedirect ? "/arb" : requestedRedirect;
 
   return `/.auth/login/${provider}?post_login_redirect_uri=${encodeURIComponent(nextRedirect)}`;
+}
+
+export function buildLogoutUrl(redirectUri = "/") {
+  const nextRedirect = redirectUri.trim() || "/";
+  return `/.auth/logout?post_logout_redirect_uri=${encodeURIComponent(nextRedirect)}`;
 }
 
 async function parseJsonResponse<T>(response: Response) {

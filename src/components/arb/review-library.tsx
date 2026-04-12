@@ -68,12 +68,22 @@ function formatDate(value: string | undefined) {
 }
 
 function getPrimaryHref(review: ArbReviewSummary, focus: ArbReviewLibraryFocus): Route {
-  if (focus === "decision") return getArbStepHref(review.reviewId, "decision");
+  const reviewId = String(review.reviewId ?? "").trim();
+  if (!reviewId || reviewId === "undefined" || reviewId === "null") {
+    return "/arb" as Route;
+  }
+
+  if (focus === "decision") return getArbStepHref(reviewId, "decision");
   const step = getActiveStep(review);
-  if (step <= 2) return getArbStepHref(review.reviewId, "upload", "upload-documents");
-  if (step === 3) return getArbStepHref(review.reviewId, "upload", "run-ai-analysis");
-  if (step === 4) return getArbStepHref(review.reviewId, "findings");
-  return getArbStepHref(review.reviewId, "overview");
+  if (step <= 2) return getArbStepHref(reviewId, "upload", "upload-documents");
+  if (step === 3) return getArbStepHref(reviewId, "upload", "run-ai-analysis");
+  if (step === 4) return getArbStepHref(reviewId, "findings");
+  return getArbStepHref(reviewId, "overview");
+}
+
+function hasValidReviewId(review: ArbReviewSummary): boolean {
+  const reviewId = String(review.reviewId ?? "").trim();
+  return Boolean(reviewId) && reviewId !== "undefined" && reviewId !== "null";
 }
 
 function getPrimaryLabel(review: ArbReviewSummary, focus: ArbReviewLibraryFocus) {
@@ -119,7 +129,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
         if (!nextPrincipal) { setLoading(false); return; }
         const payload = await listArbReviews();
         if (!active) return;
-        setReviews(payload.reviews);
+        setReviews(payload.reviews.filter(hasValidReviewId));
       } catch (loadError) {
         if (!active) return;
         setError(loadError instanceof Error ? loadError.message : "Unable to load reviews.");

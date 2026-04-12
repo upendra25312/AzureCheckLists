@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
+import { buildLoginUrl, buildLogoutUrl, fetchClientPrincipal } from "@/lib/review-cloud";
 import type { StaticWebAppClientPrincipal } from "@/types";
 
 function formatProvider(provider: string | undefined) {
@@ -21,6 +21,14 @@ export function AuthStatusChip() {
 
   useEffect(() => {
     let active = true;
+    const fallback = setTimeout(() => {
+      if (!active) {
+        return;
+      }
+
+      setPrincipal(null);
+      setResolved(true);
+    }, 6000);
 
     fetchClientPrincipal()
       .then((nextPrincipal) => {
@@ -42,6 +50,7 @@ export function AuthStatusChip() {
 
     return () => {
       active = false;
+      clearTimeout(fallback);
     };
   }, []);
 
@@ -76,13 +85,13 @@ export function AuthStatusChip() {
             <Link href="/services" className="secondary-button">
               Service Explorer
             </Link>
-            <a href="/.auth/logout" className="ghost-button">
+            <a href={buildLogoutUrl("/")} className="ghost-button">
               Sign out
             </a>
           </div>
         </div>
       </details>
-      <a href="/.auth/logout" className="ghost-button auth-signout-button">
+      <a href={buildLogoutUrl("/")} className="ghost-button auth-signout-button">
         Sign out
       </a>
     </div>
