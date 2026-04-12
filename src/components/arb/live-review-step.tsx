@@ -47,21 +47,29 @@ import { SeverityBadge } from "@/components/severity-badge";
 
 const SUPPORTED_UPLOAD_EXTENSIONS = [
   // Documents
-  ".pdf", ".doc", ".docx", ".rtf",
+  ".pdf", ".doc", ".docx", ".rtf", ".odt",
   // Presentations
-  ".ppt", ".pptx",
+  ".ppt", ".pptx", ".odp",
   // Spreadsheets & data
-  ".xls", ".xlsx", ".csv",
+  ".xls", ".xlsx", ".csv", ".ods",
   // Diagrams
-  ".drawio", ".vsdx", ".svg",
+  ".drawio", ".draw.io", ".vsdx", ".svg", ".svgz",
+  // Whiteboard / diagramming tools
+  ".excalidraw", ".mmd", ".mermaid", ".puml", ".plantuml",
   // Images / screenshots
-  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp",
+  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".tif", ".tiff",
   // Text & markup
-  ".txt", ".md", ".markdown",
+  ".txt", ".md", ".markdown", ".html", ".htm",
   // Structured / IaC
-  ".json", ".xml", ".yaml", ".yml", ".bicep", ".tf",
+  ".json", ".xml", ".yaml", ".yml", ".bicep", ".tf", ".hcl", ".toml",
+  // Scripts & automation (Azure PowerShell, Azure CLI, Bash)
+  ".ps1", ".psm1", ".sh", ".azcli",
+  // API & schema definitions
+  ".proto", ".graphql", ".gql", ".wsdl", ".xsd",
+  // Notebooks
+  ".ipynb",
   // Archives
-  ".zip"
+  ".zip", ".7z", ".tar", ".tgz"
 ] as const;
 
 function buildBullets(
@@ -820,7 +828,7 @@ export function ArbLiveReviewStep(props: {
           />
           <p className="microcopy">
             Accepted: PDF, Word, PowerPoint, Excel, images, diagrams (VSDX/SVG), Markdown, and plain text.
-            PDF and Word documents produce the richest findings. Images and spreadsheets are tracked but not text-analysed.
+            PDF and Word documents produce the richest findings. Excel/spreadsheet data is extracted sheet-by-sheet. Images and diagrams are analysed by the vision model to identify Azure services, topology, and labels.
           </p>
           {uploadSaving ? (
             <p className="arb-upload-status arb-upload-status-progress">Uploading files…</p>

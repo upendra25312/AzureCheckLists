@@ -451,6 +451,62 @@ function parseAgentResponse(responseText) {
   return { findings, scorecard, recommendation: scorecard.recommendation };
 }
 
+const IMAGE_MIME_TYPES = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".bmp": "image/bmp",
+  ".tif": "image/tiff",
+  ".tiff": "image/tiff"
+};
+
+/**
+ * Calls the multimodal model to extract architecture-relevant information from an image.
+ * Returns a plain-text description suitable for injecting into the extraction pipeline.
+ */
+async function describeImageForReview(imageBuffer, fileName, fileExtension) {
+  const config = getFoundryConfiguration();
+  if (!config.configured) {
+    throw new Error("Foundry not configured — FOUNDRY_PROJECT_ENDPOINT missing");
+  }
+
+  const mimeType = IMAGE_MIME_TYPES[fileExtension] || "image/png";
+  const base64 = imageBuffer.toString("base64");
+  const dataUrl = `data:${mimeType};base64,${base64}`;
+
+  const messages = [
+    {
+      role: "system",
+      content:
+        "You are an expert Azure cloud architect reviewing architecture diagrams. " +
+        "Extract all technically relevant information visible in the image: Azure services, " +
+        "network topology, security zones, data flows, regions, availability zones, " +
+        "subscription/resource group boundaries, connectivity patterns, and any text labels, " +
+        "titles, annotations, or legends. Be thorough and precise — your output feeds an automated review."
+    },
+    {
+      role: "user",
+      content: [
+        {
+          type: "text",
+          text: `Analyse this architecture diagram or screenshot ("${fileName}"). ` +
+            "List every Azure service, network component, security boundary, and text label you can identify. " +
+            "Describe the data flows, region/zone layout, and any HA/DR patterns shown. " +
+            "Summarise in structured plain text."
+        },
+        {
+          type: "image_url",
+          image_url: { url: dataUrl, detail: "high" }
+        }
+      ]
+    }
+  ];
+
+  return await chatCompletionsRequest(messages);
+}
+
 async function runArbAgentReview({ review, files, requirements, evidence, searchChunks }) {
   const config = getFoundryConfiguration();
   if (!config.configured) {
@@ -494,5 +550,6 @@ async function runArbAgentReview({ review, files, requirements, evidence, search
 
 module.exports = {
   getFoundryConfiguration,
+  describeImageForReview,
   runArbAgentReview
 };
