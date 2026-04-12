@@ -228,7 +228,7 @@ Respond ONLY with a valid JSON object in this exact shape:
   "strengths": ["string — cite the framework principle met"],
   "findings": [
     {
-      "severity": "High|Medium|Low",
+      "severity": "Critical|High|Medium|Low",
       "domain": "Security|Reliability|Cost|Operations|Architecture|Governance|Delivery",
       "framework": "WAF|CAF|ALZ|MicrosoftLearn",
       "frameworkPillar": "string — e.g. WAF:Reliability, CAF:Govern, ALZ:NetworkTopology",
@@ -270,6 +270,12 @@ Respond ONLY with a valid JSON object in this exact shape:
 }
 
 Scores are 0-100. Ground every finding in evidence from the uploaded documents. Do not invent facts. When a framework requirement cannot be assessed due to missing documentation, list it in missingEvidence rather than inventing a finding.
+
+**Severity calibration rules:**
+- Critical: security breach path, data exfiltration risk, or mandatory compliance violation that is already exploitable or non-waivable. Expect 0-2 Critical findings per review.
+- High: significant gap that materially increases risk but has a clear remediation path. Expect 2-5 per review.
+- Medium: best practice gap that should be addressed before GA. Expect 4-8 per review.
+- Low: optimization or documentation improvement. No limit.
 
 **Critical finding calibration rules:**
 - Set criticalBlocker: true ONLY when the gap would cause a board to reject or defer approval — e.g. unmitigated internet-facing attack surface with no WAF/NSG, missing encryption for regulated data, no disaster recovery plan for Tier-1 workload, or a mandatory ALZ policy that cannot be waived. A missing diagram or incomplete documentation is NOT a critical blocker.

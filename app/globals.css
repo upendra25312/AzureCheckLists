@@ -4061,6 +4061,40 @@ button.chip:disabled:hover {
   white-space: pre-wrap;
 }
 
+.arb-loading-skeleton {
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+}
+
+.arb-skeleton-bar {
+  height: 18px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--surface-2, #f3f4f6) 25%, var(--border, #e5e7eb) 50%, var(--surface-2, #f3f4f6) 75%);
+  background-size: 200% 100%;
+  animation: arb-shimmer 1.4s infinite;
+}
+
+.arb-skeleton-bar--wide { width: 80%; }
+.arb-skeleton-bar--medium { width: 55%; }
+.arb-skeleton-bar--narrow { width: 35%; }
+
+@keyframes arb-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.arb-decision-gate-banner {
+  border-left: 4px solid #f59e0b;
+  background: rgba(245, 158, 11, 0.06);
+  padding: 16px 20px;
+  border-radius: 0 6px 6px 0;
+}
+
+[data-theme="dark"] .arb-decision-gate-banner {
+  background: rgba(245, 158, 11, 0.1);
+}
+
 .arb-shell-posture-note {
   margin: 4px 0 0;
   padding-top: 12px;

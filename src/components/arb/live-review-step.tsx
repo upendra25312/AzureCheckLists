@@ -1669,7 +1669,7 @@ export function ArbLiveReviewStep(props: {
 
           {scorecard.reviewerOverride ? (
             <article className="trace-card arb-summary-card">
-              <p className="board-card-subtitle">Reviewer override</p>
+              <p className="board-card-subtitle">Reviewer override recorded</p>
               <strong>{scorecard.reviewerOverride.overrideDecision}</strong>
               <p>{scorecard.reviewerOverride.overrideRationale}</p>
               <p className="microcopy">
@@ -1683,7 +1683,15 @@ export function ArbLiveReviewStep(props: {
                 })}
               </p>
             </article>
-          ) : null}
+          ) : (
+            <article className="trace-card arb-summary-card">
+              <p className="board-card-subtitle">Score override</p>
+              <p className="section-copy">If the AI score does not reflect your judgment, proceed to the Decision step to record the human decision with rationale. The reviewer decision always takes precedence over the AI recommendation.</p>
+              <a href={getArbStepHref(reviewId, "decision", "decision")} className="secondary-button" style={{ display: "inline-block", marginTop: 8 }}>
+                Go to Decision →
+              </a>
+            </article>
+          )}
         </section>
 
         {actionSummary.openActions.length > 0 ? (
@@ -1722,18 +1730,35 @@ export function ArbLiveReviewStep(props: {
   function renderDecisionContent() {
     return (
       <div className="arb-page-stack">
+        {decisionGateMessage ? (
+          <section className="trace-card arb-decision-gate-banner">
+            <p className="board-card-subtitle">Action required before sign-off</p>
+            <p className="section-copy">{decisionGateMessage}</p>
+          </section>
+        ) : null}
         <div className="arb-decision-grid">
           <section className="surface-panel arb-summary-card">
             <div className="board-card-head">
               <div className="board-card-head-copy">
                 <p className="board-card-subtitle">Decision posture</p>
-                <h2 className="section-title">Record an explicit reviewer outcome</h2>
+                <h2 className="section-title">Review status before sign-off</h2>
               </div>
             </div>
-            <p>This step records and reloads the persisted reviewer decision for this ARB review.</p>
-            <p>Open actions: {actionSummary.openCount}</p>
-            <p>Blocked actions: {actionSummary.blockedCount}</p>
-            <p>Reviewer verification required: {actionSummary.reviewerVerificationCount}</p>
+            <div className="arb-summary-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 16 }}>
+              <article className="future-card">
+                <p className="board-card-subtitle">Open actions</p>
+                <strong style={{ color: actionSummary.openCount > 0 ? "var(--warning)" : undefined }}>{actionSummary.openCount}</strong>
+              </article>
+              <article className="future-card">
+                <p className="board-card-subtitle">Blocked actions</p>
+                <strong style={{ color: actionSummary.blockedCount > 0 ? "var(--error)" : undefined }}>{actionSummary.blockedCount}</strong>
+              </article>
+              <article className="future-card">
+                <p className="board-card-subtitle">Needs verification</p>
+                <strong style={{ color: actionSummary.reviewerVerificationCount > 0 ? "var(--warning)" : undefined }}>{actionSummary.reviewerVerificationCount}</strong>
+              </article>
+            </div>
+            <p className="section-copy" style={{ marginBottom: 8 }}>The AI recommendation is advisory. Your recorded decision below is the binding outcome for this review.</p>
             {actionSummary.openActions.length > 0 ? (
               <ul className="arb-checklist">
                 {actionSummary.openActions.map((action) => (
@@ -1802,7 +1827,6 @@ export function ArbLiveReviewStep(props: {
                 <option value="Rejected">Rejected</option>
               </select>
             </label>
-            {decisionGateMessage ? <p className="arb-upload-error">{decisionGateMessage}</p> : null}
             <label className="filter-field">
               <span>Decision rationale</span>
               <textarea
@@ -1898,7 +1922,13 @@ export function ArbLiveReviewStep(props: {
       reviewSummary={scorecard?.reviewSummary ?? null}
     >
       {loading ? (
-        <p>Loading ARB review state...</p>
+        <div className="arb-loading-skeleton">
+          <div className="arb-skeleton-bar arb-skeleton-bar--wide" />
+          <div className="arb-skeleton-bar arb-skeleton-bar--medium" />
+          <div className="arb-skeleton-bar arb-skeleton-bar--narrow" />
+          <div className="arb-skeleton-bar arb-skeleton-bar--wide" />
+          <div className="arb-skeleton-bar arb-skeleton-bar--medium" />
+        </div>
       ) : error ? (
         <div>
           <p>{error}</p>

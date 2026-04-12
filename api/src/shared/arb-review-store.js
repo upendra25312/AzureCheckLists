@@ -892,7 +892,7 @@ function buildDefaultReview(reviewId, principal, input = {}) {
       : (principal.userDetails || principal.userId || null),
     targetReviewDate: normalizeNullableString(input.targetReviewDate),
     notes: normalizeNullableString(input.notes),
-    overallScore: Number.isFinite(Number(input.overallScore)) ? Number(input.overallScore) : 78,
+    overallScore: Number.isFinite(Number(input.overallScore)) ? Number(input.overallScore) : null,
     recommendation: String(input.recommendation ?? "").trim() || "Needs Revision",
     finalDecision: input.finalDecision ? String(input.finalDecision).trim() : null,
     requiredEvidencePresent: readiness.requiredEvidencePresent,
@@ -1114,7 +1114,7 @@ function toScorecardEntity(reviewId, userId, scorecard) {
     rowKey: getRowKey(SCORECARD_ROW_KEY, userId),
     reviewId,
     createdByUserId: userId,
-    overallScore: scorecard.overallScore ?? 0,
+    overallScore: scorecard.overallScore ?? null,
     recommendation: scorecard.recommendation,
     confidence: scorecard.confidence,
     criticalBlockers: scorecard.criticalBlockers ?? 0,
@@ -1167,7 +1167,7 @@ function fromSummaryEntity(entity) {
     assignedReviewer: entity.assignedReviewer || null,
     targetReviewDate: entity.targetReviewDate || null,
     notes: entity.notes || null,
-    overallScore: Number(entity.overallScore ?? 0),
+    overallScore: entity.overallScore != null ? Number(entity.overallScore) : null,
     recommendation: entity.recommendation,
     finalDecision: entity.finalDecision || null,
     requiredEvidencePresent: Boolean(entity.requiredEvidencePresent),
@@ -1205,7 +1205,7 @@ function fromScorecardEntity(entity, review) {
   }
 
   return {
-    overallScore: Number(entity.overallScore ?? review.overallScore ?? 0),
+    overallScore: entity.overallScore != null ? Number(entity.overallScore) : (review.overallScore ?? null),
     recommendation: entity.recommendation || review.recommendation,
     confidence: entity.confidence || "Medium",
     criticalBlockers: Number(entity.criticalBlockers ?? 0),
@@ -1308,10 +1308,13 @@ function calculateDomainScore(domain, weight, findings, review) {
     return total + 2;
   }, 0);
 
+  const hasCriticalBlocker = linkedFindings.some((f) => f.criticalBlocker && isActiveFinding(f));
+  const minScore = hasCriticalBlocker ? 0 : Math.round(weight * 0.1);
+
   return {
     domain,
     weight,
-    score: Math.max(8, weight - penalty),
+    score: Math.max(minScore, weight - penalty),
     reason: `${linkedFindings.length} active finding${linkedFindings.length === 1 ? "" : "s"} currently influence this domain.`,
     linkedFindings: linkedFindings.map((finding) => finding.findingId)
   };
@@ -1336,15 +1339,19 @@ function buildDerivedScorecard(review, findings, decision) {
   let recommendation = "Needs Revision";
   let confidence = "Medium";
 
-  if (review.evidenceReadinessState === "Insufficient Evidence" || overallScore < 55) {
+  const readiness = review.evidenceReadinessState;
+  if (readiness === "Insufficient Evidence" || overallScore < 55) {
     recommendation = "Rejected";
     confidence = "Low";
   } else if (criticalBlockers > 0 || overallScore < 70) {
     recommendation = "Needs Revision";
     confidence = "Medium";
-  } else if (overallScore >= 85 && review.evidenceReadinessState === "Ready for Review") {
+  } else if (overallScore >= 85 && (readiness === "Ready for Review" || readiness === "Ready with Gaps")) {
     recommendation = "Approved";
-    confidence = "High";
+    confidence = readiness === "Ready for Review" ? "High" : "Medium";
+  } else if (overallScore >= 70 && (readiness === "Ready for Review" || readiness === "Ready with Gaps")) {
+    recommendation = "Needs Revision";
+    confidence = "Medium";
   }
 
   return {
@@ -1408,22 +1415,30 @@ async function seedDemoReview(client, principal, reviewId) {
   return review;
 }
 
-async function listArbReviews(principal) {
+async function listArbReviews(principal, options = {}) {
   const client = await getTableClient(ARB_REVIEW_TABLE_NAME);
   const reviews = [];
+  const targetRowKey = getRowKey(SUMMARY_ROW_KEY, principal.userId);
 
-  for await (const entity of client.listEntities()) {
-    if (entity.rowKey !== getRowKey(SUMMARY_ROW_KEY, principal.userId)) {
-      continue;
-    }
-
+  for await (const entity of client.listEntities({
+    queryOptions: { filter: `RowKey eq '${targetRowKey}'` }
+  })) {
     reviews.push(fromSummaryEntity(entity));
   }
 
-  reviews.sort((left, right) => String(right.lastUpdated).localeCompare(String(left.lastUpdated)));
+  reviews.sort((left, right) => String(right.lastUpdated ?? "").localeCompare(String(left.lastUpdated ?? "")));
+
+  const limit = options.limit ?? 50;
+  const offset = options.offset ?? 0;
+  const total = reviews.length;
+  const page = reviews.slice(offset, offset + limit);
 
   return {
-    reviews
+    reviews: page,
+    total,
+    limit,
+    offset,
+    hasMore: offset + limit < total
   };
 }
 
