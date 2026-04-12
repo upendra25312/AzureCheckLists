@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useAuthSession } from "@/components/auth-session-provider";
 import {
   ENABLED_AUTH_PROVIDERS,
   activateCloudProjectReview,
@@ -9,7 +10,6 @@ import {
   buildLoginUrl,
   buildLogoutUrl,
   deleteCloudProjectReview,
-  fetchClientPrincipal,
   formatIdentityProvider,
   listCloudProjectReviews,
   purgeCloudProjectReview,
@@ -99,7 +99,7 @@ function compareReviews(left: SavedProjectReviewSummary, right: SavedProjectRevi
 }
 
 export function ProjectReviewLibrary() {
-  const [principal, setPrincipal] = useState<StaticWebAppClientPrincipal | null>(null);
+  const { principal, resolved } = useAuthSession();
   const [payload, setPayload] = useState<ProjectReviewLibraryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,21 +121,22 @@ export function ProjectReviewLibrary() {
   useEffect(() => {
     let active = true;
 
+    if (!resolved) {
+      return () => {
+        active = false;
+      };
+    }
+
+    if (!principal) {
+      setPayload(null);
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
     async function loadLibrary() {
       try {
-        const nextPrincipal = await fetchClientPrincipal();
-
-        if (!active) {
-          return;
-        }
-
-        setPrincipal(nextPrincipal);
-
-        if (!nextPrincipal) {
-          setLoading(false);
-          return;
-        }
-
         const nextPayload = await listCloudProjectReviews();
 
         if (!active) {
@@ -165,7 +166,7 @@ export function ProjectReviewLibrary() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [principal, resolved]);
 
   const filteredReviews = useMemo(() => {
     const reviews = payload?.reviews ?? [];

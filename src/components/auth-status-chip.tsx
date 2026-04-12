@@ -1,54 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useAuthSession } from "@/components/auth-session-provider";
 import {
   ENABLED_AUTH_PROVIDERS,
   buildLoginUrl,
   buildLogoutUrl,
-  fetchClientPrincipal,
   formatIdentityProvider
 } from "@/lib/review-cloud";
-import type { StaticWebAppClientPrincipal } from "@/types";
 
 export function AuthStatusChip() {
-  const [principal, setPrincipal] = useState<StaticWebAppClientPrincipal | null>(null);
-  const [resolved, setResolved] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    const fallback = setTimeout(() => {
-      if (!active) {
-        return;
-      }
-
-      setPrincipal(null);
-      setResolved(true);
-    }, 6000);
-
-    fetchClientPrincipal()
-      .then((nextPrincipal) => {
-        if (!active) {
-          return;
-        }
-
-        setPrincipal(nextPrincipal);
-        setResolved(true);
-      })
-      .catch(() => {
-        if (!active) {
-          return;
-        }
-
-        setPrincipal(null);
-        setResolved(true);
-      });
-
-    return () => {
-      active = false;
-      clearTimeout(fallback);
-    };
-  }, []);
+  const { principal, resolved } = useAuthSession();
 
   if (!resolved) {
     return null;

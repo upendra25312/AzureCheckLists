@@ -6,11 +6,11 @@ import { useEffect, useRef, useState } from "react";
 import { createArbReview, listArbReviews, uploadArbFiles } from "@/arb/api";
 import { getArbStepHref } from "@/arb/routes";
 import type { ArbReviewSummary } from "@/arb/types";
+import { useAuthSession } from "@/components/auth-session-provider";
 import {
   ENABLED_AUTH_PROVIDERS,
   PRIMARY_AUTH_PROVIDER,
   buildLoginUrl,
-  fetchClientPrincipal,
   getAuthSupportLabel
 } from "@/lib/review-cloud";
 
@@ -80,7 +80,7 @@ const frameworkCoverage = [
 ] as const;
 
 export default function HomePage() {
-  const [signedIn, setSignedIn] = useState<boolean | null>(null);
+  const { principal, resolved, signedIn } = useAuthSession();
   const [latestReview, setLatestReview] = useState<ArbReviewSummary | null>(null);
   const [dropActive, setDropActive] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -88,25 +88,47 @@ export default function HomePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetchClientPrincipal()
-      .then(async (p) => {
-        setSignedIn(Boolean(p));
-        if (p) {
-          try {
-            const payload = await listArbReviews();
-            const sorted = [...payload.reviews]
-              .filter(hasValidReviewId)
-              .sort(
-              (a, b) => new Date(b.lastUpdated ?? 0).getTime() - new Date(a.lastUpdated ?? 0).getTime()
-              );
-            setLatestReview(sorted[0] ?? null);
-          } catch {
-            // non-fatal
-          }
+    let active = true;
+
+    if (!resolved) {
+      return () => {
+        active = false;
+      };
+    }
+
+    if (!principal) {
+      setLatestReview(null);
+      return () => {
+        active = false;
+      };
+    }
+
+    async function loadLatestReview() {
+      try {
+        const payload = await listArbReviews();
+
+        if (!active) {
+          return;
         }
-      })
-      .catch(() => setSignedIn(false));
-  }, []);
+
+        const sorted = [...payload.reviews]
+          .filter(hasValidReviewId)
+          .sort((a, b) => new Date(b.lastUpdated ?? 0).getTime() - new Date(a.lastUpdated ?? 0).getTime());
+
+        setLatestReview(sorted[0] ?? null);
+      } catch {
+        if (active) {
+          setLatestReview(null);
+        }
+      }
+    }
+
+    void loadLatestReview();
+
+    return () => {
+      active = false;
+    };
+  }, [principal, resolved]);
 
   async function handleFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return;
@@ -137,7 +159,7 @@ export default function HomePage() {
         </p>
 
         {/* Upload zone — the action IS the page */}
-        {signedIn === null ? (
+        {!resolved ? (
           <div className="hero-upload-zone hero-upload-zone--loading">
             <span className="impact-auth-loading">Checking sign-in status…</span>
           </div>

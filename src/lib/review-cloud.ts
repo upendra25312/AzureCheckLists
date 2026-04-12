@@ -144,7 +144,7 @@ export function formatIdentityProvider(provider: string | undefined) {
   }
 }
 
-export async function fetchClientPrincipal() {
+export async function readClientPrincipal() {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
 
@@ -156,15 +156,21 @@ export async function fetchClientPrincipal() {
     });
 
     if (!response.ok) {
-      return null;
+      throw new Error(`Unable to read auth session: ${response.status}`);
     }
 
     const payload = (await response.json()) as AuthMeResponse;
     return parseClientPrincipal(payload);
-  } catch {
-    return null;
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+export async function fetchClientPrincipal() {
+  try {
+    return await readClientPrincipal();
+  } catch {
+    return null;
   }
 }
 

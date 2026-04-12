@@ -6,8 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import { createArbReview, listArbReviews } from "@/arb/api";
 import { getArbStepHref } from "@/arb/routes";
 import type { ArbReviewSummary } from "@/arb/types";
-import { ENABLED_AUTH_PROVIDERS, buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
-import type { StaticWebAppClientPrincipal } from "@/types";
+import { useAuthSession } from "@/components/auth-session-provider";
+import { ENABLED_AUTH_PROVIDERS, buildLoginUrl } from "@/lib/review-cloud";
 
 type ArbReviewLibraryFocus = "workspace" | "decision";
 
@@ -110,7 +110,7 @@ function StatusBadge({ state }: { state: string }) {
 
 export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
   const { focus = "workspace" } = props;
-  const [principal, setPrincipal] = useState<StaticWebAppClientPrincipal | null>(null);
+  const { principal, resolved } = useAuthSession();
   const [reviews, setReviews] = useState<ArbReviewSummary[]>([]);
   const [projectName, setProjectName] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -121,12 +121,22 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
   useEffect(() => {
     let active = true;
 
+    if (!resolved) {
+      return () => {
+        active = false;
+      };
+    }
+
+    if (!principal) {
+      setReviews([]);
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
     async function load() {
       try {
-        const nextPrincipal = await fetchClientPrincipal();
-        if (!active) return;
-        setPrincipal(nextPrincipal);
-        if (!nextPrincipal) { setLoading(false); return; }
         const payload = await listArbReviews();
         if (!active) return;
         setReviews(payload.reviews.filter(hasValidReviewId));
@@ -140,7 +150,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
 
     void load();
     return () => { active = false; };
-  }, []);
+  }, [principal, resolved]);
 
   const filteredReviews = useMemo(() => {
     if (focus === "decision") {

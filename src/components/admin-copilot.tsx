@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useAuthSession } from "@/components/auth-session-provider";
 import type {
   AdminCopilotHealthResponse,
   AdminCopilotResponse,
@@ -8,7 +9,7 @@ import type {
   StaticWebAppClientPrincipal
 } from "@/types";
 import { loadAdminCopilotHealth, runAdminCopilot } from "@/lib/admin-copilot";
-import { PRIMARY_AUTH_PROVIDER, fetchClientPrincipal } from "@/lib/review-cloud";
+import { PRIMARY_AUTH_PROVIDER } from "@/lib/review-cloud";
 import { loadReviewTelemetrySummary, trackReviewTelemetry } from "@/lib/review-telemetry";
 
 const SUGGESTED_ADMIN_PROMPTS = [
@@ -79,8 +80,7 @@ function getEvidenceToneClass(status: "healthy" | "warning" | "error" | "info") 
 }
 
 export function AdminCopilot() {
-  const [principal, setPrincipal] = useState<StaticWebAppClientPrincipal | null>(null);
-  const [authResolved, setAuthResolved] = useState(false);
+  const { principal, resolved: authResolved } = useAuthSession();
   const [health, setHealth] = useState<AdminCopilotHealthResponse | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
   const [healthLoading, setHealthLoading] = useState(false);
@@ -96,56 +96,48 @@ export function AdminCopilot() {
   useEffect(() => {
     let active = true;
 
-    fetchClientPrincipal()
-      .then((nextPrincipal) => {
+    if (!authResolved) {
+      return () => {
+        active = false;
+      };
+    }
+
+    if (!hasAdminRole(principal)) {
+      setHealth(null);
+      setHealthLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    setHealthLoading(true);
+
+    loadAdminCopilotHealth()
+      .then((nextHealth) => {
         if (!active) {
           return;
         }
 
-        setPrincipal(nextPrincipal);
-        setAuthResolved(true);
-
-        if (!hasAdminRole(nextPrincipal)) {
-          return;
-        }
-
-        setHealthLoading(true);
-
-        loadAdminCopilotHealth()
-          .then((nextHealth) => {
-            if (!active) {
-              return;
-            }
-
-            setHealth(nextHealth);
-            setHealthLoading(false);
-          })
-          .catch((nextError) => {
-            if (!active) {
-              return;
-            }
-
-            setHealthError(
-              nextError instanceof Error
-                ? nextError.message
-                : "Unable to load admin copilot health."
-            );
-            setHealthLoading(false);
-          });
+        setHealth(nextHealth);
+        setHealthLoading(false);
       })
-      .catch(() => {
+      .catch((nextError) => {
         if (!active) {
           return;
         }
 
-        setPrincipal(null);
-        setAuthResolved(true);
+        setHealthError(
+          nextError instanceof Error
+            ? nextError.message
+            : "Unable to load admin copilot health."
+        );
+        setHealthLoading(false);
       });
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [authResolved, principal]);
 
   const principalLabel = useMemo(
     () => principal?.userDetails || principal?.userId || "Signed-in admin",
