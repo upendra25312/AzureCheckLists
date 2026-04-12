@@ -125,7 +125,7 @@ async function handleArbRunAgentReview(request, context) {
     if (!agentResult.success) {
       log("Agent returned failure", { reason: agentResult.reason, status: 502 });
       return jsonResponse(502, {
-        error: "Agent review did not complete successfully.",
+        error: `Agent review did not complete successfully${agentResult.reason ? `: ${agentResult.reason}` : "."}`,
         reason: agentResult.reason
       });
     }

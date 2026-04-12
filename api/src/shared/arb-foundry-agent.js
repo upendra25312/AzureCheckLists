@@ -446,7 +446,18 @@ function parseAgentResponse(responseText) {
   try {
     parsed = JSON.parse(jsonText);
   } catch {
-    return null;
+    // Best-effort recovery when model prepends/appends text around a JSON object.
+    const firstBrace = jsonText.indexOf("{");
+    const lastBrace = jsonText.lastIndexOf("}");
+    if (firstBrace >= 0 && lastBrace > firstBrace) {
+      try {
+        parsed = JSON.parse(jsonText.slice(firstBrace, lastBrace + 1));
+      } catch {
+        return null;
+      }
+    } else {
+      return null;
+    }
   }
 
   const findings = (Array.isArray(parsed.findings) ? parsed.findings : []).map((f, i) => ({
@@ -583,7 +594,25 @@ async function runArbAgentReview({ review, files, requirements, evidence, search
       return { success: false, reason: "Model returned an empty response" };
     }
 
-    const parsed = parseAgentResponse(responseText);
+    let parsed = parseAgentResponse(responseText);
+    // Retry once with a strict correction prompt when initial output is not parseable JSON.
+    if (!parsed) {
+      const correctionPrompt = [
+        "Your previous response was not valid JSON.",
+        "Return ONLY a valid JSON object in the exact required schema.",
+        "No markdown fences, no prose, no comments."
+      ].join(" ");
+
+      responseText = await chatCompletionsRequest([
+        { role: "system", content: ARB_SYSTEM_PROMPT },
+        { role: "user", content: userMessage },
+        { role: "assistant", content: responseText },
+        { role: "user", content: correctionPrompt }
+      ]);
+
+      parsed = parseAgentResponse(responseText);
+    }
+
     if (!parsed) {
       return { success: false, reason: "Model response could not be parsed as structured JSON", rawResponse: responseText };
     }
