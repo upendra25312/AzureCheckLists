@@ -189,11 +189,6 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
         <h1 className="arb-signin-headline">
           Upload your design documents and get an AI-powered architecture review in minutes.
         </h1>
-        <p className="arb-signin-sub">
-          Sign in with your supported account to create a review, upload SOW or design docs,
-          and let the Azure ARB Agent check them against WAF, CAF, ALZ, HA/DR, Security,
-          Networking, and Monitoring — with findings linked to live Microsoft Learn guidance.
-        </p>
         {ENABLED_AUTH_PROVIDERS.map((provider, index) => (
           <a
             key={provider.id}
@@ -205,11 +200,10 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
           </a>
         ))}
         <ul className="arb-signin-bullets">
-          <li>PDF, Word, or PowerPoint — drag and drop your documents</li>
-          <li>AI checks WAF · CAF · ALZ · HA/DR · Backup · Security · Networking · Monitoring</li>
-          <li>Findings scored 0–100, every finding linked to Microsoft Learn</li>
-          <li>Export board-ready pack as CSV, HTML, or Markdown</li>
-          <li>Reviews retained for 30 days — delete any review manually at any time</li>
+          <li>PDF, Word, PowerPoint, or Markdown — drag and drop your documents</li>
+          <li>AI checks WAF · CAF · ALZ · HA/DR · Security · Networking · Monitoring in one pass</li>
+          <li>Every finding scored 0–100 and linked to a Microsoft Learn source</li>
+          <li>Files retained for 30 days — delete any review at any time</li>
         </ul>
       </div>
     );
@@ -249,7 +243,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
             onClick={() => void handleCreateReview()}
             disabled={saving || !projectName.trim()}
           >
-            {saving ? "Creating…" : "Create review and upload documents →"}
+            {saving ? "Creating…" : "Start Review →"}
           </button>
         </div>
         {error ? <p className="arb-create-error">{error}</p> : null}

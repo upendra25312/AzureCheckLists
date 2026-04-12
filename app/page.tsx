@@ -214,21 +214,13 @@ export default function HomePage() {
           <p className="hero-upload-error">{uploadError}</p>
         ) : null}
 
-        <div className="impact-hero-cta-row" style={{ marginTop: 16 }}>
-          <Link href="/services" className="impact-btn impact-btn-secondary">
-            Explore Azure services — no sign-in required
-          </Link>
-          {signedIn && latestReview && (
+        {signedIn && latestReview && (
+          <div className="impact-hero-cta-row" style={{ marginTop: 16 }}>
             <Link href={getStepHref(latestReview)} className="impact-btn impact-btn-secondary">
               Continue: {WORKFLOW_STEPS[getActiveStep(latestReview) - 1]?.label} →
             </Link>
-          )}
-          {signedIn && !latestReview && (
-            <Link href="/arb" className="impact-btn impact-btn-secondary">
-              Start Board Review →
-            </Link>
-          )}
-        </div>
+          </div>
+        )}
       </section>
 
       {/* ── HOW IT WORKS ── */}
@@ -237,16 +229,10 @@ export default function HomePage() {
         <h2 className="impact-section-title">Six steps from document to board-ready pack</h2>
         {signedIn && latestReview ? (
           <p className="impact-small">
-            You are currently on <strong>step {getActiveStep(latestReview)}: {WORKFLOW_STEPS[getActiveStep(latestReview) - 1]?.label}</strong> for <strong>{latestReview.projectName}</strong>.{" "}
+            You are on <strong>step {getActiveStep(latestReview)}: {WORKFLOW_STEPS[getActiveStep(latestReview) - 1]?.label}</strong> for <strong>{latestReview.projectName}</strong>.{" "}
             <Link href={getStepHref(latestReview)} className="impact-inline-link">Continue →</Link>
           </p>
-        ) : (
-          <p className="impact-small">
-            Once you sign in, each step follows automatically — upload triggers analysis,
-            analysis produces findings, findings feed the scorecard, and the scorecard
-            feeds the export pack.
-          </p>
-        )}
+        ) : null}
 
         <ol className="impact-workflow-steps">
           {WORKFLOW_STEPS.map((step) => {
@@ -291,7 +277,7 @@ export default function HomePage() {
           )}
           {signedIn === true && !latestReview && (
             <Link href="/arb" className="impact-btn impact-btn-primary">
-              Start Board Review
+              Start Review
             </Link>
           )}
         </div>
@@ -369,7 +355,7 @@ export default function HomePage() {
             </div>
             <div style={{ marginTop: 16 }}>
               <Link href="/arb" className="impact-btn impact-btn-primary">
-                Start Board Review
+                Start Review
               </Link>
             </div>
           </article>
