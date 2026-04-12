@@ -1,9 +1,11 @@
 const crypto = require("node:crypto");
 const path = require("node:path");
+const XLSX = require("xlsx");
 const {
   ARB_INPUT_CONTAINER_NAME,
   ARB_OUTPUT_CONTAINER_NAME,
   getContainerClient,
+  readBinaryBlob,
   readTextBlob,
   sanitizePathSegment,
   uploadBinaryBlob,
@@ -11,6 +13,7 @@ const {
 } = require("./storage");
 const { getCopilotConfiguration, runCopilot } = require("./copilot");
 const { ensureArbSearchIndex, indexArbDocumentChunks, getSearchConfiguration } = require("./arb-search");
+const { describeImageForReview, getFoundryConfiguration } = require("./arb-foundry-agent");
 const {
   ARB_REVIEW_TABLE_NAME,
   encodeTableKey,
@@ -41,29 +44,53 @@ const TEXT_EXTRACTABLE_EXTENSIONS = new Set([
   // Structured data
   ".csv", ".json", ".xml", ".yaml", ".yml",
   // IaC / config
-  ".bicep", ".tf",
+  ".bicep", ".tf", ".hcl", ".toml",
   // Diagrams (XML-based, fully readable)
-  ".drawio",
+  ".drawio", ".draw.io",
+  // Whiteboard / diagramming (text-based)
+  ".excalidraw", ".mmd", ".mermaid", ".puml", ".plantuml",
+  // Markup
+  ".html", ".htm",
+  // Scripts & automation
+  ".ps1", ".psm1", ".sh", ".azcli",
+  // API & schema definitions
+  ".proto", ".graphql", ".gql", ".wsdl", ".xsd",
+  // Notebooks (JSON-based)
+  ".ipynb",
   // Rich text
   ".rtf"
 ]);
+const SPREADSHEET_EXTRACTABLE_EXTENSIONS = new Set([
+  ".xlsx", ".xls", ".ods"
+]);
+const IMAGE_EXTRACTABLE_EXTENSIONS = new Set([
+  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".tif", ".tiff"
+]);
 const SUPPORTED_UPLOAD_EXTENSIONS = new Set([
   // Documents
-  ".pdf", ".doc", ".docx", ".rtf",
+  ".pdf", ".doc", ".docx", ".rtf", ".odt",
   // Presentations
-  ".ppt", ".pptx",
+  ".ppt", ".pptx", ".odp",
   // Spreadsheets & data
-  ".xls", ".xlsx", ".csv",
+  ".xls", ".xlsx", ".csv", ".ods",
   // Diagrams
-  ".drawio", ".vsdx", ".svg",
+  ".drawio", ".draw.io", ".vsdx", ".svg", ".svgz",
+  // Whiteboard / diagramming tools
+  ".excalidraw", ".mmd", ".mermaid", ".puml", ".plantuml",
   // Images / screenshots
-  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp",
+  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".tif", ".tiff",
   // Text & markup
-  ".txt", ".md", ".markdown",
+  ".txt", ".md", ".markdown", ".html", ".htm",
   // Structured / IaC
-  ".json", ".xml", ".yaml", ".yml", ".bicep", ".tf",
+  ".json", ".xml", ".yaml", ".yml", ".bicep", ".tf", ".hcl", ".toml",
+  // Scripts & automation (Azure PowerShell, Azure CLI, Bash)
+  ".ps1", ".psm1", ".sh", ".azcli",
+  // API & schema definitions
+  ".proto", ".graphql", ".gql", ".wsdl", ".xsd",
+  // Notebooks
+  ".ipynb",
   // Archives
-  ".zip"
+  ".zip", ".7z", ".tar", ".tgz"
 ]);
 const EXTRACTION_KEYWORD_MAP = [
   ["security", "Security"],
@@ -190,6 +217,33 @@ function inferSourceRole(logicalCategory) {
 
 function supportsTextExtraction(fileName) {
   return TEXT_EXTRACTABLE_EXTENSIONS.has(getFileExtension(fileName));
+}
+
+function supportsSpreadsheetExtraction(fileName) {
+  return SPREADSHEET_EXTRACTABLE_EXTENSIONS.has(getFileExtension(fileName));
+}
+
+function supportsImageExtraction(fileName) {
+  return IMAGE_EXTRACTABLE_EXTENSIONS.has(getFileExtension(fileName));
+}
+
+/**
+ * Converts an Excel/ODS workbook buffer to readable plain text.
+ * Each sheet is rendered as a TSV block labelled with the sheet name.
+ */
+function extractSpreadsheetText(buffer) {
+  const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
+  const parts = [];
+
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    const csv = XLSX.utils.sheet_to_csv(sheet, { blankrows: false });
+    if (csv.trim()) {
+      parts.push(`=== Sheet: ${sheetName} ===\n${csv}`);
+    }
+  }
+
+  return parts.join("\n\n");
 }
 
 function isSupportedUpload(fileName) {
@@ -1469,12 +1523,12 @@ async function uploadArbFiles(principal, reviewId, filesInput = []) {
       uploadedBy: principal.userDetails || principal.userId,
       uploadedAt: now,
       contentHash,
-      extractionStatus: supportsTextExtraction(fileName) ? "Pending" : "Limited Evidence",
+      extractionStatus: (supportsTextExtraction(fileName) || supportsSpreadsheetExtraction(fileName) || supportsImageExtraction(fileName)) ? "Pending" : "Limited Evidence",
       extractionError: null,
       sourceRole: normalizeNullableString(file.sourceRole) || inferSourceRole(logicalCategory),
       sizeBytes: contentBuffer.byteLength,
       contentType,
-      supportedTextExtraction: supportsTextExtraction(fileName)
+      supportedTextExtraction: supportsTextExtraction(fileName) || supportsSpreadsheetExtraction(fileName) || supportsImageExtraction(fileName)
     });
   }
 
@@ -1587,7 +1641,105 @@ async function startArbExtraction(principal, reviewId) {
     }
   }
 
+  const visionAvailable = getFoundryConfiguration().configured;
+
   for (const file of files) {
+    const isSpreadsheet = supportsSpreadsheetExtraction(file.fileName);
+    const isImage = supportsImageExtraction(file.fileName);
+
+    // ── Spreadsheet extraction via SheetJS ──────────────────────────────────
+    if (isSpreadsheet) {
+      try {
+        const buffer = await readBinaryBlob(inputContainer, file.blobPath);
+
+        if (!buffer || buffer.length === 0) {
+          nextFiles.push({
+            ...file,
+            extractionStatus: "Failed",
+            extractionError: "Spreadsheet file could not be read from storage."
+          });
+          extractionErrors.push(`${file.fileName}: empty blob.`);
+          continue;
+        }
+
+        const text = extractSpreadsheetText(buffer);
+
+        if (!text || !text.trim()) {
+          nextFiles.push({
+            ...file,
+            extractionStatus: "Failed",
+            extractionError: "No data rows could be extracted from the spreadsheet."
+          });
+          extractionErrors.push(`${file.fileName}: no data rows found.`);
+          continue;
+        }
+
+        fileTexts.set(file.fileId, text);
+        nextFiles.push({ ...file, extractionStatus: "Completed", extractionError: null });
+
+        if (searchIndexed) {
+          indexArbDocumentChunks(reviewId, file.fileId, file.fileName, file.logicalCategory, text).catch(() => {});
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown spreadsheet extraction error.";
+        nextFiles.push({ ...file, extractionStatus: "Failed", extractionError: message });
+        extractionErrors.push(`${file.fileName}: ${message}`);
+      }
+      continue;
+    }
+
+    // ── Image description via multimodal vision ──────────────────────────────
+    if (isImage) {
+      if (!visionAvailable) {
+        nextFiles.push({
+          ...file,
+          extractionStatus: "Limited Evidence",
+          extractionError: "Vision analysis requires FOUNDRY_PROJECT_ENDPOINT to be configured."
+        });
+        continue;
+      }
+
+      try {
+        const buffer = await readBinaryBlob(inputContainer, file.blobPath);
+
+        if (!buffer || buffer.length === 0) {
+          nextFiles.push({
+            ...file,
+            extractionStatus: "Failed",
+            extractionError: "Image file could not be read from storage."
+          });
+          extractionErrors.push(`${file.fileName}: empty blob.`);
+          continue;
+        }
+
+        const description = await describeImageForReview(buffer, file.fileName, getFileExtension(file.fileName));
+
+        if (!description || !description.trim()) {
+          nextFiles.push({
+            ...file,
+            extractionStatus: "Failed",
+            extractionError: "Vision model returned no description for the image."
+          });
+          extractionErrors.push(`${file.fileName}: vision returned empty response.`);
+          continue;
+        }
+
+        const text = `[Architecture diagram: ${file.fileName}]\n\n${description}`;
+        fileTexts.set(file.fileId, text);
+        nextFiles.push({ ...file, extractionStatus: "Completed", extractionError: null });
+
+        if (searchIndexed) {
+          indexArbDocumentChunks(reviewId, file.fileId, file.fileName, file.logicalCategory, text).catch(() => {});
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown image analysis error.";
+        nextFiles.push({ ...file, extractionStatus: "Failed", extractionError: message });
+        extractionErrors.push(`${file.fileName}: ${message}`);
+      }
+      continue;
+    }
+
+    // ── Plain-text extraction (existing path) ────────────────────────────────
     if (!file.supportedTextExtraction) {
       nextFiles.push({
         ...file,

@@ -96,6 +96,23 @@ async function uploadBinaryBlob(containerClient, blobName, body, contentType) {
   return blobClient;
 }
 
+async function readBinaryBlob(containerClient, blobName) {
+  const blobClient = containerClient.getBlobClient(blobName);
+
+  if (!(await blobClient.exists())) {
+    return null;
+  }
+
+  const download = await blobClient.download();
+  const chunks = [];
+
+  for await (const chunk of download.readableStreamBody) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+
+  return Buffer.concat(chunks);
+}
+
 async function readTextBlob(containerClient, blobName) {
   const blobClient = containerClient.getBlobClient(blobName);
 
@@ -148,6 +165,7 @@ module.exports = {
   buildProjectReviewStateBlobName,
   deleteBlobIfExists,
   getContainerClient,
+  readBinaryBlob,
   readTextBlob,
   readJsonBlob,
   sanitizePathSegment,
