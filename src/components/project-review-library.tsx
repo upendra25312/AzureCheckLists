@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
+  ENABLED_AUTH_PROVIDERS,
   activateCloudProjectReview,
   archiveCloudProjectReview,
   buildLoginUrl,
   buildLogoutUrl,
   deleteCloudProjectReview,
   fetchClientPrincipal,
+  formatIdentityProvider,
   listCloudProjectReviews,
   purgeCloudProjectReview,
   restoreDeletedCloudProjectReview
@@ -22,16 +24,6 @@ import type {
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString("en-US");
-}
-
-function formatProvider(provider: string | undefined) {
-  switch ((provider ?? "").toLowerCase()) {
-    case "aad":
-    case "azureactivedirectory":
-      return "Microsoft";
-    default:
-      return provider || "Account";
-  }
 }
 
 function getReviewLifecycleLabel(review: SavedProjectReviewSummary) {
@@ -231,7 +223,7 @@ export function ProjectReviewLibrary() {
         ? `Active saved review is ${payload.user.activeReviewId}.`
         : principal
           ? "Signed in, but no active Azure-backed review is set yet."
-          : "Sign in with Microsoft to load and manage saved project reviews."
+          : "Sign in to load and manage saved project reviews."
     }
   ];
 
@@ -409,14 +401,15 @@ export function ProjectReviewLibrary() {
               Start a new review
             </Link>
             {!principal ? (
-              <>
-                <a href={buildLoginUrl("aad")} className="secondary-button review-command-secondary">
-                  Sign in with Microsoft
+              ENABLED_AUTH_PROVIDERS.map((provider) => (
+                <a
+                  key={provider.id}
+                  href={buildLoginUrl(provider.id)}
+                  className="secondary-button review-command-secondary"
+                >
+                  Sign in with {provider.label}
                 </a>
-                <a href={buildLoginUrl("google")} className="secondary-button review-command-secondary">
-                  Sign in with Google
-                </a>
-              </>
+              ))
             ) : (
               <a href={buildLogoutUrl("/")} className="secondary-button review-command-secondary">
                 Sign out
@@ -440,18 +433,21 @@ export function ProjectReviewLibrary() {
         <section className="library-state-grid">
           <section className="filter-card board-stage-panel library-state-card">
             <p className="eyebrow">Sign in</p>
-            <h3>Sign in with Microsoft to sync saved reviews across sessions.</h3>
+            <h3>Sign in to sync saved reviews across sessions.</h3>
             <p className="microcopy">
               You can still explore services and outputs without sign-in. Saving, resuming, and
               restoring reviews from Azure requires an authenticated identity.
             </p>
             <div className="button-row">
-              <a href={buildLoginUrl("aad")} className="primary-button">
-                Continue with Microsoft
-              </a>
-              <a href={buildLoginUrl("google")} className="secondary-button">
-                Continue with Google
-              </a>
+              {ENABLED_AUTH_PROVIDERS.map((provider, index) => (
+                <a
+                  key={provider.id}
+                  href={buildLoginUrl(provider.id)}
+                  className={index === 0 ? "primary-button" : "secondary-button"}
+                >
+                  Continue with {provider.label}
+                </a>
+              ))}
             </div>
           </section>
           <section className="filter-card board-stage-panel library-state-card">
@@ -471,11 +467,11 @@ export function ProjectReviewLibrary() {
             <p className="eyebrow">Signed in identity</p>
             <h3>{payload.user.email}</h3>
             <p className="microcopy">
-              Signed in with {formatProvider(payload.user.provider)}. The active saved review is{" "}
+              Signed in with {formatIdentityProvider(payload.user.provider)}. The active saved review is{" "}
               {payload.user.activeReviewId ?? "not set"}.
             </p>
             <div className="chip-row board-summary-row">
-              <span className="chip">Provider {formatProvider(payload.user.provider)}</span>
+              <span className="chip">Provider {formatIdentityProvider(payload.user.provider)}</span>
               <span className="chip">
                 Active review {payload.user.activeReviewId ?? "not set"}
               </span>

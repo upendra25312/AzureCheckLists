@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createArbReview, listArbReviews } from "@/arb/api";
 import { getArbStepHref } from "@/arb/routes";
 import type { ArbReviewSummary } from "@/arb/types";
-import { buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
+import { ENABLED_AUTH_PROVIDERS, buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
 import type { StaticWebAppClientPrincipal } from "@/types";
 
 type ArbReviewLibraryFocus = "workspace" | "decision";
@@ -180,16 +180,20 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
           Upload your design documents and get an AI-powered architecture review in minutes.
         </h1>
         <p className="arb-signin-sub">
-          Sign in with your Microsoft account to create a review, upload SOW or design docs,
+          Sign in with your supported account to create a review, upload SOW or design docs,
           and let the Azure ARB Agent check them against WAF, CAF, ALZ, HA/DR, Security,
           Networking, and Monitoring — with findings linked to live Microsoft Learn guidance.
         </p>
-        <a href={buildLoginUrl("aad")} className="arb-signin-cta">
-          Sign in with Microsoft to start →
-        </a>
-        <a href={buildLoginUrl("google")} className="arb-signin-cta" style={{ marginTop: 10 }}>
-          Sign in with Google to start →
-        </a>
+        {ENABLED_AUTH_PROVIDERS.map((provider, index) => (
+          <a
+            key={provider.id}
+            href={buildLoginUrl(provider.id)}
+            className="arb-signin-cta"
+            style={index > 0 ? { marginTop: 10 } : undefined}
+          >
+            Sign in with {provider.label} to start →
+          </a>
+        ))}
         <ul className="arb-signin-bullets">
           <li>PDF, Word, or PowerPoint — drag and drop your documents</li>
           <li>AI checks WAF · CAF · ALZ · HA/DR · Backup · Security · Networking · Monitoring</li>

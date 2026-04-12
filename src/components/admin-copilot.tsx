@@ -8,7 +8,7 @@ import type {
   StaticWebAppClientPrincipal
 } from "@/types";
 import { loadAdminCopilotHealth, runAdminCopilot } from "@/lib/admin-copilot";
-import { fetchClientPrincipal } from "@/lib/review-cloud";
+import { PRIMARY_AUTH_PROVIDER, fetchClientPrincipal } from "@/lib/review-cloud";
 import { loadReviewTelemetrySummary, trackReviewTelemetry } from "@/lib/review-telemetry";
 
 const SUGGESTED_ADMIN_PROMPTS = [
@@ -20,10 +20,10 @@ const SUGGESTED_ADMIN_PROMPTS = [
 
 function getLoginUrl() {
   if (typeof window === "undefined") {
-    return "/.auth/login/aad";
+    return `/.auth/login/${PRIMARY_AUTH_PROVIDER}`;
   }
 
-  return `/.auth/login/aad?post_login_redirect_uri=${encodeURIComponent(window.location.href)}`;
+  return `/.auth/login/${PRIMARY_AUTH_PROVIDER}?post_login_redirect_uri=${encodeURIComponent(window.location.href)}`;
 }
 
 function hasAdminRole(principal: StaticWebAppClientPrincipal | null) {

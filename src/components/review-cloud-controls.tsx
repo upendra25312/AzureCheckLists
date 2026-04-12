@@ -9,6 +9,7 @@ import type {
   StaticWebAppClientPrincipal
 } from "@/types";
 import {
+  ENABLED_AUTH_PROVIDERS,
   buildLoginUrl,
   buildStructuredReviewRecords,
   downloadCloudReviewCsv,
@@ -202,9 +203,15 @@ export function ReviewCloudControls({
           context restore in later sessions, or a cloud-generated CSV artifact.
         </p>
         <div className="button-row">
-          <a href={buildLoginUrl("aad")} className="primary-button">
-            Continue with Microsoft
-          </a>
+          {ENABLED_AUTH_PROVIDERS.map((provider, index) => (
+            <a
+              key={provider.id}
+              href={buildLoginUrl(provider.id)}
+              className={index === 0 ? "primary-button" : "secondary-button"}
+            >
+              Continue with {provider.label}
+            </a>
+          ))}
           {continueHref ? (
             <a href={continueHref} className="ghost-button">
               Keep working locally

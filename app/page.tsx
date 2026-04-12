@@ -6,10 +6,16 @@ import { useEffect, useRef, useState } from "react";
 import { createArbReview, listArbReviews, uploadArbFiles } from "@/arb/api";
 import { getArbStepHref } from "@/arb/routes";
 import type { ArbReviewSummary } from "@/arb/types";
-import { buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
+import {
+  ENABLED_AUTH_PROVIDERS,
+  PRIMARY_AUTH_PROVIDER,
+  buildLoginUrl,
+  fetchClientPrincipal,
+  getAuthSupportLabel
+} from "@/lib/review-cloud";
 
 const WORKFLOW_STEPS = [
-  { id: 1, label: "Sign in", detail: "Microsoft account — Outlook or Azure AD" },
+  { id: 1, label: "Sign in", detail: "Use your supported Microsoft, GitHub, or Google account" },
   { id: 2, label: "Create review", detail: "Name your project and customer" },
   { id: 3, label: "Upload documents", detail: "PDF, Word, PowerPoint, Markdown" },
   { id: 4, label: "Run AI analysis", detail: "WAF · CAF · ALZ · HA/DR · Security + more" },
@@ -171,10 +177,10 @@ export default function HomePage() {
             )}
           </div>
         ) : (
-          <a href={buildLoginUrl("aad")} className="hero-upload-zone hero-upload-zone--signin">
+          <a href={buildLoginUrl(PRIMARY_AUTH_PROVIDER)} className="hero-upload-zone hero-upload-zone--signin">
             <span className="hero-upload-icon">🔐</span>
             <p className="hero-upload-title">Sign in to upload your documents</p>
-            <p className="hero-upload-sub">Microsoft or Google account supported</p>
+            <p className="hero-upload-sub">{getAuthSupportLabel()}</p>
           </a>
         )}
 
@@ -241,12 +247,15 @@ export default function HomePage() {
         <div className="impact-hero-cta-row" style={{ marginTop: 24 }}>
           {signedIn === false && (
             <>
-              <a href={buildLoginUrl("aad")} className="impact-btn impact-btn-primary">
-                Start with Microsoft
-              </a>
-              <a href={buildLoginUrl("google")} className="impact-btn impact-btn-secondary">
-                Start with Google
-              </a>
+              {ENABLED_AUTH_PROVIDERS.map((provider, index) => (
+                <a
+                  key={provider.id}
+                  href={buildLoginUrl(provider.id)}
+                  className={`impact-btn ${index === 0 ? "impact-btn-primary" : "impact-btn-secondary"}`}
+                >
+                  Start with {provider.label}
+                </a>
+              ))}
             </>
           )}
           {signedIn === true && latestReview && (

@@ -25,7 +25,7 @@ import {
 } from "@/arb/api";
 import { getArbReviewSteps } from "@/arb/mock-review";
 import { getArbStepHref } from "@/arb/routes";
-import { buildLoginUrl } from "@/lib/review-cloud";
+import { ENABLED_AUTH_PROVIDERS, buildLoginUrl } from "@/lib/review-cloud";
 import type {
   ArbAction,
   ArbDecision,
@@ -1899,11 +1899,17 @@ export function ArbLiveReviewStep(props: {
           <p>{error}</p>
           {authRequired ? (
             <div className="review-command-bar">
-              <p>Sign in with Microsoft to open Azure-backed uploads, findings, exports, and decision state for this review.</p>
+              <p>Sign in to open Azure-backed uploads, findings, exports, and decision state for this review.</p>
               <div className="review-command-actions">
-                <a href={buildLoginUrl("aad")} className="primary-button">
-                  Continue with Microsoft
-                </a>
+                {ENABLED_AUTH_PROVIDERS.map((provider, index) => (
+                  <a
+                    key={provider.id}
+                    href={buildLoginUrl(provider.id)}
+                    className={index === 0 ? "primary-button" : "secondary-button"}
+                  >
+                    Continue with {provider.label}
+                  </a>
+                ))}
               </div>
             </div>
           ) : (

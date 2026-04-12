@@ -17,7 +17,7 @@ import {
   saveScopedReviews,
   upsertPackage
 } from "@/lib/review-storage";
-import { buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
+import { PRIMARY_AUTH_PROVIDER, buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
 import type { ChecklistItem, ReviewDraft, ReviewPackage, ServicePayload } from "@/types";
 
 type ExportFormat = "csv" | "json" | "text";
@@ -242,7 +242,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
                 Start AI review with this service →
               </Link>
             ) : signedIn === false ? (
-              <a href={buildLoginUrl("aad", "/arb")} className="primary-button">
+              <a href={buildLoginUrl(PRIMARY_AUTH_PROVIDER, "/arb")} className="primary-button">
                 Sign in to start a review →
               </a>
             ) : null}

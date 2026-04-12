@@ -2,18 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { buildLoginUrl, buildLogoutUrl, fetchClientPrincipal } from "@/lib/review-cloud";
+import {
+  ENABLED_AUTH_PROVIDERS,
+  buildLoginUrl,
+  buildLogoutUrl,
+  fetchClientPrincipal,
+  formatIdentityProvider
+} from "@/lib/review-cloud";
 import type { StaticWebAppClientPrincipal } from "@/types";
-
-function formatProvider(provider: string | undefined) {
-  switch ((provider ?? "").toLowerCase()) {
-    case "aad":
-    case "azureactivedirectory":
-      return "Microsoft";
-    default:
-      return provider || "Account";
-  }
-}
 
 export function AuthStatusChip() {
   const [principal, setPrincipal] = useState<StaticWebAppClientPrincipal | null>(null);
@@ -61,12 +57,16 @@ export function AuthStatusChip() {
   if (!principal) {
     return (
       <div className="auth-chip-group">
-        <a href={buildLoginUrl("aad")} className="auth-chip" title="Continue with Microsoft">
-          Microsoft
-        </a>
-        <a href={buildLoginUrl("google")} className="auth-chip" title="Continue with Google">
-          Google
-        </a>
+        {ENABLED_AUTH_PROVIDERS.map((provider) => (
+          <a
+            key={provider.id}
+            href={buildLoginUrl(provider.id)}
+            className="auth-chip"
+            title={`Continue with ${provider.label}`}
+          >
+            {provider.label}
+          </a>
+        ))}
       </div>
     );
   }
@@ -80,7 +80,7 @@ export function AuthStatusChip() {
         </summary>
         <div className="auth-menu-panel">
           <p className="microcopy">
-            Signed in with {formatProvider(principal.identityProvider)} as{" "}
+            Signed in with {formatIdentityProvider(principal.identityProvider)} as{" "}
             {principal.userDetails || principal.userId}.
           </p>
           <div className="auth-menu-actions">
