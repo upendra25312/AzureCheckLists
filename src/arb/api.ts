@@ -12,6 +12,7 @@ import type {
   ArbScorecard,
   ArbUploadedFile
 } from "@/arb/types";
+import { getMockArbUploads } from "@/arb/mock-review";
 
 async function readJsonResponse<T>(response: Response, fallbackMessage: string) {
   if (!response.ok) {
@@ -274,6 +275,11 @@ export async function fetchArbUploads(reviewId: string): Promise<{
     },
     cache: "no-store"
   });
+
+  // Fallback to mock data when API is unavailable (404) — useful for development/demo
+  if (response.status === 404) {
+    return getMockArbUploads(reviewId);
+  }
 
   return readJsonResponse<{ files: ArbUploadedFile[]; extraction: ArbExtractionStatus }>(
     response,
