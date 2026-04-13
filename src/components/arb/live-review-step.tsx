@@ -810,21 +810,26 @@ export function ArbLiveReviewStep(props: {
             ))}
           </div>
 
-          <label className="secondary-button arb-upload-picker" htmlFor={`arb-upload-${reviewId}`}>
-            Select review files
+          <label htmlFor={`arb-upload-${reviewId}`} className="arb-upload-label">
+            <span className="arb-upload-icon">📁</span>
+            <span>Upload Architecture Docs</span>
+            <input
+              id={`arb-upload-${reviewId}`}
+              className="field-input"
+              aria-label="Upload architecture review documents"
+              type="file"
+              multiple
+              accept={SUPPORTED_ARB_UPLOAD_EXTENSIONS.join(",")}
+              style={{ display: 'none' }}
+              onChange={(event) => {
+                void handleFileUpload(event.target.files);
+                event.currentTarget.value = "";
+              }}
+            />
           </label>
-          <input
-            id={`arb-upload-${reviewId}`}
-            className="field-input"
-            aria-label="Upload review package files"
-            type="file"
-            multiple
-            accept={SUPPORTED_ARB_UPLOAD_EXTENSIONS.join(",")}
-            onChange={(event) => {
-              void handleFileUpload(event.target.files);
-              event.currentTarget.value = "";
-            }}
-          />
+          <div className="arb-upload-helper-text" style={{marginTop: '0.5rem', marginBottom: '0.5rem'}}>
+            Accepted: PDF, DOCX, PPTX, XLSX, images, diagrams, Markdown, and more. Upload your SOW, HLD, LLD, or diagrams for review.
+          </div>
           <p className="microcopy">
             Accepted: PDF, Word, PowerPoint, Excel, images, diagrams (VSDX/SVG), Markdown, and plain text.
             PDF and Word documents produce the richest findings. Excel/spreadsheet data is extracted sheet-by-sheet. Images and diagrams are analysed by the vision model to identify Azure services, topology, and labels.
