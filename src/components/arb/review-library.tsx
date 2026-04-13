@@ -233,19 +233,27 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
     setError(null);
   }
 
+
+
   if (loading) {
     return <div className="arb-library-loading"><p>Loading reviews…</p></div>;
   }
 
-  /* ── Signed-out state ── */
+  // --- Session diagnostics always visible ---
   if (!principal) {
     return (
-      <div className="arb-signin-hero">
+      <div className="arb-signin-hero arb-session-diagnostics">
         <img src="/icon.svg" alt="Azure Review Assistant" className="arb-signin-mark" />
         <p className="arb-signin-kicker">ARB-grade review mode</p>
         <h1 className="arb-signin-headline">
           Upload your design documents and get a framework-validated architecture review in minutes.
         </h1>
+        <div style={{margin: '16px 0', color: '#b00', fontWeight: 600}}>
+          <p>Session diagnostics:</p>
+          <pre style={{background: '#fff0f0', color: '#b00', padding: 8, borderRadius: 4, fontSize: 12}}>
+            {JSON.stringify({ principal, resolved, error, debug: true, time: new Date().toISOString() }, null, 2)}
+          </pre>
+        </div>
         {ENABLED_AUTH_PROVIDERS.map((provider, index) => (
           <a
             key={provider.id}
@@ -262,9 +270,52 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
           <li>Every finding scored 0–100 and linked to a Microsoft Learn source</li>
           <li>Sign in is required to save uploads, findings, exports, and final sign-off</li>
         </ul>
+        <div style={{marginTop: 24}}>
+          <strong style={{color: '#b00'}}>Debug: Force upload UI (admin/dev only)</strong>
+          <div style={{marginTop: 12, border: '1px solid #b00', padding: 12, borderRadius: 6, background: '#fff8f8'}}>
+            <p style={{color: '#b00'}}>Session principal is missing. If you are an admin or developer, check authentication/session provider. To force test the upload UI, click below:</p>
+            <button
+              type="button"
+              className="secondary-button arb-upload-picker"
+              onClick={() => setSelectedFiles([])}
+            >
+              Force show upload UI (debug)
+            </button>
+            <div style={{marginTop: 12}}>
+              <input
+                type="file"
+                multiple
+                onChange={(event) => {
+                  setSelectedFiles(Array.from(event.target.files ?? []));
+                  event.currentTarget.value = "";
+                }}
+              />
+              {selectedFiles.length > 0 && (
+                <div style={{marginTop: 8}}>
+                  <strong>Selected files:</strong>
+                  <ul>
+                    {selectedFiles.map((f) => <li key={f.name}>{f.name}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
+
+  // --- Signed-in state: always show upload UI and session diagnostics ---
+  // Diagnostics always visible for troubleshooting
+  // (Optionally, you can move this to a collapsible panel if too verbose)
+  const sessionDiagnostics = (
+    <div style={{margin: '16px 0', color: '#666', fontWeight: 400}}>
+      <p>Session diagnostics:</p>
+      <pre style={{background: '#f0f0ff', color: '#333', padding: 8, borderRadius: 4, fontSize: 12}}>
+        {JSON.stringify({ principal, resolved, error, time: new Date().toISOString() }, null, 2)}
+      </pre>
+    </div>
+  );
 
   /* ── Signed-in state ── */
   return (

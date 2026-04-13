@@ -690,6 +690,31 @@ export function ArbLiveReviewStep(props: {
   }
 
   function renderUploadContent() {
+    // --- Session diagnostics and fallback upload UI ---
+    if (!review) {
+      return (
+        <div className="arb-session-diagnostics" style={{margin: 24, color: '#b00'}}>
+          <h2>Session diagnostics: Review not loaded</h2>
+          <pre style={{background: '#fff0f0', color: '#b00', padding: 8, borderRadius: 4, fontSize: 12}}>
+            {JSON.stringify({ reviewId, review, error, uploadError }, null, 2)}
+          </pre>
+          <details style={{marginTop: 24}}>
+            <summary style={{cursor: 'pointer', color: '#b00'}}>Debug: Force upload UI (admin only)</summary>
+            <div style={{marginTop: 12, border: '1px solid #b00', padding: 12, borderRadius: 6, background: '#fff8f8'}}>
+              <p style={{color: '#b00'}}>Review object is missing. If you are an admin or developer, check reviewId and backend API. If you want to force test the upload UI, click below:</p>
+              <input
+                type="file"
+                multiple
+                onChange={(event) => {
+                  void handleFileUpload(event.target.files);
+                  event.currentTarget.value = "";
+                }}
+              />
+            </div>
+          </details>
+        </div>
+      );
+    }
     const supportedUploads = uploadedFiles.filter((item) => item.supportedTextExtraction);
     const unsupportedUploads = uploadedFiles.filter((item) => !item.supportedTextExtraction);
     const readinessChecks = [
