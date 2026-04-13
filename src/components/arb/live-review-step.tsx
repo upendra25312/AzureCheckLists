@@ -1101,6 +1101,13 @@ export function ArbLiveReviewStep(props: {
     const selectedFindingAction = selectedFinding
       ? actions.find((action) => action.sourceFindingId === selectedFinding.findingId) ?? null
       : null;
+    const reviewPosture = review?.finalDecision ?? review?.recommendation ?? "In Review";
+    const selectedFindingOwner = selectedFinding?.owner ?? selectedFinding?.suggestedOwner ?? "Unassigned";
+    const nextReviewerMove = selectedFinding
+      ? selectedFindingAction
+        ? "Update the remediation action, clear blocker status where possible, and keep the due date honest."
+        : "Assign an owner and create the remediation action so this finding is no longer waiting on coordination."
+      : "Open a finding to assign accountability and capture the remediation path.";
 
     if (findings.length === 0) {
       return (
@@ -1125,27 +1132,44 @@ export function ArbLiveReviewStep(props: {
 
     return (
       <div className="arb-page-stack">
-        <div className="arb-summary-grid">
-          <article className="future-card">
-            <p className="board-card-subtitle">Open actions</p>
-            <strong>{actionSummary.openCount}</strong>
-            <p>Open actions: {actionSummary.openCount}</p>
-          </article>
-          <article className="future-card">
-            <p className="board-card-subtitle">Critical blockers</p>
-            <strong>{criticalBlockerCount}</strong>
-            <p className="section-copy">
-              Review these first because they can prevent final approval even when other findings close.
-            </p>
-          </article>
-          <article className="future-card">
-            <p className="board-card-subtitle">Missing evidence</p>
-            <strong>{missingEvidenceCount}</strong>
-            <p className="section-copy">
-              Missing evidence should stay visible alongside remediation tasks instead of disappearing into notes.
-            </p>
-          </article>
-        </div>
+        <section className="surface-panel arb-summary-card arb-findings-hero">
+          <div className="arb-findings-hero-main">
+            <div>
+              <p className="board-card-subtitle">Findings cockpit</p>
+              <h2 className="section-title">Triage blockers first, then assign the owner and next move.</h2>
+              <p className="section-copy">
+                This page should tell the board reviewer what is blocking sign-off, what evidence is still missing,
+                and who owns the next remediation step.
+              </p>
+            </div>
+            <div className="arb-findings-hero-posture">
+              <strong>{reviewPosture}</strong>
+              <span>Evidence: {review?.evidenceReadinessState ?? "Pending evidence check"}</span>
+            </div>
+          </div>
+          <div className="arb-findings-hero-list">
+            <article className="future-card">
+              <p className="board-card-subtitle">Critical blockers</p>
+              <strong>{criticalBlockerCount}</strong>
+              <p>These findings can stop sign-off even when other items are already in progress.</p>
+            </article>
+            <article className="future-card">
+              <p className="board-card-subtitle">Open actions</p>
+              <strong>{actionSummary.openCount}</strong>
+              <p>{actionSummary.blockedCount} blocked · {actionSummary.reviewerVerificationCount} need reviewer verification.</p>
+            </article>
+            <article className="future-card">
+              <p className="board-card-subtitle">Missing evidence</p>
+              <strong>{missingEvidenceCount}</strong>
+              <p>Keep evidence gaps visible here so they stay tied to the actual finding and owner.</p>
+            </article>
+            <article className="future-card">
+              <p className="board-card-subtitle">Next reviewer move</p>
+              <strong>{selectedFinding ? "Work the selected finding" : "Select a finding"}</strong>
+              <p>{nextReviewerMove}</p>
+            </article>
+          </div>
+        </section>
 
           {findingError ? (
             <section className="trace-card arb-summary-card">
@@ -1157,7 +1181,7 @@ export function ArbLiveReviewStep(props: {
           <div className="board-card-head">
             <div className="board-card-head-copy">
               <p className="board-card-subtitle">Findings table</p>
-              <h2 className="section-title">Scan the findings first, then open one item to work it through.</h2>
+              <h2 className="section-title">Open one finding, assign accountability, and capture the remediation path.</h2>
             </div>
           </div>
           <div className="arb-review-table-scroll">
@@ -1259,6 +1283,24 @@ export function ArbLiveReviewStep(props: {
               <article className="trace-card">
                 <strong>Recommended fix</strong>
                 <p>{selectedFinding.recommendation}</p>
+              </article>
+            </div>
+
+            <div className="arb-finding-focus-summary">
+              <article className="future-card">
+                <p className="board-card-subtitle">Status</p>
+                <strong>{selectedFinding.status}</strong>
+                <p>Keep status aligned with the actual remediation state, not just intent.</p>
+              </article>
+              <article className="future-card">
+                <p className="board-card-subtitle">Owner</p>
+                <strong>{selectedFindingOwner}</strong>
+                <p>{selectedFinding.owner ? "An accountable reviewer or engineer is already named." : "Assign one named owner before moving this finding forward."}</p>
+              </article>
+              <article className="future-card">
+                <p className="board-card-subtitle">Due date</p>
+                <strong>{selectedFinding.dueDate ?? "Not set"}</strong>
+                <p>{selectedFindingAction ? "Action tracking exists for this finding." : "No remediation action exists yet for this finding."}</p>
               </article>
             </div>
 
