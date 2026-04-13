@@ -235,7 +235,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
             </Link>
             {signedIn === true ? (
               <Link href="/arb" className="primary-button">
-                Start AI review with this service →
+                Start architecture review with this service →
               </Link>
             ) : signedIn === false ? (
               <a href={buildLoginUrl(PRIMARY_AUTH_PROVIDER, "/arb")} className="primary-button">

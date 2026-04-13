@@ -197,7 +197,7 @@ export function ArbReviewShell(props: {
         <aside className="arb-sidecar-stack">
           {reviewSummary ? (
             <section className="trace-card arb-summary-card">
-              <p className="board-card-subtitle">AI review summary</p>
+              <p className="board-card-subtitle">Assessment summary</p>
               <p className="section-copy arb-review-summary-text">{reviewSummary}</p>
             </section>
           ) : null}

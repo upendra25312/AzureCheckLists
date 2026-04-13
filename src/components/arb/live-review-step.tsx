@@ -95,7 +95,7 @@ function buildBullets(
           ];
     case "decision":
       return [
-        "Show AI recommendation and blocker summary",
+        "Show derived recommendation and blocker summary",
         "Capture reviewer decision and rationale",
         "Track conditions and must-fix actions"
       ];
@@ -721,7 +721,7 @@ export function ArbLiveReviewStep(props: {
             <p className="board-card-subtitle">Files uploaded</p>
             <strong>{supportedUploads.length}</strong>
             <p className="section-copy">
-              Text-based files (PDF, Word, Markdown) are ready for AI analysis.
+              Text-based files (PDF, Word, Markdown) are ready for automated assessment.
             </p>
           </article>
           <article className="future-card">
@@ -773,8 +773,8 @@ export function ArbLiveReviewStep(props: {
           </div>
 
           <p className="section-copy">
-            Drag files here or click to select. The AI agent will read these documents and check them
-            against WAF, CAF, ALZ, HA/DR, Security, Networking, and Monitoring frameworks.
+            Drag files here or click to select. These documents will be assessed against
+            WAF, CAF, ALZ, HA/DR, Security, Networking, and Monitoring frameworks.
           </p>
 
           <div className="pill-row">
@@ -937,13 +937,13 @@ export function ArbLiveReviewStep(props: {
           ) : null}
         </section>
 
-        {/* Run AI Review CTA — shown once extraction is complete */}
+        {/* Run Assessment CTA — shown once extraction is complete */}
         {extractionStatus?.state === "Completed" ? (
           <section className="surface-panel arb-action-panel arb-action-panel-highlight">
-            <p className="arb-action-panel-label">Analysis complete — ready for AI review</p>
+            <p className="arb-action-panel-label">Extraction complete — ready for framework assessment</p>
             <p className="section-copy">
-              Run the ARB Agent to produce structured findings, a weighted scorecard, and a
-              recommendation. The agent checks all evidence against WAF, CAF, ALZ, HA/DR, Security,
+              Run the automated assessment to produce structured findings, a weighted scorecard, and a
+              derived recommendation. Every evidence item is validated against WAF, CAF, ALZ, HA/DR, Security,
               Networking, and Monitoring. Typically takes 1–3 minutes.
             </p>
             <button
@@ -953,19 +953,19 @@ export function ArbLiveReviewStep(props: {
               onClick={() => void handleRunAgentReview()}
             >
               {agentRunning ? (
-                <><span className="arb-spinner" aria-hidden="true" /> Running AI review… 1–3 minutes</>
+                <><span className="arb-spinner" aria-hidden="true" /> Running assessment… 1–3 minutes</>
               ) : (
-                "Run AI review →"
+                "Run assessment →"
               )}
             </button>
             {agentRunning ? (
               <p className="arb-upload-status arb-upload-status-progress">
-                The agent is reading your documents and checking against all 11 Azure frameworks. Do not close this page.
+                Validating your documents against all 11 Azure frameworks. Do not close this page.
               </p>
             ) : null}
             {agentCompleted ? (
               <p className="arb-upload-status arb-upload-status-done">
-                AI review complete — findings and scorecard updated.{" "}
+                Assessment complete — findings and scorecard updated.{" "}
                 <a href={getArbStepHref(reviewId, "findings")} className="arb-inline-link">View findings →</a>
               </p>
             ) : null}
@@ -977,7 +977,7 @@ export function ArbLiveReviewStep(props: {
         <div className="arb-upload-layout">
           <div className="arb-sidecar-stack">
             <section className="future-card arb-summary-card">
-              <p className="board-card-subtitle">What the AI will check</p>
+              <p className="board-card-subtitle">Framework coverage</p>
               <ul className="arb-checklist">
                 {extractionPreview.map((item) => (
                   <li key={item}>{item}</li>
@@ -1113,15 +1113,15 @@ export function ArbLiveReviewStep(props: {
       return (
         <div className="arb-page-stack">
           <ArbPlaceholderPage
-            intro="No AI findings yet — the AI agent hasn't run for this review."
+            intro="No findings yet — the automated assessment hasn't run for this review."
             bullets={[
-              "Go back to the Upload step and click 'Run AI review →' to generate findings",
-              "The agent checks your documents against WAF, CAF, ALZ, HA/DR, Security, Networking, and Monitoring",
+              "Go back to the Upload step and click 'Run assessment →' to generate findings",
+              "Documents are validated against WAF, CAF, ALZ, HA/DR, Security, Networking, and Monitoring",
               "Results appear here automatically — typically 1–3 minutes"
             ]}
             footer={
               <a href={getArbStepHref(reviewId, "upload", "upload-documents")} className="primary-button">
-                Go to Upload — Run AI review →
+                Go to Upload — Run assessment →
               </a>
             }
           />
@@ -1273,7 +1273,7 @@ export function ArbLiveReviewStep(props: {
 
             <div className="arb-score-grid">
               <article className="trace-card">
-                <strong>What the AI found</strong>
+                <strong>Assessment finding</strong>
                 <p>{selectedFinding.findingStatement}</p>
               </article>
               <article className="trace-card">
@@ -1702,7 +1702,7 @@ export function ArbLiveReviewStep(props: {
           ) : (
             <article className="trace-card arb-summary-card">
               <p className="board-card-subtitle">Score override</p>
-              <p className="section-copy">If the AI score does not reflect your judgment, proceed to the Decision step to record the human decision with rationale. The reviewer decision always takes precedence over the AI recommendation.</p>
+              <p className="section-copy">If the derived score does not reflect your judgment, proceed to the Decision step to record the human decision with rationale. The reviewer decision always takes precedence over the derived recommendation.</p>
               <a href={getArbStepHref(reviewId, "decision")} className="secondary-button" style={{ display: "inline-block", marginTop: 8 }}>
                 Go to Decision →
               </a>
@@ -1774,7 +1774,7 @@ export function ArbLiveReviewStep(props: {
                 <strong style={{ color: actionSummary.reviewerVerificationCount > 0 ? "var(--warning)" : undefined }}>{actionSummary.reviewerVerificationCount}</strong>
               </article>
             </div>
-            <p className="section-copy" style={{ marginBottom: 8 }}>The AI recommendation is advisory. Your recorded decision below is the binding outcome for this review.</p>
+            <p className="section-copy" style={{ marginBottom: 8 }}>The derived recommendation is advisory. Your recorded decision below is the binding outcome for this review.</p>
             {actionSummary.openActions.length > 0 ? (
               <ul className="arb-checklist">
                 {actionSummary.openActions.map((action) => (
@@ -1791,7 +1791,7 @@ export function ArbLiveReviewStep(props: {
                 <p className="board-card-subtitle">Decision recorded</p>
                 <div className="arb-decision-recorded-grid">
                   <div><span className="microcopy">Decision</span><strong>{decisionResult.reviewerDecision}</strong></div>
-                  <div><span className="microcopy">AI recommendation</span><strong>{decisionResult.aiRecommendation}</strong></div>
+                  <div><span className="microcopy">Derived recommendation</span><strong>{decisionResult.aiRecommendation}</strong></div>
                   {decisionResult.reviewerName && <div><span className="microcopy">Reviewer</span><strong>{decisionResult.reviewerName}</strong></div>}
                   {decisionResult.reviewerRole && <div><span className="microcopy">Role</span><strong>{decisionResult.reviewerRole}</strong></div>}
                   <div><span className="microcopy">Recorded at</span><strong>{new Date(decisionResult.recordedAt).toLocaleString()}</strong></div>
@@ -1805,7 +1805,7 @@ export function ArbLiveReviewStep(props: {
             <div className="board-card-head">
               <div className="board-card-head-copy">
                 <p className="board-card-subtitle">Reviewer sign-off</p>
-                <h2 className="section-title">Record the human decision — separate from the AI recommendation</h2>
+                <h2 className="section-title">Record the human decision — separate from the derived recommendation</h2>
               </div>
             </div>
             <div className="arb-form-grid">

@@ -17,8 +17,8 @@ export default function DecisionCenterPage() {
         <div className="review-command-metrics">
           <article className="review-command-metric">
             <span>Recommendation</span>
-            <strong>AI recommendation</strong>
-            <p>Keep the AI recommendation visible, but separate from the reviewer-owned decision.</p>
+            <strong>Derived recommendation</strong>
+            <p>Keep the derived recommendation visible, but separate from the reviewer-owned decision.</p>
           </article>
           <article className="review-command-metric">
             <span>Scorecard</span>

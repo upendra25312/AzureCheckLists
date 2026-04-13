@@ -72,7 +72,7 @@ function getReviewPosture(review: ArbReviewSummary) {
 function getNextStepSummary(review: ArbReviewSummary) {
   const step = getActiveStep(review);
   if (step <= 2) {
-    return "Next: upload the architecture package so the AI review can start from real evidence.";
+    return "Next: upload the architecture package so the assessment can start from real evidence.";
   }
   if (step === 3) {
     return "Next: run analysis and validate the extracted evidence before findings are shared.";
@@ -221,7 +221,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
       <div className="arb-signin-hero">
         <p className="arb-signin-kicker">ARB-grade review mode</p>
         <h1 className="arb-signin-headline">
-          Upload your design documents and get an AI-powered architecture review in minutes.
+          Upload your design documents and get a framework-validated architecture review in minutes.
         </h1>
         {ENABLED_AUTH_PROVIDERS.map((provider, index) => (
           <a
@@ -235,7 +235,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
         ))}
         <ul className="arb-signin-bullets">
           <li>PDF, Word, PowerPoint, or Markdown — drag and drop your documents</li>
-          <li>AI checks WAF · CAF · ALZ · HA/DR · Security · Networking · Monitoring in one pass</li>
+          <li>Automated coverage across WAF · CAF · ALZ · HA/DR · Security · Networking · Monitoring</li>
           <li>Every finding scored 0–100 and linked to a Microsoft Learn source</li>
           <li>Files retained for 30 days — delete any review at any time</li>
         </ul>
@@ -248,12 +248,12 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
     <div className="arb-library-stack">
       <section className="arb-create-card">
         <div className="arb-create-copy">
-          <p className="arb-create-label">AI review workspace</p>
-          <h2 className="arb-create-title">Upload architecture documents and start an AI review.</h2>
+          <p className="arb-create-label">Architecture review workspace</p>
+          <h2 className="arb-create-title">Upload architecture documents and start a structured review.</h2>
           <p className="arb-create-sub">
             Create the review, move straight into document upload, and generate Microsoft Learn-grounded findings across WAF, CAF, ALZ, HA/DR, Security, Networking, and Monitoring.
           </p>
-          <div className="arb-proof-strip" aria-label="AI review proof points">
+          <div className="arb-proof-strip" aria-label="Architecture review proof points">
             <span className="arb-proof-chip">11 framework areas checked</span>
             <span className="arb-proof-chip">Traceable Microsoft guidance</span>
             <span className="arb-proof-chip">Board-ready sign-off workflow</span>
@@ -284,7 +284,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
           <input
             id="arb-landing-upload"
             className="arb-landing-upload-input"
-            aria-label="Select review files before creating the AI review"
+            aria-label="Select review files before creating the architecture review"
             type="file"
             multiple
             accept={SUPPORTED_ARB_UPLOAD_EXTENSIONS.join(",")}
@@ -353,7 +353,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
           >
             {saving
               ? (selectedFiles.length > 0 ? "Creating review and uploading…" : "Creating…")
-              : (selectedFiles.length > 0 ? "Start AI Review and upload files →" : "Start AI Review →")}
+              : (selectedFiles.length > 0 ? "Start Architecture Review and upload files →" : "Start Architecture Review →")}
           </button>
         </div>
         <p className="arb-create-trust">

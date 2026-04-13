@@ -21,7 +21,7 @@ const WORKFLOW_STEPS = [
   {
     id: 4,
     label: "Architecture Assurance Assessment",
-    detail: "AI-driven validation across WAF, CAF, ALZ, HA/DR, Security + more"
+    detail: "Automated framework assessment across WAF, CAF, ALZ, HA/DR, Security + more"
   },
   { id: 5, label: "Review findings", detail: "Scored 0–100, linked to Microsoft Learn" },
   { id: 6, label: "Sign off & export", detail: "CSV, HTML, Markdown — board-ready pack" },
@@ -167,7 +167,7 @@ export default function HomePage() {
           Upload architecture docs. Get board-ready Azure findings in minutes.
         </h1>
         <p className="impact-subline">
-          Drop your SOW or design document — the AI agent reads it and checks it against WAF, CAF, ALZ, HA/DR, Security, Networking, and Monitoring.
+          Upload your SOW or design document and get scored, evidence-linked findings across WAF, CAF, ALZ, HA/DR, Security, Networking, and Monitoring.
         </p>
 
         {/* Upload zone — the action IS the page */}
@@ -285,7 +285,7 @@ export default function HomePage() {
           )}
           {signedIn === true && !latestReview && (
             <Link href="/arb" className="impact-btn impact-btn-primary">
-                Start AI Review →
+                Start Architecture Review →
             </Link>
           )}
         </div>
@@ -327,7 +327,7 @@ export default function HomePage() {
             </div>
             <h3 className="impact-mode-title">Full architecture review</h3>
             <p className="impact-small">
-              Upload your SOW or design doc. The AI agent reads it and checks every page against 11 Microsoft frameworks.
+              Upload your SOW or design doc. Every page is assessed against 11 Microsoft frameworks — scored, evidence-linked, and board-ready.
             </p>
             <ul className="impact-mode-list">
               <li>Document evidence grounded in your own files</li>
@@ -338,7 +338,7 @@ export default function HomePage() {
             </ul>
             <div>
               <Link href="/arb" className="impact-btn impact-btn-primary">
-                Start AI Review →
+                Start Architecture Review →
               </Link>
             </div>
           </article>
@@ -350,8 +350,8 @@ export default function HomePage() {
         <span className="impact-kicker">Architecture Board Review</span>
         <h2 className="impact-section-title">What you get after uploading your documents</h2>
         <p className="impact-small">
-          The AI agent checks every document against 11 Azure frameworks and returns scored findings
-          with evidence from your own docs and links to Microsoft Learn.
+          Every document is assessed against 11 Azure frameworks, returning scored, evidence-linked findings
+          grounded in your own docs with references to Microsoft Learn.
         </p>
 
         <div className="impact-grid-two">
@@ -420,7 +420,7 @@ export default function HomePage() {
                 <span className="impact-decision-chip">Rejected</span>
               </div>
               <p className="impact-small" style={{ marginTop: 8 }}>
-                AI recommends a posture. The named reviewer records the final human decision.
+                Framework analysis derives a recommended posture. The named reviewer records the final decision.
               </p>
             </div>
             <div className="impact-format-chips">
@@ -430,7 +430,7 @@ export default function HomePage() {
             </div>
             <div style={{ marginTop: 16 }}>
               <Link href="/arb" className="impact-btn impact-btn-primary">
-                 Start AI Review →
+                 Start Architecture Review →
               </Link>
             </div>
           </article>
