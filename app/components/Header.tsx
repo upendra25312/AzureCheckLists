@@ -1,0 +1,38 @@
+import Link from "next/link";
+import { useAuthSession } from "@/components/auth-session-provider";
+
+export default function Header() {
+  const { principal, signedIn } = useAuthSession();
+
+  return (
+    <header className="page-header-home">
+      <div className="home-header-main">
+        <Link href="/" className="home-brand-link" aria-label="Azure Review Assistant Home">
+          <img src="/logo.png" alt="" className="home-brand-logo" />
+          <span className="home-brand-name">Azure Review Assistant</span>
+        </Link>
+        <nav className="home-link-nav" aria-label="Main navigation">
+          <Link href="/review" className="home-link-nav-item">Architecture Review</Link>
+          <Link href="/explorer" className="home-link-nav-item">Service Explorer</Link>
+        </nav>
+      </div>
+      <div className="home-header-actions">
+        <Link href="/help" className="home-link-nav-item" aria-label="Help">
+          <span role="img" aria-label="Help">❓</span>
+        </Link>
+        {signedIn ? (
+          <div className="account-dropdown">
+            <button className="avatar-button" aria-label="Account menu">
+              <span className="avatar">{principal?.name?.[0] ?? "U"}</span>
+              <span className="username">{principal?.name ?? "Account"}</span>
+              <span aria-hidden>▼</span>
+            </button>
+            {/* Dropdown menu (Profile, Settings, Sign out) can be implemented here */}
+          </div>
+        ) : (
+          <Link href="/login" className="home-link-nav-item">Sign in</Link>
+        )}
+      </div>
+    </header>
+  );
+}
