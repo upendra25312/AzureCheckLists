@@ -82,18 +82,5 @@ export function ArbLandingRouter() {
     );
   }
 
-  return (
-    <>
-      {/* Page header */}
-      <section className="arb-page-header">
-        <h1 className="arb-page-title">AI Architecture Review</h1>
-        <p className="arb-page-sub">
-          Name your project, upload design docs, and get AI findings across all Azure frameworks.
-        </p>
-      </section>
-
-      {/* Create form + review list */}
-      <ArbReviewLibrary />
-    </>
-  );
+  return <ArbReviewLibrary />;
 }
