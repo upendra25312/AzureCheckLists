@@ -111,6 +111,11 @@ export function ArbReviewShell(props: {
   const postureActionHint = getPostureActionHint(review);
   const recommendationValue = review.finalDecision ?? review.recommendation ?? "Pending";
 
+  // Helper: build upload step href for this review
+  function getUploadStepHref() {
+    return `/arb?reviewId=${encodeURIComponent(review.reviewId)}&step=upload`;
+  }
+
   return (
     <main className="arb-page-stack">
       <section className="review-command-panel">
@@ -135,6 +140,17 @@ export function ArbReviewShell(props: {
               <Link href="/decision-center" className="ghost-button">
                 Open Decision Center
               </Link>
+              {/* Persistent Upload Documents button, hidden on upload step */}
+              {activeStep !== "upload" && (
+                <Link
+                  href={getUploadStepHref()}
+                  className="primary-button"
+                  title="You can upload additional evidence at any time."
+                  style={{ marginLeft: 8 }}
+                >
+                  Upload Documents
+                </Link>
+              )}
             </div>
           </div>
 
