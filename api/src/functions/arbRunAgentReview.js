@@ -275,8 +275,23 @@ async function handleArbRunAgentReview(request, context) {
     });
   } catch (error) {
     const statusCode = error?.statusCode === 400 || error?.statusCode === 404 ? error.statusCode : 500;
-    log("Agent review failed", { statusCode, error: error instanceof Error ? error.message : String(error), durationMs: Date.now() - t0 });
-    return jsonResponse(statusCode, { error: statusCode === 500 ? "Agent review failed due to an internal error." : (error instanceof Error ? error.message : "Agent review failed."), traceId });
+    // Log full error details for diagnostics
+    log("Agent review failed", {
+      statusCode,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error && error.stack ? error.stack : undefined,
+      traceId,
+      durationMs: Date.now() - t0
+    });
+    // Return detailed error to frontend for troubleshooting (only in non-production or admin mode)
+    const isProduction = process.env.NODE_ENV === "production";
+    return jsonResponse(statusCode, {
+      error: statusCode === 500
+        ? `Agent review failed due to an internal error.${!isProduction ? `\n${error instanceof Error ? error.message : String(error)}` : ""}`
+        : (error instanceof Error ? error.message : "Agent review failed."),
+      traceId,
+      details: !isProduction ? (error instanceof Error ? error.stack : String(error)) : undefined
+    });
   }
 }
 

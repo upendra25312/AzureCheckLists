@@ -2,7 +2,7 @@ const { app } = require("@azure/functions");
 const { jsonResponse, requireAuthenticated, safeErrorResponse } = require("../shared/auth");
 const { downloadArbExport } = require("../shared/arb-review-store");
 
-async function handleArbDownloadExport(request) {
+async function handleArbDownloadExport(request, context) {
   const auth = requireAuthenticated(request);
   if (auth.response) {
     return auth.response;
