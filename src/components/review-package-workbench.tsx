@@ -2903,136 +2903,95 @@ export function ReviewPackageWorkbench({
                             📊 Download tracker CSV
                           </button>
                         ) : null}
-                            {card.id === "design" ? (
-                              <>
-                                <button
-                                  type="button"
-                                  className="primary-button"
-                                  disabled={!activePackage || packageItems.length === 0}
-                                  onClick={exportPackageMarkdown}
-                                  title="Download handoff Markdown (for documentation)"
-                                >
-                                  📄 Download handoff Markdown
-                                </button>
-                                <button
-                                  type="button"
-                                  className="secondary-button"
-                                  disabled={!activePackage || packageItems.length === 0}
-                                  onClick={exportPackageText}
-                                  title="Download plain text notes"
-                                >
-                                  📄 Download plain text notes
-                                </button>
-                              </>
-                            ) : null}
-                            {card.id === "pricing" ? (
-                              <>
-                                <button
-                                  type="button"
-                                  className="primary-button"
-                                  disabled={!activePackage || !pricingReady || pricingLoading}
-                                  onClick={exportPackagePricingCsv}
-                                  title="Download commercial CSV (spreadsheet)"
-                                >
-                                  💰 Download commercial CSV
-                                </button>
-                                <button
-                                  type="button"
-                                  className="secondary-button"
-                                  disabled={!activePackage || !pricingReady || pricingLoading}
-                                  onClick={exportPackagePricingMarkdown}
-                                  title="Download commercial Markdown"
-                                >
-                                  💰 Download commercial Markdown
-                                </button>
-                                <button
-                                  type="button"
-                                  className="secondary-button"
-                                  disabled={!activePackage || !pricingReady || pricingLoading}
-                                  onClick={exportPackagePricingText}
-                                  title="Download pricing text"
-                                >
-                                  💰 Download pricing text
-                                </button>
-                              </>
-                            ) : null}
-                            {card.id === "estimate" ? (
-                              <>
-                                <button
-                                  type="button"
-                                  className="primary-button"
-                                  disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
-                                  onClick={exportPackageMonthlyEstimateCsv}
-                                  title="Download estimate CSV (spreadsheet)"
-                                >
-                                  🌐 Download estimate CSV
-                                </button>
-                                <button
-                                  type="button"
-                                  className="secondary-button"
-                                  disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
-                                  onClick={exportPackageMonthlyEstimateMarkdown}
-                                  title="Download estimate Markdown"
-                                >
-                                  🌐 Download estimate Markdown
-                                </button>
-                                <button
-                                  type="button"
-                                  className="secondary-button"
-                                  disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
-                                  onClick={exportPackageMonthlyEstimateText}
-                                  title="Download estimate text"
-                                >
-                                  🌐 Download estimate text
-                                </button>
-                              </>
-                            ) : null}
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                <>
-                  <p className="microcopy" style={{ gridColumn: "1 / -1" }}>
-                    Update the review basics above, then click <strong>Save review details</strong>.
-                  </p>
-
-                  <label>
-                    <span className="microcopy">Audience</span>
-                    <select
-                      className="field-select"
-                      value={form.audience}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          audience: event.target.value as ReviewPackageAudience
-                        }))
-                      }
-                    >
-                      {AUDIENCES.map((audience) => (
-                        <option key={audience} value={audience}>
-                          {audience}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    <span className="microcopy">Architecture notes</span>
-                    <textarea
-                      className="field-textarea"
-                      value={form.businessScope}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, businessScope: event.target.value }))
-                      }
-                      placeholder="Capture the project scope, constraints, and customer assumptions."
-                    />
-                  </label>
-                </>
-              ) : (
-                <p className="microcopy" style={{ gridColumn: "1 / -1" }}>
-                  Audience and architecture notes can stay lightweight on the first pass. Open ARB-grade review later when you need document upload and stricter evidence handling.
-                </p>
-              )}
+                        {card.id === "design" ? (
+                          <>
+                            <button
+                              type="button"
+                              className="primary-button"
+                              disabled={!activePackage || packageItems.length === 0}
+                              onClick={exportPackageMarkdown}
+                              title="Download handoff Markdown (for documentation)"
+                            >
+                              📄 Download handoff Markdown
+                            </button>
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              disabled={!activePackage || packageItems.length === 0}
+                              onClick={exportPackageText}
+                              title="Download plain text notes"
+                            >
+                              📄 Download plain text notes
+                            </button>
+                          </>
+                        ) : null}
+                        {card.id === "pricing" ? (
+                          <>
+                            <button
+                              type="button"
+                              className="primary-button"
+                              disabled={!activePackage || !pricingReady || pricingLoading}
+                              onClick={exportPackagePricingCsv}
+                              title="Download commercial CSV (spreadsheet)"
+                            >
+                              💰 Download commercial CSV
+                            </button>
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              disabled={!activePackage || !pricingReady || pricingLoading}
+                              onClick={exportPackagePricingMarkdown}
+                              title="Download commercial Markdown"
+                            >
+                              💰 Download commercial Markdown
+                            </button>
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              disabled={!activePackage || !pricingReady || pricingLoading}
+                              onClick={exportPackagePricingText}
+                              title="Download pricing text"
+                            >
+                              💰 Download pricing text
+                            </button>
+                          </>
+                        ) : null}
+                        {card.id === "estimate" ? (
+                          <>
+                            <button
+                              type="button"
+                              className="primary-button"
+                              disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
+                              onClick={exportPackageMonthlyEstimateCsv}
+                              title="Download estimate CSV (spreadsheet)"
+                            >
+                              🌐 Download estimate CSV
+                            </button>
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
+                              onClick={exportPackageMonthlyEstimateMarkdown}
+                              title="Download estimate Markdown"
+                            >
+                              🌐 Download estimate Markdown
+                            </button>
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
+                              onClick={exportPackageMonthlyEstimateText}
+                              title="Download estimate text"
+                            >
+                              🌐 Download estimate text
+                            </button>
+                          </>
+                        ) : null}
+                      </div>
+                    </article>
+                  );
+                })}
+                {/* ...existing code... */}
             </div>
 
             <div className="button-row">
