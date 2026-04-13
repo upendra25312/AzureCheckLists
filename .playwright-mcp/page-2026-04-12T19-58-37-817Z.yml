@@ -1,0 +1,17 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link "Azure Review Assistant" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e6]: Azure Review Assistant
+      - navigation "Primary sections" [ref=e7]:
+        - link "AI Review" [ref=e8] [cursor=pointer]:
+          - /url: /arb
+          - generic [ref=e9]: AI Review
+        - link "Service Explorer" [ref=e10] [cursor=pointer]:
+          - /url: /services
+          - generic [ref=e11]: Service Explorer
+  - main [ref=e12]:
+    - paragraph [ref=e14]: Loading review workspace…
+  - contentinfo [ref=e15]:
+    - paragraph [ref=e16]: Azure Review Assistant — architecture reviews that ship, not stall.

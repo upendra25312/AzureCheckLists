@@ -1,0 +1,36 @@
+[   13659ms] [INFO] BSSO Telemetry: {"result":"Error","error":"NoExtension","type":"ChromeSsoTelemetry","data":{},"traces":["BrowserSSO Initialized","Creating ChromeBrowserCore provider","Sending message for method CreateProviderAsync","Received message for method CreateProviderAsync","Error: ChromeBrowserCore error NoExtension: Extension is not installed."]} @ https://aadcdn.msftauth.net/shared/1.0/content/js/BssoInterrupt_Core_eE2DYJlsHKgq7xFfjkmMww2.js:17
+[   15283ms] [LOG] true @ https://login.live.com/Me.htm?v=3:0
+[   15295ms] [LOG] Storage access: false @ https://login.live.com/Me.htm?v=3:0
+[   15670ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://login.microsoftonline.com/common/oauth2/v2.0/authorize?response_type=code+id_token&redirect_uri=https%3A%2F%2Fidentity.6.azurestaticapps.net%2F.auth%2Flogin%2Faad%2Fcallback&client_id=d414ee2d-73e5-4e5b-bb16-03ef55fea597&scope=openid+profile+email&response_mode=form_post&nonce=1e03483d038a470788421491fe409066_20260413060114&state=redir%3D%252F.auth%252Flogin%252Fdone&sso_reload=true:0
+[  151075ms] [LOG] true @ https://login.live.com/Me.htm?v=3:0
+[  151077ms] [LOG] Storage access: false @ https://login.live.com/Me.htm?v=3:0
+[  151249ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://autologon.microsoftazuread-sso.com/upendra25312gmail.onmicrosoft.com/winauth/ssoprobe?client-request-id=3d33a40a-b674-48da-8939-a02276923dd4&_=1776059920678:0
+[  151668ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "username"): (More info: https://goo.gl/9p2vKq) %o @ https://login.microsoftonline.com/common/oauth2/v2.0/authorize?response_type=code+id_token&redirect_uri=https%3A%2F%2Fidentity.6.azurestaticapps.net%2F.auth%2Flogin%2Faad%2Fcallback&client_id=d414ee2d-73e5-4e5b-bb16-03ef55fea597&scope=openid+profile+email&response_mode=form_post&nonce=1e03483d038a470788421491fe409066_20260413060114&state=redir%3D%252F.auth%252Flogin%252Fdone&sso_reload=true:0
+[  197828ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://jolly-sea-014792b10.6.azurestaticapps.net/api/arb/reviews:0
+[  226036ms] TypeError: Cannot read properties of undefined (reading 'length')
+    at https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/938-1beabaa8d3cafcf1.js:1:27644
+    at Array.reduce (<anonymous>)
+    at https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/938-1beabaa8d3cafcf1.js:1:27610
+    at https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/938-1beabaa8d3cafcf1.js:1:41800
+    at f (https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/938-1beabaa8d3cafcf1.js:1:59570)
+    at l9 (https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/4bd1b696-c023c6e3521b1417.js:1:51124)
+    at o_ (https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/4bd1b696-c023c6e3521b1417.js:1:70984)
+    at oq (https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/4bd1b696-c023c6e3521b1417.js:1:82014)
+    at ik (https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/4bd1b696-c023c6e3521b1417.js:1:114676)
+    at https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/4bd1b696-c023c6e3521b1417.js:1:114521
+[  231792ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://jolly-sea-014792b10.6.azurestaticapps.net/favicon.ico:0
+[  247885ms] TypeError: Cannot read properties of undefined (reading 'length')
+    at https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/938-1beabaa8d3cafcf1.js:1:27644
+    at Array.reduce (<anonymous>)
+    at https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/938-1beabaa8d3cafcf1.js:1:27610
+    at https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/938-1beabaa8d3cafcf1.js:1:41800
+    at f (https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/938-1beabaa8d3cafcf1.js:1:59570)
+    at l9 (https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/4bd1b696-c023c6e3521b1417.js:1:51124)
+    at o_ (https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/4bd1b696-c023c6e3521b1417.js:1:70984)
+    at oq (https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/4bd1b696-c023c6e3521b1417.js:1:82014)
+    at ik (https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/4bd1b696-c023c6e3521b1417.js:1:114676)
+    at https://jolly-sea-014792b10.6.azurestaticapps.net/_next/static/chunks/4bd1b696-c023c6e3521b1417.js:1:114521
+[13586105ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://jolly-sea-014792b10.6.azurestaticapps.net/api/arb/reviews/bmw-landing-zone:0
+[13593391ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://jolly-sea-014792b10.6.azurestaticapps.net/api/arb/reviews/bmw-landing-zone:0
+[13596793ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://jolly-sea-014792b10.6.azurestaticapps.net/api/arb/reviews/bmw-landing-zone:0
+[13607729ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://jolly-sea-014792b10.6.azurestaticapps.net/api/arb/reviews/diagtestreview:0

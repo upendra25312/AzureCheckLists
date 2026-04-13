@@ -1,0 +1,655 @@
+- generic [active] [ref=e1]:
+  - generic:
+    - link "Join Datadog at DASH—coming to NYC June 9-10. Register now for Super Early Bird savings of $700 until March 31" [ref=e3] [cursor=pointer]:
+      - /url: https://dash.datadoghq.com/?utm_source=events&utm_medium=internal&utm_campaign=summit-202606dash&utm_term=HPbanner
+      - generic [ref=e5]: Join Datadog at DASH—coming to NYC June 9-10. Register now for Super Early Bird savings of $700 until March 31
+    - navigation [ref=e6]:
+      - generic [ref=e8]:
+        - list [ref=e9]:
+          - listitem [ref=e10]:
+            - link "Product" [ref=e11] [cursor=pointer]:
+              - /url: https://www.datadoghq.com/product/
+          - listitem [ref=e12]:
+            - link "Customers" [ref=e13] [cursor=pointer]:
+              - /url: https://www.datadoghq.com/customers/
+          - listitem [ref=e14]:
+            - link "Pricing" [ref=e15] [cursor=pointer]:
+              - /url: https://www.datadoghq.com/pricing/
+          - listitem [ref=e16]:
+            - link "Solutions" [ref=e17] [cursor=pointer]:
+              - /url: https://www.datadoghq.com/
+          - listitem [ref=e18]:
+            - link "Docs" [ref=e19] [cursor=pointer]:
+              - /url: https://docs.datadoghq.com/
+        - link "DataDog DataDog" [ref=e21] [cursor=pointer]:
+          - /url: https://www.datadoghq.com/
+          - img "DataDog" [ref=e22]
+          - img "DataDog" [ref=e23]
+        - list [ref=e24]:
+          - listitem [ref=e25]:
+            - link "About" [ref=e26] [cursor=pointer]:
+              - /url: https://www.datadoghq.com/about/leadership/
+          - listitem [ref=e27]:
+            - link "Blog" [ref=e28] [cursor=pointer]:
+              - /url: /blog/
+          - listitem [ref=e29]:
+            - link "Login" [ref=e30] [cursor=pointer]:
+              - /url: https://app.datadoghq.com/
+          - listitem [ref=e31]:
+            - link "GET STARTED FREE" [ref=e32] [cursor=pointer]:
+              - /url: https://www.datadoghq.com/
+              - generic [ref=e33]: GET STARTED FREE
+  - main [ref=e34]:
+    - generic [ref=e35]:
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - link "The Monitor" [ref=e38] [cursor=pointer]:
+            - /url: /blog/
+          - heading "Incorporate Datadog Synthetic tests into your CI/CD pipeline" [level=1] [ref=e39]
+          - generic [ref=e40]:
+            - link "synthetic monitoring" [ref=e41] [cursor=pointer]:
+              - /url: /blog/search/?tag=synthetic%20monitoring
+              - generic [ref=e42]: synthetic monitoring
+            - link "digital experience monitoring" [ref=e43] [cursor=pointer]:
+              - /url: /blog/search/?tag=digital%20experience%20monitoring
+              - generic [ref=e44]: digital experience monitoring
+            - link "ci-cd" [ref=e45] [cursor=pointer]:
+              - /url: /blog/search/?tag=ci-cd
+              - generic [ref=e46]: ci-cd
+        - generic [ref=e48]:
+          - generic [ref=e49]:
+            - paragraph [ref=e50]: Published
+            - time [ref=e51]: Aug 11, 2020
+          - generic [ref=e52]:
+            - paragraph [ref=e53]: Updated
+            - time [ref=e54]: Jul 29, 2021
+          - generic [ref=e55]:
+            - paragraph [ref=e56]: Read time
+            - paragraph [ref=e57]: 7m
+      - figure [ref=e59]:
+        - img "Incorporate Datadog Synthetic tests into your CI/CD pipeline" [ref=e61]
+    - generic [ref=e62]:
+      - generic [ref=e63]:
+        - complementary [ref=e64]:
+          - navigation [ref=e65]:
+            - paragraph [ref=e66]: Incorporate Datadog Synthetic tests into your CI/CD pipeline
+            - list [ref=e67]:
+              - listitem [ref=e68]:
+                - link "Run Synthetic tests in your CI pipeline for earlier issue detection" [ref=e69] [cursor=pointer]:
+                  - /url: "#run-synthetic-tests-in-your-ci-pipeline-for-earlier-issue-detection"
+              - listitem [ref=e70]:
+                - link "Run Synthetic tests on deployment to ensure safe releases" [ref=e71] [cursor=pointer]:
+                  - /url: "#run-synthetic-tests-on-deployment-to-ensure-safe-releases"
+              - listitem [ref=e72]:
+                - link "Use a single, customizable test suite for every environment" [ref=e73] [cursor=pointer]:
+                  - /url: "#use-a-single-customizable-test-suite-for-every-environment"
+              - listitem [ref=e74]:
+                - link "Shift system-wide troubleshooting to the left" [ref=e75] [cursor=pointer]:
+                  - /url: "#shift-system-wide-troubleshooting-to-the-left"
+              - listitem [ref=e76]:
+                - link "Get started with Synthetic CI/CD Testing" [ref=e77] [cursor=pointer]:
+                  - /url: "#get-started-with-synthetic-cicd-testing"
+          - generic [ref=e78]:
+            - button "Close feedback prompt" [ref=e80] [cursor=pointer]:
+              - generic [ref=e81]: Close feedback prompt
+              - img [ref=e82]
+            - generic [ref=e85]:
+              - paragraph [ref=e86]: Did you find this article helpful?
+              - generic [ref=e87]:
+                - button "Article thumbs up" [ref=e88] [cursor=pointer]:
+                  - generic [ref=e89]: Article thumbs up
+                  - img [ref=e90]
+                - button "Article thumbs down" [ref=e93] [cursor=pointer]:
+                  - generic [ref=e94]: Article thumbs down
+                  - img [ref=e95]
+        - generic [ref=e97]:
+          - paragraph [ref=e98]: Further Reading
+          - paragraph [ref=e99]: Benefits of End-to-End Observability
+          - generic:
+            - figure:
+              - generic:
+                - img "Benefits of End-to-End Observability"
+          - paragraph [ref=e100]: Break down frontend and backend silos with full-stack observability
+          - link "Download to learn more" [ref=e101] [cursor=pointer]:
+            - /url: https://www.datadoghq.com/resources/end-to-end-observability-benefits-ebook/?utm_source=inbound&utm_medium=corpsite-display&utm_campaign=dg-rum-ww-homepage-rotating-report-endtoendmonitoring-dem
+            - generic [ref=e102]: Download to learn more
+      - generic [ref=e103]:
+        - generic [ref=e104]:
+          - generic [ref=e105]:
+            - figure [ref=e107]:
+              - img "Betsy Sallee" [ref=e109]
+            - paragraph [ref=e111]: Betsy Sallee
+          - generic [ref=e112]:
+            - figure [ref=e114]:
+              - img "Margot Lepizzera" [ref=e116]
+            - paragraph [ref=e118]: Margot Lepizzera
+        - generic [ref=e119]:
+          - paragraph [ref=e120]:
+            - text: Testing within the CI/CD pipeline, also known as
+            - link "shift-left testing" [ref=e121] [cursor=pointer]:
+              - /url: https://www.datadoghq.com/blog/shift-left-testing-best-practices/
+            - text: ", is a devops best practice that enables agile teams to continually assess the viability of new features at every stage of the development process. Running tests early and often makes it easier to catch issues before they impact your users, reduce technical debt, and foster efficient, cross-team collaboration."
+          - paragraph [ref=e122]:
+            - link "Datadog Synthetic CI/CD Testing" [ref=e123] [cursor=pointer]:
+              - /url: https://docs.datadoghq.com/synthetics/ci/?tab=npm
+            - text: offers a flexible approach to shift-left testing that allows you to incorporate your existing Datadog Synthetic tests at any point in your CI/CD pipeline, so you can maintain a positive user experience and minimize downtime. You can use a single Synthetic test suite for a range of testing scenarios—including canary testing and testing in your CI environment—which eliminates the need for environment-specific tests. Your scheduled tests will still run against your production environment as expected, but you’ll be able to run those same tests—with whatever adjustments you see fit—on demand and at every stage of the development process.
+          - heading "Run Synthetic tests in your CI pipeline for earlier issue detection" [level=2] [ref=e124]:
+            - link "Run Synthetic tests in your CI pipeline for earlier issue detection" [ref=e125] [cursor=pointer]:
+              - /url: "#run-synthetic-tests-in-your-ci-pipeline-for-earlier-issue-detection"
+          - paragraph [ref=e126]:
+            - text: The rise in popularity of the
+            - link "agile development methodology" [ref=e127] [cursor=pointer]:
+              - /url: https://en.wikipedia.org/wiki/Agile_software_development
+            - text: has made continuous integration testing crucial to the preservation of a healthy production environment. Agile teams frequently deploy new features and application improvements, so it’s critical for companies to ensure that these rapid deployments do not introduce regressions. Tests that are run within the CI pipeline must therefore reliably verify that code changes have not degraded the user experience—without impeding the team’s ability to ship changes quickly.
+          - paragraph [ref=e128]:
+            - text: Traditionally, end-to-end tests have been too brittle and slow to be run in the CI pipelines of teams that ship code on a daily basis. Datadog Synthetic tests, however, are designed with
+            - link "reliability" [ref=e129] [cursor=pointer]:
+              - /url: https://www.datadoghq.com/blog/test-maintenance-best-practices/#reduce-test-flakiness-with-reliable-locators-and-alerts
+            - text: and efficiency in mind. Synthetic tests automatically update in response to UI changes and employ a wait and retry mechanism to ensure that failures are legitimate. And because Synthetic CI/CD Testing runs tests simultaneously rather than sequentially, it won’t slow down your development process.
+          - paragraph [ref=e130]:
+            - text: Datadog’s integrations with popular CI tools such as
+            - link "GitLab" [ref=e131] [cursor=pointer]:
+              - /url: https://docs.datadoghq.com/integrations/gitlab
+            - text: ","
+            - link "Jenkins" [ref=e132] [cursor=pointer]:
+              - /url: https://docs.datadoghq.com/integrations/jenkins
+            - text: ", and"
+            - link "Azure DevOps" [ref=e133] [cursor=pointer]:
+              - /url: https://docs.datadoghq.com/integrations/azure_devops
+            - text: already allow you to collect events from your pipelines within the Datadog platform. Synthetic CI/CD Testing takes it a step further by enabling you to incorporate Synthetic tests in your CI pipelines for earlier issue detection. You can even view the results of Synthetic CI test runs directly within your CI, as shown in the following screenshot.
+          - figure "Visualize your test results in your CI/CD platform." [ref=e136]:
+            - img "Visualize your test results in your CI/CD platform." [ref=e138]
+            - generic [ref=e139]: Visualize your test results in your CI/CD platform.
+          - paragraph [ref=e140]:
+            - text: Adding Synthetic tests to your existing workflow is seamless. You can either
+            - link "send requests to a trigger endpoint and a polling endpoint" [ref=e141] [cursor=pointer]:
+              - /url: https://docs.datadoghq.com/synthetics/ci/?tab=npm#api-usage
+            - text: or
+            - link "install an npm package and use the associated CLI" [ref=e142] [cursor=pointer]:
+              - /url: https://docs.datadoghq.com/synthetics/ci/?tab=npm#cli-usage
+            - text: as part of your CI build process. The CLI will autodiscover the tests to run in your repositories, execute the tests, and retrieve their results, blocking the deployment pipeline if key Synthetic tests fail in the CI environment. This helps prevent breaking changes from reaching staging or production—and safeguards the core functionality of your application by creating a safety net that only lets viable code progress through the pipeline.
+          - figure "Configure execution rules to block breaking changes from reaching production." [ref=e145]:
+            - img "Configure execution rules to block breaking changes from reaching production." [ref=e147]
+            - generic [ref=e148]: Configure execution rules to block breaking changes from reaching production.
+          - paragraph [ref=e149]:
+            - text: This same CLI tool can be used to upload your frontend JavaScript source maps, which makes the frontend errors you collect with Datadog RUM more meaningful. For example, you will be able to use
+            - link "Error Tracking" [ref=e150] [cursor=pointer]:
+              - /url: /blog/error-tracking
+            - text: to investigate when an error first occurred, which line of code fired it, and whether the latest release fixed it.
+          - heading "Run Synthetic tests on deployment to ensure safe releases" [level=2] [ref=e151]:
+            - link "Run Synthetic tests on deployment to ensure safe releases" [ref=e152] [cursor=pointer]:
+              - /url: "#run-synthetic-tests-on-deployment-to-ensure-safe-releases"
+          - paragraph [ref=e153]: In addition to running Synthetic tests throughout the development cycle, you can also use Datadog Synthetic CI/CD Testing to execute tests as part of your CD process. Evaluating the state of your production application immediately after a deployment finishes enables you to detect potential regressions that could impact your users—and automatically trigger a rollback whenever a critical test fails. This capability is particularly useful for highly agile development teams that want to both own features from development to production and deploy frequently without risking extended downtime.
+          - paragraph [ref=e154]:
+            - text: Synthetic CI/CD Testing can be utilized as an automatic safety measure in your
+            - link "canary deployments" [ref=e155] [cursor=pointer]:
+              - /url: https://dev.to/mostlyjason/intro-to-deployment-strategies-blue-green-canary-and-more-3a3
+            - text: . If, for instance, you’ve deployed a new feature to a subset of users in a particular location, you can run your Synthetic tests against production in that location immediately after your changes go live. You can then use the API polling endpoint to send the results of your tests to a custom webhook, which, in the event of a failure, will trigger an automated rollback in order to revert to the most recent stable state.
+          - heading "Use a single, customizable test suite for every environment" [level=2] [ref=e156]:
+            - link "Use a single, customizable test suite for every environment" [ref=e157] [cursor=pointer]:
+              - /url: "#use-a-single-customizable-test-suite-for-every-environment"
+          - paragraph [ref=e158]: Datadog Synthetic CI/CD Testing abstracts tests from their parameters, enabling you to leverage your existing, production-level test suite within your CI/CD pipeline, as well as within any environment that requires authentication or direct access to a network. The flexible nature of these Synthetic tests breaks down the silos between development, operations, QA, and product teams by eliminating the need to maintain separate testing scenarios for each stage of development. Simply create a test suite once, and tailor it for every use case.
+          - paragraph [ref=e159]:
+            - text: By default, Synthetic tests that are triggered through Synthetic CI/CD Testing will run according to the same configuration that they have on production. You can, however, specify overrides in order to meet the particular needs of each environment. This can be done for your entire test suite within a global configuration file (as demonstrated in the
+            - code [ref=e160]: global
+            - text: section of the following code snippet) or at the individual test level.
+          - figure [ref=e162]:
+            - code [ref=e164]:
+              - generic [ref=e165]:
+                - generic [ref=e166]:
+                  - generic: "1"
+                - generic [ref=e167]: "{"
+              - generic [ref=e168]:
+                - generic [ref=e169]:
+                  - generic: "2"
+                - generic [ref=e170]: "\"apiKey\": \"<DATADOG_API_KEY>\","
+              - generic [ref=e171]:
+                - generic [ref=e172]:
+                  - generic: "3"
+                - generic [ref=e173]: "\"appKey\": \"<DATADOG_APPLICATION_KEY>\","
+              - generic [ref=e174]:
+                - generic [ref=e175]:
+                  - generic: "4"
+                - generic [ref=e176]: "\"global\": {"
+              - generic [ref=e177]:
+                - generic [ref=e178]:
+                  - generic: "5"
+                - generic [ref=e179]: "\"basicAuth\": { \"username\": \"bits\", \"password\": \"labrador\" },"
+              - generic [ref=e180]:
+                - generic [ref=e181]:
+                  - generic: "6"
+                - generic [ref=e182]: "\"startUrl\": \"{{URL}}?static_hash={{STATIC_HASH}}\","
+              - generic [ref=e183]:
+                - generic [ref=e184]:
+                  - generic: "7"
+                - generic [ref=e185]: "},"
+              - generic [ref=e187]:
+                - generic [ref=e188]:
+                  - generic: "8"
+                - generic [ref=e189]: "\"proxy\": {"
+              - generic [ref=e190]:
+                - generic [ref=e191]:
+                  - generic: "9"
+                - generic [ref=e192]: "\"host\": \"127.0.0.1\","
+              - generic [ref=e193]:
+                - generic [ref=e194]:
+                  - generic: "10"
+                - generic [ref=e195]: "\"port\": 3128,"
+              - generic [ref=e196]:
+                - generic [ref=e197]:
+                  - generic: "11"
+                - generic [ref=e198]: "\"protocol\": \"http\""
+              - generic [ref=e199]:
+                - generic [ref=e200]:
+                  - generic: "12"
+                - generic [ref=e201]: "}"
+              - generic [ref=e203]:
+                - generic [ref=e204]:
+                  - generic: "13"
+                - generic [ref=e205]: "}"
+            - button "Copy to clipboard" [ref=e207] [cursor=pointer]
+          - paragraph [ref=e208]:
+            - text: For example, if your testing environment is behind a proxy or basic auth system, you can use overrides to add that specificity to your CI tests without overcomplicating your production-level tests. You can also use environment variables to dynamically configure an override value for your tests’
+            - code [ref=e209]: startUrl
+            - text: . If, for instance, your pipeline generates a static hash for staging purposes whenever an engineer opens a PR, that static hash can be dynamically incorporated into the
+            - code [ref=e210]: startUrl
+            - text: parameter, as shown above. For a complete list of customizable parameters, review the
+            - link "documentation" [ref=e211] [cursor=pointer]:
+              - /url: https://docs.datadoghq.com/synthetics/ci/?tab=npm#configure-tests
+            - text: .
+          - heading "Shift system-wide troubleshooting to the left" [level=2] [ref=e212]:
+            - link "Shift system-wide troubleshooting to the left" [ref=e213] [cursor=pointer]:
+              - /url: "#shift-system-wide-troubleshooting-to-the-left"
+          - paragraph [ref=e214]:
+            - text: Whenever an issue is surfaced by a Synthetic test, it’s important for users to be able to easily troubleshoot it, regardless of the environment in which the test was run or where the issue originates within the stack.
+            - link "Datadog Synthetic Monitoring" [ref=e215] [cursor=pointer]:
+              - /url: https://www.datadoghq.com/blog/introducing-synthetic-monitoring/
+            - text: enables you to view test results from every environment—along with a wealth of contextual data—in the Datadog UI.
+          - figure "View test results from every environment in the Datadog UI." [ref=e218]:
+            - img "View test results from every environment in the Datadog UI." [ref=e220]
+            - generic [ref=e221]: View test results from every environment in the Datadog UI.
+          - paragraph [ref=e222]:
+            - text: Tests that are run in the CI/CD pipeline have the same level of context as your production-level test runs, so you can use relevant error messages, resources, and screenshots to pinpoint the precise point of failure at any stage of the development cycle. And because Synthetic Monitoring is tightly coupled with
+            - link "APM" [ref=e223] [cursor=pointer]:
+              - /url: https://www.datadoghq.com/product/apm/
+            - text: ", each test run is automatically correlated with metrics, traces, and logs from your application and infrastructure, enabling you to conduct efficient investigations without switching contexts."
+          - figure "View metrics, traces, and logs that are relevant to each test." [ref=e226]:
+            - img "View metrics, traces, and logs that are relevant to each test." [ref=e228]
+            - generic [ref=e229]: View metrics, traces, and logs that are relevant to each test.
+          - paragraph [ref=e230]:
+            - text: You can also visualize CI/CD test results in the context of their job executions in the
+            - link "CI Results Explorer" [ref=e231] [cursor=pointer]:
+              - /url: https://app.datadoghq.com/synthetics/explorer/ci
+            - text: ", along with test batch statuses and average batch duration over time. This view can be filtered by facets that are relevant to the CI environment, such as"
+            - code [ref=e232]: branch
+            - text: and
+            - code [ref=e233]: commit sha
+            - text: ", which makes it easy to focus your investigation on the job executions you care about. The CI Results Explorer also allows you to dive into any test batch in a single click in order to monitor the progress of individual test runs, identify failures, and compare results across different browsers, devices, and locations."
+          - figure "The CI Results Explorer displays all test batches that are executed in the CI/CD pipeline." [ref=e236]:
+            - img "The CI Results Explorer displays CI/CD test results in the context of their job executions." [ref=e238]
+            - generic [ref=e239]: The CI Results Explorer displays all test batches that are executed in the CI/CD pipeline.
+          - heading "Get started with Synthetic CI/CD Testing" [level=2] [ref=e240]:
+            - link "Get started with Synthetic CI/CD Testing" [ref=e241] [cursor=pointer]:
+              - /url: "#get-started-with-synthetic-cicd-testing"
+          - paragraph [ref=e242]:
+            - text: Datadog Synthetic CI/CD Testing allows you to leverage the power of your existing Synthetic test suite at any point in your CI/CD pipeline, so you can catch issues early, run safe deployments, and provide the best possible experience to your users. If you’re already a Datadog customer and you would like more information about how to extend the power of Datadog Synthetic tests to your CI/CD pipeline, check out the
+            - link "documentation" [ref=e243] [cursor=pointer]:
+              - /url: https://docs.datadoghq.com/synthetics/ci/?tab=npm
+            - text: . New to Datadog? Get started with a
+            - link "14-day free trial" [ref=e244] [cursor=pointer]:
+              - /url: "#"
+            - text: .
+        - list [ref=e245]:
+          - listitem [ref=e246]:
+            - link "Share on X" [ref=e247] [cursor=pointer]:
+              - /url: https://twitter.com/intent/tweet?url=https://www.datadoghq.com/blog/datadog-synthetic-ci-cd-testing/
+              - img [ref=e248]
+          - listitem [ref=e252]:
+            - link "Share on Reddit" [ref=e253] [cursor=pointer]:
+              - /url: https://www.reddit.com/submit?url=https://www.datadoghq.com/blog/datadog-synthetic-ci-cd-testing/
+              - img [ref=e254]
+          - listitem [ref=e258]:
+            - link "Share on LinkedIn" [ref=e259] [cursor=pointer]:
+              - /url: https://www.linkedin.com/shareArticle?url=https://www.datadoghq.com/blog/datadog-synthetic-ci-cd-testing/
+              - img [ref=e260]
+    - generic [ref=e267]:
+      - heading "Related Articles" [level=2] [ref=e269]
+      - generic [ref=e270]:
+        - article [ref=e271]:
+          - link "Run Synthetic tests in your CI/CD pipelines with the Datadog CircleCI orb" [ref=e272] [cursor=pointer]:
+            - /url: /blog/run-synthetic-tests-in-circeci-pipelines-with-datadog/
+          - generic [ref=e273]:
+            - figure [ref=e276]:
+              - img "Run Synthetic tests in your CI/CD pipelines with the Datadog CircleCI orb" [ref=e278]
+            - heading "Run Synthetic tests in your CI/CD pipelines with the Datadog CircleCI orb" [level=2] [ref=e280]
+        - article [ref=e281]:
+          - link "Run Datadog Synthetic tests in your Jenkins pipelines" [ref=e282] [cursor=pointer]:
+            - /url: /blog/jenkins-testing/
+          - generic [ref=e283]:
+            - figure [ref=e286]:
+              - img "Run Datadog Synthetic tests in your Jenkins pipelines" [ref=e288]
+            - heading "Run Datadog Synthetic tests in your Jenkins pipelines" [level=2] [ref=e290]
+        - article [ref=e291]:
+          - link "Run Synthetic tests in CI/CD with the new Datadog GitHub Action" [ref=e292] [cursor=pointer]:
+            - /url: /blog/datadog-github-action-synthetics-ci-visibility/
+          - generic [ref=e293]:
+            - figure [ref=e296]:
+              - img "Run Synthetic tests in CI/CD with the new Datadog GitHub Action" [ref=e298]
+            - heading "Run Synthetic tests in CI/CD with the new Datadog GitHub Action" [level=2] [ref=e300]
+        - article [ref=e301]:
+          - link "Datadog now supports cross-browser synthetic testing" [ref=e302] [cursor=pointer]:
+            - /url: /blog/cross-browser-testing-datadog/
+          - generic [ref=e303]:
+            - figure [ref=e306]:
+              - img "Datadog now supports cross-browser synthetic testing" [ref=e308]
+            - heading "Datadog now supports cross-browser synthetic testing" [level=2] [ref=e310]
+    - generic [ref=e312]:
+      - heading "Related jobs at Datadog" [level=2] [ref=e313]
+      - heading "We're always looking for talented people to collaborate with" [level=3] [ref=e314]
+      - paragraph [ref=e315]: Featured positions
+      - table [ref=e317]:
+        - rowgroup [ref=e318]:
+          - row "Technical Escalations Engineer 2 (Synthetics) - Mexico City Support Engineering / Technical Solutions" [ref=e319]:
+            - cell "Technical Escalations Engineer 2 (Synthetics) - Mexico City Support Engineering / Technical Solutions" [ref=e320] [cursor=pointer]:
+              - link "Technical Escalations Engineer 2 (Synthetics) - Mexico City Support Engineering / Technical Solutions" [ref=e321]:
+                - /url: https://careers.datadoghq.com/detail/7777832/?gh_jid=7777832
+                - paragraph [ref=e322]: Technical Escalations Engineer 2 (Synthetics) - Mexico City
+                - paragraph [ref=e323]: Support Engineering / Technical Solutions
+          - row "Product Manager II - Network Path Product Management" [ref=e324]:
+            - cell "Product Manager II - Network Path Product Management" [ref=e325] [cursor=pointer]:
+              - link "Product Manager II - Network Path Product Management" [ref=e326]:
+                - /url: https://careers.datadoghq.com/detail/7763117/?gh_jid=7763117
+                - paragraph [ref=e327]: Product Manager II - Network Path
+                - paragraph [ref=e328]: Product Management
+      - link "View all" [ref=e331] [cursor=pointer]:
+        - /url: https://careers.datadoghq.com/all-jobs/?s=synthetic monitoring digital experience monitoring ci-cd
+        - generic [ref=e332]: View all
+    - generic [ref=e334]:
+      - heading "Start monitoring your metrics in minutes" [level=2] [ref=e335]
+      - button "find out how" [ref=e336] [cursor=pointer]:
+        - generic [ref=e337]: find out how
+  - contentinfo [ref=e339]:
+    - generic [ref=e340]:
+      - generic [ref=e342]:
+        - generic [ref=e343]:
+          - link "Free Trial" [ref=e344] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e345]: Free Trial
+          - paragraph [ref=e346]: Download mobile app
+          - generic [ref=e347]:
+            - link "Apple Store Link" [ref=e348] [cursor=pointer]:
+              - /url: https://apps.apple.com/app/datadog/id1391380318
+              - img [ref=e350]
+            - link "Google Play Store Link" [ref=e353] [cursor=pointer]:
+              - /url: https://play.google.com/store/apps/details?id=com.datadog.app
+              - img [ref=e355]
+        - generic [ref=e360]:
+          - paragraph [ref=e361]: Product
+          - generic [ref=e363]:
+            - generic [ref=e364]:
+              - link "Infrastructure Monitoring" [ref=e366] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/infrastructure-monitoring/
+              - link "Network Monitoring" [ref=e368] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/network-monitoring/
+              - link "Container Monitoring" [ref=e370] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/container-monitoring/
+              - link "Serverless" [ref=e372] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/serverless-monitoring/
+              - link "Cloud Cost Management" [ref=e374] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/cloud-cost-management/
+              - link "Cloudcraft" [ref=e376] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/cloudcraft/
+              - link "Kubernetes Autoscaling" [ref=e378] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/kubernetes-autoscaling/
+              - link "Application Performance Monitoring" [ref=e380] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/apm/
+              - link "Software Catalog" [ref=e382] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/software-catalog/
+              - link "Universal Service Monitoring" [ref=e384] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/universal-service-monitoring/
+              - link "Data Streams Monitoring" [ref=e386] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/data-streams-monitoring/
+              - link "Jobs Monitoring" [ref=e388] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/data-observability/jobs-monitoring/
+              - link "Quality Monitoring" [ref=e390] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/data-observability/quality-monitoring/
+              - link "Database Monitoring" [ref=e392] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/database-monitoring/
+              - link "Continuous Profiler" [ref=e394] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/code-profiling/
+              - link "Dynamic Instrumentation" [ref=e396] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/dynamic-instrumentation/
+              - link "Log Management" [ref=e398] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/log-management/
+              - link "Sensitive Data Scanner" [ref=e400] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/sensitive-data-scanner/
+              - link "Audit Trail" [ref=e402] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/audit-trail/
+              - link "Observability Pipelines" [ref=e404] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/observability-pipelines/
+              - link "Cloud Security" [ref=e406] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/cloud-security/
+              - link "Cloud Security Posture Management" [ref=e408] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/cloud-security/#posture-management
+              - link "Workload Protection" [ref=e410] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/workload-protection/
+              - link "Cloud Infrastructure Entitlement Management" [ref=e412] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/cloud-security/#entitlement-management
+              - link "Vulnerability Management" [ref=e414] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/cloud-security/#vulnerability-management
+              - link "Compliance" [ref=e416] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/cloud-security/#compliance
+              - link "App and API Protection" [ref=e418] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/app-and-api-protection/
+              - link "Software Composition Analysis" [ref=e420] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/software-composition-analysis/
+              - link "Code Security" [ref=e422] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/code-security/
+              - link "Static Code Analysis (SAST)" [ref=e424] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/sast/
+              - link "Runtime Code Analysis (IAST)" [ref=e426] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/iast/
+              - link "IaC Security" [ref=e428] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/iac-security
+              - link "Cloud SIEM" [ref=e430] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/cloud-siem/
+              - link "Browser Real User Monitoring" [ref=e432] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/real-user-monitoring/
+              - link "Mobile Real User Monitoring" [ref=e434] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/real-user-monitoring/mobile-rum/
+              - link "Product Analytics" [ref=e436] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/product-analytics/
+              - link "Experiments" [ref=e438] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/experiments/
+              - link "Session Replay" [ref=e440] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/real-user-monitoring/session-replay/
+              - link "Synthetic Monitoring" [ref=e442] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/synthetic-monitoring/
+              - link "Mobile App Testing" [ref=e444] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/mobile-app-testing/
+              - link "Continuous Testing" [ref=e446] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/continuous-testing/
+            - generic [ref=e447]:
+              - link "Error Tracking" [ref=e449] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/error-tracking/
+              - link "CloudPrem" [ref=e451] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/cloudprem/
+              - link "Internal Developer Portal" [ref=e453] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/internal-developer-portal/
+              - link "CI Visibility" [ref=e455] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/ci-cd-monitoring/
+              - link "Test Optimization" [ref=e457] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/test-optimization/
+              - link "Feature Flags" [ref=e459] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/feature-flags/
+              - link "Code Coverage" [ref=e461] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/code-coverage/
+              - link "Service Level Objectives" [ref=e463] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/service-level-objectives/
+              - link "Incident Response" [ref=e465] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/incident-response/
+              - link "Event Management" [ref=e467] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/event-management/
+              - link "Case Management" [ref=e469] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/case-management/
+              - link "Bits AI Agents" [ref=e471] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/ai/bits-ai-agents/
+              - link "Bits AI SRE" [ref=e473] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/ai/bits-ai-sre/
+              - link "Bits AI Security Analyst" [ref=e475] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/ai/bits-ai-security-analyst/
+              - link "MCP Server" [ref=e477] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/ai/mcp-server/
+              - link "Agent Directory" [ref=e479] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/ai/agent-directory/
+              - link "Metrics" [ref=e481] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/metrics/
+              - link "Watchdog" [ref=e483] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/platform/watchdog/
+              - link "LLM Observability" [ref=e485] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/ai/llm-observability/
+              - link "AI Integrations" [ref=e487] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/platform/integrations/#cat-aiml
+              - link "Workflow Automation" [ref=e489] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/workflow-automation/
+              - link "App Builder" [ref=e491] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/app-builder/
+              - link "CoScreen" [ref=e493] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/coscreen/
+              - link "Teams" [ref=e495] [cursor=pointer]:
+                - /url: https://docs.datadoghq.com/account_management/teams/
+              - link "Dashboards" [ref=e497] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/platform/dashboards/
+              - link "Notebooks" [ref=e499] [cursor=pointer]:
+                - /url: https://docs.datadoghq.com/notebooks/
+              - link "Mobile App" [ref=e501] [cursor=pointer]:
+                - /url: https://docs.datadoghq.com/service_management/mobile/?tab=ios
+              - link "Fleet Automation" [ref=e503] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/fleet-automation/
+              - link "Governance Console" [ref=e505] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/governance-console/
+              - link "Access Control" [ref=e507] [cursor=pointer]:
+                - /url: https://docs.datadoghq.com/account_management/rbac/?tab=datadogapplication
+              - link "OpenTelemetry" [ref=e509] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/solutions/opentelemetry/
+              - link "Alerts" [ref=e511] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/platform/alerts/
+              - link "Integrations" [ref=e513] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/platform/integrations/
+              - link "IDE Plugins" [ref=e515] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/platform/ides/
+              - link "API" [ref=e517] [cursor=pointer]:
+                - /url: https://docs.datadoghq.com/api/
+              - link "Marketplace" [ref=e519] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/marketplacepartners/
+              - link "Security Labs Research" [ref=e521] [cursor=pointer]:
+                - /url: https://securitylabs.datadoghq.com/
+              - link "Open Source Projects" [ref=e523] [cursor=pointer]:
+                - /url: https://opensource.datadoghq.com/
+              - link "Storage Management" [ref=e525] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/storage-management/
+              - link "DORA Metrics" [ref=e527] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/platform/dora-metrics/
+              - link "Secret Scanning" [ref=e529] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product/secret-scanning/
+        - generic [ref=e530]:
+          - paragraph [ref=e531]: Resources
+          - generic [ref=e533]:
+            - generic [ref=e534]:
+              - link "Pricing" [ref=e536] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/pricing/
+              - link "Documentation" [ref=e538] [cursor=pointer]:
+                - /url: https://docs.datadoghq.com/
+              - link "Support" [ref=e540] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/support/
+              - link "Services & Enablement" [ref=e542] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/support-services/
+              - link "Product Preview Program" [ref=e544] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/product-preview/
+              - link "Certification" [ref=e546] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/certification/overview/
+            - generic [ref=e547]:
+              - link "Open Source" [ref=e549] [cursor=pointer]:
+                - /url: https://opensource.datadoghq.com/
+              - link "Events and Webinars" [ref=e551] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/events-webinars/
+              - link "Security" [ref=e553] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/security/
+              - link "Privacy Center" [ref=e555] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/privacy/
+              - link "Knowledge Center" [ref=e557] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/knowledge-center/
+              - link "Learning Resources" [ref=e559] [cursor=pointer]:
+                - /url: https://www.datadoghq.com/learn/
+        - generic [ref=e561]:
+          - generic [ref=e562]:
+            - paragraph [ref=e563]: About
+            - generic [ref=e565]:
+              - generic [ref=e566]:
+                - link "Contact Us" [ref=e568] [cursor=pointer]:
+                  - /url: https://www.datadoghq.com/about/contact/
+                - link "Partners" [ref=e570] [cursor=pointer]:
+                  - /url: https://www.datadoghq.com/partner/network/
+                - link "Press" [ref=e572] [cursor=pointer]:
+                  - /url: https://www.datadoghq.com/about/latest-news/press-releases/
+                - link "Leadership" [ref=e574] [cursor=pointer]:
+                  - /url: https://www.datadoghq.com/about/leadership/
+                - link "Careers" [ref=e576] [cursor=pointer]:
+                  - /url: https://careers.datadoghq.com/
+                - link "Legal" [ref=e578] [cursor=pointer]:
+                  - /url: https://www.datadoghq.com/legal/
+              - generic [ref=e579]:
+                - link "Investor Relations" [ref=e581] [cursor=pointer]:
+                  - /url: https://investors.datadoghq.com/
+                - link "Analyst Reports" [ref=e583] [cursor=pointer]:
+                  - /url: https://www.datadoghq.com/about/analyst/
+                - link "ESG Report" [ref=e585] [cursor=pointer]:
+                  - /url: https://www.datadoghq.com/esg-report/
+                - link "Vendor Help" [ref=e587] [cursor=pointer]:
+                  - /url: https://www.datadoghq.com/vendor-help/
+                - link "Trust Hub" [ref=e589] [cursor=pointer]:
+                  - /url: https://www.datadoghq.com/trust/
+          - generic [ref=e590]:
+            - paragraph [ref=e591]: Blog
+            - generic [ref=e593]:
+              - generic [ref=e594]:
+                - link "The Monitor" [ref=e596] [cursor=pointer]:
+                  - /url: https://www.datadoghq.com/blog/
+                - link "Engineering" [ref=e598] [cursor=pointer]:
+                  - /url: https://www.datadoghq.com/blog/engineering/
+              - generic [ref=e599]:
+                - link "AI" [ref=e601] [cursor=pointer]:
+                  - /url: https://www.datadoghq.com/blog/ai/
+                - link "Security Labs" [ref=e603] [cursor=pointer]:
+                  - /url: https://securitylabs.datadoghq.com/
+      - generic [ref=e606]:
+        - button "Icon/world English" [ref=e609] [cursor=pointer]:
+          - generic [ref=e610]:
+            - img "Icon/world" [ref=e612]
+            - generic [ref=e615]: English
+          - img [ref=e617]
+        - generic [ref=e620]:
+          - generic:
+            - link "Twitter link":
+              - /url: https://twitter.com/datadoghq
+          - generic:
+            - link "Instagram link":
+              - /url: https://www.instagram.com/datadoghq/
+          - generic:
+            - link "Youtube link":
+              - /url: https://www.youtube.com/user/DatadogHQ
+          - generic:
+            - link "LinkedIn link":
+              - /url: https://www.linkedin.com/company/datadog
+        - generic [ref=e622]:
+          - generic [ref=e623]: © Datadog 2026
+          - generic [ref=e624]:
+            - link "Terms" [ref=e625] [cursor=pointer]:
+              - /url: https://www.datadoghq.com/legal/terms/
+            - generic [ref=e626]: "|"
+          - generic [ref=e627]:
+            - link "Privacy" [ref=e628] [cursor=pointer]:
+              - /url: https://www.datadoghq.com/legal/privacy/
+            - generic [ref=e629]: "|"
+          - link "Your Privacy Choices" [ref=e631] [cursor=pointer]:
+            - /url: "#"
