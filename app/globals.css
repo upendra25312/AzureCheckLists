@@ -6970,11 +6970,52 @@ button.chip:disabled:hover {
 .arb-create-card {
   background: var(--surf-0);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 28px;
+  border-radius: 12px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+}
+
+.arb-create-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.arb-create-title {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--t1);
+  letter-spacing: -0.03em;
+}
+
+.arb-create-sub {
+  margin: 0;
+  max-width: 920px;
+  color: var(--t2);
+  line-height: 1.6;
+}
+
+.arb-proof-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.arb-proof-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--surf-1);
+  border: 1px solid var(--border);
+  color: var(--t2);
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .arb-create-fields {
@@ -7044,6 +7085,12 @@ button.chip:disabled:hover {
   color: var(--high);
 }
 
+.arb-create-trust {
+  margin: -4px 0 0;
+  color: var(--t2);
+  font-size: 0.9rem;
+}
+
 /* Review table */
 .arb-empty-state {
   padding: 40px;
@@ -7069,14 +7116,126 @@ button.chip:disabled:hover {
 .arb-review-table-wrap {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
+}
+
+.arb-review-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .arb-review-table-heading {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.02rem;
   font-weight: 700;
   color: var(--t1);
+}
+
+.arb-review-table-sub {
+  margin: 0;
+  color: var(--t2);
+  font-size: 0.94rem;
+}
+
+.arb-review-list {
+  display: grid;
+  gap: 16px;
+}
+
+.arb-review-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px 24px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surf-0);
+}
+
+.arb-review-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.arb-review-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.arb-review-card-project {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--t1);
+}
+
+.arb-review-card-customer {
+  color: var(--t2);
+  font-size: 0.92rem;
+}
+
+.arb-review-card-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.arb-review-updated {
+  color: var(--t3);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.arb-review-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.arb-review-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--surf-1);
+  border: 1px solid var(--border);
+}
+
+.arb-review-metric-label {
+  color: var(--t3);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.arb-review-metric-value {
+  color: var(--t1);
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.arb-review-next-step {
+  margin: 0;
+  color: var(--t2);
+  line-height: 1.55;
+}
+
+.arb-review-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.arb-review-id {
+  color: var(--t3);
+  font-size: 0.82rem;
 }
 
 .arb-review-table-scroll {
@@ -7170,6 +7329,44 @@ button.chip:disabled:hover {
 .arb-table-secondary:hover {
   border-color: var(--brand);
   color: var(--brand);
+}
+
+@media (max-width: 980px) {
+  .arb-create-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .arb-review-card-head,
+  .arb-review-links {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .arb-review-card-actions {
+    align-items: flex-start;
+  }
+
+  .arb-review-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .arb-create-card {
+    padding: 24px 20px;
+  }
+
+  .arb-create-title {
+    font-size: 1.3rem;
+  }
+
+  .arb-review-card {
+    padding: 18px;
+  }
+
+  .arb-review-metrics {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Status badges */

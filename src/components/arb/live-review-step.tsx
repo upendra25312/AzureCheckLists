@@ -1687,7 +1687,7 @@ export function ArbLiveReviewStep(props: {
             <article className="trace-card arb-summary-card">
               <p className="board-card-subtitle">Score override</p>
               <p className="section-copy">If the AI score does not reflect your judgment, proceed to the Decision step to record the human decision with rationale. The reviewer decision always takes precedence over the AI recommendation.</p>
-              <a href={getArbStepHref(reviewId, "decision", "decision")} className="secondary-button" style={{ display: "inline-block", marginTop: 8 }}>
+              <a href={getArbStepHref(reviewId, "decision")} className="secondary-button" style={{ display: "inline-block", marginTop: 8 }}>
                 Go to Decision →
               </a>
             </article>
