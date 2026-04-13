@@ -1445,13 +1445,16 @@ async function listArbReviews(principal, options = {}) {
 async function createArbReview(principal, input = {}) {
   const client = await getTableClient(ARB_REVIEW_TABLE_NAME);
   const baseId = input.reviewId || input.projectCode || input.projectName || "demo-review";
-  const reviewId = input.projectCode
+  let reviewId = input.projectCode
     ? normalizeReviewId(`arb-${baseId}`, "demo-review")
     : normalizeReviewId(baseId, "demo-review");
-  const existing = await getEntity(client, reviewId, getRowKey(SUMMARY_ROW_KEY, principal.userId));
 
+  // Auto-resolve name collision: append a short timestamp suffix so the upload
+  // always succeeds rather than showing "Unable to create the ARB review."
+  const existing = await getEntity(client, reviewId, getRowKey(SUMMARY_ROW_KEY, principal.userId));
   if (existing) {
-    throw createHttpError(409, `ARB review ${reviewId} already exists.`);
+    const suffix = Date.now().toString(36); // e.g. "lp5xtk"
+    reviewId = normalizeReviewId(`${reviewId}-${suffix}`, "demo-review");
   }
 
   const review = buildDefaultReview(reviewId, principal, input);

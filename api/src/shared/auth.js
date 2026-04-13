@@ -51,7 +51,7 @@ function requireAuthenticated(request) {
  * - The raw message is always logged so it is observable in App Insights / Functions logs.
  */
 function safeErrorResponse(error, fallbackMessage, context = null) {
-  const knownStatus = error?.statusCode === 400 || error?.statusCode === 404 ? error.statusCode : null;
+  const knownStatus = [400, 404, 409].includes(error?.statusCode) ? error.statusCode : null;
   const status = knownStatus ?? 500;
   const clientMessage = knownStatus
     ? (error instanceof Error ? error.message : fallbackMessage)
