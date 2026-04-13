@@ -3,7 +3,17 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { useEffect, useMemo, useState } from "react";
-import { createArbReview, listArbReviews, uploadArbFiles } from "@/arb/api";
+import { createArbReview, listArbReviews, uploadArbFiles, deleteArbReview } from "@/arb/api";
+  // Delete handler
+  async function handleDeleteReview(reviewId: string) {
+    if (!window.confirm("Are you sure you want to delete this review? This cannot be undone.")) return;
+    try {
+      await deleteArbReview(reviewId);
+      setReviews((prev) => prev.filter((r) => r.reviewId !== reviewId));
+    } catch (err) {
+      setError("Failed to delete review. Please try again.");
+    }
+  }
 import { getArbStepHref } from "@/arb/routes";
 import type { ArbReviewSummary } from "@/arb/types";
 import { useAuthSession } from "@/components/auth-session-provider";
@@ -278,9 +288,17 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
               <p className="arb-create-upload-label">Upload your review package now</p>
               <h3 className="arb-create-upload-title">Stage your SOW, design docs, diagrams, and workbooks before the workspace opens.</h3>
             </div>
-            <label className="secondary-button arb-upload-picker" htmlFor="arb-landing-upload">
+            <label className="secondary-button arb-upload-picker" htmlFor="arb-landing-upload" tabIndex={0}>
               Select files
             </label>
+            <button
+              type="button"
+              className="secondary-button arb-upload-fallback"
+              style={{ marginLeft: 8 }}
+              onClick={() => document.getElementById("arb-landing-upload")?.click()}
+            >
+              Choose Files
+            </button>
           </div>
           <input
             id="arb-landing-upload"
@@ -396,6 +414,14 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
                     <Link href={getPrimaryHref(review, focus)} className="arb-table-open">
                       {getPrimaryLabel(review, focus)}
                     </Link>
+                    <button
+                      type="button"
+                      className="arb-table-delete"
+                      style={{ marginLeft: 8 }}
+                      onClick={() => handleDeleteReview(review.reviewId)}
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
                 <div className="arb-review-metrics" aria-label={`Review posture for ${review.projectName}`}>
