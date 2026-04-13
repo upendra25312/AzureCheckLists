@@ -53,7 +53,7 @@ function getPartitionKey(reviewId) {
 // "Backend call failure" that the frontend cannot parse as JSON.
 // We self-terminate the ENTIRE pipeline at 100s and return a valid
 // JSON fallback response so the user always gets structured output.
-const PIPELINE_TIMEOUT_MS = 100_000;
+const PIPELINE_TIMEOUT_MS = 30_000;
 
 async function runReviewPipeline({ principal, reviewId, traceId, log }) {
   const t0 = Date.now();

@@ -14,7 +14,7 @@ const FOUNDRY_AGENT_MODEL = "model-router";
 const OPENAI_API_VERSION = "2025-01-01-preview";
 const AGENTS_API_VERSION = "2025-05-15-preview";
 const MICROSOFT_LEARN_MCP_ENDPOINT = "https://learn.microsoft.com/api/mcp";
-const DEFAULT_HTTP_TIMEOUT_MS = 45000;
+const DEFAULT_HTTP_TIMEOUT_MS = 20000;
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_HTTP_TIMEOUT_MS) {
   const controller = new AbortController();
@@ -161,7 +161,7 @@ async function chatCompletionsRequest(messages) {
       max_tokens: 8192,
       temperature: 0.2
     })
-  }, 50000);
+  }, 20000);
 
   if (!res.ok) {
     const text = await res.text().catch(() => `HTTP ${res.status}`);
