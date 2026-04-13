@@ -10,6 +10,7 @@
     "test": "node --test"
   },
   "dependencies": {
+    "@azure/ai-form-recognizer": "^5.0.0",
     "@azure/ai-projects": "^2.0.2",
     "@azure/data-tables": "^13.3.2",
     "@azure/functions": "^4.7.3",
