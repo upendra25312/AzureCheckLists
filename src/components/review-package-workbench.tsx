@@ -2854,50 +2854,55 @@ export function ReviewPackageWorkbench({
             </p>
             <div className="review-progress-list">
               {workspaceStages.map((stage, index) => (
-                <a
-                  <div className="package-context-grid export-preview-grid">
-                    {/* Helper text for clarity */}
-                    <div className="export-helper-text" style={{gridColumn: '1/-1', marginBottom: '12px', color: '#444', fontSize: '1rem'}}>
-                      <strong>Tip:</strong> Regenerate outputs after updating findings or decisions to keep downloads aligned with the latest review state.
-                    </div>
-                    {outputArtifactCards.map((card) => {
-                      // Icon selection based on file type
-                      let icon = "📄";
-                      if (card.id === "checklist") icon = "📊";
-                      if (card.id === "pricing") icon = "💰";
-                      if (card.id === "estimate") icon = "🌐";
-                      return (
-                        <article className="future-card export-preview-card export-preview-card-detailed export-download-card" key={card.id} style={{marginBottom: '18px', border: '1px solid #E5E7EB', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)'}}>
-                          <div className="export-preview-card-head" style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-                            <span style={{fontSize: '2rem'}}>{icon}</span>
-                            <div style={{flex: 1}}>
-                              <p className="eyebrow">{card.eyebrow}</p>
-                              <h3 style={{margin: 0, fontSize: '1.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}} title={card.title}>{card.title}</h3>
-                            </div>
-                            <span className="chip">{card.readiness}</span>
-                          </div>
-                          <p>{card.summary}</p>
-                          <div className="chip-row compact-chip-row">
-                            {card.bullets.map((bullet) => (
-                              <span className="chip" key={`${card.id}-${bullet}`}>{bullet}</span>
-                            ))}
-                          </div>
-                          <div className="export-preview-surface">
-                            <strong>{card.previewLabel}</strong>
-                            <pre className="export-preview-code">{card.preview}</pre>
-                          </div>
-                          <div className="button-row">
-                            {card.id === "checklist" ? (
-                              <button
-                                type="button"
-                                className="primary-button"
-                                disabled={!activePackage || packageItems.length === 0}
-                                onClick={exportPackageCsv}
-                                title="Download tracker CSV (spreadsheet)"
-                              >
-                                📊 Download tracker CSV
-                              </button>
-                            ) : null}
+                <div key={stage.id || index} className="workspace-stage">
+                  {/* ...existing code for each stage... */}
+                </div>
+              ))}
+
+              {/* Export/download cards section (fixed JSX) */}
+              <div className="package-context-grid export-preview-grid">
+                {/* Helper text for clarity */}
+                <div className="export-helper-text" style={{gridColumn: '1/-1', marginBottom: '12px', color: '#444', fontSize: '1rem'}}>
+                  <strong>Tip:</strong> Regenerate outputs after updating findings or decisions to keep downloads aligned with the latest review state.
+                </div>
+                {outputArtifactCards.map((card) => {
+                  // Icon selection based on file type
+                  let icon = "📄";
+                  if (card.id === "checklist") icon = "📊";
+                  if (card.id === "pricing") icon = "💰";
+                  if (card.id === "estimate") icon = "🌐";
+                  return (
+                    <article className="future-card export-preview-card export-preview-card-detailed export-download-card" key={card.id} style={{marginBottom: '18px', border: '1px solid #E5E7EB', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)'}}>
+                      <div className="export-preview-card-head" style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                        <span style={{fontSize: '2rem'}}>{icon}</span>
+                        <div style={{flex: 1}}>
+                          <p className="eyebrow">{card.eyebrow}</p>
+                          <h3 style={{margin: 0, fontSize: '1.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}} title={card.title}>{card.title}</h3>
+                        </div>
+                        <span className="chip">{card.readiness}</span>
+                      </div>
+                      <p>{card.summary}</p>
+                      <div className="chip-row compact-chip-row">
+                        {card.bullets.map((bullet) => (
+                          <span className="chip" key={`${card.id}-${bullet}`}>{bullet}</span>
+                        ))}
+                      </div>
+                      <div className="export-preview-surface">
+                        <strong>{card.previewLabel}</strong>
+                        <pre className="export-preview-code">{card.preview}</pre>
+                      </div>
+                      <div className="button-row">
+                        {card.id === "checklist" ? (
+                          <button
+                            type="button"
+                            className="primary-button"
+                            disabled={!activePackage || packageItems.length === 0}
+                            onClick={exportPackageCsv}
+                            title="Download tracker CSV (spreadsheet)"
+                          >
+                            📊 Download tracker CSV
+                          </button>
+                        ) : null}
                             {card.id === "design" ? (
                               <>
                                 <button
