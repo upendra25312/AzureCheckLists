@@ -2855,119 +2855,138 @@ export function ReviewPackageWorkbench({
             <div className="review-progress-list">
               {workspaceStages.map((stage, index) => (
                 <a
-                  className="review-progress-item"
-                  href={`#${stage.id}`}
-                  key={stage.id}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    openStage(stage.id);
-                  }}
-                >
-                  <div className="review-progress-item-head">
-                    <span className="review-progress-step">0{index + 1}</span>
-                    <span className={`review-progress-pill review-progress-pill-${stage.status}`}>
-                      {stage.status}
-                    </span>
+                  <div className="package-context-grid export-preview-grid">
+                    {/* Helper text for clarity */}
+                    <div className="export-helper-text" style={{gridColumn: '1/-1', marginBottom: '12px', color: '#444', fontSize: '1rem'}}>
+                      <strong>Tip:</strong> Regenerate outputs after updating findings or decisions to keep downloads aligned with the latest review state.
+                    </div>
+                    {outputArtifactCards.map((card) => {
+                      // Icon selection based on file type
+                      let icon = "📄";
+                      if (card.id === "checklist") icon = "📊";
+                      if (card.id === "pricing") icon = "💰";
+                      if (card.id === "estimate") icon = "🌐";
+                      return (
+                        <article className="future-card export-preview-card export-preview-card-detailed export-download-card" key={card.id} style={{marginBottom: '18px', border: '1px solid #E5E7EB', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)'}}>
+                          <div className="export-preview-card-head" style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                            <span style={{fontSize: '2rem'}}>{icon}</span>
+                            <div style={{flex: 1}}>
+                              <p className="eyebrow">{card.eyebrow}</p>
+                              <h3 style={{margin: 0, fontSize: '1.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}} title={card.title}>{card.title}</h3>
+                            </div>
+                            <span className="chip">{card.readiness}</span>
+                          </div>
+                          <p>{card.summary}</p>
+                          <div className="chip-row compact-chip-row">
+                            {card.bullets.map((bullet) => (
+                              <span className="chip" key={`${card.id}-${bullet}`}>{bullet}</span>
+                            ))}
+                          </div>
+                          <div className="export-preview-surface">
+                            <strong>{card.previewLabel}</strong>
+                            <pre className="export-preview-code">{card.preview}</pre>
+                          </div>
+                          <div className="button-row">
+                            {card.id === "checklist" ? (
+                              <button
+                                type="button"
+                                className="primary-button"
+                                disabled={!activePackage || packageItems.length === 0}
+                                onClick={exportPackageCsv}
+                                title="Download tracker CSV (spreadsheet)"
+                              >
+                                📊 Download tracker CSV
+                              </button>
+                            ) : null}
+                            {card.id === "design" ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="primary-button"
+                                  disabled={!activePackage || packageItems.length === 0}
+                                  onClick={exportPackageMarkdown}
+                                  title="Download handoff Markdown (for documentation)"
+                                >
+                                  📄 Download handoff Markdown
+                                </button>
+                                <button
+                                  type="button"
+                                  className="secondary-button"
+                                  disabled={!activePackage || packageItems.length === 0}
+                                  onClick={exportPackageText}
+                                  title="Download plain text notes"
+                                >
+                                  📄 Download plain text notes
+                                </button>
+                              </>
+                            ) : null}
+                            {card.id === "pricing" ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="primary-button"
+                                  disabled={!activePackage || !pricingReady || pricingLoading}
+                                  onClick={exportPackagePricingCsv}
+                                  title="Download commercial CSV (spreadsheet)"
+                                >
+                                  💰 Download commercial CSV
+                                </button>
+                                <button
+                                  type="button"
+                                  className="secondary-button"
+                                  disabled={!activePackage || !pricingReady || pricingLoading}
+                                  onClick={exportPackagePricingMarkdown}
+                                  title="Download commercial Markdown"
+                                >
+                                  💰 Download commercial Markdown
+                                </button>
+                                <button
+                                  type="button"
+                                  className="secondary-button"
+                                  disabled={!activePackage || !pricingReady || pricingLoading}
+                                  onClick={exportPackagePricingText}
+                                  title="Download pricing text"
+                                >
+                                  💰 Download pricing text
+                                </button>
+                              </>
+                            ) : null}
+                            {card.id === "estimate" ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="primary-button"
+                                  disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
+                                  onClick={exportPackageMonthlyEstimateCsv}
+                                  title="Download estimate CSV (spreadsheet)"
+                                >
+                                  🌐 Download estimate CSV
+                                </button>
+                                <button
+                                  type="button"
+                                  className="secondary-button"
+                                  disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
+                                  onClick={exportPackageMonthlyEstimateMarkdown}
+                                  title="Download estimate Markdown"
+                                >
+                                  🌐 Download estimate Markdown
+                                </button>
+                                <button
+                                  type="button"
+                                  className="secondary-button"
+                                  disabled={!activePackage || !monthlyEstimateReady || pricingLoading}
+                                  onClick={exportPackageMonthlyEstimateText}
+                                  title="Download estimate text"
+                                >
+                                  🌐 Download estimate text
+                                </button>
+                              </>
+                            ) : null}
+                          </div>
+                        </article>
+                      );
+                    })}
                   </div>
-                  <strong>{stage.title}</strong>
-                  <p>{stage.detail}</p>
-                </a>
-              ))}
-            </div>
-          </section>
-        </aside>
-
-        <div className="review-workspace-flow">
-      <section
-        className={`surface-panel board-stage-panel${
-          highlightedStageId === "project-review-setup" ? " board-stage-panel-highlighted" : ""
-        }`}
-        id="project-review-setup"
-      >
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Step 1</p>
-            <h2 className="section-title">Set up the review basics before you scope services.</h2>
-            <p className="section-copy">
-              Start with a review name, choose the review mode, and capture the region or architecture
-              notes that matter to the first pass.
-            </p>
-          </div>
-          <div className="chip-row">
-            <span className="chip">Only the name is required to start</span>
-            <span className="chip">ARB-grade review stays available inside the same flow</span>
-          </div>
-          <div className="button-row review-stage-head-actions">
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() => toggleStageExpansion("project-review-setup", Boolean(activePackage))}
-            >
-              {setupStageExpanded ? "Collapse stage" : "Expand stage"}
-            </button>
-          </div>
-        </div>
-
-        {setupStageExpanded ? (
-        <div className="package-header-grid">
-          <article className="filter-card package-card">
-            <div className="filter-grid">
-              <label>
-                <span className="microcopy">Active project review</span>
-                <select
-                  className="field-select"
-                  value={activePackageId ?? ""}
-                  onChange={(event) => handleSelectPackage(event.target.value)}
-                >
-                  <option value="">No active project review</option>
-                  {packages.map((reviewPackage) => (
-                    <option key={reviewPackage.id} value={reviewPackage.id}>
-                      {reviewPackage.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                <span className="microcopy">Review name</span>
-                <input
-                  className="field-input"
-                  value={form.name}
-                  onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                  placeholder="Contoso edge review"
-                />
-              </label>
-              <label>
-                <span className="microcopy">Review mode</span>
-                <select
-                  className="field-select"
-                  value={form.reviewMode}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      reviewMode: event.target.value as ReviewMode
-                    }))
-                  }
-                >
-                  {REVIEW_MODES.map((reviewMode) => (
-                    <option key={reviewMode} value={reviewMode}>
-                      {reviewMode}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span className="microcopy">Target regions</span>
-                <input
-                  className="field-input"
-                  value={form.targetRegions}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, targetRegions: event.target.value }))
-                  }
-                  placeholder="East US, West Europe, UAE Central"
-                />
-              </label>
-              {showSetupDetails ? (
                 <>
                   <p className="microcopy" style={{ gridColumn: "1 / -1" }}>
                     Update the review basics above, then click <strong>Save review details</strong>.
