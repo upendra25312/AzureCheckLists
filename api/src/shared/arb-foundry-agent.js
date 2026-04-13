@@ -161,7 +161,7 @@ async function chatCompletionsRequest(messages) {
       max_tokens: 8192,
       temperature: 0.2
     })
-  }, 90000);
+  }, 50000);
 
   if (!res.ok) {
     const text = await res.text().catch(() => `HTTP ${res.status}`);
@@ -754,6 +754,7 @@ async function runArbAgentReview({ review, files, requirements, evidence, search
 }
 
 module.exports = {
+  buildFallbackAgentReview,
   getFoundryConfiguration,
   describeImageForReview,
   runArbAgentReview

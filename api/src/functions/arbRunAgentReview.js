@@ -10,7 +10,7 @@ const {
   syncArbReviewedOutputs
 } = require("../shared/arb-review-store");
 const { searchArbDocuments, ensureArbSearchIndex } = require("../shared/arb-search");
-const { runArbAgentReview, getFoundryConfiguration } = require("../shared/arb-foundry-agent");
+const { runArbAgentReview, getFoundryConfiguration, buildFallbackAgentReview } = require("../shared/arb-foundry-agent");
 const { getTableClient, ARB_REVIEW_TABLE_NAME, encodeTableKey } = require("../shared/table-storage");
 
 /**
@@ -51,6 +51,12 @@ function getPartitionKey(reviewId) {
   return encodeTableKey(reviewId);
 }
 
+// Hard ceiling that prevents SWA's proxy from cutting us off before we can
+// return a structured response. SWA times out linked backends at ~230 s;
+// we self-terminate at 110 s and return a fallback rather than let the proxy
+// return a plain-text "Backend call failure" that the frontend can't parse.
+const FUNCTION_HARD_TIMEOUT_MS = 110_000;
+
 async function handleArbRunAgentReview(request, context) {
   const auth = requireAuthenticated(request);
   if (auth.response) return auth.response;
@@ -63,9 +69,21 @@ async function handleArbRunAgentReview(request, context) {
     context.log(JSON.stringify({ traceId, reviewId, msg, ...extra }));
   }
 
+  // Timeout sentinel — resolves after FUNCTION_HARD_TIMEOUT_MS with a
+  // sentinel object so the outer race can detect it and return a fallback
+  // rather than letting SWA's proxy terminate the request with plain text.
+  let _hardTimeoutHandle;
+  const hardTimeoutPromise = new Promise((resolve) => {
+    _hardTimeoutHandle = setTimeout(
+      () => resolve({ __hardTimeout: true }),
+      FUNCTION_HARD_TIMEOUT_MS
+    );
+  });
+
   try {
     const foundryConfig = getFoundryConfiguration();
     if (!foundryConfig.configured) {
+      clearTimeout(_hardTimeoutHandle);
       log("Foundry not configured", { status: 503 });
       return jsonResponse(503, {
         error: "Foundry agent is not configured on this deployment.",
@@ -111,23 +129,49 @@ async function handleArbRunAgentReview(request, context) {
 
     log("Search complete", { query: searchQuery.slice(0, 80), chunks: searchChunks.length });
 
-    // Run the agent review
-    const agentResult = await runArbAgentReview({
-      review,
-      files,
-      requirements: requirementsList,
-      evidence: evidenceList,
-      searchChunks
-    });
+    // Run the agent review — race against hard timeout so we always return JSON
+    const agentResultOrTimeout = await Promise.race([
+      runArbAgentReview({
+        review,
+        files,
+        requirements: requirementsList,
+        evidence: evidenceList,
+        searchChunks
+      }),
+      hardTimeoutPromise
+    ]);
+
+    // If the hard timeout fired first, substitute a fallback and continue so
+    // exports are still generated and the user gets structured output.
+    const agentResult = agentResultOrTimeout?.__hardTimeout
+      ? (() => {
+        log("Hard timeout fired — using fallback", { elapsed: Date.now() - t0 });
+        return {
+          ...buildFallbackAgentReview({
+            review, requirements: requirementsList, evidence: evidenceList,
+            reason: "AI assessment timed out — re-run to get full findings"
+          }),
+          success: true,
+          fallbackUsed: true
+        };
+      })()
+      : agentResultOrTimeout;
 
     log("Agent invoked", { durationMs: Date.now() - t0 });
 
+    // If the AI call failed for any reason (timeout, API error, parse failure),
+    // substitute the deterministic fallback so the pipeline always completes and
+    // the user can still access structured output and exports. The fallback
+    // clearly labels itself as provisional so reviewers know to re-run.
     if (!agentResult.success) {
-      log("Agent returned failure", { reason: agentResult.reason, status: 502 });
-      return jsonResponse(502, {
-        error: `Agent review did not complete successfully${agentResult.reason ? `: ${agentResult.reason}` : "."}`,
-        reason: agentResult.reason
+      log("Agent returned failure — using fallback", { reason: agentResult.reason });
+      const fallback = buildFallbackAgentReview({
+        review,
+        requirements: requirementsList,
+        evidence: evidenceList,
+        reason: agentResult.reason ?? "AI assessment unavailable"
       });
+      Object.assign(agentResult, fallback, { success: true, fallbackUsed: true });
     }
 
     log("Agent succeeded", {
@@ -260,12 +304,14 @@ async function handleArbRunAgentReview(request, context) {
       "Merge"
     );
 
+    clearTimeout(_hardTimeoutHandle);
     log("Persisted results", { durationMs: Date.now() - t0 });
 
     return jsonResponse(200, {
       reviewId,
       traceId,
       agentReviewCompleted: true,
+      fallbackUsed: agentResult.fallbackUsed ?? false,
       findingsCount: agentResult.findings?.length ?? 0,
       recommendation: agentResult.recommendation,
       overallScore: agentResult.scorecard?.overallScore ?? null,
@@ -274,6 +320,7 @@ async function handleArbRunAgentReview(request, context) {
       artifactsGenerated: syncedOutputs.artifacts.length
     });
   } catch (error) {
+    clearTimeout(_hardTimeoutHandle);
     const statusCode = error?.statusCode === 400 || error?.statusCode === 404 ? error.statusCode : 500;
     // Log full error details for diagnostics
     log("Agent review failed", {
