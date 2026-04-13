@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createArbReview, listArbReviews, uploadArbFiles, deleteArbReview } from "@/arb/api";
 import { getArbStepHref } from "@/arb/routes";
 import type { ArbReviewSummary } from "@/arb/types";
@@ -128,6 +128,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Delete handler (must be inside component to access state)
   async function handleDeleteReview(reviewId: string) {
@@ -289,19 +290,16 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
               <p className="arb-create-upload-label">Upload your review package now</p>
               <h3 className="arb-create-upload-title">Stage your SOW, design docs, diagrams, and workbooks before the workspace opens.</h3>
             </div>
-            <label className="secondary-button arb-upload-picker" htmlFor="arb-landing-upload" tabIndex={0}>
-              Select files
-            </label>
             <button
               type="button"
-              className="secondary-button arb-upload-fallback"
-              style={{ marginLeft: 8 }}
-              onClick={() => document.getElementById("arb-landing-upload")?.click()}
+              className="secondary-button arb-upload-picker"
+              onClick={() => fileInputRef.current?.click()}
             >
-              Choose Files
+              Select files
             </button>
           </div>
           <input
+            ref={fileInputRef}
             id="arb-landing-upload"
             className="arb-landing-upload-input"
             aria-label="Select review files before creating the architecture review"

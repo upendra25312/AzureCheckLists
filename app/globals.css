@@ -7060,7 +7060,12 @@ button.chip:disabled:hover {
 }
 
 .arb-landing-upload-input {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .arb-selected-files {
@@ -9507,7 +9512,12 @@ button.chip:disabled:hover {
 }
 
 .hero-upload-input {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .hero-upload-icon {
