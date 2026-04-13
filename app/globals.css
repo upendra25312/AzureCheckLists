@@ -7018,6 +7018,88 @@ button.chip:disabled:hover {
   font-weight: 700;
 }
 
+.arb-create-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 20px;
+  border: 1px dashed var(--border-md);
+  border-radius: 12px;
+  background: var(--surf-1);
+}
+
+.arb-create-upload-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.arb-create-upload-label {
+  margin: 0 0 6px;
+  color: var(--t3);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.arb-create-upload-title {
+  margin: 0;
+  color: var(--t1);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.arb-create-upload-sub,
+.arb-create-upload-empty {
+  margin: 0;
+  color: var(--t2);
+  line-height: 1.55;
+}
+
+.arb-landing-upload-input {
+  display: none;
+}
+
+.arb-selected-files {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surf-0);
+}
+
+.arb-selected-files-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.arb-selected-files-list {
+  margin: 0;
+  color: var(--t2);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.arb-upload-clear {
+  border: 0;
+  background: transparent;
+  color: var(--brand);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.arb-upload-clear:hover {
+  text-decoration: underline;
+}
+
 .arb-create-fields {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
@@ -7336,6 +7418,11 @@ button.chip:disabled:hover {
     grid-template-columns: 1fr;
   }
 
+  .arb-create-upload-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .arb-review-card-head,
   .arb-review-links {
     flex-direction: column;
@@ -7358,6 +7445,11 @@ button.chip:disabled:hover {
 
   .arb-create-title {
     font-size: 1.3rem;
+  }
+
+  .arb-selected-files-head {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .arb-review-card {

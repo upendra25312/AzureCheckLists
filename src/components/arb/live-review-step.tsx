@@ -43,34 +43,8 @@ import type {
 } from "@/arb/types";
 import { ArbPlaceholderPage } from "@/components/arb/placeholder-page";
 import { ArbReviewShell } from "@/components/arb/review-shell";
+import { SUPPORTED_ARB_UPLOAD_EXTENSIONS } from "@/components/arb/upload-extensions";
 import { SeverityBadge } from "@/components/severity-badge";
-
-const SUPPORTED_UPLOAD_EXTENSIONS = [
-  // Documents
-  ".pdf", ".doc", ".docx", ".rtf", ".odt",
-  // Presentations
-  ".ppt", ".pptx", ".odp",
-  // Spreadsheets & data
-  ".xls", ".xlsx", ".csv", ".ods",
-  // Diagrams
-  ".drawio", ".draw.io", ".vsdx", ".svg", ".svgz",
-  // Whiteboard / diagramming tools
-  ".excalidraw", ".mmd", ".mermaid", ".puml", ".plantuml",
-  // Images / screenshots
-  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".tif", ".tiff",
-  // Text & markup
-  ".txt", ".md", ".markdown", ".html", ".htm",
-  // Structured / IaC
-  ".json", ".xml", ".yaml", ".yml", ".bicep", ".tf", ".hcl", ".toml",
-  // Scripts & automation (Azure PowerShell, Azure CLI, Bash)
-  ".ps1", ".psm1", ".sh", ".azcli",
-  // API & schema definitions
-  ".proto", ".graphql", ".gql", ".wsdl", ".xsd",
-  // Notebooks
-  ".ipynb",
-  // Archives
-  ".zip", ".7z", ".tar", ".tgz"
-] as const;
 
 function buildBullets(
   activeStep: ArbReviewStepKey,
@@ -804,7 +778,7 @@ export function ArbLiveReviewStep(props: {
           </p>
 
           <div className="pill-row">
-            {SUPPORTED_UPLOAD_EXTENSIONS.map((extension) => (
+            {SUPPORTED_ARB_UPLOAD_EXTENSIONS.map((extension) => (
               <span key={extension} className="pill">
                 {extension}
               </span>
@@ -820,7 +794,7 @@ export function ArbLiveReviewStep(props: {
             aria-label="Upload review package files"
             type="file"
             multiple
-            accept={SUPPORTED_UPLOAD_EXTENSIONS.join(",")}
+            accept={SUPPORTED_ARB_UPLOAD_EXTENSIONS.join(",")}
             onChange={(event) => {
               void handleFileUpload(event.target.files);
               event.currentTarget.value = "";

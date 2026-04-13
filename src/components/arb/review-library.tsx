@@ -3,10 +3,11 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { useEffect, useMemo, useState } from "react";
-import { createArbReview, listArbReviews } from "@/arb/api";
+import { createArbReview, listArbReviews, uploadArbFiles } from "@/arb/api";
 import { getArbStepHref } from "@/arb/routes";
 import type { ArbReviewSummary } from "@/arb/types";
 import { useAuthSession } from "@/components/auth-session-provider";
+import { SUPPORTED_ARB_UPLOAD_EXTENSIONS } from "@/components/arb/upload-extensions";
 import { ENABLED_AUTH_PROVIDERS, buildLoginUrl } from "@/lib/review-cloud";
 
 type ArbReviewLibraryFocus = "workspace" | "decision";
@@ -122,6 +123,8 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
   const [reviews, setReviews] = useState<ArbReviewSummary[]>([]);
   const [projectName, setProjectName] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadDropActive, setUploadDropActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -177,12 +180,35 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
       setSaving(true);
       setError(null);
       const review = await createArbReview({ projectName, customerName });
-      window.location.href = getArbStepHref(review.reviewId, "upload", "upload-documents");
+      const uploadHref = getArbStepHref(review.reviewId, "upload", "upload-documents");
+
+      if (selectedFiles.length === 0) {
+        window.location.href = uploadHref;
+        return;
+      }
+
+      try {
+        await uploadArbFiles({ reviewId: review.reviewId, files: selectedFiles });
+        window.location.href = getArbStepHref(review.reviewId, "upload", "run-ai-analysis");
+        return;
+      } catch {
+        window.location.href = uploadHref;
+        return;
+      }
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Unable to create review.");
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleSelectedFiles(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) {
+      return;
+    }
+
+    setSelectedFiles(Array.from(fileList));
+    setError(null);
   }
 
   if (loading) {
@@ -233,6 +259,71 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
             <span className="arb-proof-chip">Board-ready sign-off workflow</span>
           </div>
         </div>
+        <section
+          className={`arb-create-upload arb-upload-dropzone${uploadDropActive ? " arb-upload-dropzone-active" : ""}`}
+          onDragOver={(event) => {
+            event.preventDefault();
+            setUploadDropActive(true);
+          }}
+          onDragLeave={() => setUploadDropActive(false)}
+          onDrop={(event) => {
+            event.preventDefault();
+            setUploadDropActive(false);
+            handleSelectedFiles(event.dataTransfer.files);
+          }}
+        >
+          <div className="arb-create-upload-head">
+            <div>
+              <p className="arb-create-upload-label">Upload your review package now</p>
+              <h3 className="arb-create-upload-title">Stage your SOW, design docs, diagrams, and workbooks before the workspace opens.</h3>
+            </div>
+            <label className="secondary-button arb-upload-picker" htmlFor="arb-landing-upload">
+              Select files
+            </label>
+          </div>
+          <input
+            id="arb-landing-upload"
+            className="arb-landing-upload-input"
+            aria-label="Select review files before creating the AI review"
+            type="file"
+            multiple
+            accept={SUPPORTED_ARB_UPLOAD_EXTENSIONS.join(",")}
+            onChange={(event) => {
+              handleSelectedFiles(event.target.files);
+              event.currentTarget.value = "";
+            }}
+          />
+          <p className="arb-create-upload-sub">
+            Optional but recommended. If you select files here, the new review opens with those files already staged and ready for analysis.
+          </p>
+          <p className="microcopy">
+            Accepted: PDF, Word, PowerPoint, Excel, diagrams, images, Markdown, text, IaC, and archive files.
+          </p>
+          {selectedFiles.length > 0 ? (
+            <div className="arb-selected-files">
+              <div className="arb-selected-files-head">
+                <strong>
+                  {selectedFiles.length} file{selectedFiles.length === 1 ? "" : "s"} ready for upload
+                </strong>
+                <button
+                  type="button"
+                  className="arb-upload-clear"
+                  onClick={() => setSelectedFiles([])}
+                >
+                  Clear
+                </button>
+              </div>
+              <p className="arb-selected-files-list">
+                {selectedFiles.slice(0, 4).map((file) => file.name).join(", ")}
+                {selectedFiles.length > 4 ? ` +${selectedFiles.length - 4} more` : ""}
+              </p>
+            </div>
+          ) : (
+            <p className="arb-create-upload-empty">
+              No files selected yet. You can still start the review and upload inside the workspace.
+            </p>
+          )}
+        </section>
         <div className="arb-create-fields">
           <label className="arb-field">
             <span>Project name</span>
@@ -260,7 +351,9 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
             onClick={() => void handleCreateReview()}
             disabled={saving || !projectName.trim()}
           >
-            {saving ? "Creating…" : "Start AI Review →"}
+            {saving
+              ? (selectedFiles.length > 0 ? "Creating review and uploading…" : "Creating…")
+              : (selectedFiles.length > 0 ? "Start AI Review and upload files →" : "Start AI Review →")}
           </button>
         </div>
         <p className="arb-create-trust">
