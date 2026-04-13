@@ -192,21 +192,36 @@ async function runCopilot(question, context, options = {}) {
     options.mode === "service-review" || options.mode === "leadership-summary"
       ? options.mode
       : "project-review";
-  const response = await fetch(
-    `${configuration.endpoint}/openai/deployments/${configuration.deployment}/chat/completions?api-version=${configuration.apiVersion}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "api-key": configuration.apiKey
-      },
-      body: JSON.stringify({
-        messages: buildCopilotMessages(sanitizedQuestion, sanitizedContext, mode),
-        temperature: 0.2,
-        max_tokens: 900
-      })
-    }
-  );
+
+  // Hard timeout so a slow/unreachable Azure OpenAI endpoint never causes the
+  // calling function to hang indefinitely and hit SWA's proxy timeout ceiling.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30_000);
+
+  let response;
+  try {
+    response = await fetch(
+      `${configuration.endpoint}/openai/deployments/${configuration.deployment}/chat/completions?api-version=${configuration.apiVersion}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "api-key": configuration.apiKey
+        },
+        body: JSON.stringify({
+          messages: buildCopilotMessages(sanitizedQuestion, sanitizedContext, mode),
+          temperature: 0.2,
+          max_tokens: 900
+        }),
+        signal: controller.signal
+      }
+    );
+  } catch (fetchErr) {
+    clearTimeout(timer);
+    const isAbort = fetchErr && fetchErr.name === "AbortError";
+    throw new Error(isAbort ? "Azure OpenAI copilot request timed out after 30s." : String(fetchErr.message ?? fetchErr));
+  }
+  clearTimeout(timer);
 
   if (!response.ok) {
     const errorBody = await response.text();

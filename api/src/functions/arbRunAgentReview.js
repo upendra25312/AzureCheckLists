@@ -330,6 +330,10 @@ async function handleArbRunAgentReview(request, context) {
       traceId,
       durationMs: Date.now() - t0
     });
+    // Force error to Application Insights
+    if (context.log && typeof context.log.error === "function") {
+      context.log.error("Agent review exception", error instanceof Error ? error : { message: String(error) });
+    }
     // Return detailed error to frontend for troubleshooting (only in non-production or admin mode)
     const isProduction = process.env.NODE_ENV === "production";
     return jsonResponse(statusCode, {

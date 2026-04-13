@@ -415,7 +415,7 @@ export default function HomePage() {
             <div className="impact-signoff-block">
               <p className="impact-signoff-label">ARB sign-off checkpoint</p>
               <div className="impact-signoff-meta">
-                <span className="impact-signoff-field">👤 Senior Cloud Architect</span>
+                <span className="impact-signoff-field">Architecture Review Board Executive</span>
                 <span className="impact-signoff-field">📅 13 Apr 2026 · 14:32 UTC</span>
               </div>
               <div className="impact-decision-model">
