@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { createArbReview, listArbReviews, uploadArbFiles } from "@/arb/api";
 import { getArbStepHref } from "@/arb/routes";
 import type { ArbReviewSummary } from "@/arb/types";
+import { SUPPORTED_ARB_UPLOAD_EXTENSIONS } from "@/components/arb/upload-extensions";
 import { useAuthSession } from "@/components/auth-session-provider";
 import {
   ENABLED_AUTH_PROVIDERS,
@@ -17,7 +18,11 @@ import {
 const WORKFLOW_STEPS = [
   { id: 1, label: "Sign in", detail: "Use your supported account" },
   { id: 2, label: "Create review", detail: "Name your project and customer" },
-  { id: 3, label: "Upload documents", detail: "PDF, Word, PowerPoint, Markdown" },
+  {
+    id: 3,
+    label: "Upload documents",
+    detail: "Documents, diagrams, spreadsheets, images, IaC, scripts, and archives"
+  },
   {
     id: 4,
     label: "Architecture Assurance Assessment",
@@ -192,7 +197,7 @@ export default function HomePage() {
               ref={fileInputRef}
               type="file"
               multiple
-              accept=".pdf,.doc,.docx,.rtf,.ppt,.pptx,.xls,.xlsx,.csv,.drawio,.vsdx,.svg,.png,.jpg,.jpeg,.gif,.webp,.bmp,.txt,.md,.markdown,.json,.xml,.yaml,.yml,.bicep,.tf,.zip"
+              accept={SUPPORTED_ARB_UPLOAD_EXTENSIONS.join(",")}
               className="hero-upload-input"
               aria-hidden="true"
               onChange={(e) => { void handleFiles(e.target.files); e.currentTarget.value = ""; }}
@@ -207,7 +212,7 @@ export default function HomePage() {
               <>
                 <span className="hero-upload-icon">📄</span>
                 <p className="hero-upload-title">Drop your SOW or design doc here</p>
-                <p className="hero-upload-sub">or <span className="hero-upload-link">click to select files</span> · PDF, Word, PowerPoint, Markdown</p>
+                <p className="hero-upload-sub">or <span className="hero-upload-link">click to select files</span> · docs, diagrams, spreadsheets, images, IaC, scripts, notebooks, archives</p>
               </>
             )}
           </div>
