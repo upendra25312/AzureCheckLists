@@ -48,7 +48,7 @@ function getRowKey(baseKey, userId) {
 }
 
 function getPartitionKey(reviewId) {
-  return reviewId;
+  return encodeTableKey(reviewId);
 }
 
 async function handleArbRunAgentReview(request, context) {

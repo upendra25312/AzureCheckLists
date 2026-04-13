@@ -2012,7 +2012,7 @@ export function ArbLiveReviewStep(props: {
               </div>
             </div>
           ) : (
-            <p>This scaffold expects the Function App ARB endpoints to be available.</p>
+            <p>This view requires live Function App ARB endpoints. Verify API deployment and retry.</p>
           )}
         </div>
       ) : (
