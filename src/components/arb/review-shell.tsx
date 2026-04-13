@@ -143,7 +143,7 @@ export function ArbReviewShell(props: {
               {/* Persistent Upload Documents button, hidden on upload step */}
               {activeStep !== "upload" && (
                 <Link
-                  href={getUploadStepHref()}
+                  href={getUploadStepHref() as Route}
                   className="primary-button"
                   title="You can upload additional evidence at any time."
                   style={{ marginLeft: 8 }}
