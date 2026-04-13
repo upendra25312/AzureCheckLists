@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   icons: {
-    icon: "/icon.svg"
+    icon: "/logo.png"
   },
   openGraph: {
     type: "website",

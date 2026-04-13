@@ -167,7 +167,7 @@ export default function HomePage() {
 
       {/* ── HERO ── */}
       <section className="impact-section impact-section-hero">
-        <img src="/icon.svg" alt="Azure Review Assistant" className="hero-brand-mark" />
+        <img src="/logo.png" alt="Azure Review Assistant" className="hero-brand-mark" />
         <span className="impact-kicker">Architecture reviews that ship</span>
         <h1 className="impact-headline">
           Upload architecture docs. Get board-ready Azure findings in minutes.

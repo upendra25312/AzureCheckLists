@@ -243,7 +243,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
   if (!principal) {
     return (
       <div className="arb-signin-hero arb-session-diagnostics">
-        <img src="/icon.svg" alt="Azure Review Assistant" className="arb-signin-mark" />
+        <img src="/logo.png" alt="Azure Review Assistant" className="arb-signin-mark" />
         <p className="arb-signin-kicker">ARB-grade review mode</p>
         <h1 className="arb-signin-headline">
           Upload your design documents and get a framework-validated architecture review in minutes.

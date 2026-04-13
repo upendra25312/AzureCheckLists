@@ -48,7 +48,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           <div className="topbar-inner">
             {/* Brand */}
             <Link href="/" className="topbar-brand" aria-label={SITE_NAME}>
-              <img src="/icon.svg" alt="" className="topbar-brand-logo" />
+              <img src="/logo.png" alt="" className="topbar-brand-logo" />
               <span className="topbar-brand-name">{SITE_NAME}</span>
             </Link>
 

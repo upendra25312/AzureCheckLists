@@ -365,6 +365,8 @@ pre {
   width: 32px;
   height: 32px;
   flex-shrink: 0;
+  object-fit: contain;
+  border-radius: 6px;
 }
 
 .topbar-brand-name {
@@ -8738,19 +8740,23 @@ button.chip:disabled:hover {
 }
 
 .hero-brand-mark {
-  width: 72px;
-  height: 72px;
+  width: 88px;
+  height: 88px;
   display: block;
   margin-bottom: 20px;
-  filter: drop-shadow(0 4px 16px rgba(0, 120, 212, 0.22));
+  object-fit: contain;
+  border-radius: 12px;
+  filter: drop-shadow(0 6px 24px rgba(0, 120, 212, 0.30));
 }
 
 .arb-signin-mark {
-  width: 64px;
-  height: 64px;
+  width: 80px;
+  height: 80px;
   display: block;
   margin-bottom: 16px;
-  filter: drop-shadow(0 4px 14px rgba(0, 120, 212, 0.2));
+  object-fit: contain;
+  border-radius: 10px;
+  filter: drop-shadow(0 4px 14px rgba(0, 120, 212, 0.25));
 }
 
 .impact-kicker {
