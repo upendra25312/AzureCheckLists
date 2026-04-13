@@ -4,16 +4,6 @@ import Link from "next/link";
 import type { Route } from "next";
 import { useEffect, useMemo, useState } from "react";
 import { createArbReview, listArbReviews, uploadArbFiles, deleteArbReview } from "@/arb/api";
-  // Delete handler
-  async function handleDeleteReview(reviewId: string) {
-    if (!window.confirm("Are you sure you want to delete this review? This cannot be undone.")) return;
-    try {
-      await deleteArbReview(reviewId);
-      setReviews((prev) => prev.filter((r) => r.reviewId !== reviewId));
-    } catch (err) {
-      setError("Failed to delete review. Please try again.");
-    }
-  }
 import { getArbStepHref } from "@/arb/routes";
 import type { ArbReviewSummary } from "@/arb/types";
 import { useAuthSession } from "@/components/auth-session-provider";
@@ -138,6 +128,17 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Delete handler (must be inside component to access state)
+  async function handleDeleteReview(reviewId: string) {
+    if (!window.confirm("Are you sure you want to delete this review? This cannot be undone.")) return;
+    try {
+      await deleteArbReview(reviewId);
+      setReviews((prev) => prev.filter((r) => r.reviewId !== reviewId));
+    } catch (err) {
+      setError("Failed to delete review. Please try again.");
+    }
+  }
 
   useEffect(() => {
     let active = true;
