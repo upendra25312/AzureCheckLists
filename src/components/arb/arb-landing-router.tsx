@@ -52,7 +52,7 @@ function getStepMeta(step: ArbReviewStepKey): { title: string; description: stri
     default:
       return {
         title: "Review Workspace Overview",
-        description: "See the current evidence posture, workflow state, and next step for this architecture review."
+        description: "See the current evidence posture, workflow state, and next step for this AI review."
       };
   }
 }

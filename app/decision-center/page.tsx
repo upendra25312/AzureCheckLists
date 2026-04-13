@@ -7,33 +7,34 @@ export default function DecisionCenterPage() {
       <section className="review-command-panel">
         <div className="review-command-copy">
           <p className="header-badge">Decision Center</p>
-          <h1 className="review-command-title">Review score, conditions, and human sign-off in one place.</h1>
+          <h1 className="review-command-title">Review score, conditions, and final sign-off in one place.</h1>
           <p className="review-command-summary">
-            Decision Center is the closeout surface for advanced reviews. It keeps weighted score,
-            blockers, evidence gaps, and the human decision in one reviewer-owned queue.
+            Decision Center is the closeout checkpoint for advanced reviews. It keeps the derived
+            score, open conditions, reviewer identity, recorded timestamp, and the final human
+            outcome in one place.
           </p>
         </div>
 
         <div className="review-command-metrics">
           <article className="review-command-metric">
-            <span>Recommendation</span>
-            <strong>Derived recommendation</strong>
-            <p>Keep the derived recommendation visible, but separate from the reviewer-owned decision.</p>
+            <span>Decision states</span>
+            <strong>Approved / Needs Revision / Rejected</strong>
+            <p>Make the final outcome explicit instead of leaving sign-off implied.</p>
           </article>
           <article className="review-command-metric">
-            <span>Scorecard</span>
-            <strong>Weighted rationale</strong>
-            <p>Every score should drill back to the evidence, findings, and grounded guidance behind it.</p>
+            <span>Derived recommendation</span>
+            <strong>Keep AI guidance visible</strong>
+            <p>The weighted recommendation stays visible, but the recorded reviewer decision takes precedence.</p>
+          </article>
+          <article className="review-command-metric">
+            <span>Checkpoint metadata</span>
+            <strong>Reviewer, role, timestamp</strong>
+            <p>Every sign-off needs a named human owner, role context, and a visible recorded checkpoint.</p>
           </article>
           <article className="review-command-metric">
             <span>Conditions</span>
-            <strong>Must-fix tracking</strong>
-            <p>Open actions and reviewer verification requirements stay visible before sign-off.</p>
-          </article>
-          <article className="review-command-metric">
-            <span>Outcome</span>
-            <strong>Human-owned final decision</strong>
-            <p>Recorded decisions capture rationale, timing, and explicit human accountability.</p>
+            <strong>Open actions stay visible</strong>
+            <p>Blocked actions, evidence gaps, and reviewer verification remain visible before approval.</p>
           </article>
         </div>
 

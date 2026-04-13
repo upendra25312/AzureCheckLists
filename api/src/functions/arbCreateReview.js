@@ -12,12 +12,8 @@ async function handleArbCreateReview(request, context) {
     const body = await request.json().catch(() => ({}));
 
     const projectName = String(body.projectName ?? "").trim();
-    const customerName = String(body.customerName ?? "").trim();
     if (!projectName || projectName.length < 2) {
       return jsonResponse(400, { error: "projectName is required and must be at least 2 characters." });
-    }
-    if (!customerName || customerName.length < 2) {
-      return jsonResponse(400, { error: "customerName is required and must be at least 2 characters." });
     }
 
     const review = await createArbReview(auth.principal, body);

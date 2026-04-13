@@ -47,7 +47,7 @@ export function AuthStatusChip() {
           </p>
           <div className="auth-menu-actions">
             <Link href="/arb" className="primary-button">
-              Architecture Review
+              AI Review
             </Link>
             <Link href="/services" className="secondary-button">
               Service Explorer

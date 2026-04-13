@@ -362,8 +362,8 @@ pre {
 }
 
 .topbar-brand-logo {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
 }
 
@@ -8678,6 +8678,22 @@ button.chip:disabled:hover {
 
 .impact-section-hero {
   background: radial-gradient(circle at 10% 0%, #e8f2ff 0%, #f6f9fc 48%), #ffffff;
+}
+
+.hero-brand-mark {
+  width: 72px;
+  height: 72px;
+  display: block;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 4px 16px rgba(0, 120, 212, 0.22));
+}
+
+.arb-signin-mark {
+  width: 64px;
+  height: 64px;
+  display: block;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 4px 14px rgba(0, 120, 212, 0.2));
 }
 
 .impact-kicker {

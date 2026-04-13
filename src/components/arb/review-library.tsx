@@ -219,6 +219,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
   if (!principal) {
     return (
       <div className="arb-signin-hero">
+        <img src="/icon.svg" alt="Azure Review Assistant" className="arb-signin-mark" />
         <p className="arb-signin-kicker">ARB-grade review mode</p>
         <h1 className="arb-signin-headline">
           Upload your design documents and get a framework-validated architecture review in minutes.
@@ -237,7 +238,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
           <li>PDF, Word, PowerPoint, or Markdown — drag and drop your documents</li>
           <li>Automated coverage across WAF · CAF · ALZ · HA/DR · Security · Networking · Monitoring</li>
           <li>Every finding scored 0–100 and linked to a Microsoft Learn source</li>
-          <li>Files retained for 30 days — delete any review at any time</li>
+          <li>Sign in is required to save uploads, findings, exports, and final sign-off</li>
         </ul>
       </div>
     );
@@ -248,7 +249,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
     <div className="arb-library-stack">
       <section className="arb-create-card">
         <div className="arb-create-copy">
-          <p className="arb-create-label">Architecture review workspace</p>
+          <p className="arb-create-label">AI review workspace</p>
           <h2 className="arb-create-title">Upload architecture documents and start a structured review.</h2>
           <p className="arb-create-sub">
             Create the review, move straight into document upload, and generate Microsoft Learn-grounded findings across WAF, CAF, ALZ, HA/DR, Security, Networking, and Monitoring.
@@ -353,7 +354,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
           >
             {saving
               ? (selectedFiles.length > 0 ? "Creating review and uploading…" : "Creating…")
-              : (selectedFiles.length > 0 ? "Start Architecture Review and upload files →" : "Start Architecture Review →")}
+              : (selectedFiles.length > 0 ? "Start AI Review and upload files →" : "Start AI Review →")}
           </button>
         </div>
         <p className="arb-create-trust">

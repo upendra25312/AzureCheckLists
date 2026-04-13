@@ -1744,6 +1744,20 @@ export function ArbLiveReviewStep(props: {
   }
 
   function renderDecisionContent() {
+    const recordedAtLabel = decisionResult?.recordedAt
+      ? new Date(decisionResult.recordedAt).toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit"
+        })
+      : "Not recorded yet";
+    const decisionStatusLabel = decisionResult?.reviewerDecision ?? shellReview.finalDecision ?? "Pending reviewer sign-off";
+    const checkpointOwnerLabel =
+      decisionResult?.reviewerName || shellReview.assignedReviewer || decisionReviewerName || "Unassigned";
+    const checkpointRoleLabel = decisionResult?.reviewerRole || decisionReviewerRole || "Role not captured";
+
     return (
       <div className="arb-page-stack">
         {decisionGateMessage ? (
@@ -1762,6 +1776,19 @@ export function ArbLiveReviewStep(props: {
             </div>
             <div className="arb-summary-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 16 }}>
               <article className="future-card">
+                <p className="board-card-subtitle">Decision state</p>
+                <strong>{decisionStatusLabel}</strong>
+              </article>
+              <article className="future-card">
+                <p className="board-card-subtitle">Checkpoint owner</p>
+                <strong>{checkpointOwnerLabel}</strong>
+                <p>{checkpointRoleLabel}</p>
+              </article>
+              <article className="future-card">
+                <p className="board-card-subtitle">Target review date</p>
+                <strong>{shellReview.targetReviewDate ?? "Not scheduled"}</strong>
+              </article>
+              <article className="future-card">
                 <p className="board-card-subtitle">Open actions</p>
                 <strong style={{ color: actionSummary.openCount > 0 ? "var(--warning)" : undefined }}>{actionSummary.openCount}</strong>
               </article>
@@ -1772,6 +1799,10 @@ export function ArbLiveReviewStep(props: {
               <article className="future-card">
                 <p className="board-card-subtitle">Needs verification</p>
                 <strong style={{ color: actionSummary.reviewerVerificationCount > 0 ? "var(--warning)" : undefined }}>{actionSummary.reviewerVerificationCount}</strong>
+              </article>
+              <article className="future-card">
+                <p className="board-card-subtitle">Recorded checkpoint</p>
+                <strong>{recordedAtLabel}</strong>
               </article>
             </div>
             <p className="section-copy" style={{ marginBottom: 8 }}>The derived recommendation is advisory. Your recorded decision below is the binding outcome for this review.</p>
@@ -1830,6 +1861,23 @@ export function ArbLiveReviewStep(props: {
                 />
               </label>
             </div>
+            <section className="trace-card arb-summary-card" style={{ marginBottom: 16 }}>
+              <p className="board-card-subtitle">Decision model</p>
+              <div className="arb-checklist">
+                <div>
+                  <strong>Approved</strong>
+                  <p className="microcopy">Use only when remediation is complete, no blocked actions remain, and the architecture is ready for board sign-off.</p>
+                </div>
+                <div>
+                  <strong>Needs Revision</strong>
+                  <p className="microcopy">Use when the architecture can proceed only after named actions, evidence, or reviewer verification are completed.</p>
+                </div>
+                <div>
+                  <strong>Rejected</strong>
+                  <p className="microcopy">Use when the proposed architecture should not move forward in its current form and needs material redesign.</p>
+                </div>
+              </div>
+            </section>
             <label className="filter-field">
               <span>Final decision</span>
               <select

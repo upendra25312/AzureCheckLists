@@ -17,7 +17,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   {
     href: "/arb" as Route,
-    label: "Architecture Review",
+    label: "AI Review",
     matchPrefixes: ["/arb", "/decision-center"],
   },
   {

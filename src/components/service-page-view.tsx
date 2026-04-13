@@ -152,6 +152,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
   const isServiceInActivePackage = Boolean(
     activePackage?.selectedServiceSlugs.includes(payload.service.slug)
   );
+  const canAddToActivePackage = Boolean(activePackage) && !isServiceInActivePackage;
   const familyGroups: FamilyGroup[] = [
     {
       title: "Baseline families",
@@ -234,13 +235,24 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
               Back to services
             </Link>
             {signedIn === true ? (
-              <Link href="/arb" className="primary-button">
-                Start architecture review with this service →
-              </Link>
+              canAddToActivePackage ? (
+                <button type="button" className="primary-button" onClick={addServiceToActivePackage}>
+                  Add to review workspace
+                </button>
+              ) : (
+                <Link href="/arb" className="primary-button">
+                  {isServiceInActivePackage ? "Open review workspace →" : "Start AI Review →"}
+                </Link>
+              )
             ) : signedIn === false ? (
-              <a href={buildLoginUrl(PRIMARY_AUTH_PROVIDER, "/arb")} className="primary-button">
-                Sign in to start a review →
-              </a>
+              <>
+                <a href="#service-findings-workspace" className="primary-button">
+                  View instant findings below ↓
+                </a>
+                <a href={buildLoginUrl(PRIMARY_AUTH_PROVIDER, "/arb")} className="ghost-button">
+                  Sign in to save to AI Review →
+                </a>
+              </>
             ) : null}
           </div>
         </div>
@@ -287,7 +299,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
         <p className="microcopy svc-detail-guidance">{payload.service.whatThisMeans}</p>
       </section>
 
-      <section className="surface-panel svc-detail-workspace">
+      <section id="service-findings-workspace" className="surface-panel svc-detail-workspace">
         <div className="board-card-head svc-detail-workspace-head">
           <div className="board-card-head-copy">
             <p className="board-card-subtitle">Findings workspace</p>
@@ -326,12 +338,16 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
               ? isServiceInActivePackage
                 ? `${payload.service.service} is already in the active project review.`
                 : `${payload.service.service} is not yet in the active project review.`
-              : "No active project review is selected."}
+              : signedIn === false
+                ? "Instant findings are available now."
+                : "No active project review is selected."}
           </strong>
           <p>
             {activePackage
               ? `Use this page to keep scoped decisions for ${activePackage.audience} without losing the raw source guidance.`
-              : "You can still search and annotate findings here, then start a project review when you are ready to scope decisions."}
+              : signedIn === false
+                ? "Search, open, and export findings without sign-in. Sign in only when you want a saved AI review workspace with scoped decisions."
+                : "You can still search and annotate findings here, then start a project review when you are ready to scope decisions."}
           </p>
         </div>
 

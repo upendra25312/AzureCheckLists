@@ -148,7 +148,7 @@ export default function HomePage() {
       setUploading(true);
       setUploadError(null);
       const firstName = fileList[0].name.replace(/\.[^.]+$/, "").slice(0, 80);
-      const review = await createArbReview({ projectName: firstName || "Architecture Review", customerName: "" });
+      const review = await createArbReview({ projectName: firstName || "AI Review", customerName: "" });
       await uploadArbFiles({ reviewId: review.reviewId, files: Array.from(fileList) });
       window.location.href = getArbStepHref(review.reviewId, "upload", "upload-documents");
     } catch (err) {
@@ -162,6 +162,7 @@ export default function HomePage() {
 
       {/* ── HERO ── */}
       <section className="impact-section impact-section-hero">
+        <img src="/icon.svg" alt="Azure Review Assistant" className="hero-brand-mark" />
         <span className="impact-kicker">Architecture reviews that ship</span>
         <h1 className="impact-headline">
           Upload architecture docs. Get board-ready Azure findings in minutes.
@@ -285,7 +286,7 @@ export default function HomePage() {
           )}
           {signedIn === true && !latestReview && (
             <Link href="/arb" className="impact-btn impact-btn-primary">
-                Start Architecture Review →
+                Start AI Review →
             </Link>
           )}
         </div>
@@ -338,7 +339,7 @@ export default function HomePage() {
             </ul>
             <div>
               <Link href="/arb" className="impact-btn impact-btn-primary">
-                Start Architecture Review →
+                Start AI Review →
               </Link>
             </div>
           </article>
@@ -430,7 +431,7 @@ export default function HomePage() {
             </div>
             <div style={{ marginTop: 16 }}>
               <Link href="/arb" className="impact-btn impact-btn-primary">
-                 Start Architecture Review →
+                 Start AI Review →
               </Link>
             </div>
           </article>
