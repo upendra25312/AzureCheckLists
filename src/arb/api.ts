@@ -1,3 +1,19 @@
+/**
+ * Delete an ARB review by reviewId.
+ * Sends DELETE to /api/arb/reviews/{reviewId}.
+ */
+export async function deleteArbReview(reviewId: string): Promise<{ deleted: boolean }> {
+  const response = await fetch(`/api/arb/reviews/${reviewId}`, {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json"
+    }
+  });
+  if (!response.ok) {
+    throw new Error(`Unable to delete ARB review (${response.status})`);
+  }
+  return { deleted: true };
+}
 import type {
   ArbAction,
   ArbDecision,
