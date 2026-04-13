@@ -38,8 +38,14 @@ function createMockTableModule() {
         const nextEntity = mode === "Merge" ? { ...existing, ...entity } : entity;
         table.set(key, structuredClone(nextEntity));
       },
-      async *listEntities() {
+      async *listEntities(options) {
+        const filterStr = options?.queryOptions?.filter ?? "";
+        // Support simple OData equality filters: RowKey eq 'val' and PartitionKey eq 'val'
+        const rowKeyMatch = filterStr.match(/RowKey eq '([^']*)'/);
+        const partitionKeyMatch = filterStr.match(/PartitionKey eq '([^']*)'/);
         for (const entity of table.values()) {
+          if (rowKeyMatch && entity.rowKey !== rowKeyMatch[1]) continue;
+          if (partitionKeyMatch && entity.partitionKey !== partitionKeyMatch[1]) continue;
           yield structuredClone(entity);
         }
       }

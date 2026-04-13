@@ -185,6 +185,10 @@ The public UI is local-first and does not require sign-in. The dedicated backend
 - `AZURE_OPENAI_MODEL_NAME`
 - `AZURE_OPENAI_API_VERSION`
 
+Optional frontend environment variables (set in the Azure Static Web App configuration or a `.env.local` file for local development):
+
+- `NEXT_PUBLIC_ENABLE_GITHUB_AUTH` — GitHub sign-in is **enabled by default**; set to `false` to hide it from all sign-in prompts.
+
 Recommended defaults:
 
 - `AZURE_STORAGE_REVIEW_CONTAINER_NAME=review-notes`
@@ -252,5 +256,7 @@ az staticwebapp users invite \
    --domain <static-web-app-domain> \
    --invitation-expiration-in-hours 24
 ```
+
+For GitHub-authenticated users, use `--authentication-provider GitHub` and supply the GitHub username as `--user-details`.
 
 This role-assignment behavior matches Azure Static Web Apps role management guidance: signed-in users are only `authenticated` by default, and custom roles like `admin` must be granted explicitly.

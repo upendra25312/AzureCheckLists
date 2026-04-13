@@ -65,6 +65,42 @@ const libraryPayload = {
   ]
 } as const;
 
+type MutableLibraryUser = {
+  userId: string;
+  email: string;
+  displayName: string;
+  provider: string;
+  activeReviewId: string | null;
+};
+
+type MutableLibraryReview = {
+  id: string;
+  name: string;
+  audience: string;
+  businessScope: string;
+  targetRegions: readonly string[];
+  selectedServiceSlugs: readonly string[];
+  serviceCount: number;
+  recordCount: number;
+  includedCount: number;
+  notApplicableCount: number;
+  excludedCount: number;
+  pendingCount: number;
+  createdAt: string;
+  updatedAt: string;
+  lastSavedAt: string;
+  isActive: boolean;
+  isArchived: boolean;
+  archivedAt: string | null;
+  isDeleted: boolean;
+  deletedAt: string | null;
+};
+
+type MutableLibraryState = {
+  user: MutableLibraryUser;
+  reviews: MutableLibraryReview[];
+};
+
 const reviewStateDocument = {
   schemaVersion: 1,
   updatedAt: restoredPackage.updatedAt,
@@ -490,7 +526,7 @@ test.describe("cloud-backed project review flows", () => {
   });
 
   test("searches, archives, restores, and deletes saved project reviews", async ({ page }) => {
-    const currentLibrary = {
+    const currentLibrary: MutableLibraryState = {
       user: {
         ...libraryPayload.user,
         activeReviewId: restoredPackage.id
@@ -624,7 +660,7 @@ test.describe("cloud-backed project review flows", () => {
   });
 
   test("does not restore a purged active review from Azure state later", async ({ page }) => {
-    const currentLibrary = {
+    const currentLibrary: MutableLibraryState = {
       user: {
         ...libraryPayload.user,
         activeReviewId: restoredPackage.id

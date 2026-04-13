@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useAuthSession } from "@/components/auth-session-provider";
 import { ItemDrawer } from "@/components/item-drawer";
 import { QualityBadge } from "@/components/quality-badge";
 import { ServicePricingPanel } from "@/components/service-pricing-panel";
@@ -17,7 +18,7 @@ import {
   saveScopedReviews,
   upsertPackage
 } from "@/lib/review-storage";
-import { buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
+import { PRIMARY_AUTH_PROVIDER, buildLoginUrl } from "@/lib/review-cloud";
 import type { ChecklistItem, ReviewDraft, ReviewPackage, ServicePayload } from "@/types";
 
 type ExportFormat = "csv" | "json" | "text";
@@ -90,9 +91,9 @@ function buildServiceFindingsText(
 }
 
 export function ServicePageView({ payload }: { payload: ServicePayload }) {
+  const { principal, resolved } = useAuthSession();
   const [selectedGuid, setSelectedGuid] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [reviews, setReviews] = useState<Record<string, ReviewDraft>>({});
   const [activePackage, setActivePackage] = useState<ReviewPackage | null>(null);
   const [storageReady, setStorageReady] = useState(false);
@@ -104,12 +105,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
   const deprecatedFamilies = payload.service.families.filter(
     (family) => family.maturityBucket === "Deprecated"
   );
-
-  useEffect(() => {
-    fetchClientPrincipal()
-      .then((p) => setSignedIn(Boolean(p)))
-      .catch(() => setSignedIn(false));
-  }, []);
+  const signedIn = resolved ? Boolean(principal) : null;
 
   useEffect(() => {
     const packageId = loadActivePackageId();
@@ -242,7 +238,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
                 Start AI review with this service →
               </Link>
             ) : signedIn === false ? (
-              <a href={buildLoginUrl("aad", "/arb")} className="primary-button">
+              <a href={buildLoginUrl(PRIMARY_AUTH_PROVIDER, "/arb")} className="primary-button">
                 Sign in to start a review →
               </a>
             ) : null}

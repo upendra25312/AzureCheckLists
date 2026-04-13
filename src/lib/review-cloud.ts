@@ -12,7 +12,31 @@ import type {
 } from "@/types";
 import { readBackendErrorMessage } from "@/lib/backend-error";
 
-export type AuthProvider = "aad";
+export type AuthProvider = "aad" | "github";
+
+type AuthProviderOption = {
+  id: AuthProvider;
+  label: string;
+  enabled: boolean;
+};
+
+export const GITHUB_AUTH_ENABLED = process.env.NEXT_PUBLIC_ENABLE_GITHUB_AUTH !== "false";
+
+const AUTH_PROVIDER_OPTIONS: AuthProviderOption[] = [
+  {
+    id: "aad",
+    label: "Microsoft",
+    enabled: true
+  },
+  {
+    id: "github",
+    label: "GitHub",
+    enabled: GITHUB_AUTH_ENABLED
+  }
+];
+
+export const ENABLED_AUTH_PROVIDERS = AUTH_PROVIDER_OPTIONS.filter((provider) => provider.enabled);
+export const PRIMARY_AUTH_PROVIDER = ENABLED_AUTH_PROVIDERS[0]?.id ?? "aad";
 
 type AuthMeResponse =
   | {
@@ -90,30 +114,83 @@ function parseClientPrincipal(payload: AuthMeResponse) {
   return payload?.clientPrincipal ?? null;
 }
 
-export async function fetchClientPrincipal() {
+function formatHumanList(values: string[]) {
+  if (values.length <= 1) {
+    return values[0] ?? "Microsoft";
+  }
+
+  if (values.length === 2) {
+    return `${values[0]} or ${values[1]}`;
+  }
+
+  return `${values.slice(0, -1).join(", ")}, or ${values.at(-1)}`;
+}
+
+export function getAuthSupportLabel() {
+  return `${formatHumanList(ENABLED_AUTH_PROVIDERS.map((provider) => provider.label))} account supported`;
+}
+
+export function formatIdentityProvider(provider: string | undefined) {
+  switch ((provider ?? "").toLowerCase()) {
+    case "aad":
+    case "azureactivedirectory":
+      return "Microsoft";
+    case "github":
+      return "GitHub";
+    case "google":
+      return "Google";
+    default:
+      return provider || "Account";
+  }
+}
+
+export async function readClientPrincipal() {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
   try {
     const response = await fetch("/.auth/me", {
       credentials: "same-origin",
-      cache: "no-store"
+      cache: "no-store",
+      signal: controller.signal
     });
 
     if (!response.ok) {
-      return null;
+      throw new Error(`Unable to read auth session: ${response.status}`);
     }
 
     const payload = (await response.json()) as AuthMeResponse;
     return parseClientPrincipal(payload);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export async function fetchClientPrincipal() {
+  try {
+    return await readClientPrincipal();
   } catch {
     return null;
   }
 }
 
 export function buildLoginUrl(provider: AuthProvider, redirectUri?: string) {
-  const fallbackRedirect =
-    typeof window === "undefined" ? "/" : window.location.href;
-  const nextRedirect = redirectUri ?? fallbackRedirect;
+  const fallbackRedirect = typeof window === "undefined" ? "/" : window.location.href;
+  const requestedRedirect = (redirectUri ?? fallbackRedirect).trim();
+  const invalidRedirect =
+    !requestedRedirect || requestedRedirect.includes("reviewId=undefined") || requestedRedirect === "undefined";
+  const nextRedirect = invalidRedirect ? "/arb" : requestedRedirect;
 
   return `/.auth/login/${provider}?post_login_redirect_uri=${encodeURIComponent(nextRedirect)}`;
+}
+
+export function buildPrimaryLoginUrl(redirectUri?: string) {
+  return buildLoginUrl(PRIMARY_AUTH_PROVIDER, redirectUri);
+}
+
+export function buildLogoutUrl(redirectUri = "/") {
+  const nextRedirect = redirectUri.trim() || "/";
+  return `/.auth/logout?post_logout_redirect_uri=${encodeURIComponent(nextRedirect)}`;
 }
 
 async function parseJsonResponse<T>(response: Response) {

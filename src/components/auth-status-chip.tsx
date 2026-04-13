@@ -1,49 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
-import type { StaticWebAppClientPrincipal } from "@/types";
-
-function formatProvider(provider: string | undefined) {
-  switch ((provider ?? "").toLowerCase()) {
-    case "aad":
-    case "azureactivedirectory":
-      return "Microsoft";
-    default:
-      return provider || "Account";
-  }
-}
+import { useAuthSession } from "@/components/auth-session-provider";
+import {
+  ENABLED_AUTH_PROVIDERS,
+  buildLoginUrl,
+  buildLogoutUrl,
+  formatIdentityProvider
+} from "@/lib/review-cloud";
 
 export function AuthStatusChip() {
-  const [principal, setPrincipal] = useState<StaticWebAppClientPrincipal | null>(null);
-  const [resolved, setResolved] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-
-    fetchClientPrincipal()
-      .then((nextPrincipal) => {
-        if (!active) {
-          return;
-        }
-
-        setPrincipal(nextPrincipal);
-        setResolved(true);
-      })
-      .catch(() => {
-        if (!active) {
-          return;
-        }
-
-        setPrincipal(null);
-        setResolved(true);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+  const { principal, resolved } = useAuthSession();
 
   if (!resolved) {
     return null;
@@ -51,9 +18,18 @@ export function AuthStatusChip() {
 
   if (!principal) {
     return (
-      <a href={buildLoginUrl("aad")} className="auth-chip" title="Continue with Microsoft">
-        Sign In with Microsoft
-      </a>
+      <div className="auth-chip-group">
+        {ENABLED_AUTH_PROVIDERS.map((provider) => (
+          <a
+            key={provider.id}
+            href={buildLoginUrl(provider.id)}
+            className="auth-chip"
+            title={`Continue with ${provider.label}`}
+          >
+            {provider.label}
+          </a>
+        ))}
+      </div>
     );
   }
 
@@ -66,23 +42,23 @@ export function AuthStatusChip() {
         </summary>
         <div className="auth-menu-panel">
           <p className="microcopy">
-            Signed in with {formatProvider(principal.identityProvider)} as{" "}
+            Signed in with {formatIdentityProvider(principal.identityProvider)} as{" "}
             {principal.userDetails || principal.userId}.
           </p>
           <div className="auth-menu-actions">
             <Link href="/arb" className="primary-button">
-              Board Review
+              AI Review
             </Link>
             <Link href="/services" className="secondary-button">
               Service Explorer
             </Link>
-            <a href="/.auth/logout" className="ghost-button">
+            <a href={buildLogoutUrl("/")} className="ghost-button">
               Sign out
             </a>
           </div>
         </div>
       </details>
-      <a href="/.auth/logout" className="ghost-button auth-signout-button">
+      <a href={buildLogoutUrl("/")} className="ghost-button auth-signout-button">
         Sign out
       </a>
     </div>

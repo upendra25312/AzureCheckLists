@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   createArbExport,
   createArbAction,
@@ -23,7 +24,8 @@ import {
   updateArbFinding
 } from "@/arb/api";
 import { getArbReviewSteps } from "@/arb/mock-review";
-import { buildLoginUrl } from "@/lib/review-cloud";
+import { getArbStepHref } from "@/arb/routes";
+import { ENABLED_AUTH_PROVIDERS, buildLoginUrl } from "@/lib/review-cloud";
 import type {
   ArbAction,
   ArbDecision,
@@ -41,34 +43,8 @@ import type {
 } from "@/arb/types";
 import { ArbPlaceholderPage } from "@/components/arb/placeholder-page";
 import { ArbReviewShell } from "@/components/arb/review-shell";
+import { SUPPORTED_ARB_UPLOAD_EXTENSIONS } from "@/components/arb/upload-extensions";
 import { SeverityBadge } from "@/components/severity-badge";
-
-const SUPPORTED_UPLOAD_EXTENSIONS = [
-  // Documents
-  ".pdf", ".doc", ".docx", ".rtf", ".odt",
-  // Presentations
-  ".ppt", ".pptx", ".odp",
-  // Spreadsheets & data
-  ".xls", ".xlsx", ".csv", ".ods",
-  // Diagrams
-  ".drawio", ".draw.io", ".vsdx", ".svg", ".svgz",
-  // Whiteboard / diagramming tools
-  ".excalidraw", ".mmd", ".mermaid", ".puml", ".plantuml",
-  // Images / screenshots
-  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".tif", ".tiff",
-  // Text & markup
-  ".txt", ".md", ".markdown", ".html", ".htm",
-  // Structured / IaC
-  ".json", ".xml", ".yaml", ".yml", ".bicep", ".tf", ".hcl", ".toml",
-  // Scripts & automation (Azure PowerShell, Azure CLI, Bash)
-  ".ps1", ".psm1", ".sh", ".azcli",
-  // API & schema definitions
-  ".proto", ".graphql", ".gql", ".wsdl", ".xsd",
-  // Notebooks
-  ".ipynb",
-  // Archives
-  ".zip", ".7z", ".tar", ".tgz"
-] as const;
 
 function buildBullets(
   activeStep: ArbReviewStepKey,
@@ -246,6 +222,7 @@ export function ArbLiveReviewStep(props: {
   description: string;
 }) {
   const { reviewId, activeStep, title, description } = props;
+  const router = useRouter();
   const [review, setReview] = useState<ArbReviewSummary | null>(null);
   const [findings, setFindings] = useState<ArbFinding[]>([]);
   const [actions, setActions] = useState<ArbAction[]>([]);
@@ -701,6 +678,8 @@ export function ArbLiveReviewStep(props: {
       ]);
       setFindings(nextFindings);
       setScorecard(nextScorecard);
+      // Auto-navigate to findings once agent review completes
+      router.push(getArbStepHref(reviewId, "findings"));
     } catch (agentRunError) {
       setAgentError(
         agentRunError instanceof Error ? agentRunError.message : "Unable to run agent review."
@@ -799,7 +778,7 @@ export function ArbLiveReviewStep(props: {
           </p>
 
           <div className="pill-row">
-            {SUPPORTED_UPLOAD_EXTENSIONS.map((extension) => (
+            {SUPPORTED_ARB_UPLOAD_EXTENSIONS.map((extension) => (
               <span key={extension} className="pill">
                 {extension}
               </span>
@@ -815,7 +794,7 @@ export function ArbLiveReviewStep(props: {
             aria-label="Upload review package files"
             type="file"
             multiple
-            accept={SUPPORTED_UPLOAD_EXTENSIONS.join(",")}
+            accept={SUPPORTED_ARB_UPLOAD_EXTENSIONS.join(",")}
             onChange={(event) => {
               void handleFileUpload(event.target.files);
               event.currentTarget.value = "";
@@ -987,7 +966,7 @@ export function ArbLiveReviewStep(props: {
             {agentCompleted ? (
               <p className="arb-upload-status arb-upload-status-done">
                 AI review complete — findings and scorecard updated.{" "}
-                <a href={`/arb/${reviewId}/findings`} className="arb-inline-link">View findings →</a>
+                <a href={getArbStepHref(reviewId, "findings")} className="arb-inline-link">View findings →</a>
               </p>
             ) : null}
             {agentError ? <p className="arb-upload-error">{agentError}</p> : null}
@@ -1134,7 +1113,7 @@ export function ArbLiveReviewStep(props: {
               "Results appear here automatically — typically 1–3 minutes"
             ]}
             footer={
-              <a href={`/arb/${reviewId}/upload`} className="primary-button">
+              <a href={getArbStepHref(reviewId, "upload", "upload-documents")} className="primary-button">
                 Go to Upload — Run AI review →
               </a>
             }
@@ -1367,7 +1346,11 @@ export function ArbLiveReviewStep(props: {
                     className="field-input"
                     aria-label={`Due date for ${selectedFinding.title}`}
                     type="date"
-                    value={selectedFinding.dueDate ?? ""}
+                    value={selectedFinding.dueDate ?? (() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() + 7);
+                      return d.toISOString().slice(0, 10);
+                    })()}
                     onChange={(event) => {
                       const nextDueDate = event.target.value;
                       updateLocalFinding(selectedFinding.findingId, (current) => ({
@@ -1660,7 +1643,7 @@ export function ArbLiveReviewStep(props: {
 
           {scorecard.reviewerOverride ? (
             <article className="trace-card arb-summary-card">
-              <p className="board-card-subtitle">Reviewer override</p>
+              <p className="board-card-subtitle">Reviewer override recorded</p>
               <strong>{scorecard.reviewerOverride.overrideDecision}</strong>
               <p>{scorecard.reviewerOverride.overrideRationale}</p>
               <p className="microcopy">
@@ -1674,7 +1657,15 @@ export function ArbLiveReviewStep(props: {
                 })}
               </p>
             </article>
-          ) : null}
+          ) : (
+            <article className="trace-card arb-summary-card">
+              <p className="board-card-subtitle">Score override</p>
+              <p className="section-copy">If the AI score does not reflect your judgment, proceed to the Decision step to record the human decision with rationale. The reviewer decision always takes precedence over the AI recommendation.</p>
+              <a href={getArbStepHref(reviewId, "decision")} className="secondary-button" style={{ display: "inline-block", marginTop: 8 }}>
+                Go to Decision →
+              </a>
+            </article>
+          )}
         </section>
 
         {actionSummary.openActions.length > 0 ? (
@@ -1713,18 +1704,35 @@ export function ArbLiveReviewStep(props: {
   function renderDecisionContent() {
     return (
       <div className="arb-page-stack">
+        {decisionGateMessage ? (
+          <section className="trace-card arb-decision-gate-banner">
+            <p className="board-card-subtitle">Action required before sign-off</p>
+            <p className="section-copy">{decisionGateMessage}</p>
+          </section>
+        ) : null}
         <div className="arb-decision-grid">
           <section className="surface-panel arb-summary-card">
             <div className="board-card-head">
               <div className="board-card-head-copy">
                 <p className="board-card-subtitle">Decision posture</p>
-                <h2 className="section-title">Record an explicit reviewer outcome</h2>
+                <h2 className="section-title">Review status before sign-off</h2>
               </div>
             </div>
-            <p>This step records and reloads the persisted reviewer decision for this ARB review.</p>
-            <p>Open actions: {actionSummary.openCount}</p>
-            <p>Blocked actions: {actionSummary.blockedCount}</p>
-            <p>Reviewer verification required: {actionSummary.reviewerVerificationCount}</p>
+            <div className="arb-summary-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 16 }}>
+              <article className="future-card">
+                <p className="board-card-subtitle">Open actions</p>
+                <strong style={{ color: actionSummary.openCount > 0 ? "var(--warning)" : undefined }}>{actionSummary.openCount}</strong>
+              </article>
+              <article className="future-card">
+                <p className="board-card-subtitle">Blocked actions</p>
+                <strong style={{ color: actionSummary.blockedCount > 0 ? "var(--error)" : undefined }}>{actionSummary.blockedCount}</strong>
+              </article>
+              <article className="future-card">
+                <p className="board-card-subtitle">Needs verification</p>
+                <strong style={{ color: actionSummary.reviewerVerificationCount > 0 ? "var(--warning)" : undefined }}>{actionSummary.reviewerVerificationCount}</strong>
+              </article>
+            </div>
+            <p className="section-copy" style={{ marginBottom: 8 }}>The AI recommendation is advisory. Your recorded decision below is the binding outcome for this review.</p>
             {actionSummary.openActions.length > 0 ? (
               <ul className="arb-checklist">
                 {actionSummary.openActions.map((action) => (
@@ -1793,7 +1801,6 @@ export function ArbLiveReviewStep(props: {
                 <option value="Rejected">Rejected</option>
               </select>
             </label>
-            {decisionGateMessage ? <p className="arb-upload-error">{decisionGateMessage}</p> : null}
             <label className="filter-field">
               <span>Decision rationale</span>
               <textarea
@@ -1886,19 +1893,32 @@ export function ArbLiveReviewStep(props: {
       activeStep={activeStep}
       title={title}
       description={description}
+      reviewSummary={scorecard?.reviewSummary ?? null}
     >
       {loading ? (
-        <p>Loading ARB review state...</p>
+        <div className="arb-loading-skeleton">
+          <div className="arb-skeleton-bar arb-skeleton-bar--wide" />
+          <div className="arb-skeleton-bar arb-skeleton-bar--medium" />
+          <div className="arb-skeleton-bar arb-skeleton-bar--narrow" />
+          <div className="arb-skeleton-bar arb-skeleton-bar--wide" />
+          <div className="arb-skeleton-bar arb-skeleton-bar--medium" />
+        </div>
       ) : error ? (
         <div>
           <p>{error}</p>
           {authRequired ? (
             <div className="review-command-bar">
-              <p>Sign in with Microsoft to open Azure-backed uploads, findings, exports, and decision state for this review.</p>
+              <p>Sign in to open Azure-backed uploads, findings, exports, and decision state for this review.</p>
               <div className="review-command-actions">
-                <a href={buildLoginUrl("aad")} className="primary-button">
-                  Continue with Microsoft
-                </a>
+                {ENABLED_AUTH_PROVIDERS.map((provider, index) => (
+                  <a
+                    key={provider.id}
+                    href={buildLoginUrl(provider.id)}
+                    className={index === 0 ? "primary-button" : "secondary-button"}
+                  >
+                    Continue with {provider.label}
+                  </a>
+                ))}
               </div>
             </div>
           ) : (

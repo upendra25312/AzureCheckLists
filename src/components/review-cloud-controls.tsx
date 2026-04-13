@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useAuthSession } from "@/components/auth-session-provider";
 import type {
   ChecklistItem,
   ProjectReviewCopilotContext,
   ReviewDraft,
-  ReviewPackage,
-  StaticWebAppClientPrincipal
+  ReviewPackage
 } from "@/types";
 import {
+  ENABLED_AUTH_PROVIDERS,
   buildLoginUrl,
   buildStructuredReviewRecords,
   downloadCloudReviewCsv,
-  fetchClientPrincipal,
   loadCloudProjectReviewState,
   loadCloudReviewRecords,
   saveCloudProjectReviewState,
@@ -45,8 +45,7 @@ export function ReviewCloudControls({
   onRestoreCloudState,
   continueHref
 }: ReviewCloudControlsProps) {
-  const [principal, setPrincipal] = useState<StaticWebAppClientPrincipal | null>(null);
-  const [authResolved, setAuthResolved] = useState(false);
+  const { principal, resolved: authResolved } = useAuthSession();
   const [busyAction, setBusyAction] = useState<BusyAction>(null);
   const [statusMessage, setStatusMessage] = useState("Stored in this browser until you save to Azure.");
   const selectedServiceCount = activePackage?.selectedServiceSlugs.length ?? 0;
@@ -54,28 +53,6 @@ export function ReviewCloudControls({
     () => buildStructuredReviewRecords(items, reviews),
     [items, reviews]
   );
-
-  useEffect(() => {
-    let active = true;
-
-    fetchClientPrincipal()
-      .then((nextPrincipal) => {
-        if (active) {
-          setPrincipal(nextPrincipal);
-          setAuthResolved(true);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setPrincipal(null);
-          setAuthResolved(true);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   async function loadFromAzure() {
     try {
@@ -202,9 +179,15 @@ export function ReviewCloudControls({
           context restore in later sessions, or a cloud-generated CSV artifact.
         </p>
         <div className="button-row">
-          <a href={buildLoginUrl("aad")} className="primary-button">
-            Continue with Microsoft
-          </a>
+          {ENABLED_AUTH_PROVIDERS.map((provider, index) => (
+            <a
+              key={provider.id}
+              href={buildLoginUrl(provider.id)}
+              className={index === 0 ? "primary-button" : "secondary-button"}
+            >
+              Continue with {provider.label}
+            </a>
+          ))}
           {continueHref ? (
             <a href={continueHref} className="ghost-button">
               Keep working locally

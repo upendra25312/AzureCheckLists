@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useAuthSession } from "@/components/auth-session-provider";
 import {
+  ENABLED_AUTH_PROVIDERS,
   activateCloudProjectReview,
   archiveCloudProjectReview,
   buildLoginUrl,
+  buildLogoutUrl,
   deleteCloudProjectReview,
-  fetchClientPrincipal,
+  formatIdentityProvider,
   listCloudProjectReviews,
   purgeCloudProjectReview,
   restoreDeletedCloudProjectReview
@@ -21,16 +24,6 @@ import type {
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString("en-US");
-}
-
-function formatProvider(provider: string | undefined) {
-  switch ((provider ?? "").toLowerCase()) {
-    case "aad":
-    case "azureactivedirectory":
-      return "Microsoft";
-    default:
-      return provider || "Account";
-  }
 }
 
 function getReviewLifecycleLabel(review: SavedProjectReviewSummary) {
@@ -106,7 +99,7 @@ function compareReviews(left: SavedProjectReviewSummary, right: SavedProjectRevi
 }
 
 export function ProjectReviewLibrary() {
-  const [principal, setPrincipal] = useState<StaticWebAppClientPrincipal | null>(null);
+  const { principal, resolved } = useAuthSession();
   const [payload, setPayload] = useState<ProjectReviewLibraryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -128,21 +121,22 @@ export function ProjectReviewLibrary() {
   useEffect(() => {
     let active = true;
 
+    if (!resolved) {
+      return () => {
+        active = false;
+      };
+    }
+
+    if (!principal) {
+      setPayload(null);
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
     async function loadLibrary() {
       try {
-        const nextPrincipal = await fetchClientPrincipal();
-
-        if (!active) {
-          return;
-        }
-
-        setPrincipal(nextPrincipal);
-
-        if (!nextPrincipal) {
-          setLoading(false);
-          return;
-        }
-
         const nextPayload = await listCloudProjectReviews();
 
         if (!active) {
@@ -172,7 +166,7 @@ export function ProjectReviewLibrary() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [principal, resolved]);
 
   const filteredReviews = useMemo(() => {
     const reviews = payload?.reviews ?? [];
@@ -230,7 +224,7 @@ export function ProjectReviewLibrary() {
         ? `Active saved review is ${payload.user.activeReviewId}.`
         : principal
           ? "Signed in, but no active Azure-backed review is set yet."
-          : "Sign in with Microsoft to load and manage saved project reviews."
+          : "Sign in to load and manage saved project reviews."
     }
   ];
 
@@ -408,11 +402,17 @@ export function ProjectReviewLibrary() {
               Start a new review
             </Link>
             {!principal ? (
-              <a href={buildLoginUrl("aad")} className="secondary-button review-command-secondary">
-                Sign in to sync reviews
-              </a>
+              ENABLED_AUTH_PROVIDERS.map((provider) => (
+                <a
+                  key={provider.id}
+                  href={buildLoginUrl(provider.id)}
+                  className="secondary-button review-command-secondary"
+                >
+                  Sign in with {provider.label}
+                </a>
+              ))
             ) : (
-              <a href="/.auth/logout" className="secondary-button review-command-secondary">
+              <a href={buildLogoutUrl("/")} className="secondary-button review-command-secondary">
                 Sign out
               </a>
             )}
@@ -434,15 +434,21 @@ export function ProjectReviewLibrary() {
         <section className="library-state-grid">
           <section className="filter-card board-stage-panel library-state-card">
             <p className="eyebrow">Sign in</p>
-            <h3>Sign in with Microsoft to sync saved reviews across sessions.</h3>
+            <h3>Sign in to sync saved reviews across sessions.</h3>
             <p className="microcopy">
               You can still explore services and outputs without sign-in. Saving, resuming, and
               restoring reviews from Azure requires an authenticated identity.
             </p>
             <div className="button-row">
-              <a href={buildLoginUrl("aad")} className="primary-button">
-                Continue with Microsoft
-              </a>
+              {ENABLED_AUTH_PROVIDERS.map((provider, index) => (
+                <a
+                  key={provider.id}
+                  href={buildLoginUrl(provider.id)}
+                  className={index === 0 ? "primary-button" : "secondary-button"}
+                >
+                  Continue with {provider.label}
+                </a>
+              ))}
             </div>
           </section>
           <section className="filter-card board-stage-panel library-state-card">
@@ -462,11 +468,11 @@ export function ProjectReviewLibrary() {
             <p className="eyebrow">Signed in identity</p>
             <h3>{payload.user.email}</h3>
             <p className="microcopy">
-              Signed in with {formatProvider(payload.user.provider)}. The active saved review is{" "}
+              Signed in with {formatIdentityProvider(payload.user.provider)}. The active saved review is{" "}
               {payload.user.activeReviewId ?? "not set"}.
             </p>
             <div className="chip-row board-summary-row">
-              <span className="chip">Provider {formatProvider(payload.user.provider)}</span>
+              <span className="chip">Provider {formatIdentityProvider(payload.user.provider)}</span>
               <span className="chip">
                 Active review {payload.user.activeReviewId ?? "not set"}
               </span>

@@ -3,21 +3,14 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { useEffect, useMemo, useState } from "react";
-import { createArbReview, listArbReviews } from "@/arb/api";
+import { createArbReview, listArbReviews, uploadArbFiles } from "@/arb/api";
+import { getArbStepHref } from "@/arb/routes";
 import type { ArbReviewSummary } from "@/arb/types";
-import { buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
-import type { StaticWebAppClientPrincipal } from "@/types";
+import { useAuthSession } from "@/components/auth-session-provider";
+import { SUPPORTED_ARB_UPLOAD_EXTENSIONS } from "@/components/arb/upload-extensions";
+import { ENABLED_AUTH_PROVIDERS, buildLoginUrl } from "@/lib/review-cloud";
 
 type ArbReviewLibraryFocus = "workspace" | "decision";
-
-const REVIEW_STEPS = [
-  { id: 1, key: "created",  label: "Created" },
-  { id: 2, key: "upload",   label: "Upload" },
-  { id: 3, key: "analysis", label: "Analysis" },
-  { id: 4, key: "findings", label: "Findings" },
-  { id: 5, key: "signoff",  label: "Sign-off" },
-  { id: 6, key: "export",   label: "Export" },
-] as const;
 
 function getActiveStep(review: ArbReviewSummary): number {
   const s = review.workflowState;
@@ -34,29 +27,6 @@ function getActiveStep(review: ArbReviewSummary): number {
   return 1;
 }
 
-function ReviewProgress({ review }: { review: ArbReviewSummary }) {
-  const active = getActiveStep(review);
-  return (
-    <div className="arb-progress-strip" aria-label="Review progress">
-      {REVIEW_STEPS.map((step) => {
-        const done = step.id < active;
-        const current = step.id === active;
-        return (
-          <div
-            key={step.key}
-            className={`arb-progress-step${done ? " arb-progress-step--done" : ""}${current ? " arb-progress-step--current" : ""}`}
-          >
-            <span className="arb-progress-dot">
-              {done ? "✓" : step.id}
-            </span>
-            <span className="arb-progress-label">{step.label}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 function formatDate(value: string | undefined) {
   if (!value) return "—";
   return new Date(value).toLocaleDateString("en-US", {
@@ -67,12 +37,22 @@ function formatDate(value: string | undefined) {
 }
 
 function getPrimaryHref(review: ArbReviewSummary, focus: ArbReviewLibraryFocus): Route {
-  if (focus === "decision") return `/arb/${review.reviewId}/decision` as Route;
+  const reviewId = String(review.reviewId ?? "").trim();
+  if (!reviewId || reviewId === "undefined" || reviewId === "null") {
+    return "/arb" as Route;
+  }
+
+  if (focus === "decision") return getArbStepHref(reviewId, "decision");
   const step = getActiveStep(review);
-  if (step <= 2) return `/arb/${review.reviewId}/upload` as Route;
-  if (step === 3) return `/arb/${review.reviewId}/upload` as Route;
-  if (step === 4) return `/arb/${review.reviewId}/findings` as Route;
-  return `/arb/${review.reviewId}` as Route;
+  if (step <= 2) return getArbStepHref(reviewId, "upload", "upload-documents");
+  if (step === 3) return getArbStepHref(reviewId, "upload", "run-ai-analysis");
+  if (step === 4) return getArbStepHref(reviewId, "findings");
+  return getArbStepHref(reviewId, "overview");
+}
+
+function hasValidReviewId(review: ArbReviewSummary): boolean {
+  const reviewId = String(review.reviewId ?? "").trim();
+  return Boolean(reviewId) && reviewId !== "undefined" && reviewId !== "null";
 }
 
 function getPrimaryLabel(review: ArbReviewSummary, focus: ArbReviewLibraryFocus) {
@@ -80,9 +60,49 @@ function getPrimaryLabel(review: ArbReviewSummary, focus: ArbReviewLibraryFocus)
   const step = getActiveStep(review);
   if (step <= 2) return "Upload documents →";
   if (step === 3) return "Run analysis →";
-  if (step === 4) return "Review findings →";
-  if (step === 5) return "Sign off →";
-  return "Download export →";
+  if (step === 4) return "Resolve findings →";
+  if (step === 5) return "Complete sign-off →";
+  return "Open reviewed pack →";
+}
+
+function getReviewPosture(review: ArbReviewSummary) {
+  return review.finalDecision ?? review.recommendation ?? review.workflowState;
+}
+
+function getNextStepSummary(review: ArbReviewSummary) {
+  const step = getActiveStep(review);
+  if (step <= 2) {
+    return "Next: upload the architecture package so the AI review can start from real evidence.";
+  }
+  if (step === 3) {
+    return "Next: run analysis and validate the extracted evidence before findings are shared.";
+  }
+  if (step === 4) {
+    return "Next: assign owners and resolve findings that block board-ready sign-off.";
+  }
+  if (step === 5) {
+    return "Next: confirm the recommendation, reviewer rationale, and final decision state.";
+  }
+  return "Next: open the reviewed pack and export the latest board-ready outputs.";
+}
+
+function getEvidenceSummary(review: ArbReviewSummary) {
+  const requiredGaps = review.missingRequiredItems?.length ?? 0;
+  const recommendedGaps = review.missingRecommendedItems?.length ?? 0;
+
+  if (requiredGaps > 0) {
+    return `${requiredGaps} required evidence gap${requiredGaps === 1 ? "" : "s"}`;
+  }
+
+  if (recommendedGaps > 0) {
+    return `${recommendedGaps} recommended evidence gap${recommendedGaps === 1 ? "" : "s"}`;
+  }
+
+  if (review.documentCount && review.documentCount > 0) {
+    return `${review.documentCount} document${review.documentCount === 1 ? "" : "s"} staged`;
+  }
+
+  return review.evidenceReadinessState;
 }
 
 function StatusBadge({ state }: { state: string }) {
@@ -99,10 +119,12 @@ function StatusBadge({ state }: { state: string }) {
 
 export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
   const { focus = "workspace" } = props;
-  const [principal, setPrincipal] = useState<StaticWebAppClientPrincipal | null>(null);
+  const { principal, resolved } = useAuthSession();
   const [reviews, setReviews] = useState<ArbReviewSummary[]>([]);
   const [projectName, setProjectName] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadDropActive, setUploadDropActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -110,15 +132,25 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
   useEffect(() => {
     let active = true;
 
+    if (!resolved) {
+      return () => {
+        active = false;
+      };
+    }
+
+    if (!principal) {
+      setReviews([]);
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
     async function load() {
       try {
-        const nextPrincipal = await fetchClientPrincipal();
-        if (!active) return;
-        setPrincipal(nextPrincipal);
-        if (!nextPrincipal) { setLoading(false); return; }
         const payload = await listArbReviews();
         if (!active) return;
-        setReviews(payload.reviews);
+        setReviews(payload.reviews.filter(hasValidReviewId));
       } catch (loadError) {
         if (!active) return;
         setError(loadError instanceof Error ? loadError.message : "Unable to load reviews.");
@@ -129,7 +161,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
 
     void load();
     return () => { active = false; };
-  }, []);
+  }, [principal, resolved]);
 
   const filteredReviews = useMemo(() => {
     if (focus === "decision") {
@@ -148,12 +180,35 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
       setSaving(true);
       setError(null);
       const review = await createArbReview({ projectName, customerName });
-      window.location.href = `/arb/${encodeURIComponent(review.reviewId)}/upload`;
+      const uploadHref = getArbStepHref(review.reviewId, "upload", "upload-documents");
+
+      if (selectedFiles.length === 0) {
+        window.location.href = uploadHref;
+        return;
+      }
+
+      try {
+        await uploadArbFiles({ reviewId: review.reviewId, files: selectedFiles });
+        window.location.href = getArbStepHref(review.reviewId, "upload", "run-ai-analysis");
+        return;
+      } catch {
+        window.location.href = uploadHref;
+        return;
+      }
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Unable to create review.");
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleSelectedFiles(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) {
+      return;
+    }
+
+    setSelectedFiles(Array.from(fileList));
+    setError(null);
   }
 
   if (loading) {
@@ -168,20 +223,21 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
         <h1 className="arb-signin-headline">
           Upload your design documents and get an AI-powered architecture review in minutes.
         </h1>
-        <p className="arb-signin-sub">
-          Sign in with your Microsoft account to create a review, upload SOW or design docs,
-          and let the Azure ARB Agent check them against WAF, CAF, ALZ, HA/DR, Security,
-          Networking, and Monitoring — with findings linked to live Microsoft Learn guidance.
-        </p>
-        <a href={buildLoginUrl("aad")} className="arb-signin-cta">
-          Sign in with Microsoft to start →
-        </a>
+        {ENABLED_AUTH_PROVIDERS.map((provider, index) => (
+          <a
+            key={provider.id}
+            href={buildLoginUrl(provider.id)}
+            className="arb-signin-cta"
+            style={index > 0 ? { marginTop: 10 } : undefined}
+          >
+            Sign in with {provider.label} to start →
+          </a>
+        ))}
         <ul className="arb-signin-bullets">
-          <li>PDF, Word, or PowerPoint — drag and drop your documents</li>
-          <li>AI checks WAF · CAF · ALZ · HA/DR · Backup · Security · Networking · Monitoring</li>
-          <li>Findings scored 0–100, every finding linked to Microsoft Learn</li>
-          <li>Export board-ready pack as CSV, HTML, or Markdown</li>
-          <li>Reviews retained for 30 days — delete any review manually at any time</li>
+          <li>PDF, Word, PowerPoint, or Markdown — drag and drop your documents</li>
+          <li>AI checks WAF · CAF · ALZ · HA/DR · Security · Networking · Monitoring in one pass</li>
+          <li>Every finding scored 0–100 and linked to a Microsoft Learn source</li>
+          <li>Files retained for 30 days — delete any review at any time</li>
         </ul>
       </div>
     );
@@ -190,10 +246,84 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
   /* ── Signed-in state ── */
   return (
     <div className="arb-library-stack">
-
-      {/* Create form */}
       <section className="arb-create-card">
-        <p className="arb-create-label">Start a new review</p>
+        <div className="arb-create-copy">
+          <p className="arb-create-label">AI review workspace</p>
+          <h2 className="arb-create-title">Upload architecture documents and start an AI review.</h2>
+          <p className="arb-create-sub">
+            Create the review, move straight into document upload, and generate Microsoft Learn-grounded findings across WAF, CAF, ALZ, HA/DR, Security, Networking, and Monitoring.
+          </p>
+          <div className="arb-proof-strip" aria-label="AI review proof points">
+            <span className="arb-proof-chip">11 framework areas checked</span>
+            <span className="arb-proof-chip">Traceable Microsoft guidance</span>
+            <span className="arb-proof-chip">Board-ready sign-off workflow</span>
+          </div>
+        </div>
+        <section
+          className={`arb-create-upload arb-upload-dropzone${uploadDropActive ? " arb-upload-dropzone-active" : ""}`}
+          onDragOver={(event) => {
+            event.preventDefault();
+            setUploadDropActive(true);
+          }}
+          onDragLeave={() => setUploadDropActive(false)}
+          onDrop={(event) => {
+            event.preventDefault();
+            setUploadDropActive(false);
+            handleSelectedFiles(event.dataTransfer.files);
+          }}
+        >
+          <div className="arb-create-upload-head">
+            <div>
+              <p className="arb-create-upload-label">Upload your review package now</p>
+              <h3 className="arb-create-upload-title">Stage your SOW, design docs, diagrams, and workbooks before the workspace opens.</h3>
+            </div>
+            <label className="secondary-button arb-upload-picker" htmlFor="arb-landing-upload">
+              Select files
+            </label>
+          </div>
+          <input
+            id="arb-landing-upload"
+            className="arb-landing-upload-input"
+            aria-label="Select review files before creating the AI review"
+            type="file"
+            multiple
+            accept={SUPPORTED_ARB_UPLOAD_EXTENSIONS.join(",")}
+            onChange={(event) => {
+              handleSelectedFiles(event.target.files);
+              event.currentTarget.value = "";
+            }}
+          />
+          <p className="arb-create-upload-sub">
+            Optional but recommended. If you select files here, the new review opens with those files already staged and ready for analysis.
+          </p>
+          <p className="microcopy">
+            Accepted: PDF, Word, PowerPoint, Excel, diagrams, images, Markdown, text, IaC, and archive files.
+          </p>
+          {selectedFiles.length > 0 ? (
+            <div className="arb-selected-files">
+              <div className="arb-selected-files-head">
+                <strong>
+                  {selectedFiles.length} file{selectedFiles.length === 1 ? "" : "s"} ready for upload
+                </strong>
+                <button
+                  type="button"
+                  className="arb-upload-clear"
+                  onClick={() => setSelectedFiles([])}
+                >
+                  Clear
+                </button>
+              </div>
+              <p className="arb-selected-files-list">
+                {selectedFiles.slice(0, 4).map((file) => file.name).join(", ")}
+                {selectedFiles.length > 4 ? ` +${selectedFiles.length - 4} more` : ""}
+              </p>
+            </div>
+          ) : (
+            <p className="arb-create-upload-empty">
+              No files selected yet. You can still start the review and upload inside the workspace.
+            </p>
+          )}
+        </section>
         <div className="arb-create-fields">
           <label className="arb-field">
             <span>Project name</span>
@@ -221,13 +351,17 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
             onClick={() => void handleCreateReview()}
             disabled={saving || !projectName.trim()}
           >
-            {saving ? "Creating…" : "Create review and upload documents →"}
+            {saving
+              ? (selectedFiles.length > 0 ? "Creating review and uploading…" : "Creating…")
+              : (selectedFiles.length > 0 ? "Start AI Review and upload files →" : "Start AI Review →")}
           </button>
         </div>
+        <p className="arb-create-trust">
+          Files are retained for 30 days. The next step opens the upload workspace so the review starts from your actual design package.
+        </p>
         {error ? <p className="arb-create-error">{error}</p> : null}
       </section>
 
-      {/* Review list with progress tracker */}
       {filteredReviews.length === 0 ? (
         <section className="arb-empty-state">
           <p className="arb-empty-title">No reviews yet</p>
@@ -237,37 +371,62 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
         </section>
       ) : (
         <section className="arb-review-table-wrap">
-          <h2 className="arb-review-table-heading">Your reviews</h2>
+          <div className="arb-review-section-head">
+            <h2 className="arb-review-table-heading">Resume an active review</h2>
+            <p className="arb-review-table-sub">
+              Each card shows current posture, evidence readiness, and the next action needed to reach a board-ready pack.
+            </p>
+          </div>
           <div className="arb-review-list">
             {filteredReviews.map((review) => (
               <article
                 key={`${review.reviewId}-${review.createdByUserId ?? "user"}`}
-                className="arb-review-row"
+                className="arb-review-card"
               >
-                {/* Top row: project name, status badge, score, date, action */}
-                <div className="arb-review-row-head">
-                  <div className="arb-review-row-meta">
-                    <span className="arb-review-row-project">{review.projectName}</span>
+                <div className="arb-review-card-head">
+                  <div className="arb-review-card-meta">
+                    <span className="arb-review-card-project">{review.projectName}</span>
                     {review.customerName && (
-                      <span className="arb-review-row-customer">{review.customerName}</span>
+                      <span className="arb-review-card-customer">{review.customerName}</span>
                     )}
                   </div>
-                  <div className="arb-review-row-right">
-                    <StatusBadge state={review.workflowState} />
-                    {review.overallScore !== null && review.overallScore !== undefined && (
-                      <span className="arb-review-row-score">Score: {review.overallScore}</span>
-                    )}
-                    <span className="arb-review-row-date">{formatDate(review.lastUpdated)}</span>
+                  <div className="arb-review-card-actions">
+                    <span className="arb-review-updated">Updated {formatDate(review.lastUpdated)}</span>
                     <Link href={getPrimaryHref(review, focus)} className="arb-table-open">
                       {getPrimaryLabel(review, focus)}
                     </Link>
-                    <Link href={`/arb/${review.reviewId}/findings` as Route} className="arb-table-secondary">
-                      Findings
-                    </Link>
                   </div>
                 </div>
-                {/* Progress tracker */}
-                <ReviewProgress review={review} />
+                <div className="arb-review-metrics" aria-label={`Review posture for ${review.projectName}`}>
+                  <div className="arb-review-metric">
+                    <span className="arb-review-metric-label">Workflow</span>
+                    <StatusBadge state={review.workflowState} />
+                  </div>
+                  <div className="arb-review-metric">
+                    <span className="arb-review-metric-label">Decision posture</span>
+                    <strong className="arb-review-metric-value">{getReviewPosture(review)}</strong>
+                  </div>
+                  <div className="arb-review-metric">
+                    <span className="arb-review-metric-label">Evidence</span>
+                    <strong className="arb-review-metric-value">{getEvidenceSummary(review)}</strong>
+                  </div>
+                  <div className="arb-review-metric">
+                    <span className="arb-review-metric-label">Score</span>
+                    {review.overallScore !== null && review.overallScore !== undefined && (
+                      <strong className="arb-review-metric-value">{review.overallScore}/100</strong>
+                    )}
+                    {(review.overallScore === null || review.overallScore === undefined) && (
+                      <strong className="arb-review-metric-value">Pending</strong>
+                    )}
+                  </div>
+                </div>
+                <p className="arb-review-next-step">{getNextStepSummary(review)}</p>
+                <div className="arb-review-links">
+                  <Link href={getArbStepHref(review.reviewId, "findings")} className="arb-table-secondary">
+                    Open findings
+                  </Link>
+                  <span className="arb-review-id">Review ID: {review.reviewId}</span>
+                </div>
               </article>
             ))}
           </div>

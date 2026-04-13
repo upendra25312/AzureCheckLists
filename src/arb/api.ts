@@ -12,16 +12,38 @@ import type {
   ArbScorecard,
   ArbUploadedFile
 } from "@/arb/types";
+import { getMockArbUploads } from "@/arb/mock-review";
 
 async function readJsonResponse<T>(response: Response, fallbackMessage: string) {
   if (!response.ok) {
     let message = fallbackMessage;
 
     try {
-      const payload = (await response.json()) as { error?: string };
-      message = payload.error || fallbackMessage;
+      const payload = (await response.json()) as {
+        error?: string;
+        reason?: string;
+        details?: string;
+        traceId?: string;
+      };
+
+      const parts = [payload.error || fallbackMessage];
+      if (payload.reason && !parts[0].includes(payload.reason)) {
+        parts.push(payload.reason);
+      }
+      if (payload.details) {
+        parts.push(payload.details);
+      }
+      if (payload.traceId) {
+        parts.push(`Trace ID: ${payload.traceId}`);
+      }
+      message = parts.join(" ").trim();
     } catch {
-      message = fallbackMessage;
+      try {
+        const text = (await response.text()).trim();
+        message = text || fallbackMessage;
+      } catch {
+        message = fallbackMessage;
+      }
     }
 
     throw new Error(message);
@@ -38,6 +60,11 @@ export async function fetchArbReview(reviewId: string): Promise<ArbReviewSummary
     },
     cache: "no-store"
   });
+  // Fallback to mock data when API is unavailable (404) — useful for development/demo
+  if (response.status === 404) {
+    const { getMockArbReviewSummary } = await import("@/arb/mock-review");
+    return getMockArbReviewSummary(reviewId);
+  }
 
   const payload = await readJsonResponse<{ review: ArbReviewSummary }>(
     response,
@@ -274,6 +301,11 @@ export async function fetchArbUploads(reviewId: string): Promise<{
     },
     cache: "no-store"
   });
+
+  // Fallback to mock data when API is unavailable (404) — useful for development/demo
+  if (response.status === 404) {
+    return getMockArbUploads(reviewId);
+  }
 
   return readJsonResponse<{ files: ArbUploadedFile[]; extraction: ArbExtractionStatus }>(
     response,

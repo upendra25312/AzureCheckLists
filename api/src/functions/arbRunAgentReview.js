@@ -6,10 +6,8 @@ const {
   getArbFiles,
   getArbRequirements,
   getArbEvidence,
-  getArbFindings,
-  getArbScorecard,
   getArbActions,
-  updateArbFinding
+  syncArbReviewedOutputs
 } = require("../shared/arb-review-store");
 const { searchArbDocuments, ensureArbSearchIndex } = require("../shared/arb-search");
 const { runArbAgentReview, getFoundryConfiguration } = require("../shared/arb-foundry-agent");
@@ -78,11 +76,12 @@ async function handleArbRunAgentReview(request, context) {
     log("Agent review started");
 
     // Load all review data
-    const [review, files, requirementsList, evidenceList] = await Promise.all([
+    const [review, files, requirementsList, evidenceList, actionsList] = await Promise.all([
       getArbReview(auth.principal, reviewId),
       getArbFiles(auth.principal, reviewId),
       getArbRequirements(auth.principal, reviewId),
-      getArbEvidence(auth.principal, reviewId)
+      getArbEvidence(auth.principal, reviewId),
+      getArbActions(auth.principal, reviewId)
     ]);
 
     if (!review) {
@@ -126,7 +125,7 @@ async function handleArbRunAgentReview(request, context) {
     if (!agentResult.success) {
       log("Agent returned failure", { reason: agentResult.reason, status: 502 });
       return jsonResponse(502, {
-        error: "Agent review did not complete successfully.",
+        error: `Agent review did not complete successfully${agentResult.reason ? `: ${agentResult.reason}` : "."}`,
         reason: agentResult.reason
       });
     }
@@ -219,6 +218,35 @@ async function handleArbRunAgentReview(request, context) {
       );
     }
 
+    const syncedOutputs = await syncArbReviewedOutputs({
+      principal: auth.principal,
+      review: {
+        ...review,
+        workflowState: "Review In Progress",
+        agentRecommendation: agentResult.recommendation ?? null,
+        agentReviewedAt: now,
+        lastUpdated: now
+      },
+      files,
+      requirements: requirementsList,
+      evidence: evidenceList,
+      findings: agentResult.findings ?? [],
+      scorecard: agentResult.scorecard ?? null,
+      actions: actionsList,
+      formats: ["markdown", "csv", "html"],
+      generatedAt: now,
+      existingExports: []
+    });
+
+    await client.upsertEntity(
+      {
+        partitionKey: getPartitionKey(reviewId),
+        rowKey: getRowKey("EXPORTS", userId),
+        exportsJson: JSON.stringify(syncedOutputs.exportsList)
+      },
+      "Replace"
+    );
+
     // Update review summary row with agent recommendation and state
     await client.upsertEntity(
       {
@@ -242,7 +270,8 @@ async function handleArbRunAgentReview(request, context) {
       recommendation: agentResult.recommendation,
       overallScore: agentResult.scorecard?.overallScore ?? null,
       confidenceLevel: agentResult.scorecard?.confidenceLevel ?? null,
-      generatedAt: now
+      generatedAt: now,
+      artifactsGenerated: syncedOutputs.artifacts.length
     });
   } catch (error) {
     const statusCode = error?.statusCode === 400 || error?.statusCode === 404 ? error.statusCode : 500;

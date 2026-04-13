@@ -4,16 +4,25 @@ import Link from "next/link";
 import type { Route } from "next";
 import { useEffect, useRef, useState } from "react";
 import { createArbReview, listArbReviews, uploadArbFiles } from "@/arb/api";
+import { getArbStepHref } from "@/arb/routes";
 import type { ArbReviewSummary } from "@/arb/types";
-import { buildLoginUrl, fetchClientPrincipal } from "@/lib/review-cloud";
-
-const signInHref = buildLoginUrl("aad", "/arb");
+import { useAuthSession } from "@/components/auth-session-provider";
+import {
+  ENABLED_AUTH_PROVIDERS,
+  PRIMARY_AUTH_PROVIDER,
+  buildLoginUrl,
+  getAuthSupportLabel
+} from "@/lib/review-cloud";
 
 const WORKFLOW_STEPS = [
-  { id: 1, label: "Sign in", detail: "Microsoft account — Outlook or Azure AD" },
+  { id: 1, label: "Sign in", detail: "Use your supported account" },
   { id: 2, label: "Create review", detail: "Name your project and customer" },
   { id: 3, label: "Upload documents", detail: "PDF, Word, PowerPoint, Markdown" },
-  { id: 4, label: "Run AI analysis", detail: "WAF · CAF · ALZ · HA/DR · Security + more" },
+  {
+    id: 4,
+    label: "Architecture Assurance Assessment",
+    detail: "AI-driven validation across WAF, CAF, ALZ, HA/DR, Security + more"
+  },
   { id: 5, label: "Review findings", detail: "Scored 0–100, linked to Microsoft Learn" },
   { id: 6, label: "Sign off & export", detail: "CSV, HTML, Markdown — board-ready pack" },
 ];
@@ -29,11 +38,21 @@ function getActiveStep(review: ArbReviewSummary): number {
 }
 
 function getStepHref(review: ArbReviewSummary): Route {
+  const resolvedReviewId = String(review.reviewId ?? "").trim();
+  if (!resolvedReviewId || resolvedReviewId === "undefined" || resolvedReviewId === "null") {
+    return "/arb" as Route;
+  }
+
   const step = getActiveStep(review);
-  if (step <= 3) return `/arb/${review.reviewId}/upload#upload-documents` as Route;
-  if (step === 4) return `/arb/${review.reviewId}/upload#run-ai-analysis` as Route;
-  if (step === 5) return `/arb/${review.reviewId}/decision` as Route;
-  return `/arb/${review.reviewId}` as Route;
+  if (step <= 3) return getArbStepHref(resolvedReviewId, "upload", "upload-documents");
+  if (step === 4) return getArbStepHref(resolvedReviewId, "upload", "run-ai-analysis");
+  if (step === 5) return getArbStepHref(resolvedReviewId, "decision");
+  return getArbStepHref(resolvedReviewId, "overview");
+}
+
+function hasValidReviewId(review: ArbReviewSummary): boolean {
+  const reviewId = String(review.reviewId ?? "").trim();
+  return Boolean(reviewId) && reviewId !== "undefined" && reviewId !== "null";
 }
 
 const serviceCards = [
@@ -61,11 +80,19 @@ const serviceCards = [
 ] as const;
 
 const frameworkCoverage = [
-  "WAF", "CAF", "ALZ", "HA/DR", "Backup", "Security", "Networking", "Monitoring", "Governance",
+  { name: "WAF",        status: "complete" },
+  { name: "CAF",        status: "complete" },
+  { name: "ALZ",        status: "complete" },
+  { name: "HA/DR",      status: "partial"  },
+  { name: "Backup",     status: "partial"  },
+  { name: "Security",   status: "complete" },
+  { name: "Networking", status: "complete" },
+  { name: "Monitoring", status: "partial"  },
+  { name: "Governance", status: "complete" },
 ] as const;
 
 export default function HomePage() {
-  const [signedIn, setSignedIn] = useState<boolean | null>(null);
+  const { principal, resolved, signedIn } = useAuthSession();
   const [latestReview, setLatestReview] = useState<ArbReviewSummary | null>(null);
   const [dropActive, setDropActive] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -73,23 +100,47 @@ export default function HomePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetchClientPrincipal()
-      .then(async (p) => {
-        setSignedIn(Boolean(p));
-        if (p) {
-          try {
-            const payload = await listArbReviews();
-            const sorted = [...payload.reviews].sort(
-              (a, b) => new Date(b.lastUpdated ?? 0).getTime() - new Date(a.lastUpdated ?? 0).getTime()
-            );
-            setLatestReview(sorted[0] ?? null);
-          } catch {
-            // non-fatal
-          }
+    let active = true;
+
+    if (!resolved) {
+      return () => {
+        active = false;
+      };
+    }
+
+    if (!principal) {
+      setLatestReview(null);
+      return () => {
+        active = false;
+      };
+    }
+
+    async function loadLatestReview() {
+      try {
+        const payload = await listArbReviews();
+
+        if (!active) {
+          return;
         }
-      })
-      .catch(() => setSignedIn(false));
-  }, []);
+
+        const sorted = [...payload.reviews]
+          .filter(hasValidReviewId)
+          .sort((a, b) => new Date(b.lastUpdated ?? 0).getTime() - new Date(a.lastUpdated ?? 0).getTime());
+
+        setLatestReview(sorted[0] ?? null);
+      } catch {
+        if (active) {
+          setLatestReview(null);
+        }
+      }
+    }
+
+    void loadLatestReview();
+
+    return () => {
+      active = false;
+    };
+  }, [principal, resolved]);
 
   async function handleFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return;
@@ -99,7 +150,7 @@ export default function HomePage() {
       const firstName = fileList[0].name.replace(/\.[^.]+$/, "").slice(0, 80);
       const review = await createArbReview({ projectName: firstName || "Architecture Review", customerName: "" });
       await uploadArbFiles({ reviewId: review.reviewId, files: Array.from(fileList) });
-      window.location.href = `/arb/${encodeURIComponent(review.reviewId)}/upload`;
+      window.location.href = getArbStepHref(review.reviewId, "upload", "upload-documents");
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Upload failed — please try again.");
       setUploading(false);
@@ -120,7 +171,7 @@ export default function HomePage() {
         </p>
 
         {/* Upload zone — the action IS the page */}
-        {signedIn === null ? (
+        {!resolved ? (
           <div className="hero-upload-zone hero-upload-zone--loading">
             <span className="impact-auth-loading">Checking sign-in status…</span>
           </div>
@@ -160,10 +211,10 @@ export default function HomePage() {
             )}
           </div>
         ) : (
-          <a href={buildLoginUrl("aad", "/")} className="hero-upload-zone hero-upload-zone--signin">
+          <a href={buildLoginUrl(PRIMARY_AUTH_PROVIDER)} className="hero-upload-zone hero-upload-zone--signin">
             <span className="hero-upload-icon">🔐</span>
-            <p className="hero-upload-title">Sign in with Microsoft to upload your documents</p>
-            <p className="hero-upload-sub">Free · Microsoft account or Azure AD · No credit card</p>
+            <p className="hero-upload-title">Sign in to upload your documents</p>
+            <p className="hero-upload-sub">{getAuthSupportLabel()}</p>
           </a>
         )}
 
@@ -171,16 +222,13 @@ export default function HomePage() {
           <p className="hero-upload-error">{uploadError}</p>
         ) : null}
 
-        <div className="impact-hero-cta-row" style={{ marginTop: 16 }}>
-          <Link href="/services" className="impact-btn impact-btn-secondary">
-            Explore Azure services — no sign-in required
-          </Link>
-          {signedIn && latestReview && (
+        {signedIn && latestReview && (
+          <div className="impact-hero-cta-row" style={{ marginTop: 16 }}>
             <Link href={getStepHref(latestReview)} className="impact-btn impact-btn-secondary">
               Continue: {WORKFLOW_STEPS[getActiveStep(latestReview) - 1]?.label} →
             </Link>
-          )}
-        </div>
+          </div>
+        )}
       </section>
 
       {/* ── HOW IT WORKS ── */}
@@ -189,16 +237,10 @@ export default function HomePage() {
         <h2 className="impact-section-title">Six steps from document to board-ready pack</h2>
         {signedIn && latestReview ? (
           <p className="impact-small">
-            You are currently on <strong>step {getActiveStep(latestReview)}: {WORKFLOW_STEPS[getActiveStep(latestReview) - 1]?.label}</strong> for <strong>{latestReview.projectName}</strong>.{" "}
+            You are on <strong>step {getActiveStep(latestReview)}: {WORKFLOW_STEPS[getActiveStep(latestReview) - 1]?.label}</strong> for <strong>{latestReview.projectName}</strong>.{" "}
             <Link href={getStepHref(latestReview)} className="impact-inline-link">Continue →</Link>
           </p>
-        ) : (
-          <p className="impact-small">
-            Once you sign in, each step follows automatically — upload triggers analysis,
-            analysis produces findings, findings feed the scorecard, and the scorecard
-            feeds the export pack.
-          </p>
-        )}
+        ) : null}
 
         <ol className="impact-workflow-steps">
           {WORKFLOW_STEPS.map((step) => {
@@ -224,9 +266,17 @@ export default function HomePage() {
 
         <div className="impact-hero-cta-row" style={{ marginTop: 24 }}>
           {signedIn === false && (
-            <a href={signInHref} className="impact-btn impact-btn-primary">
-              Start Board Review
-            </a>
+            <>
+              {ENABLED_AUTH_PROVIDERS.map((provider, index) => (
+                <a
+                  key={provider.id}
+                  href={buildLoginUrl(provider.id)}
+                  className={`impact-btn ${index === 0 ? "impact-btn-primary" : "impact-btn-secondary"}`}
+                >
+                  Start with {provider.label}
+                </a>
+              ))}
+            </>
           )}
           {signedIn === true && latestReview && (
             <Link href={getStepHref(latestReview)} className="impact-btn impact-btn-primary">
@@ -235,9 +285,63 @@ export default function HomePage() {
           )}
           {signedIn === true && !latestReview && (
             <Link href="/arb" className="impact-btn impact-btn-primary">
-              Start Board Review
+                Start AI Review →
             </Link>
           )}
+        </div>
+      </section>
+
+      {/* ── TWO MODES ── */}
+      <section className="impact-section" id="two-modes">
+        <span className="impact-kicker">Two ways to review</span>
+        <h2 className="impact-section-title">Standard or ARB mode — choose what fits your work</h2>
+        <div className="impact-mode-grid">
+          <article className="impact-mode-card">
+            <div className="impact-mode-header">
+              <span className="impact-mode-badge impact-mode-badge--standard">Standard</span>
+              <span className="impact-mode-tag">No sign-in required</span>
+            </div>
+            <h3 className="impact-mode-title">Instant service findings</h3>
+            <p className="impact-small">
+              Browse 100+ Azure services. Pick your stack and get immediate WAF, CAF, and ALZ findings with Microsoft Learn links.
+            </p>
+            <ul className="impact-mode-list">
+              <li>Anonymous — no account needed</li>
+              <li>Per-service best-practice checks</li>
+              <li>Regional availability signals</li>
+              <li>Export as CSV or HTML</li>
+            </ul>
+            <div>
+              <Link href="/services" className="impact-btn impact-btn-secondary">
+                Explore services ↗
+              </Link>
+            </div>
+          </article>
+
+          <div className="impact-mode-divider" aria-hidden="true">vs</div>
+
+          <article className="impact-mode-card impact-mode-card--arb">
+            <div className="impact-mode-header">
+              <span className="impact-mode-badge impact-mode-badge--arb">ARB Grade</span>
+              <span className="impact-mode-tag">Sign-in required</span>
+            </div>
+            <h3 className="impact-mode-title">Full architecture review</h3>
+            <p className="impact-small">
+              Upload your SOW or design doc. The AI agent reads it and checks every page against 11 Microsoft frameworks.
+            </p>
+            <ul className="impact-mode-list">
+              <li>Document evidence grounded in your own files</li>
+              <li>All 11 frameworks in one pass</li>
+              <li>Weighted scorecard 0–100</li>
+              <li>Human sign-off checkpoint with decision record</li>
+              <li>Export as executive summary, action list, or full ARB pack</li>
+            </ul>
+            <div>
+              <Link href="/arb" className="impact-btn impact-btn-primary">
+                Start AI Review →
+              </Link>
+            </div>
+          </article>
         </div>
       </section>
 
@@ -258,30 +362,36 @@ export default function HomePage() {
                 <strong>AKS monitoring not enabled · Severity: High</strong>
                 <p className="impact-small">Framework: WAF Reliability</p>
                 <a href="https://learn.microsoft.com/en-us/azure/aks/monitor-aks" target="_blank" rel="noreferrer">
-                  learn.microsoft.com/azure/aks/monitor-aks
+                  learn.microsoft.com/azure/aks/monitor-aks ↗
                 </a>
               </li>
               <li className="impact-evidence-item">
                 <strong>No zone redundancy in gateway layer · Severity: High</strong>
                 <p className="impact-small">Framework: HA/DR and CAF</p>
                 <a href="https://learn.microsoft.com/en-us/azure/well-architected/reliability/" target="_blank" rel="noreferrer">
-                  learn.microsoft.com/azure/well-architected/reliability
+                  learn.microsoft.com/azure/well-architected/reliability ↗
                 </a>
               </li>
               <li className="impact-evidence-item">
                 <strong>Missing tagging policy alignment · Severity: Medium</strong>
                 <p className="impact-small">Framework: ALZ Governance</p>
                 <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/landing-zone/" target="_blank" rel="noreferrer">
-                  learn.microsoft.com/azure/cloud-adoption-framework
+                  learn.microsoft.com/azure/cloud-adoption-framework ↗
                 </a>
               </li>
             </ul>
 
             <div className="impact-framework-grid">
-              {frameworkCoverage.map((name) => (
-                <div key={name} className="impact-framework-item">{name}</div>
+              {frameworkCoverage.map(({ name, status }) => (
+                <div key={name} className="impact-framework-item">
+                  <span className={`impact-framework-state${status === "complete" ? " impact-framework-state-complete" : " impact-framework-state-partial"}`}>
+                    {status === "complete" ? "✓" : "~"}
+                  </span>
+                  <span>{name}</span>
+                </div>
               ))}
             </div>
+            <p className="impact-framework-summary">6 of 9 frameworks complete · 78% coverage</p>
           </article>
 
           <article className="impact-panel">
@@ -298,14 +408,21 @@ export default function HomePage() {
                 </div>
               );
             })}
-            <div className="impact-decision-model">
-              <span className="impact-decision-chip">Approved</span>
-              <span className="impact-decision-chip impact-decision-chip-active">Needs Revision</span>
-              <span className="impact-decision-chip">Rejected</span>
+            <div className="impact-signoff-block">
+              <p className="impact-signoff-label">ARB sign-off checkpoint</p>
+              <div className="impact-signoff-meta">
+                <span className="impact-signoff-field">👤 Senior Cloud Architect</span>
+                <span className="impact-signoff-field">📅 13 Apr 2026 · 14:32 UTC</span>
+              </div>
+              <div className="impact-decision-model">
+                <span className="impact-decision-chip">Approved</span>
+                <span className="impact-decision-chip impact-decision-chip-active">Needs Revision</span>
+                <span className="impact-decision-chip">Rejected</span>
+              </div>
+              <p className="impact-small" style={{ marginTop: 8 }}>
+                AI recommends a posture. The named reviewer records the final human decision.
+              </p>
             </div>
-            <p className="impact-small" style={{ marginTop: 12 }}>
-              AI recommends a posture. Reviewers record the final decision and export the full ARB pack.
-            </p>
             <div className="impact-format-chips">
               <span className="impact-format-chip">CSV Export</span>
               <span className="impact-format-chip">HTML Export</span>
@@ -313,7 +430,7 @@ export default function HomePage() {
             </div>
             <div style={{ marginTop: 16 }}>
               <Link href="/arb" className="impact-btn impact-btn-primary">
-                Start Board Review
+                 Start AI Review →
               </Link>
             </div>
           </article>
@@ -339,7 +456,7 @@ export default function HomePage() {
               <p className="impact-small" style={{ color: "var(--t1)", fontWeight: 600 }}>{card.finding}</p>
               <div className="impact-service-actions">
                 <Link href={card.href} className="impact-btn impact-btn-secondary">
-                  View Findings
+                  {signedIn ? "View findings · Add to review" : "View instant findings ↗"}
                 </Link>
               </div>
             </article>

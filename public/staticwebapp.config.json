@@ -24,10 +24,6 @@
   },
   "routes": [
     {
-      "route": "/.auth/login/google",
-      "statusCode": 404
-    },
-    {
       "route": "/explorer",
       "redirect": "/services",
       "statusCode": 301
@@ -59,13 +55,7 @@
       ]
     },
     {
-      "route": "/admin*",
-      "allowedRoles": [
-        "admin"
-      ]
-    },
-    {
-      "route": "/api/admin*",
+      "route": "/api/admin/*",
       "allowedRoles": [
         "admin"
       ]

@@ -211,6 +211,11 @@ export interface ArbScorecard {
   evidenceReadinessState: ArbEvidenceReadiness;
   domainScores: ArbDomainScore[];
   reviewerOverride: ArbReviewerOverride | null;
+  reviewSummary?: string | null;
+  strengths?: string[];
+  missingEvidence?: string[];
+  criticalBlockersList?: string[];
+  nextActions?: string[];
 }
 
 export interface ArbDecision {

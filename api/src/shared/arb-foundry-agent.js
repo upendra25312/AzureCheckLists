@@ -14,6 +14,26 @@ const FOUNDRY_AGENT_MODEL = "model-router";
 const OPENAI_API_VERSION = "2025-01-01-preview";
 const AGENTS_API_VERSION = "2025-05-15-preview";
 const MICROSOFT_LEARN_MCP_ENDPOINT = "https://learn.microsoft.com/api/mcp";
+const DEFAULT_HTTP_TIMEOUT_MS = 45000;
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_HTTP_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+  } catch (error) {
+    if (error && error.name === "AbortError") {
+      throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 // Derive the base AI Services endpoint from the Foundry project endpoint
 // e.g. https://foo.services.ai.azure.com/api/projects/bar -> https://foo.services.ai.azure.com
@@ -52,14 +72,14 @@ async function getFoundryAgentToken() {
 async function foundryAgentRequest(path, method, body) {
   const token = await getFoundryAgentToken();
   const url = `${FOUNDRY_PROJECT_ENDPOINT}${path}?api-version=${AGENTS_API_VERSION}`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method,
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${token}`
     },
     body: body !== undefined ? JSON.stringify(body) : undefined
-  });
+  }, 30000);
 
   if (!res.ok) {
     const text = await res.text().catch(() => `HTTP ${res.status}`);
@@ -130,7 +150,7 @@ async function runViaFoundryAgent(userMessage) {
 async function chatCompletionsRequest(messages) {
   const base = getAiServicesBaseEndpoint();
   const url = `${base}/openai/deployments/${FOUNDRY_AGENT_MODEL}/chat/completions?api-version=${OPENAI_API_VERSION}`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -141,7 +161,7 @@ async function chatCompletionsRequest(messages) {
       max_tokens: 8192,
       temperature: 0.2
     })
-  });
+  }, 90000);
 
   if (!res.ok) {
     const text = await res.text().catch(() => `HTTP ${res.status}`);
@@ -208,7 +228,7 @@ Respond ONLY with a valid JSON object in this exact shape:
   "strengths": ["string — cite the framework principle met"],
   "findings": [
     {
-      "severity": "High|Medium|Low",
+      "severity": "Critical|High|Medium|Low",
       "domain": "Security|Reliability|Cost|Operations|Architecture|Governance|Delivery",
       "framework": "WAF|CAF|ALZ|MicrosoftLearn",
       "frameworkPillar": "string — e.g. WAF:Reliability, CAF:Govern, ALZ:NetworkTopology",
@@ -219,11 +239,16 @@ Respond ONLY with a valid JSON object in this exact shape:
       "evidenceIds": ["string — ID values from the Extracted Evidence Facts section that support this finding, e.g. 'review-1-ev-3'"],
       "recommendation": "string — specific actionable fix referencing Microsoft Learn URL where applicable",
       "learnMoreUrl": "string — relevant learn.microsoft.com link",
+      "criticalBlocker": false,
       "suggestedOwner": "string"
     }
   ],
-  "missingEvidence": ["string — describe the specific document or artefact absent"],
-  "criticalBlockers": ["string — WAF/CAF/ALZ violations that must be resolved before approval"],
+  "missingEvidence": [
+    "string — name the specific document, artefact, or evidence item that is absent and would change the assessment if present (minimum 5 items; aim for 8). Examples: 'No network topology diagram showing hub-spoke or Virtual WAN design', 'No Azure Policy assignment list or Bicep/Terraform IaC for policy', 'No DR runbook or RTO/RPO SLA commitment document', 'No identity design document covering AAD tenant, conditional access, PIM', 'No capacity model or load test results for peak traffic'"
+  ],
+  "criticalBlockers": [
+    "string — ONLY list here if the gap is a hard WAF/CAF/ALZ blocker that MUST be resolved before the board can approve: e.g. missing security baseline, unmitigated data exfiltration path, no RPO/RTO commitment for a Tier-1 workload, or a mandatory ALZ policy violation. Do NOT flag findings as critical blockers just because evidence is thin — reserve this for genuine show-stoppers. Typical reviews have 0-3 critical blockers, not 10+"
+  ],
   "scorecard": {
     "dimensions": [
       { "name": "Architecture Completeness", "score": 0, "rationale": "string", "blockers": ["string"] },
@@ -244,7 +269,19 @@ Respond ONLY with a valid JSON object in this exact shape:
   "nextActions": ["string — specific action with framework reference and owner type"]
 }
 
-Scores are 0-100. Ground every finding in evidence from the uploaded documents. Do not invent facts. When a framework requirement cannot be assessed due to missing documentation, list it in missingEvidence rather than inventing a finding.`;
+Scores are 0-100. Ground every finding in evidence from the uploaded documents. Do not invent facts. When a framework requirement cannot be assessed due to missing documentation, list it in missingEvidence rather than inventing a finding.
+
+**Severity calibration rules:**
+- Critical: security breach path, data exfiltration risk, or mandatory compliance violation that is already exploitable or non-waivable. Expect 0-2 Critical findings per review.
+- High: significant gap that materially increases risk but has a clear remediation path. Expect 2-5 per review.
+- Medium: best practice gap that should be addressed before GA. Expect 4-8 per review.
+- Low: optimization or documentation improvement. No limit.
+
+**Critical finding calibration rules:**
+- Set criticalBlocker: true ONLY when the gap would cause a board to reject or defer approval — e.g. unmitigated internet-facing attack surface with no WAF/NSG, missing encryption for regulated data, no disaster recovery plan for Tier-1 workload, or a mandatory ALZ policy that cannot be waived. A missing diagram or incomplete documentation is NOT a critical blocker.
+- For a typical ARB review, 0-3 findings should have criticalBlocker: true. If you are flagging more than 4, reconsider whether each truly blocks approval.
+- Always generate at least 8-15 findings across all WAF pillars (Security, Reliability, Cost, Operations, Performance, Architecture). Do not stop at 2-3 findings — a shallow finding list is worse than an imperfect one.
+- missingEvidence must list at least 5 specific items. Generic phrases like "more evidence needed" are not acceptable — name the exact document, diagram, or data point that is missing.`;
 
 // ---------------------------------------------------------------------------
 // Microsoft Learn MCP integration — fetches real-time documentation grounding
@@ -252,11 +289,11 @@ Scores are 0-100. Ground every finding in evidence from the uploaded documents. 
 
 async function callMicrosoftLearnMcp(method, params) {
   try {
-    const res = await fetch(MICROSOFT_LEARN_MCP_ENDPOINT, {
+    const res = await fetchWithTimeout(MICROSOFT_LEARN_MCP_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params })
-    });
+    }, 12000);
     if (!res.ok) return null;
     const text = await res.text();
     // Response is Server-Sent Events: extract the data line
@@ -446,7 +483,18 @@ function parseAgentResponse(responseText) {
   try {
     parsed = JSON.parse(jsonText);
   } catch {
-    return null;
+    // Best-effort recovery when model prepends/appends text around a JSON object.
+    const firstBrace = jsonText.indexOf("{");
+    const lastBrace = jsonText.lastIndexOf("}");
+    if (firstBrace >= 0 && lastBrace > firstBrace) {
+      try {
+        parsed = JSON.parse(jsonText.slice(firstBrace, lastBrace + 1));
+      } catch {
+        return null;
+      }
+    } else {
+      return null;
+    }
   }
 
   const findings = (Array.isArray(parsed.findings) ? parsed.findings : []).map((f, i) => ({
@@ -498,6 +546,84 @@ function parseAgentResponse(responseText) {
   };
 
   return { findings, scorecard, recommendation: scorecard.recommendation };
+}
+
+function buildFallbackAgentReview({ review, requirements, evidence, reason }) {
+  const evidenceGaps = [];
+  if (!requirements.length) {
+    evidenceGaps.push("Requirements extraction results are empty.");
+  }
+  if (!evidence.length) {
+    evidenceGaps.push("Evidence mapping results are empty.");
+  }
+  if (review.evidenceReadinessState && review.evidenceReadinessState !== "Sufficient") {
+    evidenceGaps.push(`Evidence readiness reported as ${review.evidenceReadinessState}.`);
+  }
+
+  const missingEvidence = evidenceGaps.length > 0
+    ? evidenceGaps
+    : ["Additional architecture evidence is needed for complete framework coverage."];
+
+  const baseScore = missingEvidence.length > 1 ? 62 : 72;
+  const now = new Date().toISOString();
+  const dimensions = [
+    "Architecture Completeness",
+    "Security and Compliance",
+    "Reliability and Resilience",
+    "Operational Readiness",
+    "Cost and Commercial Fit",
+    "Governance and Controls",
+    "Delivery Feasibility",
+    "Documentation Quality"
+  ].map((name) => ({
+    name,
+    score: baseScore,
+    weight: 12.5,
+    rationale: "Fallback scoring applied due to unavailable model output. Validate manually before final sign-off.",
+    blockers: missingEvidence.slice(0, 2)
+  }));
+
+  return {
+    findings: [
+      {
+        findingId: "fallback-finding-1",
+        severity: "High",
+        domain: "Architecture",
+        framework: "WAF",
+        frameworkPillar: "WAF:Operational Excellence",
+        title: "AI review fallback was triggered",
+        findingStatement: "Automated model output was unavailable for this run, so a deterministic fallback assessment was generated.",
+        whyItMatters: "Without full AI output, recommendations can miss service-specific gaps and should be reviewed manually before board submission.",
+        evidenceBasis: `Fallback trigger: ${reason}`,
+        recommendation: "Re-run AI review after validating Foundry model availability, then confirm findings before decision sign-off.",
+        learnMoreUrl: "https://learn.microsoft.com/azure/well-architected/operational-excellence/",
+        suggestedOwner: "Cloud Architecture Lead",
+        evidenceFound: [],
+        status: "Open",
+        source: "agent"
+      }
+    ],
+    scorecard: {
+      overallScore: baseScore,
+      recommendation: "Needs Revision",
+      criticalBlockerCount: missingEvidence.length,
+      missingEvidenceCount: missingEvidence.length,
+      confidenceLevel: "Low",
+      dimensionScores: dimensions,
+      reviewSummary:
+        "A deterministic fallback ARB assessment was generated because the AI model response was unavailable for this run. Treat this output as provisional and re-run the full AI review once model availability is restored.",
+      strengths: ["Review workflow and evidence pipeline are active."],
+      missingEvidence,
+      criticalBlockers: missingEvidence,
+      nextActions: [
+        "Validate Foundry model endpoint and credentials.",
+        "Re-run AI review and compare outputs before recording final decision."
+      ],
+      source: "agent",
+      generatedAt: now
+    },
+    recommendation: "Needs Revision"
+  };
 }
 
 const IMAGE_MIME_TYPES = {
@@ -580,12 +706,42 @@ async function runArbAgentReview({ review, files, requirements, evidence, search
     ]);
 
     if (!responseText) {
-      return { success: false, reason: "Model returned an empty response" };
+      const fallback = buildFallbackAgentReview({
+        review,
+        requirements,
+        evidence,
+        reason: "Model returned an empty response"
+      });
+      return { success: true, ...fallback, fallbackUsed: true };
     }
 
-    const parsed = parseAgentResponse(responseText);
+    let parsed = parseAgentResponse(responseText);
+    // Retry once with a strict correction prompt when initial output is not parseable JSON.
     if (!parsed) {
-      return { success: false, reason: "Model response could not be parsed as structured JSON", rawResponse: responseText };
+      const correctionPrompt = [
+        "Your previous response was not valid JSON.",
+        "Return ONLY a valid JSON object in the exact required schema.",
+        "No markdown fences, no prose, no comments."
+      ].join(" ");
+
+      responseText = await chatCompletionsRequest([
+        { role: "system", content: ARB_SYSTEM_PROMPT },
+        { role: "user", content: userMessage },
+        { role: "assistant", content: responseText },
+        { role: "user", content: correctionPrompt }
+      ]);
+
+      parsed = parseAgentResponse(responseText);
+    }
+
+    if (!parsed) {
+      const fallback = buildFallbackAgentReview({
+        review,
+        requirements,
+        evidence,
+        reason: "Model response could not be parsed as structured JSON"
+      });
+      return { success: true, ...fallback, fallbackUsed: true, rawResponse: responseText };
     }
 
     return { success: true, ...parsed };
