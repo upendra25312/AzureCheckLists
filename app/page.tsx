@@ -190,16 +190,22 @@ export default function HomePage() {
             aria-label="Upload architecture documents"
           >
             {/* Full-zone overlay input — clicking anywhere on the zone triggers file picker natively */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept={SUPPORTED_ARB_UPLOAD_EXTENSIONS.join(",")}
-              className="hero-upload-input"
-              aria-label="Select architecture documents to upload"
-              disabled={uploading}
-              onChange={(e) => { void handleFiles(e.target.files); e.currentTarget.value = ""; }}
-            />
+            <label htmlFor="file-upload" className="arb-upload-label">
+              <span className="arb-upload-icon">📁</span>
+              <span>Upload Architecture Docs</span>
+              <input
+                id="file-upload"
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept={SUPPORTED_ARB_UPLOAD_EXTENSIONS.join(",")}
+                className="hero-upload-input"
+                aria-label="Upload architecture review documents"
+                disabled={uploading}
+                style={{ display: 'none' }}
+                onChange={(e) => { void handleFiles(e.target.files); e.currentTarget.value = ""; }}
+              />
+            </label>
             {uploading ? (
               <>
                 <span className="hero-upload-icon">⏳</span>
@@ -210,7 +216,9 @@ export default function HomePage() {
               <>
                 <span className="hero-upload-icon">📄</span>
                 <p className="hero-upload-title">Drop your SOW or design doc here</p>
-                <p className="hero-upload-sub">or <span className="hero-upload-link">click to select files</span> · docs, diagrams, spreadsheets, images, IaC, scripts, notebooks, archives</p>
+                <p className="hero-upload-sub arb-upload-helper">or <span className="hero-upload-link">click to upload files</span> <br />
+                  <span className="arb-upload-helper-text">Accepted: PDF, DOCX, PPTX, XLSX, images, IaC, scripts, notebooks, archives</span>
+                </p>
               </>
             )}
           </div>

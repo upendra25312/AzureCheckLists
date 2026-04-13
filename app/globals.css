@@ -1,3 +1,31 @@
+/* Impactful Upload Button Styles */
+.arb-upload-label {
+  display: inline-flex;
+  align-items: center;
+  background: var(--brand);
+  color: #fff;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: background 0.2s;
+  margin-bottom: 0.5rem;
+}
+.arb-upload-label:hover {
+  background: #005fa3;
+}
+.arb-upload-label .arb-upload-icon {
+  margin-right: 0.75rem;
+  font-size: 1.5rem;
+}
+.arb-upload-helper-text {
+  color: #444;
+  font-size: 0.95rem;
+  display: block;
+  margin-top: 0.25rem;
+}
 :root {
   color-scheme: light;
 
