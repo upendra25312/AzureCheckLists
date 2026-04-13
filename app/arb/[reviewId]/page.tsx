@@ -18,7 +18,7 @@ export default async function ArbReviewOverviewPage({ params }: PageProps) {
       reviewId={reviewId}
       activeStep="overview"
       title="Review Workspace Overview"
-      description="See the current evidence posture, workflow state, and next step for this AI review."
+      description="See the current evidence posture, workflow state, and next step for this architecture review."
     />
   );
 }

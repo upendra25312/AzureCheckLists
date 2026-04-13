@@ -249,7 +249,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
     <div className="arb-library-stack">
       <section className="arb-create-card">
         <div className="arb-create-copy">
-          <p className="arb-create-label">AI review workspace</p>
+          <p className="arb-create-label">Architecture review workspace</p>
           <h2 className="arb-create-title">Upload architecture documents and start a structured review.</h2>
           <p className="arb-create-sub">
             Create the review, move straight into document upload, and generate Microsoft Learn-grounded findings across WAF, CAF, ALZ, HA/DR, Security, Networking, and Monitoring.
@@ -354,7 +354,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
           >
             {saving
               ? (selectedFiles.length > 0 ? "Creating review and uploading…" : "Creating…")
-              : (selectedFiles.length > 0 ? "Start AI Review and upload files →" : "Start AI Review →")}
+              : (selectedFiles.length > 0 ? "Start Architecture Review and upload files →" : "Start Architecture Review →")}
           </button>
         </div>
         <p className="arb-create-trust">

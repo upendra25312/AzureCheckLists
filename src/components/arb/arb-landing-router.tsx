@@ -37,7 +37,7 @@ function getStepMeta(step: ArbReviewStepKey): { title: string; description: stri
     case "findings":
       return {
         title: "Review Findings",
-        description: "Inspect AI findings, severity, and references tied to Microsoft guidance."
+        description: "Inspect evidence-grounded findings, severity, and references tied to Microsoft guidance."
       };
     case "scorecard":
       return {
@@ -52,7 +52,7 @@ function getStepMeta(step: ArbReviewStepKey): { title: string; description: stri
     default:
       return {
         title: "Review Workspace Overview",
-        description: "See the current evidence posture, workflow state, and next step for this AI review."
+        description: "See the current evidence posture, workflow state, and next step for this architecture review."
       };
   }
 }

@@ -241,7 +241,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
                 </button>
               ) : (
                 <Link href="/arb" className="primary-button">
-                  {isServiceInActivePackage ? "Open review workspace →" : "Start AI Review →"}
+                  {isServiceInActivePackage ? "Open review workspace →" : "Start Architecture Review →"}
                 </Link>
               )
             ) : signedIn === false ? (
@@ -250,7 +250,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
                   View instant findings below ↓
                 </a>
                 <a href={buildLoginUrl(PRIMARY_AUTH_PROVIDER, "/arb")} className="ghost-button">
-                  Sign in to save to AI Review →
+                  Sign in to save to Architecture Review →
                 </a>
               </>
             ) : null}
@@ -346,7 +346,7 @@ export function ServicePageView({ payload }: { payload: ServicePayload }) {
             {activePackage
               ? `Use this page to keep scoped decisions for ${activePackage.audience} without losing the raw source guidance.`
               : signedIn === false
-                ? "Search, open, and export findings without sign-in. Sign in only when you want a saved AI review workspace with scoped decisions."
+                ? "Search, open, and export findings without sign-in. Sign in only when you want a saved architecture review workspace with scoped decisions."
                 : "You can still search and annotate findings here, then start a project review when you are ready to scope decisions."}
           </p>
         </div>
