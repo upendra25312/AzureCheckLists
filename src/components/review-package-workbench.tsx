@@ -3082,6 +3082,8 @@ export function ReviewPackageWorkbench({
             ) : null}
           </article>
 
+          {/* Ensure proper closure of previous block before starting new article */}
+
           <article className="filter-card package-card">
             <p className="eyebrow">Project summary</p>
             <div className="package-stats-grid">
