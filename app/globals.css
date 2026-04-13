@@ -9517,6 +9517,7 @@ button.chip:disabled:hover {
 
 /* ── Homepage: hero upload zone ── */
 .hero-upload-zone {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -9565,16 +9566,20 @@ button.chip:disabled:hover {
 
 .hero-upload-input {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   opacity: 0;
-  overflow: hidden;
-  pointer-events: none;
+  cursor: pointer;
+  z-index: 1;
 }
 
 .hero-upload-icon {
   font-size: 2.4rem;
   line-height: 1;
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
 }
 
 .hero-upload-title {
@@ -9583,6 +9588,9 @@ button.chip:disabled:hover {
   font-weight: 600;
   color: #1e3a5f;
   text-align: center;
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
 }
 
 .hero-upload-sub {
@@ -9590,6 +9598,9 @@ button.chip:disabled:hover {
   font-size: 0.875rem;
   color: #6B7280;
   text-align: center;
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
 }
 
 .hero-upload-link {

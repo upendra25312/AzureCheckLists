@@ -187,19 +187,17 @@ export default function HomePage() {
             onDragOver={(e) => { e.preventDefault(); setDropActive(true); }}
             onDragLeave={() => setDropActive(false)}
             onDrop={(e) => { e.preventDefault(); setDropActive(false); void handleFiles(e.dataTransfer.files); }}
-            onClick={() => !uploading && fileInputRef.current?.click()}
-            role="button"
-            tabIndex={0}
             aria-label="Upload architecture documents"
-            onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
           >
+            {/* Full-zone overlay input — clicking anywhere on the zone triggers file picker natively */}
             <input
               ref={fileInputRef}
               type="file"
               multiple
               accept={SUPPORTED_ARB_UPLOAD_EXTENSIONS.join(",")}
               className="hero-upload-input"
-              aria-hidden="true"
+              aria-label="Select architecture documents to upload"
+              disabled={uploading}
               onChange={(e) => { void handleFiles(e.target.files); e.currentTarget.value = ""; }}
             />
             {uploading ? (
