@@ -106,6 +106,14 @@ function cleanDisplayText(value) {
   }
 
   return value
+    // ── Category name normalisation (raw source-repo enum values → display labels) ──
+    .replace(/\bBc_Dr\b/g, "BC and DR")
+    .replace(/\bCluster_Multi\b/g, "Multi-Cluster")
+    .replace(/\bCluster_Security\b/g, "Cluster Security")
+    .replace(/\bResource_Management\b/g, "Resource Management")
+    .replace(/\bPerformant\b/g, "Performance")
+    .replace(/\baccidential\b/gi, "accidental")
+    // ─────────────────────────────────────────────────────────────────────────────
     .replace(/\bAzure Open AI\b/gi, "Azure OpenAI")
     .replace(/\bAzure Openai\b/g, "Azure OpenAI")
     .replace(/\bOpen AI\b/gi, "OpenAI")
