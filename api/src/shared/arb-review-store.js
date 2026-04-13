@@ -1474,6 +1474,44 @@ async function createArbReview(principal, input = {}) {
   return review;
 }
 
+async function deleteArbReview(principal, reviewId) {
+  const client = await getTableClient(ARB_REVIEW_TABLE_NAME);
+  const summaryEntity = await getOwnedSummaryEntity(client, principal, reviewId);
+
+  if (!summaryEntity) {
+    throw createHttpError(404, `ARB review ${reviewId} was not found or you do not have permission to delete it.`);
+  }
+
+  // Delete all row keys for this review owned by this user
+  const rowKeys = [
+    SUMMARY_ROW_KEY,
+    FINDINGS_ROW_KEY,
+    SCORECARD_ROW_KEY,
+    DECISION_ROW_KEY,
+    ACTIONS_ROW_KEY,
+    FILES_ROW_KEY,
+    EXTRACTION_ROW_KEY,
+    REQUIREMENTS_ROW_KEY,
+    EVIDENCE_ROW_KEY,
+    EXPORTS_ROW_KEY
+  ];
+
+  const partitionKey = getPartitionKey(reviewId);
+  await Promise.all(
+    rowKeys.map(async (baseKey) => {
+      const rowKey = getRowKey(baseKey, principal.userId);
+      try {
+        await client.deleteEntity(partitionKey, rowKey);
+      } catch (error) {
+        // 404 means entity didn't exist — safe to ignore
+        if (error?.statusCode !== 404) throw error;
+      }
+    })
+  );
+
+  return { deleted: true, reviewId };
+}
+
 async function getArbFiles(principal, reviewId) {
   const client = await getTableClient(ARB_REVIEW_TABLE_NAME);
   const summaryEntity = await getOwnedSummaryEntity(client, principal, reviewId);
@@ -2460,6 +2498,7 @@ module.exports = {
   createArbExport,
   createArbAction,
   createArbReview,
+  deleteArbReview,
   deleteArbFile,
   downloadArbExport,
   getArbEvidence,

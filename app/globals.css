@@ -7400,6 +7400,58 @@ button.chip:disabled:hover {
   background: #006cbd;
 }
 
+.arb-table-delete {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 5px;
+  border: 1px solid #fca5a5;
+  background: transparent;
+  color: #dc2626;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.arb-table-delete:hover {
+  background: #fef2f2;
+  border-color: #dc2626;
+}
+
+.arb-table-delete--confirm {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+  font-weight: 600;
+}
+
+.arb-table-delete--confirm:hover {
+  background: #b91c1c;
+}
+
+.arb-table-delete--confirm:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.arb-table-delete-cancel {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 5px;
+  border: 1px solid var(--border-md);
+  background: transparent;
+  color: var(--t2);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.arb-table-delete-cancel:hover {
+  background: var(--surf-1);
+}
+
 .arb-table-secondary {
   display: inline-flex;
   align-items: center;

@@ -128,16 +128,26 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Delete handler (must be inside component to access state)
   async function handleDeleteReview(reviewId: string) {
-    if (!window.confirm("Are you sure you want to delete this review? This cannot be undone.")) return;
+    // First click: show inline confirm
+    if (confirmDeleteId !== reviewId) {
+      setConfirmDeleteId(reviewId);
+      return;
+    }
+    // Second click (confirmed): execute delete
+    setConfirmDeleteId(null);
+    setDeletingId(reviewId);
     try {
       await deleteArbReview(reviewId);
       setReviews((prev) => prev.filter((r) => r.reviewId !== reviewId));
     } catch (err) {
       setError("Failed to delete review. Please try again.");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -413,14 +423,33 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
                     <Link href={getPrimaryHref(review, focus)} className="arb-table-open">
                       {getPrimaryLabel(review, focus)}
                     </Link>
-                    <button
-                      type="button"
-                      className="arb-table-delete"
-                      style={{ marginLeft: 8 }}
-                      onClick={() => handleDeleteReview(review.reviewId)}
-                    >
-                      Delete
-                    </button>
+                    {confirmDeleteId === review.reviewId ? (
+                      <>
+                        <button
+                          type="button"
+                          className="arb-table-delete arb-table-delete--confirm"
+                          onClick={() => void handleDeleteReview(review.reviewId)}
+                          disabled={deletingId === review.reviewId}
+                        >
+                          {deletingId === review.reviewId ? "Deleting…" : "Confirm delete"}
+                        </button>
+                        <button
+                          type="button"
+                          className="arb-table-delete-cancel"
+                          onClick={() => setConfirmDeleteId(null)}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        className="arb-table-delete"
+                        onClick={() => void handleDeleteReview(review.reviewId)}
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="arb-review-metrics" aria-label={`Review posture for ${review.projectName}`}>
