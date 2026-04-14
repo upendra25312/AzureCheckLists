@@ -1,4 +1,4 @@
-import { ArbLiveReviewStep } from "@/components/arb/live-review-step";
+import { ArbFindingsPage } from "@/components/arb/findings/arb-findings-page";
 
 type PageProps = {
   params: Promise<{
@@ -13,12 +13,5 @@ export function generateStaticParams() {
 export default async function Page({ params }: PageProps) {
   const { reviewId } = await params;
 
-  return (
-    <ArbLiveReviewStep
-      reviewId={reviewId}
-      activeStep="findings"
-      title="Review Findings"
-      description="Work from blockers, missing evidence, owners, and remediation actions before scoring."
-    />
-  );
+  return <ArbFindingsPage reviewId={reviewId} />;
 }

@@ -228,10 +228,6 @@ export function ArbLiveReviewStep(props: {
   const [findings, setFindings] = useState<ArbFinding[]>([]);
   const [actions, setActions] = useState<ArbAction[]>([]);
   const [scorecard, setScorecard] = useState<ArbScorecard | null>(null);
-  const [findingSavingId, setFindingSavingId] = useState<string | null>(null);
-  const [actionSavingFindingId, setActionSavingFindingId] = useState<string | null>(null);
-  const [actionSavingId, setActionSavingId] = useState<string | null>(null);
-  const [findingError, setFindingError] = useState<string | null>(null);
   const [decisionChoice, setDecisionChoice] = useState("Needs Revision");
   const [decisionRationale, setDecisionRationale] = useState("");
   const [decisionReviewerName, setDecisionReviewerName] = useState("");
@@ -259,7 +255,6 @@ export function ArbLiveReviewStep(props: {
   const [agentCompleted, setAgentCompleted] = useState(false);
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
   const [deleteFileError, setDeleteFileError] = useState<string | null>(null);
-  const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
   const actionSummary = summarizeActions(actions);
   const authRequired = error?.includes("Sign in is required") ?? false;
 
@@ -510,23 +505,6 @@ export function ArbLiveReviewStep(props: {
     };
   }, [reviewId, activeStep]);
 
-  useEffect(() => {
-    if (activeStep !== "findings") {
-      return;
-    }
-
-    setSelectedFindingId((currentSelectedFindingId) => {
-      if (
-        currentSelectedFindingId &&
-        findings.some((finding) => finding.findingId === currentSelectedFindingId)
-      ) {
-        return currentSelectedFindingId;
-      }
-
-      return findings[0]?.findingId ?? null;
-    });
-  }, [activeStep, findings]);
-
   const shellReview =
     review ??
     ({
@@ -583,88 +561,6 @@ export function ArbLiveReviewStep(props: {
       );
     } finally {
       setDecisionSaving(false);
-    }
-  }
-
-  async function saveFinding(finding: ArbFinding) {
-    try {
-      setFindingSavingId(finding.findingId);
-      setFindingError(null);
-
-      const savedFinding = await updateArbFinding({
-        reviewId,
-        findingId: finding.findingId,
-        status: finding.status,
-        owner: finding.owner,
-        dueDate: finding.dueDate,
-        reviewerNote: finding.reviewerNote,
-        criticalBlocker: finding.criticalBlocker
-      });
-
-      setFindings((currentFindings) =>
-        currentFindings.map((currentFinding) =>
-          currentFinding.findingId === savedFinding.findingId ? savedFinding : currentFinding
-        )
-      );
-    } catch (findingSaveError) {
-      setFindingError(
-        findingSaveError instanceof Error
-          ? findingSaveError.message
-          : "Unable to update the ARB finding."
-      );
-    } finally {
-      setFindingSavingId(null);
-    }
-  }
-
-  async function createActionForFinding(finding: ArbFinding) {
-    try {
-      setActionSavingFindingId(finding.findingId);
-      setFindingError(null);
-
-      const savedAction = await createArbAction({
-        reviewId,
-        sourceFindingId: finding.findingId
-      });
-
-      setActions((currentActions) => [...currentActions, savedAction]);
-    } catch (actionCreateError) {
-      setFindingError(
-        actionCreateError instanceof Error
-          ? actionCreateError.message
-          : "Unable to create the ARB action."
-      );
-    } finally {
-      setActionSavingFindingId(null);
-    }
-  }
-
-  async function saveAction(action: ArbAction) {
-    try {
-      setActionSavingId(action.actionId);
-      setFindingError(null);
-
-      const savedAction = await updateArbAction({
-        reviewId,
-        actionId: action.actionId,
-        owner: action.owner,
-        dueDate: action.dueDate,
-        status: action.status,
-        closureNotes: action.closureNotes,
-        reviewerVerificationRequired: action.reviewerVerificationRequired
-      });
-
-      setActions((currentActions) =>
-        currentActions.map((currentAction) =>
-          currentAction.actionId === savedAction.actionId ? savedAction : currentAction
-        )
-      );
-    } catch (actionSaveError) {
-      setFindingError(
-        actionSaveError instanceof Error ? actionSaveError.message : "Unable to update the ARB action."
-      );
-    } finally {
-      setActionSavingId(null);
     }
   }
 
