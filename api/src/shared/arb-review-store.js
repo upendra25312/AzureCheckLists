@@ -580,69 +580,332 @@ function renderCsvExportBody(review, files, requirements, evidence, findings, sc
 }
 
 function renderHtmlExportBody(review, files, requirements, evidence, findings, scorecard, actions, summaryText) {
-  const renderList = (items) =>
-    items.length === 0
-      ? "<p>None.</p>"
-      : `<ul>${items.map((item) => `<li>${item}</li>`).join("")}</ul>`;
+  const esc = escapeHtml;
+  const timestamp = new Date().toISOString();
 
-  return [
-    "<!DOCTYPE html>",
-    '<html lang="en">',
-    "<head>",
-    '  <meta charset="utf-8" />',
-    `  <title>${escapeHtml(review.projectName)} ARB Reviewed Output</title>`,
-    "  <style>",
-    "    body { font-family: Segoe UI, Arial, sans-serif; margin: 32px; color: #1f2937; }",
-    "    h1, h2 { color: #0f172a; }",
-    "    .meta { margin: 0 0 20px; padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; }",
-    "  </style>",
-    "</head>",
-    "<body>",
-    `  <h1>${escapeHtml(review.projectName)} ARB Reviewed Output</h1>`,
-    '  <section class="meta">',
-    `    <p><strong>Review ID:</strong> ${escapeHtml(review.reviewId)}</p>`,
-    `    <p><strong>Customer:</strong> ${escapeHtml(review.customerName)}</p>`,
-    `    <p><strong>Workflow state:</strong> ${escapeHtml(review.workflowState)}</p>`,
-    `    <p><strong>Evidence readiness:</strong> ${escapeHtml(review.evidenceReadinessState)}</p>`,
-    `    <p><strong>Overall score:</strong> ${escapeHtml(scorecard?.overallScore ?? "TBD")}</p>`,
-    `    <p><strong>Recommendation:</strong> ${escapeHtml(scorecard?.recommendation ?? "Pending")}</p>`,
-    "  </section>",
-    summaryText ? `  <h2>Assessment Summary</h2><p>${escapeHtml(summaryText)}</p>` : "",
-    "  <h2>Uploaded Inputs</h2>",
-    renderList(
-      files.map(
-        (file) =>
-          `${escapeHtml(file.fileName)} (${escapeHtml(file.logicalCategory)}, ${escapeHtml(file.extractionStatus)})`
-      )
-    ),
-    "  <h2>Reviewed Requirements</h2>",
-    renderList(
-      requirements.map(
-        (requirement) =>
-          `[${escapeHtml(requirement.category)}/${escapeHtml(requirement.criticality)}] ${escapeHtml(requirement.normalizedText)}`
-      )
-    ),
-    "  <h2>Reviewed Evidence</h2>",
-    renderList(
-      evidence.map(
-        (fact) =>
-          `[${escapeHtml(fact.factType)}] ${escapeHtml(fact.summary)} (${escapeHtml(fact.sourceFileName || "Derived summary")})`
-      )
-    ),
-    "  <h2>Findings</h2>",
-    renderList(
-      findings.map(
-        (finding) =>
-          `[${escapeHtml(finding.severity)}] ${escapeHtml(finding.title)} (${escapeHtml(finding.status)})`
-      )
-    ),
-    "  <h2>Actions</h2>",
-    renderList(actions.map((action) => `${escapeHtml(action.actionSummary)} (${escapeHtml(action.status)})`)),
-    "</body>",
-    "</html>"
-  ]
-    .filter(Boolean)
-    .join("\n");
+  /* ── colour helpers ── */
+  const severityBadge = (sev) => {
+    const s = String(sev || "").toLowerCase();
+    if (s === "high" || s === "critical")
+      return `<span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;background:#FEE2E2;color:#D92B2B;">${esc(sev)}</span>`;
+    if (s === "medium")
+      return `<span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;background:#FEF3C7;color:#B45309;">${esc(sev)}</span>`;
+    return `<span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;background:#DBEAFE;color:#0078D4;">${esc(sev)}</span>`;
+  };
+
+  const recommendationBadge = (rec) => {
+    const r = String(rec || "").toLowerCase();
+    let bg = "#FEF3C7"; let fg = "#B45309";
+    if (r === "approved" || r.includes("approve")) { bg = "#D1FAE5"; fg = "#065F46"; }
+    else if (r === "rejected" || r.includes("reject")) { bg = "#FEE2E2"; fg = "#D92B2B"; }
+    return `<span style="display:inline-block;padding:3px 14px;border-radius:12px;font-size:13px;font-weight:600;background:${bg};color:${fg};">${esc(rec)}</span>`;
+  };
+
+  const confidenceBadge = (conf) => {
+    const c = String(conf || "").toLowerCase();
+    let bg = "#FEE2E2"; let fg = "#D92B2B";
+    if (c === "high") { bg = "#D1FAE5"; fg = "#065F46"; }
+    else if (c === "medium") { bg = "#FEF3C7"; fg = "#B45309"; }
+    return `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:${bg};color:${fg};">${esc(conf)}</span>`;
+  };
+
+  const scoreColor = (score) => {
+    const n = Number(score);
+    if (n >= 85) return "#059669";
+    if (n >= 70) return "#B45309";
+    return "#D92B2B";
+  };
+
+  const overallScore = scorecard?.overallScore ?? null;
+  const recommendation = scorecard?.recommendation ?? "Pending";
+  const domainScores = scorecard?.domainScores || [];
+
+  /* ── score bar helper ── */
+  const scoreBar = (score, maxVal = 100) => {
+    const pct = Math.min(100, Math.max(0, Math.round((Number(score) / maxVal) * 100)));
+    const color = scoreColor(score);
+    return `<div style="display:flex;align-items:center;gap:10px;">` +
+      `<div style="flex:1;height:10px;background:#E5E7EB;border-radius:5px;overflow:hidden;">` +
+      `<div style="width:${pct}%;height:100%;background:${color};border-radius:5px;"></div></div>` +
+      `<span style="font-size:13px;font-weight:600;color:${color};min-width:40px;text-align:right;">${esc(score)}</span></div>`;
+  };
+
+  /* ── section divider ── */
+  const divider = `<hr style="border:none;border-top:1px solid #E5E7EB;margin:32px 0;" />`;
+
+  /* ── build HTML parts ── */
+  const parts = [];
+
+  /* doctype + head */
+  parts.push(
+    `<!DOCTYPE html>`,
+    `<html lang="en">`,
+    `<head>`,
+    `<meta charset="utf-8" />`,
+    `<meta name="viewport" content="width=device-width, initial-scale=1" />`,
+    `<title>${esc(review.projectName)} \u2014 Architecture Review Pack</title>`,
+    `</head>`,
+    `<body style="margin:0;padding:0;background:#ffffff;color:#1F2937;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.6;">`
+  );
+
+  /* page wrapper */
+  parts.push(`<div style="max-width:900px;margin:0 auto;padding:40px 24px;">`);
+
+  /* ── HEADER ── */
+  parts.push(
+    `<div style="margin-bottom:8px;">`,
+    `<h1 style="margin:0 0 4px;font-size:26px;font-weight:700;color:#0F172A;letter-spacing:-0.3px;">${esc(review.projectName)}</h1>`,
+    `<p style="margin:0;font-size:14px;color:#64748B;">Architecture Review Pack</p>`,
+    `</div>`
+  );
+
+  /* ── METADATA CARD ── */
+  parts.push(
+    `<div style="margin:20px 0 32px;padding:20px 24px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;">`,
+    `<table style="width:100%;border-collapse:collapse;font-size:13px;">`,
+    `<tr><td style="padding:4px 16px 4px 0;color:#64748B;white-space:nowrap;vertical-align:top;">Review ID</td><td style="padding:4px 0;font-weight:500;">${esc(review.reviewId)}</td></tr>`,
+    `<tr><td style="padding:4px 16px 4px 0;color:#64748B;white-space:nowrap;vertical-align:top;">Customer</td><td style="padding:4px 0;font-weight:500;">${esc(review.customerName)}</td></tr>`,
+    `<tr><td style="padding:4px 16px 4px 0;color:#64748B;white-space:nowrap;vertical-align:top;">Workflow State</td><td style="padding:4px 0;font-weight:500;">${esc(review.workflowState)}</td></tr>`,
+    `<tr><td style="padding:4px 16px 4px 0;color:#64748B;white-space:nowrap;vertical-align:top;">Evidence Readiness</td><td style="padding:4px 0;font-weight:500;">${esc(review.evidenceReadinessState)}</td></tr>`,
+    `<tr><td style="padding:4px 16px 4px 0;color:#64748B;white-space:nowrap;vertical-align:top;">Overall Score</td><td style="padding:4px 0;font-weight:600;">${overallScore !== null ? esc(overallScore) + " / 100" : "TBD"}</td></tr>`,
+    `<tr><td style="padding:4px 16px 4px 0;color:#64748B;white-space:nowrap;vertical-align:top;">Recommendation</td><td style="padding:4px 0;">${recommendationBadge(recommendation)}</td></tr>`,
+    `</table>`,
+    `</div>`
+  );
+
+  /* ── OVERALL SCORE BAR ── */
+  if (overallScore !== null) {
+    parts.push(
+      `<div style="margin-bottom:32px;">`,
+      `<h2 style="margin:0 0 12px;font-size:18px;font-weight:600;color:#0F172A;">Overall Score</h2>`,
+      `<div style="padding:16px 20px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;">`,
+      `<div style="display:flex;align-items:center;gap:12px;">`,
+      `<span style="font-size:32px;font-weight:700;color:${scoreColor(overallScore)};">${esc(overallScore)}</span>`,
+      `<span style="font-size:14px;color:#64748B;">/ 100</span>`,
+      `<div style="flex:1;margin-left:8px;">`,
+      `<div style="height:12px;background:#E5E7EB;border-radius:6px;overflow:hidden;">`,
+      `<div style="width:${Math.min(100, Math.max(0, Number(overallScore)))}%;height:100%;background:${scoreColor(overallScore)};border-radius:6px;"></div>`,
+      `</div></div></div></div></div>`
+    );
+  }
+
+  /* ── ASSESSMENT SUMMARY ── */
+  if (summaryText) {
+    parts.push(
+      divider,
+      `<div style="margin-bottom:32px;">`,
+      `<h2 style="margin:0 0 12px;font-size:18px;font-weight:600;color:#0F172A;">Assessment Summary</h2>`,
+      `<div style="padding:16px 20px;background:#EFF6FF;border-left:4px solid #0078D4;border-radius:4px;font-size:14px;line-height:1.7;color:#1E3A5F;">`,
+      `${esc(summaryText)}`,
+      `</div></div>`
+    );
+  }
+
+  /* ── DOMAIN SCORES ── */
+  if (domainScores.length > 0) {
+    parts.push(
+      divider,
+      `<div style="margin-bottom:32px;">`,
+      `<h2 style="margin:0 0 16px;font-size:18px;font-weight:600;color:#0F172A;">Domain Scores</h2>`
+    );
+    for (const ds of domainScores) {
+      const pct = ds.weight > 0 ? Math.round((Number(ds.score) / Number(ds.weight)) * 100) : 0;
+      const color = scoreColor(pct >= 85 ? 85 : pct >= 70 ? 75 : 50);
+      parts.push(
+        `<div style="margin-bottom:14px;">`,
+        `<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">`,
+        `<span style="font-size:13px;font-weight:600;color:#1F2937;">${esc(ds.domain)}</span>`,
+        `<span style="font-size:12px;color:#64748B;">${esc(ds.score)} / ${esc(ds.weight)} (${pct}%)</span>`,
+        `</div>`,
+        `<div style="height:8px;background:#E5E7EB;border-radius:4px;overflow:hidden;">`,
+        `<div style="width:${Math.min(100, Math.max(0, pct))}%;height:100%;background:${color};border-radius:4px;"></div>`,
+        `</div>`,
+        ds.reason ? `<p style="margin:4px 0 0;font-size:12px;color:#64748B;">${esc(ds.reason)}</p>` : "",
+        `</div>`
+      );
+    }
+    parts.push(`</div>`);
+  }
+
+  /* ── FINDINGS TABLE ── */
+  parts.push(divider);
+  parts.push(
+    `<div style="margin-bottom:32px;">`,
+    `<h2 style="margin:0 0 16px;font-size:18px;font-weight:600;color:#0F172A;">Findings</h2>`
+  );
+  if (findings.length === 0) {
+    parts.push(`<p style="color:#64748B;font-style:italic;">No findings recorded.</p>`);
+  } else {
+    parts.push(
+      `<table style="width:100%;border-collapse:collapse;font-size:13px;">`,
+      `<thead>`,
+      `<tr style="border-bottom:2px solid #E2E8F0;">`,
+      `<th style="text-align:left;padding:8px 10px;color:#64748B;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Severity</th>`,
+      `<th style="text-align:left;padding:8px 10px;color:#64748B;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Finding</th>`,
+      `<th style="text-align:left;padding:8px 10px;color:#64748B;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Domain</th>`,
+      `<th style="text-align:left;padding:8px 10px;color:#64748B;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Recommendation</th>`,
+      `<th style="text-align:left;padding:8px 10px;color:#64748B;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Status</th>`,
+      `</tr>`,
+      `</thead>`,
+      `<tbody>`
+    );
+    for (const f of findings) {
+      parts.push(
+        `<tr style="border-bottom:1px solid #F1F5F9;">`,
+        `<td style="padding:10px;vertical-align:top;">${severityBadge(f.severity)}</td>`,
+        `<td style="padding:10px;vertical-align:top;"><strong style="color:#0F172A;">${esc(f.title)}</strong><br/><span style="color:#64748B;font-size:12px;">${esc(f.findingStatement || "")}</span></td>`,
+        `<td style="padding:10px;vertical-align:top;color:#475569;">${esc(f.domain || "")}</td>`,
+        `<td style="padding:10px;vertical-align:top;color:#475569;font-size:12px;">${esc(f.recommendation || "")}</td>`,
+        `<td style="padding:10px;vertical-align:top;"><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;background:#F1F5F9;color:#475569;">${esc(f.status)}</span></td>`,
+        `</tr>`
+      );
+    }
+    parts.push(`</tbody></table>`);
+  }
+  parts.push(`</div>`);
+
+  /* ── ACTIONS TABLE ── */
+  parts.push(divider);
+  parts.push(
+    `<div style="margin-bottom:32px;">`,
+    `<h2 style="margin:0 0 16px;font-size:18px;font-weight:600;color:#0F172A;">Actions</h2>`
+  );
+  if (actions.length === 0) {
+    parts.push(`<p style="color:#64748B;font-style:italic;">No actions recorded.</p>`);
+  } else {
+    parts.push(
+      `<table style="width:100%;border-collapse:collapse;font-size:13px;">`,
+      `<thead>`,
+      `<tr style="border-bottom:2px solid #E2E8F0;">`,
+      `<th style="text-align:left;padding:8px 10px;color:#64748B;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Action</th>`,
+      `<th style="text-align:left;padding:8px 10px;color:#64748B;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Owner</th>`,
+      `<th style="text-align:left;padding:8px 10px;color:#64748B;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Due Date</th>`,
+      `<th style="text-align:left;padding:8px 10px;color:#64748B;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Status</th>`,
+      `</tr>`,
+      `</thead>`,
+      `<tbody>`
+    );
+    for (const a of actions) {
+      parts.push(
+        `<tr style="border-bottom:1px solid #F1F5F9;">`,
+        `<td style="padding:10px;vertical-align:top;">${esc(a.actionSummary)}</td>`,
+        `<td style="padding:10px;vertical-align:top;color:#475569;">${esc(a.owner || "Unassigned")}</td>`,
+        `<td style="padding:10px;vertical-align:top;color:#475569;">${esc(a.dueDate || "\u2014")}</td>`,
+        `<td style="padding:10px;vertical-align:top;"><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;background:#F1F5F9;color:#475569;">${esc(a.status)}</span></td>`,
+        `</tr>`
+      );
+    }
+    parts.push(`</tbody></table>`);
+  }
+  parts.push(`</div>`);
+
+  /* ── EVIDENCE CARDS ── */
+  parts.push(divider);
+  parts.push(
+    `<div style="margin-bottom:32px;">`,
+    `<h2 style="margin:0 0 16px;font-size:18px;font-weight:600;color:#0F172A;">Evidence</h2>`
+  );
+  if (evidence.length === 0) {
+    parts.push(`<p style="color:#64748B;font-style:italic;">No evidence recorded.</p>`);
+  } else {
+    for (const ev of evidence) {
+      parts.push(
+        `<div style="margin-bottom:12px;padding:14px 18px;border:1px solid #E2E8F0;border-radius:6px;background:#FFFFFF;">`,
+        `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">`,
+        `<span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:0.5px;">${esc(ev.factType || "Evidence")}</span>`,
+        confidenceBadge(ev.confidence),
+        `</div>`,
+        `<p style="margin:0 0 6px;font-size:14px;font-weight:500;color:#1F2937;">${esc(ev.summary)}</p>`,
+        `<p style="margin:0;font-size:12px;color:#94A3B8;">Source: ${esc(ev.sourceFileName || "Derived summary")}</p>`,
+        ev.sourceExcerpt ? `<div style="margin-top:8px;padding:8px 12px;background:#F8FAFC;border-radius:4px;font-size:12px;color:#475569;font-style:italic;border-left:3px solid #CBD5E1;">${esc(ev.sourceExcerpt)}</div>` : "",
+        `</div>`
+      );
+    }
+  }
+  parts.push(`</div>`);
+
+  /* ── UPLOADED INPUTS ── */
+  parts.push(divider);
+  parts.push(
+    `<div style="margin-bottom:32px;">`,
+    `<h2 style="margin:0 0 16px;font-size:18px;font-weight:600;color:#0F172A;">Uploaded Inputs</h2>`
+  );
+  if (files.length === 0) {
+    parts.push(`<p style="color:#64748B;font-style:italic;">No files uploaded.</p>`);
+  } else {
+    parts.push(
+      `<table style="width:100%;border-collapse:collapse;font-size:13px;">`,
+      `<thead>`,
+      `<tr style="border-bottom:2px solid #E2E8F0;">`,
+      `<th style="text-align:left;padding:8px 10px;color:#64748B;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">File Name</th>`,
+      `<th style="text-align:left;padding:8px 10px;color:#64748B;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Category</th>`,
+      `<th style="text-align:left;padding:8px 10px;color:#64748B;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Extraction Status</th>`,
+      `</tr>`,
+      `</thead>`,
+      `<tbody>`
+    );
+    for (const file of files) {
+      parts.push(
+        `<tr style="border-bottom:1px solid #F1F5F9;">`,
+        `<td style="padding:8px 10px;">${esc(file.fileName)}</td>`,
+        `<td style="padding:8px 10px;color:#475569;">${esc(file.logicalCategory)}</td>`,
+        `<td style="padding:8px 10px;color:#475569;">${esc(file.extractionStatus)}</td>`,
+        `</tr>`
+      );
+    }
+    parts.push(`</tbody></table>`);
+  }
+  parts.push(`</div>`);
+
+  /* ── REQUIREMENTS ── */
+  parts.push(divider);
+  parts.push(
+    `<div style="margin-bottom:32px;">`,
+    `<h2 style="margin:0 0 16px;font-size:18px;font-weight:600;color:#0F172A;">Reviewed Requirements</h2>`
+  );
+  if (requirements.length === 0) {
+    parts.push(`<p style="color:#64748B;font-style:italic;">No requirements recorded.</p>`);
+  } else {
+    parts.push(
+      `<table style="width:100%;border-collapse:collapse;font-size:13px;">`,
+      `<thead>`,
+      `<tr style="border-bottom:2px solid #E2E8F0;">`,
+      `<th style="text-align:left;padding:8px 10px;color:#64748B;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Category</th>`,
+      `<th style="text-align:left;padding:8px 10px;color:#64748B;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Criticality</th>`,
+      `<th style="text-align:left;padding:8px 10px;color:#64748B;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Requirement</th>`,
+      `<th style="text-align:left;padding:8px 10px;color:#64748B;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Source</th>`,
+      `<th style="text-align:left;padding:8px 10px;color:#64748B;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Status</th>`,
+      `</tr>`,
+      `</thead>`,
+      `<tbody>`
+    );
+    for (const req of requirements) {
+      parts.push(
+        `<tr style="border-bottom:1px solid #F1F5F9;">`,
+        `<td style="padding:8px 10px;font-weight:500;">${esc(req.category)}</td>`,
+        `<td style="padding:8px 10px;">${severityBadge(req.criticality)}</td>`,
+        `<td style="padding:8px 10px;color:#1F2937;">${esc(req.normalizedText)}</td>`,
+        `<td style="padding:8px 10px;color:#94A3B8;font-size:12px;">${esc(req.sourceFileName || "\u2014")}</td>`,
+        `<td style="padding:8px 10px;"><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;background:#F1F5F9;color:#475569;">${esc(req.reviewerStatus)}</span></td>`,
+        `</tr>`
+      );
+    }
+    parts.push(`</tbody></table>`);
+  }
+  parts.push(`</div>`);
+
+  /* ── FOOTER ── */
+  parts.push(
+    divider,
+    `<div style="text-align:center;padding:16px 0 8px;font-size:12px;color:#94A3B8;">`,
+    `Generated by Azure Review Assistant &middot; ${esc(timestamp)}`,
+    `</div>`
+  );
+
+  /* close wrapper + body + html */
+  parts.push(`</div></body></html>`);
+
+  return parts.filter(Boolean).join("\n");
 }
 
 function mergeExportRecords(existingExports, nextRecord) {
