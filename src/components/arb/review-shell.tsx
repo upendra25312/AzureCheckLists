@@ -5,7 +5,7 @@ import type { ArbReviewStep, ArbReviewSummary } from "@/arb/types";
 
 function formatWorkflowTimestamp(value: string | undefined) {
   if (!value) {
-    return "Awaiting update";
+    return "Not yet available";
   }
 
   return new Date(value).toLocaleString("en-US", {
@@ -51,9 +51,9 @@ function getStepGuidance(activeStep: string) {
       };
     case "decision":
       return {
-        title: "Human-owned decision",
+        title: "Final decision",
         body:
-          "The assessment engine can recommend the posture, but the final decision, rationale, and conditions remain reviewer-owned."
+          "The assessment provides a recommendation, but the final decision, rationale, and conditions are determined by the reviewer."
       };
     default:
       return {
@@ -138,12 +138,12 @@ export function ArbReviewShell(props: {
             <p className="review-command-summary">{description}</p>
             <div className="board-summary-row">
               <span className="pill">Project: {review.projectName}</span>
-              <span className="pill">Customer: {review.customerName || "Unassigned"}</span>
+              <span className="pill">Customer: {review.customerName || "Not specified"}</span>
               <span className="pill">Review ID: {review.reviewId}</span>
             </div>
             <div className="button-row">
               <Link href="/arb" className="secondary-button">
-                Back to review queue
+                Back to reviews
               </Link>
               <Link href="/decision-center" className="ghost-button">
                 Open Decision Center
@@ -163,7 +163,7 @@ export function ArbReviewShell(props: {
           </div>
 
           <aside className="detail-command-sidecar future-card arb-shell-sidecar-card">
-            <p className="board-card-subtitle">Current posture</p>
+            <p className="board-card-subtitle">Current status</p>
             <div className="arb-shell-sidecar-metrics">
               <div className="arb-shell-metric">
                 <p className="arb-shell-metric-label">Workflow</p>

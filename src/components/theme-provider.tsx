@@ -83,7 +83,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
         <footer className="site-footer surface-panel">
           <p className="site-footer-copy">
-            Azure Review Assistant &mdash; structured architecture reviews grounded in Microsoft frameworks.
+            Azure Review Assistant &mdash; Architecture reviews grounded in Microsoft Well-Architected, Cloud Adoption, and Azure Landing Zone frameworks.
           </p>
         </footer>
       </div>

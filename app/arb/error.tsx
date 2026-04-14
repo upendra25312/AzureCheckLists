@@ -30,7 +30,7 @@ export default function ArbError({
               Try again
             </button>
             <a href="/arb" className="home-init-button review-command-button" style={{ marginLeft: 12 }}>
-              Back to review queue
+              Back to reviews
             </a>
           </div>
         </div>

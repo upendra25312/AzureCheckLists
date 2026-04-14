@@ -8,14 +8,13 @@ export default function NotFound() {
           <p className="eyebrow">Not found</p>
           <h1 className="review-command-title">The requested checklist view is not available.</h1>
           <p className="review-command-summary">
-            The route may no longer exist in the generated static export, or the source checklist
-            set changed during the last build.
+            This page may have been moved or is no longer available.
           </p>
         </div>
         <div className="review-command-band">
           <div className="review-command-band-actions">
             <Link href="/" className="home-init-button review-command-button">
-              Return to review board
+              Return to home
             </Link>
           </div>
         </div>

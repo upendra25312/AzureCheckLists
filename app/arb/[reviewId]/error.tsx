@@ -31,7 +31,7 @@ export default function ArbReviewError({
               Try again
             </button>
             <Link href="/arb" className="secondary-button">
-              Back to review queue
+              Back to reviews
             </Link>
           </div>
         </div>

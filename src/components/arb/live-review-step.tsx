@@ -312,7 +312,7 @@ export function ArbLiveReviewStep(props: {
       );
     } catch (uploadFailure) {
       setUploadError(
-        uploadFailure instanceof Error ? uploadFailure.message : "Unable to upload ARB files."
+        uploadFailure instanceof Error ? uploadFailure.message : "Unable to upload files."
       );
     } finally {
       setUploadSaving(false);
@@ -395,9 +395,7 @@ export function ArbLiveReviewStep(props: {
           </div>
         </div>
         <p className="section-copy">
-          Processed ARB review outputs are written to <strong>arb-outputfiles</strong>. Regenerate
-          them after updating findings, actions, score posture, or the reviewer decision so the
-          downloaded package stays aligned with the latest review state.
+          Review outputs are generated and available for download below.
         </p>
         <div className="button-row">
           <button
@@ -406,7 +404,7 @@ export function ArbLiveReviewStep(props: {
             disabled={exportRegenerating}
             onClick={() => void regenerateReviewedOutputs()}
           >
-            {exportRegenerating ? "Regenerating outputs..." : "Regenerate reviewed outputs"}
+            {exportRegenerating ? "Regenerating outputs…" : "Regenerate reviewed outputs"}
           </button>
         </div>
         {exportArtifacts.length === 0 ? (
@@ -429,7 +427,7 @@ export function ArbLiveReviewStep(props: {
                   disabled={exportDownloadingId === artifact.exportId}
                   onClick={() => void handleExportDownload(artifact)}
                 >
-                  {exportDownloadingId === artifact.exportId ? "Preparing download..." : "Download"}
+                  {exportDownloadingId === artifact.exportId ? "Preparing download…" : "Download"}
                 </button>
               </article>
             ))}
@@ -489,7 +487,7 @@ export function ArbLiveReviewStep(props: {
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : "Unable to load ARB review state.");
+          setError(loadError instanceof Error ? loadError.message : "Unable to load the review.");
         }
       } finally {
         if (!cancelled) {
@@ -509,7 +507,7 @@ export function ArbLiveReviewStep(props: {
     review ??
     ({
       reviewId,
-      projectName: "Loading ARB review",
+      projectName: "Loading review…",
       customerName: "",
       workflowState: "Draft",
       evidenceReadinessState: "Ready with Gaps",
@@ -601,7 +599,7 @@ export function ArbLiveReviewStep(props: {
             ]}
             footer={
               <a href="/arb" className="primary-button">
-                Back to review queue
+                Back to reviews
               </a>
             }
           />
@@ -628,7 +626,7 @@ export function ArbLiveReviewStep(props: {
             "Cost, support, and operational readiness signals"
           ]
         : Array.from(new Set(supportedUploads.map((item) => item.logicalCategory))).map(
-            (category) => `Assessment engine will analyse: ${category}`
+            (category) => `Assessment engine will analyze: ${category}`
           );
     const canStartExtraction = readinessChecks.every((check) => check.complete) && !uploadSaving;
 
@@ -650,7 +648,7 @@ export function ArbLiveReviewStep(props: {
             </p>
           </article>
           <article className="future-card">
-            <p className="board-card-subtitle">Ready to analyse</p>
+            <p className="board-card-subtitle">Ready to analyze</p>
             <strong>{canStartExtraction ? "Yes" : "Not yet"}</strong>
             <p className="section-copy">
               Upload at least one document and confirm it can be used for review.
@@ -723,10 +721,6 @@ export function ArbLiveReviewStep(props: {
           <div className="arb-upload-helper-text" style={{marginTop: '0.5rem', marginBottom: '0.5rem'}}>
             Accepted: PDF, DOCX, PPTX, XLSX, images, diagrams, Markdown, and more. Upload your SOW, HLD, LLD, or diagrams for review.
           </div>
-          <p className="microcopy">
-            Accepted: PDF, Word, PowerPoint, Excel, images, diagrams (VSDX/SVG), Markdown, and plain text.
-            PDF and Word documents produce the richest findings. Excel/spreadsheet data is extracted sheet-by-sheet. Images and diagrams are analysed by the vision model to identify Azure services, topology, and labels.
-          </p>
           {uploadSaving ? (
             <p className="arb-upload-status arb-upload-status-progress">Uploading files…</p>
           ) : uploadedFiles.length > 0 && !uploadError ? (
@@ -763,7 +757,7 @@ export function ArbLiveReviewStep(props: {
                     </p>
                   </div>
                   <div className="arb-upload-file-actions">
-                    <span className="pill">{upload.supportedTextExtraction ? "Text-first" : "Limited"}</span>
+                    <span className="pill">{upload.supportedTextExtraction ? "Supported" : "Limited"}</span>
                     <button
                       type="button"
                       className="arb-delete-file-btn"
@@ -837,7 +831,7 @@ export function ArbLiveReviewStep(props: {
             }}
           >
             {extractionStarting ? (
-              <><span className="arb-spinner" aria-hidden="true" /> Analysing documents… typically 30–90 seconds per file</>
+              <><span className="arb-spinner" aria-hidden="true" /> Analyzing documents… typically 30–90 seconds per file</>
             ) : extractionStatus?.state === "Failed" ? (
               "Retry analysis →"
             ) : (
@@ -952,7 +946,7 @@ export function ArbLiveReviewStep(props: {
                 <h3>{requirement.category}</h3>
                 <p>{requirement.normalizedText}</p>
                 <p className="microcopy">
-                  {requirement.sourceFileName || "Derived review summary"} · {requirement.criticality} · {requirement.reviewerStatus}
+                  {requirement.sourceFileName || "Generated from review analysis"} · {requirement.criticality} · {requirement.reviewerStatus}
                 </p>
               </article>
             ))}
@@ -1001,7 +995,7 @@ export function ArbLiveReviewStep(props: {
               <article key={fact.evidenceId} className="trace-card arb-score-card">
                 <h3>{fact.factType}</h3>
                 <p>{fact.summary}</p>
-                <p className="microcopy">{fact.sourceFileName || "Derived review summary"} · {fact.confidence} confidence</p>
+                <p className="microcopy">{fact.sourceFileName || "Generated from review analysis"} · {fact.confidence} confidence</p>
                 <p className="microcopy">{fact.sourceExcerpt}</p>
               </article>
             ))}
@@ -1345,7 +1339,7 @@ export function ArbLiveReviewStep(props: {
               <textarea
                 className="field-textarea"
                 aria-label="Decision rationale"
-                placeholder="Summarise the basis for this decision, any conditions, and what must happen before approval is unconditional."
+                placeholder="Summarize the basis for this decision, any conditions, and what must happen before approval is unconditional."
                 value={decisionRationale}
                 onChange={(event) => setDecisionRationale(event.target.value)}
               />
@@ -1357,7 +1351,7 @@ export function ArbLiveReviewStep(props: {
                 onClick={() => void submitDecision()}
                 disabled={decisionSaving || Boolean(decisionGateMessage)}
               >
-                {decisionSaving ? "Recording decision..." : "Record decision"}
+                {decisionSaving ? "Recording decision…" : "Record decision"}
               </button>
             </div>
             {decisionError ? <p className="arb-upload-error">{decisionError}</p> : null}
@@ -1374,11 +1368,11 @@ export function ArbLiveReviewStep(props: {
       activeStep === "overview" ? (
         <div className="arb-summary-grid">
           <article className="future-card">
-            <p className="board-card-subtitle">Workflow State</p>
+            <p className="board-card-subtitle">Workflow state</p>
             <strong>{shellReview.workflowState}</strong>
           </article>
           <article className="future-card">
-            <p className="board-card-subtitle">Evidence State</p>
+            <p className="board-card-subtitle">Evidence state</p>
             <strong>{shellReview.evidenceReadinessState}</strong>
           </article>
           <article className="future-card">
@@ -1461,7 +1455,7 @@ export function ArbLiveReviewStep(props: {
               </div>
             </div>
           ) : (
-            <p>This view requires live Function App ARB endpoints. Verify API deployment and retry.</p>
+            <p>This feature is temporarily unavailable. Please try again later.</p>
           )}
         </div>
       ) : (

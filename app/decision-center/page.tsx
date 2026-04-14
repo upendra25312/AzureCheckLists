@@ -9,9 +9,7 @@ export default function DecisionCenterPage() {
           <p className="header-badge">Decision Center</p>
           <h1 className="review-command-title">Review score, conditions, and final sign-off in one place.</h1>
           <p className="review-command-summary">
-            Decision Center is the closeout checkpoint for advanced reviews. It keeps the derived
-            score, open conditions, reviewer identity, recorded timestamp, and the final human
-            outcome in one place.
+            Review scores, open conditions, and record the final decision for each architecture review.
           </p>
         </div>
 
@@ -41,7 +39,7 @@ export default function DecisionCenterPage() {
         <div className="review-command-band">
           <div className="review-command-band-actions">
             <Link href="/arb" className="primary-link review-command-button">
-              Back to ARB-grade review mode
+              Back to architecture review
             </Link>
             <Link href="/services" className="secondary-button review-command-secondary">
               Open services explorer

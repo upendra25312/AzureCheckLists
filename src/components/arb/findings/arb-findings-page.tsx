@@ -73,7 +73,7 @@ export function ArbFindingsPage({ reviewId }: { reviewId: string }) {
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : "Unable to load ARB review state.");
+          setError(loadError instanceof Error ? loadError.message : "Unable to load the review.");
         }
       } finally {
         if (!cancelled) {
@@ -207,7 +207,7 @@ export function ArbFindingsPage({ reviewId }: { reviewId: string }) {
 
   const shellReview: ArbReviewSummary = review ?? {
     reviewId,
-    projectName: "Loading ARB review",
+    projectName: "Loading review…",
     customerName: "",
     workflowState: "Draft",
     evidenceReadinessState: "Ready with Gaps",
@@ -226,7 +226,7 @@ export function ArbFindingsPage({ reviewId }: { reviewId: string }) {
           bullets={[
             "Go back to the Upload step and click 'Run assessment →' to generate findings",
             "Documents are validated against WAF, CAF, ALZ, HA/DR, Security, Networking, and Monitoring",
-            "Results appear here automatically — typically 1–3 minutes",
+            "Findings appear here automatically — typically 1–3 minutes",
           ]}
           footer={
             <a href={getArbStepHref(reviewId, "upload", "upload-documents")} className="primary-button">
@@ -358,7 +358,7 @@ export function ArbFindingsPage({ reviewId }: { reviewId: string }) {
                 </div>
               </div>
             ) : (
-              <p>This view requires live Function App ARB endpoints. Verify API deployment and retry.</p>
+              <p>This feature is temporarily unavailable. Please try again later.</p>
             )}
           </div>
         ) : (

@@ -17,8 +17,8 @@ const WORKFLOW_STEPS = [
   },
   {
     id: 4,
-    label: "Architecture Assurance Assessment",
-    detail: "Automated framework assessment across WAF, CAF, ALZ, HA/DR, Security + more"
+    label: "Automated assessment",
+    detail: "Framework validation across Security, Reliability, Cost, Operations, Architecture, Governance, and Delivery"
   },
   { id: 5, label: "Review findings", detail: "Scored 0–100, linked to Microsoft Learn" },
   { id: 6, label: "Sign off & export", detail: "CSV, HTML, Markdown — board-ready pack" },
@@ -104,9 +104,9 @@ export default function HomeClientSection() {
       {/* ── HERO ── */}
       <section className="impact-section impact-section-hero">
         <img src="/logo.png" alt="Azure Review Assistant" className="hero-brand-mark" />
-        <span className="impact-kicker">Architecture reviews that ship</span>
+        <span className="impact-kicker">Architecture reviews, accelerated</span>
         <h1 className="impact-headline">
-          Upload architecture docs. Get board-ready Azure findings in minutes.
+          Upload your architecture documents. Receive structured Azure findings in minutes.
         </h1>
         <p className="impact-subline">
           Upload your SOW or design document and get scored, evidence-linked findings across WAF, CAF, ALZ, HA/DR, Security, Networking, and Monitoring.
@@ -150,7 +150,7 @@ export default function HomeClientSection() {
             ) : (
               <>
                 <span className="hero-upload-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 4a2 2 0 0 1 2-2h8.586a1 1 0 0 1 .707.293l4.414 4.414a1 1 0 0 1 .293.707V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4Z" stroke="currentColor" strokeWidth="1.5" fill="none"/><path d="M14 2v5h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
-                <p className="hero-upload-title">Drop your SOW or design doc here</p>
+                <p className="hero-upload-title">Drop your Statement of Work (SOW) or design document here</p>
                 <p className="hero-upload-sub arb-upload-helper">or <span className="hero-upload-link">click to upload files</span> <br />
                   <span className="arb-upload-helper-text">Accepted: PDF, DOCX, PPTX, XLSX, images, IaC, scripts, notebooks, archives</span>
                 </p>
@@ -160,7 +160,7 @@ export default function HomeClientSection() {
           </div>
         ) : (
           <div className="hero-upload-zone">
-            <span className="impact-auth-loading">Sign in to upload architecture documents.</span>
+            <span className="impact-auth-loading">Sign in to get started</span>
           </div>
         )}
       </section>

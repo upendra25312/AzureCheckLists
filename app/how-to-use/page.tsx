@@ -24,9 +24,9 @@ export default function HowToUsePage() {
             </div>
             <div className="button-row">
               <Link href="/" className="primary-button">
-                Back to dashboard
+                Back to home
               </Link>
-              <Link href="/review-package" className="secondary-button">
+              <Link href="/arb" className="secondary-button">
                 Start a review
               </Link>
             </div>
