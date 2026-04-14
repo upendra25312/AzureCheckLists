@@ -217,7 +217,7 @@ export function ArbReviewShell(props: {
             {reviewSummary ? (
               <p className="section-copy arb-review-summary-text">{reviewSummary}</p>
             ) : (
-              <p className="section-copy" style={{ color: "var(--t3)", fontStyle: "italic" }}>
+              <p style={{ color: "#6B7280", fontStyle: "italic", fontSize: "0.92rem", lineHeight: 1.6, margin: 0 }}>
                 Run the automated assessment to generate an executive summary grounded in your uploaded documents.
               </p>
             )}
@@ -225,45 +225,28 @@ export function ArbReviewShell(props: {
 
           <section className="trace-card arb-summary-card">
             <p className="board-card-subtitle">Review status</p>
-            <ul className="arb-summary-list">
-              <li>
-                <span>Active Stage</span>
-                <strong>{activeStepLabel}</strong>
-              </li>
-              <li>
-                <span>Workflow State</span>
-                <strong>{review.workflowState}</strong>
-              </li>
-              <li>
-                <span>Evidence Readiness</span>
-                <strong>{review.evidenceReadinessState}</strong>
-              </li>
-              <li>
-                <span>Recommendation</span>
-                <strong>{review.recommendation ?? "Pending"}</strong>
-              </li>
-              <li>
-                <span>Final Decision</span>
-                <strong>{review.finalDecision ?? "Pending"}</strong>
-              </li>
-              <li>
-                <span>Assigned Reviewer</span>
-                <strong>{review.assignedReviewer ?? "Unassigned"}</strong>
-              </li>
-              <li>
-                <span>Review ID</span>
-                <strong>{review.reviewId}</strong>
-              </li>
-              <li>
-                <span>Last Updated</span>
-                <strong>{formatWorkflowTimestamp(review.lastUpdated)}</strong>
-              </li>
-            </ul>
+            <div style={{ display: "grid", gap: "12px" }}>
+              {[
+                ["Active Stage", activeStepLabel],
+                ["Workflow State", review.workflowState],
+                ["Evidence Readiness", review.evidenceReadinessState],
+                ["Recommendation", review.recommendation ?? "Pending"],
+                ["Final Decision", review.finalDecision ?? "Pending"],
+                ["Assigned Reviewer", review.assignedReviewer ?? "Unassigned"],
+                ["Review ID", review.reviewId],
+                ["Last Updated", formatWorkflowTimestamp(review.lastUpdated)]
+              ].map(([label, value]) => (
+                <div key={label} style={{ display: "grid", gap: "2px", paddingBottom: "10px", borderBottom: "1px solid #E5E7EB" }}>
+                  <span style={{ color: "#0078D4", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>{label}</span>
+                  <strong style={{ color: "#111827", fontSize: "0.95rem", fontWeight: 700 }}>{value}</strong>
+                </div>
+              ))}
+            </div>
           </section>
 
           <section className="future-card arb-summary-card">
             <p className="board-card-subtitle">{guidance.title}</p>
-            <p className="section-copy">{guidance.body}</p>
+            <p style={{ color: "#4B5563", fontSize: "0.95rem", lineHeight: 1.6, margin: 0 }}>{guidance.body}</p>
           </section>
         </aside>
       </div>
