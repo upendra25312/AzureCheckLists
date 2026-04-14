@@ -118,6 +118,9 @@ export function ArbReviewShell(props: {
       ? `${review.projectName} review is ${review.workflowState.toLowerCase()}. Recommendation: ${review.recommendation}. Evidence readiness: ${review.evidenceReadinessState}.${review.overallScore != null ? ` Overall score: ${review.overallScore}/100.` : ""}`
       : null
   );
+
+  // Helper: build upload step href for this review
+  function getUploadStepHref() {
     return `/arb?reviewId=${encodeURIComponent(review.reviewId)}&step=upload`;
   }
 
