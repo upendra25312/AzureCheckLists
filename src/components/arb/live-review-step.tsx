@@ -158,7 +158,8 @@ function toSeverityLevel(value: string | undefined): "High" | "Medium" | "Low" |
 }
 
 function getFindingPrimaryReference(finding: ArbFinding) {
-  return finding.references.find((reference) => Boolean(reference.url)) ?? finding.references[0] ?? null;
+  const refs = finding.references ?? [];
+  return refs.find((reference) => Boolean(reference.url)) ?? refs[0] ?? null;
 }
 
 function getDomainScorePercent(domainScore: ArbDomainScore) {
@@ -1123,7 +1124,7 @@ export function ArbLiveReviewStep(props: {
   function renderFindingsContent() {
     const criticalBlockerCount = findings.filter((finding) => finding.criticalBlocker).length;
     const missingEvidenceCount = findings.reduce(
-      (total, finding) => total + finding.missingEvidence.length,
+      (total, finding) => total + (finding.missingEvidence?.length ?? 0),
       0
     );
     const selectedFinding =
@@ -1334,7 +1335,7 @@ export function ArbLiveReviewStep(props: {
               </article>
             </div>
 
-            {selectedFinding.missingEvidence.length > 0 ? (
+            {(selectedFinding.missingEvidence?.length ?? 0) > 0 ? (
               <section className="trace-card arb-summary-card">
                 <p className="board-card-subtitle">Missing evidence</p>
                 <ul className="arb-checklist">
@@ -1345,7 +1346,7 @@ export function ArbLiveReviewStep(props: {
               </section>
             ) : null}
 
-            {selectedFinding.references.length > 0 ? (
+            {(selectedFinding.references?.length ?? 0) > 0 ? (
               <section className="trace-card arb-summary-card">
                 <p className="board-card-subtitle">Grounding links</p>
                 <div className="arb-reference-list">

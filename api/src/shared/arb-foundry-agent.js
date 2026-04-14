@@ -499,8 +499,10 @@ function parseAgentResponse(responseText) {
 
   const findings = (Array.isArray(parsed.findings) ? parsed.findings : []).map((f, i) => ({
     findingId: `agent-finding-${i + 1}`,
+    reviewId: "",  // populated by caller
     severity: parseSeverity(f.severity),
     domain: String(f.domain ?? "Architecture"),
+    findingType: String(f.findingType ?? f.framework ?? "WAF"),
     framework: String(f.framework ?? "WAF"),
     frameworkPillar: String(f.frameworkPillar ?? ""),
     title: String(f.title ?? "Finding"),
@@ -510,7 +512,17 @@ function parseAgentResponse(responseText) {
     evidenceIds: Array.isArray(f.evidenceIds) ? f.evidenceIds.map(String) : [],
     recommendation: String(f.recommendation ?? ""),
     learnMoreUrl: String(f.learnMoreUrl ?? ""),
+    references: Array.isArray(f.references)
+      ? f.references.map((r) => ({ title: String(r.title ?? ""), url: r.url ?? undefined, relevance: r.relevance ?? undefined }))
+      : (f.learnMoreUrl ? [{ title: String(f.title ?? "Learn more"), url: String(f.learnMoreUrl) }] : []),
+    confidence: String(f.confidence ?? "Medium"),
+    criticalBlocker: Boolean(f.criticalBlocker ?? false),
     suggestedOwner: String(f.suggestedOwner ?? ""),
+    suggestedDueDate: f.suggestedDueDate ? String(f.suggestedDueDate) : null,
+    owner: null,
+    dueDate: null,
+    reviewerNote: null,
+    missingEvidence: Array.isArray(f.missingEvidence) ? f.missingEvidence.map(String) : [],
     evidenceFound: [],  // resolved in arbRunAgentReview after parse
     status: "Open",
     source: "agent"
@@ -587,8 +599,10 @@ function buildFallbackAgentReview({ review, requirements, evidence, reason }) {
     findings: [
       {
         findingId: "fallback-finding-1",
+        reviewId: review.reviewId ?? "",
         severity: "High",
         domain: "Architecture",
+        findingType: "WAF",
         framework: "WAF",
         frameworkPillar: "WAF:Operational Excellence",
         title: "AI review fallback was triggered",
@@ -597,7 +611,15 @@ function buildFallbackAgentReview({ review, requirements, evidence, reason }) {
         evidenceBasis: `Fallback trigger: ${reason}`,
         recommendation: "Re-run AI review after validating Foundry model availability, then confirm findings before decision sign-off.",
         learnMoreUrl: "https://learn.microsoft.com/azure/well-architected/operational-excellence/",
+        references: [{ title: "Azure Well-Architected Framework: Operational Excellence", url: "https://learn.microsoft.com/azure/well-architected/operational-excellence/" }],
+        confidence: "Low",
+        criticalBlocker: true,
         suggestedOwner: "Cloud Architecture Lead",
+        suggestedDueDate: null,
+        owner: null,
+        dueDate: null,
+        reviewerNote: null,
+        missingEvidence: missingEvidence,
         evidenceFound: [],
         status: "Open",
         source: "agent"

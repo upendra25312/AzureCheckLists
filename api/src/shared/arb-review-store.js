@@ -1196,7 +1196,15 @@ function fromFindingsEntity(entity, reviewId) {
     return buildDefaultFindings({ reviewId, projectName: "Sample ARB Review" });
   }
 
-  return JSON.parse(entity.findingsJson);
+  const raw = JSON.parse(entity.findingsJson);
+  // Normalize findings to ensure all required array/object fields exist
+  return (Array.isArray(raw) ? raw : []).map((f) => ({
+    ...f,
+    missingEvidence: Array.isArray(f.missingEvidence) ? f.missingEvidence : [],
+    references: Array.isArray(f.references) ? f.references : [],
+    evidenceFound: Array.isArray(f.evidenceFound) ? f.evidenceFound : [],
+    reviewId: f.reviewId ?? reviewId
+  }));
 }
 
 function fromScorecardEntity(entity, review) {
