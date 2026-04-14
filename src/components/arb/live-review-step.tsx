@@ -883,7 +883,7 @@ export function ArbLiveReviewStep(props: {
             </button>
             {agentRunning ? (
               <p className="arb-upload-status arb-upload-status-progress">
-                Validating your documents against all 11 Azure frameworks. Do not close this page.
+                Validating your documents against Security, Reliability, Cost, Operations, Architecture, Governance, and Delivery domains. Do not close this page.
               </p>
             ) : null}
             {agentCompleted ? (

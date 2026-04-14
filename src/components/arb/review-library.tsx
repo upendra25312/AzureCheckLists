@@ -328,7 +328,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
             Create the review, move straight into document upload, and generate Microsoft Learn-grounded findings across WAF, CAF, ALZ, HA/DR, Security, Networking, and Monitoring.
           </p>
           <div className="arb-proof-strip" aria-label="Architecture review proof points">
-            <span className="arb-proof-chip">11 framework areas checked</span>
+            <span className="arb-proof-chip">7 assessment domains checked</span>
             <span className="arb-proof-chip">Traceable Microsoft guidance</span>
             <span className="arb-proof-chip">Board-ready sign-off workflow</span>
           </div>
