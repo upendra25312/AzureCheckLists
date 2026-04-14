@@ -1,43 +1,8 @@
-"use client";
-
-import Link from "next/link";
-
 import HomeClientSection from "./components/HomeClientSection";
 
 export default function HomePage() {
   return <HomeClientSection />;
 }
-            <Link href={getStepHref(latestReview)} className="impact-btn impact-btn-secondary">
-              Continue: {WORKFLOW_STEPS[getActiveStep(latestReview) - 1]?.label} →
-            </Link>
-          </div>
-        )}
-      </section>
-
-      {/* ── HOW IT WORKS ── */}
-      <section className="impact-section">
-        <span className="impact-kicker">How it works</span>
-        <h2 className="impact-section-title">Six steps from document to board-ready pack</h2>
-        {signedIn && latestReview ? (
-          <p className="impact-small">
-            You are on <strong>step {getActiveStep(latestReview)}: {WORKFLOW_STEPS[getActiveStep(latestReview) - 1]?.label}</strong> for <strong>{latestReview.projectName}</strong>.{" "}
-            <Link href={getStepHref(latestReview)} className="impact-inline-link">Continue →</Link>
-          </p>
-        ) : null}
-
-        <ol className="impact-workflow-steps">
-          {WORKFLOW_STEPS.map((step) => {
-            const activeStep = latestReview ? getActiveStep(latestReview) : (signedIn ? 2 : 1);
-            const isDone = step.id < activeStep;
-            const isCurrent = step.id === activeStep;
-            return (
-              <li
-                key={step.id}
-                className={`impact-workflow-step${isDone ? " impact-workflow-step--done" : ""}${isCurrent ? " impact-workflow-step--current" : ""}`}
-              >
-                <span className={`impact-step-num${isDone ? " impact-step-num--done" : ""}${isCurrent ? " impact-step-num--current" : ""}`}>
-                  {isDone ? "✓" : step.id}
-                </span>
                 <div>
                   <strong>{step.label}</strong>
                   <p className="impact-small">{step.detail}</p>
