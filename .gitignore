@@ -35,3 +35,6 @@ terraform.rc
 .vscode/
 tsconfig.tsbuildinfo
 azure-portal-snapshot.md
+
+# Azure Functions local settings (may contain secrets)
+api/local.settings.json

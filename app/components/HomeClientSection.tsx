@@ -126,7 +126,7 @@ export default function HomeClientSection() {
           >
             {/* Full-zone overlay input — clicking anywhere on the zone triggers file picker natively */}
             <label htmlFor="file-upload" className="arb-upload-label">
-              <span className="arb-upload-icon">📁</span>
+              <span className="arb-upload-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 4a2 2 0 0 1 2-2h4.586a1 1 0 0 1 .707.293l4.414 4.414a1 1 0 0 1 .293.707V16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4Z" stroke="currentColor" strokeWidth="1.5" fill="none"/><path d="M10 2v5h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 13l2-2 2 2M10 11v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
               <span>Upload Architecture Docs</span>
               <input
                 id="file-upload"
@@ -143,13 +143,13 @@ export default function HomeClientSection() {
             </label>
             {uploading ? (
               <>
-                <span className="hero-upload-icon">⏳</span>
+                <span className="hero-upload-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5"/><path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg></span>
                 <p className="hero-upload-title">Creating review and uploading…</p>
                 <p className="hero-upload-sub">You will be taken to the analysis page automatically.</p>
               </>
             ) : (
               <>
-                <span className="hero-upload-icon">📄</span>
+                <span className="hero-upload-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 4a2 2 0 0 1 2-2h8.586a1 1 0 0 1 .707.293l4.414 4.414a1 1 0 0 1 .293.707V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4Z" stroke="currentColor" strokeWidth="1.5" fill="none"/><path d="M14 2v5h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
                 <p className="hero-upload-title">Drop your SOW or design doc here</p>
                 <p className="hero-upload-sub arb-upload-helper">or <span className="hero-upload-link">click to upload files</span> <br />
                   <span className="arb-upload-helper-text">Accepted: PDF, DOCX, PPTX, XLSX, images, IaC, scripts, notebooks, archives</span>

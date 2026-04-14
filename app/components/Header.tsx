@@ -14,12 +14,12 @@ export default function Header() {
         </Link>
         <nav className="home-link-nav" aria-label="Main navigation">
           <Link href="/arb" className="home-link-nav-item">Architecture Review</Link>
-          <Link href="/explorer" className="home-link-nav-item">Service Explorer</Link>
+          <Link href="/services" className="home-link-nav-item">Service Explorer</Link>
         </nav>
       </div>
       <div className="home-header-actions">
         <Link href="/how-to-use" className="home-link-nav-item" aria-label="Help">
-          <span role="img" aria-label="Help">❓</span>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.5"/><path d="M7.5 7.5a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3.5M10 15h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </Link>
         {signedIn ? (
           <div className="account-dropdown">
