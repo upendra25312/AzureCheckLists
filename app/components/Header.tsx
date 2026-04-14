@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { useAuthSession } from "@/components/auth-session-provider";
 import { buildPrimaryLoginUrl } from "@/lib/review-cloud";
