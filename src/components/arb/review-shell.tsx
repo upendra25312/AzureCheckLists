@@ -211,21 +211,21 @@ export function ArbReviewShell(props: {
       <div className="arb-shell-grid">
         <section className="surface-panel arb-shell-main">{children}</section>
 
-        <aside className="arb-sidecar-stack">
-          <section className="trace-card arb-summary-card">
-            <p className="board-card-subtitle">Assessment summary</p>
+        <aside className="arb-sidecar-stack" style={{ minWidth: 0 }}>
+          <section style={{ padding: "20px", borderRadius: "8px", border: "1px solid #E5E7EB", background: "#FFFFFF" }}>
+            <p style={{ margin: "0 0 12px", color: "#111827", fontSize: "0.82rem", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Assessment summary</p>
             {reviewSummary ? (
-              <p className="section-copy arb-review-summary-text">{reviewSummary}</p>
+              <p style={{ color: "#374151", fontSize: "0.9rem", lineHeight: 1.65, margin: 0, whiteSpace: "pre-wrap" as const }}>{reviewSummary}</p>
             ) : (
-              <p style={{ color: "#6B7280", fontStyle: "italic", fontSize: "0.92rem", lineHeight: 1.6, margin: 0 }}>
+              <p style={{ color: "#9CA3AF", fontStyle: "italic", fontSize: "0.9rem", lineHeight: 1.6, margin: 0 }}>
                 Run the automated assessment to generate an executive summary grounded in your uploaded documents.
               </p>
             )}
           </section>
 
-          <section className="trace-card arb-summary-card">
-            <p className="board-card-subtitle">Review status</p>
-            <div style={{ display: "grid", gap: "12px" }}>
+          <section style={{ padding: "20px", borderRadius: "8px", border: "1px solid #E5E7EB", background: "#FFFFFF" }}>
+            <p style={{ margin: "0 0 12px", color: "#111827", fontSize: "0.82rem", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Review status</p>
+            <div style={{ display: "grid", gap: "0" }}>
               {[
                 ["Active Stage", activeStepLabel],
                 ["Workflow State", review.workflowState],
@@ -235,18 +235,18 @@ export function ArbReviewShell(props: {
                 ["Assigned Reviewer", review.assignedReviewer ?? "Unassigned"],
                 ["Review ID", review.reviewId],
                 ["Last Updated", formatWorkflowTimestamp(review.lastUpdated)]
-              ].map(([label, value]) => (
-                <div key={label} style={{ display: "grid", gap: "2px", paddingBottom: "10px", borderBottom: "1px solid #E5E7EB" }}>
-                  <span style={{ color: "#0078D4", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>{label}</span>
-                  <strong style={{ color: "#111827", fontSize: "0.95rem", fontWeight: 700 }}>{value}</strong>
+              ].map(([label, value], i, arr) => (
+                <div key={label} style={{ padding: "8px 0", borderBottom: i < arr.length - 1 ? "1px solid #F3F4F6" : "none" }}>
+                  <div style={{ color: "#0078D4", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "2px" }}>{label}</div>
+                  <div style={{ color: "#111827", fontSize: "0.92rem", fontWeight: 600 }}>{value}</div>
                 </div>
               ))}
             </div>
           </section>
 
-          <section className="future-card arb-summary-card">
-            <p className="board-card-subtitle">{guidance.title}</p>
-            <p style={{ color: "#4B5563", fontSize: "0.95rem", lineHeight: 1.6, margin: 0 }}>{guidance.body}</p>
+          <section style={{ padding: "20px", borderRadius: "8px", border: "1px solid #E5E7EB", background: "#F9FAFB" }}>
+            <p style={{ margin: "0 0 8px", color: "#111827", fontSize: "0.82rem", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{guidance.title}</p>
+            <p style={{ color: "#4B5563", fontSize: "0.9rem", lineHeight: 1.6, margin: 0 }}>{guidance.body}</p>
           </section>
         </aside>
       </div>
