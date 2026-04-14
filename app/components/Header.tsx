@@ -23,8 +23,8 @@ export default function Header() {
         {signedIn ? (
           <div className="account-dropdown">
             <button className="avatar-button" aria-label="Account menu">
-              <span className="avatar">{principal?.name?.[0] ?? "U"}</span>
-              <span className="username">{principal?.name ?? "Account"}</span>
+              <span className="avatar">{principal?.userDetails?.[0] ?? "U"}</span>
+              <span className="username">{principal?.userDetails ?? "Account"}</span>
               <span aria-hidden>▼</span>
             </button>
             {/* Dropdown menu (Profile, Settings, Sign out) can be implemented here */}
