@@ -1,4 +1,4 @@
-import { ArbLiveReviewStep } from "@/components/arb/live-review-step";
+import { ArbScorecardPage } from "@/components/arb/scorecard/arb-scorecard-page";
 
 type PageProps = {
   params: Promise<{
@@ -13,12 +13,5 @@ export function generateStaticParams() {
 export default async function Page({ params }: PageProps) {
   const { reviewId } = await params;
 
-  return (
-    <ArbLiveReviewStep
-      reviewId={reviewId}
-      activeStep="scorecard"
-      title="Scorecard"
-      description="Review the weighted rationale, open conditions, and recommendation before final sign-off."
-    />
-  );
+  return <ArbScorecardPage reviewId={reviewId} />;
 }
