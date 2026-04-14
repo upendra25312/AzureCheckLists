@@ -605,11 +605,11 @@ function buildFallbackAgentReview({ review, requirements, evidence, reason }) {
         findingType: "WAF",
         framework: "WAF",
         frameworkPillar: "WAF:Operational Excellence",
-        title: "AI review fallback was triggered",
+        title: "Automated review fallback was triggered",
         findingStatement: "Automated model output was unavailable for this run, so a deterministic fallback assessment was generated.",
-        whyItMatters: "Without full AI output, recommendations can miss service-specific gaps and should be reviewed manually before board submission.",
+        whyItMatters: "Without full automated output, recommendations can miss service-specific gaps and should be reviewed manually before board submission.",
         evidenceBasis: `Fallback trigger: ${reason}`,
-        recommendation: "Re-run AI review after validating Foundry model availability, then confirm findings before decision sign-off.",
+        recommendation: "Re-run the automated review after validating model availability, then confirm findings before decision sign-off.",
         learnMoreUrl: "https://learn.microsoft.com/azure/well-architected/operational-excellence/",
         references: [{ title: "Azure Well-Architected Framework: Operational Excellence", url: "https://learn.microsoft.com/azure/well-architected/operational-excellence/" }],
         confidence: "Low",
@@ -633,13 +633,13 @@ function buildFallbackAgentReview({ review, requirements, evidence, reason }) {
       confidenceLevel: "Low",
       dimensionScores: dimensions,
       reviewSummary:
-        "A deterministic fallback ARB assessment was generated because the AI model response was unavailable for this run. Treat this output as provisional and re-run the full AI review once model availability is restored.",
+        "A deterministic fallback ARB assessment was generated because the automated model response was unavailable for this run. Treat this output as provisional and re-run the full assessment once model availability is restored.",
       strengths: ["Review workflow and evidence pipeline are active."],
       missingEvidence,
       criticalBlockers: missingEvidence,
       nextActions: [
         "Validate Foundry model endpoint and credentials.",
-        "Re-run AI review and compare outputs before recording final decision."
+        "Re-run the automated review and compare outputs before recording final decision."
       ],
       source: "agent",
       generatedAt: now

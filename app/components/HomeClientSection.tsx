@@ -41,7 +41,7 @@ function getStepHref(review: ArbReviewSummary) {
   }
   const step = getActiveStep(review);
   if (step <= 3) return getArbStepHref(resolvedReviewId, "upload", "upload-documents");
-  if (step === 4) return getArbStepHref(resolvedReviewId, "upload", "run-ai-analysis");
+  if (step === 4) return getArbStepHref(resolvedReviewId, "upload", "run-automated-analysis");
   if (step === 5) return getArbStepHref(resolvedReviewId, "decision");
   return getArbStepHref(resolvedReviewId, "overview");
 }

@@ -447,7 +447,7 @@ function renderMarkdownExportBody(review, files, requirements, evidence, finding
     scorecard ? `- Overall score: ${scorecard.overallScore ?? "TBD"}` : null,
     scorecard ? `- Recommendation: ${scorecard.recommendation}` : null,
     "",
-    summaryText ? `## AI Summary\n\n${summaryText}` : null,
+    summaryText ? `## Assessment Summary\n\n${summaryText}` : null,
     summaryText ? "" : null,
     "## Uploaded Inputs",
     "",
@@ -607,7 +607,7 @@ function renderHtmlExportBody(review, files, requirements, evidence, findings, s
     `    <p><strong>Overall score:</strong> ${escapeHtml(scorecard?.overallScore ?? "TBD")}</p>`,
     `    <p><strong>Recommendation:</strong> ${escapeHtml(scorecard?.recommendation ?? "Pending")}</p>`,
     "  </section>",
-    summaryText ? `  <h2>AI Summary</h2><p>${escapeHtml(summaryText)}</p>` : "",
+    summaryText ? `  <h2>Assessment Summary</h2><p>${escapeHtml(summaryText)}</p>` : "",
     "  <h2>Uploaded Inputs</h2>",
     renderList(
       files.map(

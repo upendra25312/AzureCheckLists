@@ -53,7 +53,7 @@ function getStepGuidance(activeStep: string) {
       return {
         title: "Human-owned decision",
         body:
-          "AI can recommend the posture, but the final decision, rationale, and conditions remain reviewer-owned."
+          "The assessment engine can recommend the posture, but the final decision, rationale, and conditions remain reviewer-owned."
       };
     default:
       return {

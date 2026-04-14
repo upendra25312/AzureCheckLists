@@ -45,7 +45,7 @@ function getPrimaryHref(review: ArbReviewSummary, focus: ArbReviewLibraryFocus):
   if (focus === "decision") return getArbStepHref(reviewId, "decision");
   const step = getActiveStep(review);
   if (step <= 2) return getArbStepHref(reviewId, "upload", "upload-documents");
-  if (step === 3) return getArbStepHref(reviewId, "upload", "run-ai-analysis");
+  if (step === 3) return getArbStepHref(reviewId, "upload", "run-automated-analysis");
   if (step === 4) return getArbStepHref(reviewId, "findings");
   return getArbStepHref(reviewId, "overview");
 }
@@ -211,7 +211,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
 
       try {
         await uploadArbFiles({ reviewId: review.reviewId, files: selectedFiles });
-        window.location.href = getArbStepHref(review.reviewId, "upload", "run-ai-analysis");
+        window.location.href = getArbStepHref(review.reviewId, "upload", "run-automated-analysis");
         return;
       } catch {
         window.location.href = uploadHref;

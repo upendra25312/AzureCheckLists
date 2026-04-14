@@ -75,7 +75,7 @@ export function DashboardHome({
 
   const arbSteps = [
     { n: "01", label: "Upload design docs" },
-    { n: "02", label: "AI extracts findings" },
+    { n: "02", label: "Engine extracts findings" },
     { n: "03", label: "Weighted scorecard" },
     { n: "04", label: "Human sign-off" },
   ];

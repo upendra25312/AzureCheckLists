@@ -86,7 +86,7 @@ async function runReviewPipeline({ principal, reviewId, traceId, log }) {
   const searchChunks = await searchArbDocuments(reviewId, searchQuery, 12);
   log("Search complete", { query: searchQuery.slice(0, 80), chunks: searchChunks.length });
 
-  // Run AI agent — no timeout pressure since this runs in the background
+  // Run automated agent assessment — no timeout pressure since this runs in the background
   let agentResult = await runArbAgentReview({
     review, files, requirements: requirementsList, evidence: evidenceList, searchChunks
   });
@@ -96,7 +96,7 @@ async function runReviewPipeline({ principal, reviewId, traceId, log }) {
     agentResult = {
       ...buildFallbackAgentReview({
         review, requirements: requirementsList, evidence: evidenceList,
-        reason: agentResult.reason ?? "AI assessment unavailable"
+        reason: agentResult.reason ?? "Automated assessment unavailable"
       }),
       success: true, fallbackUsed: true
     };

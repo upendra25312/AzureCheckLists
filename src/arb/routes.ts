@@ -4,7 +4,7 @@ import type { ArbReviewStepKey } from "@/arb/types";
 export function getArbStepHref(
   reviewId: string,
   step: ArbReviewStepKey = "overview",
-  hash?: "upload-documents" | "run-ai-analysis"
+  hash?: "upload-documents" | "run-automated-analysis"
 ): Route {
   const encodedReviewId = encodeURIComponent(reviewId);
   const suffix = hash ? `#${hash}` : "";

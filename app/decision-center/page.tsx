@@ -23,7 +23,7 @@ export default function DecisionCenterPage() {
           </article>
           <article className="review-command-metric">
             <span>Derived recommendation</span>
-            <strong>Keep AI guidance visible</strong>
+            <strong>Keep assessment guidance visible</strong>
             <p>The weighted recommendation stays visible, but the recorded reviewer decision takes precedence.</p>
           </article>
           <article className="review-command-metric">
