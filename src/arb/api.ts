@@ -462,18 +462,64 @@ export async function runArbAgentReview(reviewId: string): Promise<{
   overallScore: number | null;
   confidenceLevel: string | null;
 }> {
-  const response = await fetch(`/api/arb/reviews/${reviewId}/run-agent-review`, {
+  // Step 1: Start the assessment (returns 202 immediately)
+  const startResponse = await fetch(`/api/arb/reviews/${reviewId}/run-agent-review`, {
     method: "POST",
     headers: { Accept: "application/json" }
   });
 
-  return readJsonResponse<{
-    agentReviewCompleted: boolean;
-    findingsCount: number;
-    recommendation: string;
-    overallScore: number | null;
-    confidenceLevel: string | null;
-  }>(response, `Unable to run ARB agent review (${response.status}).`);
+  // Handle non-2xx start responses
+  if (!startResponse.ok && startResponse.status !== 202) {
+    const payload = await startResponse.json().catch(() => ({})) as { error?: string };
+    throw new Error(payload.error || `Unable to start ARB agent review (${startResponse.status}).`);
+  }
+
+  // Step 2: Poll for completion — up to 5 minutes
+  const MAX_POLL_MS = 300_000;
+  const POLL_INTERVAL_MS = 4_000;
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < MAX_POLL_MS) {
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+
+    const statusResponse = await fetch(`/api/arb/reviews/${reviewId}/agent-status`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store"
+    });
+
+    if (!statusResponse.ok) {
+      continue; // Retry on transient errors
+    }
+
+    const status = await statusResponse.json() as {
+      status: string;
+      agentReviewCompleted?: boolean;
+      findingsCount?: number;
+      recommendation?: string;
+      overallScore?: number | null;
+      confidenceLevel?: string | null;
+      error?: string;
+    };
+
+    if (status.status === "completed") {
+      return {
+        agentReviewCompleted: status.agentReviewCompleted ?? true,
+        findingsCount: status.findingsCount ?? 0,
+        recommendation: status.recommendation ?? "Needs Revision",
+        overallScore: status.overallScore ?? null,
+        confidenceLevel: status.confidenceLevel ?? null
+      };
+    }
+
+    if (status.status === "failed") {
+      throw new Error(status.error || "Agent review failed.");
+    }
+
+    // status === "running" or "idle" — keep polling
+  }
+
+  throw new Error("Assessment timed out after 5 minutes. Check the review findings page — results may still appear.");
 }
 
 export async function downloadArbExport(reviewId: string, exportArtifact: ArbExportArtifact) {

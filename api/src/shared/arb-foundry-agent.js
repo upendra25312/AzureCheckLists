@@ -161,7 +161,7 @@ async function chatCompletionsRequest(messages) {
       max_tokens: 8192,
       temperature: 0.2
     })
-  }, 30000);
+  }, 120000);
 
   if (!res.ok) {
     const text = await res.text().catch(() => `HTTP ${res.status}`);
