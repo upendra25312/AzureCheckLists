@@ -3,41 +3,6 @@ import HomeClientSection from "./components/HomeClientSection";
 export default function HomePage() {
   return <HomeClientSection />;
 }
-                <div>
-                  <strong>{step.label}</strong>
-                  <p className="impact-small">{step.detail}</p>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-
-        <div className="impact-hero-cta-row" style={{ marginTop: 24 }}>
-          {signedIn === false && (
-            <>
-              {ENABLED_AUTH_PROVIDERS.map((provider, index) => (
-                <a
-                  key={provider.id}
-                  href={buildLoginUrl(provider.id)}
-                  className={`impact-btn ${index === 0 ? "impact-btn-primary" : "impact-btn-secondary"}`}
-                >
-                  Start with {provider.label}
-                </a>
-              ))}
-            </>
-          )}
-          {signedIn === true && latestReview && (
-            <Link href={getStepHref(latestReview)} className="impact-btn impact-btn-primary">
-              Continue: {WORKFLOW_STEPS[getActiveStep(latestReview) - 1]?.label} →
-            </Link>
-          )}
-          {signedIn === true && !latestReview && (
-            <Link href="/arb" className="impact-btn impact-btn-primary">
-                Start Architecture Review →
-            </Link>
-          )}
-        </div>
-      </section>
 
       {/* ── TWO MODES ── */}
       <section className="impact-section" id="two-modes">
