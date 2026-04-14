@@ -79,7 +79,7 @@ async function foundryAgentRequest(path, method, body) {
       "Authorization": `Bearer ${token}`
     },
     body: body !== undefined ? JSON.stringify(body) : undefined
-  }, 30000);
+  }, 60000);
 
   if (!res.ok) {
     const text = await res.text().catch(() => `HTTP ${res.status}`);
@@ -161,7 +161,7 @@ async function chatCompletionsRequest(messages) {
       max_tokens: 8192,
       temperature: 0.2
     })
-  }, 20000);
+  }, 120000);
 
   if (!res.ok) {
     const text = await res.text().catch(() => `HTTP ${res.status}`);

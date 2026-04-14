@@ -51,9 +51,11 @@ function getPartitionKey(reviewId) {
 
 // SWA proxy hard-kills the linked backend at ~230s with a plain-text
 // "Backend call failure" that the frontend cannot parse as JSON.
-// We self-terminate the ENTIRE pipeline at 100s and return a valid
-// JSON fallback response so the user always gets structured output.
-const PIPELINE_TIMEOUT_MS = 30_000;
+// We self-terminate the ENTIRE pipeline at 180s and return a valid
+// JSON fallback response so SWA's proxy never sees plain text.
+// The dedicated Function App backend (not SWA-linked) has no proxy timeout,
+// but we still cap at 180s to keep the UX responsive.
+const PIPELINE_TIMEOUT_MS = 180_000;
 
 async function runReviewPipeline({ principal, reviewId, traceId, log }) {
   const t0 = Date.now();
