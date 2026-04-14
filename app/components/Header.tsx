@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useAuthSession } from "@/components/auth-session-provider";
+import { buildPrimaryLoginUrl } from "@/lib/review-cloud";
 
 export default function Header() {
   const { principal, signedIn } = useAuthSession();
@@ -30,7 +31,7 @@ export default function Header() {
             {/* Dropdown menu (Profile, Settings, Sign out) can be implemented here */}
           </div>
         ) : (
-          <Link href="/login" className="home-link-nav-item">Sign in</Link>
+          <a href={buildPrimaryLoginUrl()} className="home-link-nav-item">Sign in</a>
         )}
       </div>
     </header>
