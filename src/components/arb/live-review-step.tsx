@@ -470,7 +470,9 @@ export function ArbLiveReviewStep(props: {
             ? await fetchArbExports(reviewId)
             : [];
         const scorecardResponse =
-          activeStep === "scorecard" ? await fetchArbScorecard(reviewId) : null;
+          activeStep === "scorecard" || activeStep === "findings" || activeStep === "decision"
+            ? await fetchArbScorecard(reviewId)
+            : null;
         const decisionResponse =
           activeStep === "decision" ? await fetchArbDecision(reviewId) : null;
 
