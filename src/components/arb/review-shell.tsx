@@ -212,33 +212,50 @@ export function ArbReviewShell(props: {
         <section className="surface-panel arb-shell-main">{children}</section>
 
         <aside className="arb-sidecar-stack">
-          {reviewSummary ? (
-            <section className="trace-card arb-summary-card">
-              <p className="board-card-subtitle">Assessment summary</p>
-              <p className="section-copy arb-review-summary-text">{reviewSummary}</p>
-            </section>
-          ) : null}
           <section className="trace-card arb-summary-card">
-            <p className="board-card-subtitle">Review summary</p>
+            <p className="board-card-subtitle">Assessment summary</p>
+            {reviewSummary ? (
+              <p className="section-copy arb-review-summary-text">{reviewSummary}</p>
+            ) : (
+              <p className="section-copy" style={{ color: "var(--t3)", fontStyle: "italic" }}>
+                Run the automated assessment to generate an executive summary grounded in your uploaded documents.
+              </p>
+            )}
+          </section>
+
+          <section className="trace-card arb-summary-card">
+            <p className="board-card-subtitle">Review status</p>
             <ul className="arb-summary-list">
               <li>
                 <span>Active Stage</span>
                 <strong>{activeStepLabel}</strong>
               </li>
               <li>
-                <span>Assigned Reviewer</span>
-                <strong>{review.assignedReviewer ?? "Unassigned"}</strong>
+                <span>Workflow State</span>
+                <strong>{review.workflowState}</strong>
+              </li>
+              <li>
+                <span>Evidence Readiness</span>
+                <strong>{review.evidenceReadinessState}</strong>
+              </li>
+              <li>
+                <span>Recommendation</span>
+                <strong>{review.recommendation ?? "Pending"}</strong>
               </li>
               <li>
                 <span>Final Decision</span>
                 <strong>{review.finalDecision ?? "Pending"}</strong>
               </li>
               <li>
+                <span>Assigned Reviewer</span>
+                <strong>{review.assignedReviewer ?? "Unassigned"}</strong>
+              </li>
+              <li>
                 <span>Review ID</span>
                 <strong>{review.reviewId}</strong>
               </li>
               <li>
-                <span>Updated</span>
+                <span>Last Updated</span>
                 <strong>{formatWorkflowTimestamp(review.lastUpdated)}</strong>
               </li>
             </ul>
