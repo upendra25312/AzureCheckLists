@@ -161,7 +161,7 @@ async function chatCompletionsRequest(messages) {
       max_tokens: 8192,
       temperature: 0.2
     })
-  }, 120000);
+  }, 30000);
 
   if (!res.ok) {
     const text = await res.text().catch(() => `HTTP ${res.status}`);
@@ -710,8 +710,10 @@ async function runArbAgentReview({ review, files, requirements, evidence, search
     return { success: false, reason: "Foundry not configured — FOUNDRY_PROJECT_ENDPOINT missing" };
   }
 
-  // Fetch real-time Microsoft Learn documentation — best-effort, never blocks the review
-  const learnDocs = await fetchMicrosoftLearnGrounding(review, requirements, evidence).catch(() => []);
+  // Fetch real-time Microsoft Learn documentation — best-effort, 5s max so it doesn't eat the pipeline budget
+  const learnDocsPromise = fetchMicrosoftLearnGrounding(review, requirements, evidence).catch(() => []);
+  const learnTimeout = new Promise((resolve) => setTimeout(() => resolve([]), 5000));
+  const learnDocs = await Promise.race([learnDocsPromise, learnTimeout]);
   const userMessage = buildUserMessage(review, files, requirements, evidence, searchChunks, learnDocs);
 
   try {
