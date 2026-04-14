@@ -112,8 +112,12 @@ export function ArbReviewShell(props: {
   const postureActionHint = getPostureActionHint(review);
   const recommendationValue = review.finalDecision ?? review.recommendation ?? "Pending";
 
-  // Helper: build upload step href for this review
-  function getUploadStepHref() {
+  // Generate a derived summary when the AI model doesn't provide one
+  const derivedSummary = reviewSummary || (
+    review.workflowState !== "Draft" && review.recommendation
+      ? `${review.projectName} review is ${review.workflowState.toLowerCase()}. Recommendation: ${review.recommendation}. Evidence readiness: ${review.evidenceReadinessState}.${review.overallScore != null ? ` Overall score: ${review.overallScore}/100.` : ""}`
+      : null
+  );
     return `/arb?reviewId=${encodeURIComponent(review.reviewId)}&step=upload`;
   }
 
@@ -214,8 +218,8 @@ export function ArbReviewShell(props: {
         <aside className="arb-sidecar-stack" style={{ minWidth: 0 }}>
           <section style={{ padding: "20px", borderRadius: "8px", border: "1px solid #E5E7EB", background: "#FFFFFF" }}>
             <p style={{ margin: "0 0 12px", color: "#111827", fontSize: "0.82rem", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Assessment summary</p>
-            {reviewSummary ? (
-              <p style={{ color: "#374151", fontSize: "0.9rem", lineHeight: 1.65, margin: 0, whiteSpace: "pre-wrap" as const }}>{reviewSummary}</p>
+            {derivedSummary ? (
+              <p style={{ color: "#374151", fontSize: "0.9rem", lineHeight: 1.65, margin: 0, whiteSpace: "pre-wrap" as const }}>{derivedSummary}</p>
             ) : (
               <p style={{ color: "#9CA3AF", fontStyle: "italic", fontSize: "0.9rem", lineHeight: 1.6, margin: 0 }}>
                 Run the automated assessment to generate an executive summary grounded in your uploaded documents.
