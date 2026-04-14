@@ -12,7 +12,7 @@ export default function Header() {
           <span className="home-brand-name">Azure Review Assistant</span>
         </Link>
         <nav className="home-link-nav" aria-label="Main navigation">
-          <Link href="/review" className="home-link-nav-item">Architecture Review</Link>
+          <Link href="/arb" className="home-link-nav-item">Architecture Review</Link>
           <Link href="/explorer" className="home-link-nav-item">Service Explorer</Link>
         </nav>
       </div>
