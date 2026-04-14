@@ -3936,7 +3936,7 @@ button.chip:disabled:hover {
 .arb-upload-layout,
 .arb-shell-grid,
 .arb-decision-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr 320px;
 }
 
 .arb-form-grid,
@@ -4147,6 +4147,8 @@ button.chip:disabled:hover {
 .arb-summary-list strong {
   font-size: 1rem;
   line-height: 1.4;
+  color: var(--t1);
+  font-weight: 700;
 }
 
 .arb-summary-list {
