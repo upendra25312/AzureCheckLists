@@ -125,6 +125,21 @@ function summarizeActions(actions: ArbAction[]) {
   };
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  sow: "Statement of Work",
+  design_doc: "Design Document",
+  diagram: "Diagram",
+  security_note: "Security Note",
+  cost_assumptions: "Cost Assumptions",
+  dr_ha_note: "DR / HA Note",
+  ops_monitoring_note: "Operations / Monitoring",
+  supporting_artifact: "Supporting Artifact",
+};
+
+function formatCategory(category: string): string {
+  return CATEGORY_LABELS[category] ?? category.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function formatFileSize(bytes: number) {
   if (bytes >= 1024 * 1024) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -626,7 +641,7 @@ export function ArbLiveReviewStep(props: {
             "Cost, support, and operational readiness signals"
           ]
         : Array.from(new Set(supportedUploads.map((item) => item.logicalCategory))).map(
-            (category) => `Assessment engine will analyze: ${category}`
+            (category) => `Assessment engine will analyze: ${formatCategory(category)}`
           );
     const canStartExtraction = readinessChecks.every((check) => check.complete) && !uploadSaving;
 
@@ -750,7 +765,7 @@ export function ArbLiveReviewStep(props: {
                   <div className="arb-upload-file-copy">
                     <strong>{upload.fileName}</strong>
                     <p className="microcopy">
-                      {upload.logicalCategory} · {formatFileSize(upload.sizeBytes)} ·{" "}
+                      {formatCategory(upload.logicalCategory)} · {formatFileSize(upload.sizeBytes)} ·{" "}
                       <span className={upload.extractionStatus === "Completed" ? "arb-status-done" : undefined}>
                         {upload.extractionStatus}
                       </span>
@@ -1209,7 +1224,7 @@ export function ArbLiveReviewStep(props: {
 
     return (
       <ArbPlaceholderPage
-        intro="This step is wired to the ARB route model and ready for deeper implementation on top of the live workspace shell."
+        intro="Review workspace for this architecture assessment. Use the navigation above to access each step of the review workflow."
         bullets={buildBullets(activeStep, findings, scorecard)}
         footer={footer}
       />

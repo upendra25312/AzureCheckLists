@@ -4,6 +4,8 @@ import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import type { ArbReviewStepKey } from "@/arb/types";
 import { ArbLiveReviewStep } from "@/components/arb/live-review-step";
+import { ArbFindingsPage } from "@/components/arb/findings/arb-findings-page";
+import { ArbScorecardPage } from "@/components/arb/scorecard/arb-scorecard-page";
 import { ArbReviewLibrary } from "@/components/arb/review-library";
 
 function getRequestedStep(value: string | null): ArbReviewStepKey {
@@ -72,6 +74,15 @@ export function ArbLandingRouter() {
   const stepMeta = useMemo(() => getStepMeta(step), [step]);
 
   if (reviewId) {
+    // Route findings and scorecard to their dedicated redesigned components
+    if (step === "findings") {
+      return <ArbFindingsPage reviewId={reviewId} />;
+    }
+    if (step === "scorecard") {
+      return <ArbScorecardPage reviewId={reviewId} />;
+    }
+
+    // All other steps use the monolith
     return (
       <ArbLiveReviewStep
         reviewId={reviewId}
