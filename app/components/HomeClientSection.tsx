@@ -106,10 +106,10 @@ export default function HomeClientSection() {
         <img src="/logo.png" alt="Azure Review Assistant" className="hero-brand-mark" />
         <span className="impact-kicker">Architecture reviews, accelerated</span>
         <h1 className="impact-headline">
-          Upload your architecture documents. Receive structured Azure findings in minutes.
+          Upload. Assess. Sign off.
         </h1>
         <p className="impact-subline">
-          Upload your SOW or design document and get scored, evidence-linked findings across WAF, CAF, ALZ, HA/DR, Security, Networking, and Monitoring.
+          Upload your architecture documents and receive scored, evidence-linked findings across Security, Reliability, Cost, Operations, Architecture, Governance, and Delivery — grounded in Microsoft Learn and ready for board review.
         </p>
         {/* Upload zone — the action IS the page */}
         {!resolved ? (
