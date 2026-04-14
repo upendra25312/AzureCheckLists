@@ -17,7 +17,7 @@ export default function Header() {
         </nav>
       </div>
       <div className="home-header-actions">
-        <Link href="/help" className="home-link-nav-item" aria-label="Help">
+        <Link href="/how-to-use" className="home-link-nav-item" aria-label="Help">
           <span role="img" aria-label="Help">❓</span>
         </Link>
         {signedIn ? (
