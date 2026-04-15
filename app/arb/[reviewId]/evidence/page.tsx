@@ -1,4 +1,4 @@
-import { ArbLiveReviewStep } from "@/components/arb/live-review-step";
+import { ArbEvidencePage } from "@/components/arb/evidence/arb-evidence-page";
 
 type PageProps = {
   params: Promise<{
@@ -13,12 +13,5 @@ export function generateStaticParams() {
 export default async function Page({ params }: PageProps) {
   const { reviewId } = await params;
 
-  return (
-    <ArbLiveReviewStep
-      reviewId={reviewId}
-      activeStep="evidence"
-      title="Map Design Evidence"
-      description="Compare each requirement with the supporting architecture evidence and expose weak or missing proof."
-    />
-  );
+  return <ArbEvidencePage reviewId={reviewId} />;
 }

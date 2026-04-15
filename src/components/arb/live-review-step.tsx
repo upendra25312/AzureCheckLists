@@ -974,52 +974,9 @@ export function ArbLiveReviewStep(props: {
   }
 
   function renderEvidenceContent() {
-    if (evidenceFacts.length === 0) {
-      return (
-        <ArbPlaceholderPage
-          intro="No extracted evidence facts are available yet. Upload required files and start extraction first."
-          bullets={buildBullets(activeStep, findings, scorecard)}
-        />
-      );
-    }
-
-    return (
-      <div className="arb-page-stack">
-        <div className="arb-summary-grid">
-          <article className="future-card">
-            <p className="board-card-subtitle">Evidence facts</p>
-            <strong>{evidenceFacts.length}</strong>
-            <p className="section-copy">Evidence facts are extracted from the persisted package and feed later findings.</p>
-          </article>
-          <article className="future-card">
-            <p className="board-card-subtitle">Extraction state</p>
-            <strong>{extractionStatus?.state ?? "Not Started"}</strong>
-            <p className="section-copy">Extraction status stays tied to this review instead of browser-local state.</p>
-          </article>
-        </div>
-
-        <section className="surface-panel arb-summary-card">
-          <div className="board-card-head">
-            <div className="board-card-head-copy">
-              <p className="board-card-subtitle">Evidence map</p>
-              <h2 className="section-title">Ground the review in extracted source evidence</h2>
-            </div>
-          </div>
-          <div className="arb-finding-grid">
-            {evidenceFacts.map((fact) => (
-              <article key={fact.evidenceId} className="trace-card arb-score-card">
-                <h3>{fact.factType}</h3>
-                <p>{fact.summary}</p>
-                <p className="microcopy">{fact.sourceFileName || "Generated from review analysis"} · {fact.confidence} confidence</p>
-                <p className="microcopy">{fact.sourceExcerpt}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        {renderOutputArtifactsCard()}
-      </div>
-    );
+    // Evidence rendering has been extracted to the dedicated ArbEvidencePage component
+    // at src/components/arb/evidence/arb-evidence-page.tsx
+    return <p>Evidence is now rendered by the dedicated evidence page component.</p>;
   }
 
   // renderFindingsContent removed — findings route now uses ArbFindingsPage component
@@ -1245,7 +1202,7 @@ export function ArbLiveReviewStep(props: {
     }
 
     if (activeStep === "evidence") {
-      return renderEvidenceContent();
+      return <p>Evidence is now rendered by the dedicated evidence page component.</p>;
     }
 
     if (activeStep === "scorecard") {

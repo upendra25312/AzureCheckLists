@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import type { ArbReviewStepKey } from "@/arb/types";
 import { ArbLiveReviewStep } from "@/components/arb/live-review-step";
+import { ArbEvidencePage } from "@/components/arb/evidence/arb-evidence-page";
 import { ArbFindingsPage } from "@/components/arb/findings/arb-findings-page";
 import { ArbScorecardPage } from "@/components/arb/scorecard/arb-scorecard-page";
 import { ArbReviewLibrary } from "@/components/arb/review-library";
@@ -75,6 +76,9 @@ export function ArbLandingRouter() {
 
   if (reviewId) {
     // Route findings and scorecard to their dedicated redesigned components
+    if (step === "evidence") {
+      return <ArbEvidencePage reviewId={reviewId} />;
+    }
     if (step === "findings") {
       return <ArbFindingsPage reviewId={reviewId} />;
     }
