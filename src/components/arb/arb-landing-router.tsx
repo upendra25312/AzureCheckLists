@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import type { ArbReviewStepKey } from "@/arb/types";
 import { ArbLiveReviewStep } from "@/components/arb/live-review-step";
+import { ArbOverviewPage } from "@/components/arb/overview/arb-overview-page";
 import { ArbRequirementsPage } from "@/components/arb/requirements/arb-requirements-page";
 import { ArbEvidencePage } from "@/components/arb/evidence/arb-evidence-page";
 import { ArbFindingsPage } from "@/components/arb/findings/arb-findings-page";
@@ -76,7 +77,10 @@ export function ArbLandingRouter() {
   const stepMeta = useMemo(() => getStepMeta(step), [step]);
 
   if (reviewId) {
-    // Route findings and scorecard to their dedicated redesigned components
+    // Route to dedicated redesigned components
+    if (step === "overview") {
+      return <ArbOverviewPage reviewId={reviewId} />;
+    }
     if (step === "requirements") {
       return <ArbRequirementsPage reviewId={reviewId} />;
     }

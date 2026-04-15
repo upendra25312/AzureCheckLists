@@ -1117,29 +1117,13 @@ export function ArbLiveReviewStep(props: {
   }
 
   function renderDefaultContent() {
-    const footer =
-      activeStep === "overview" ? (
-        <div className="arb-summary-grid">
-          <article className="future-card">
-            <p className="board-card-subtitle">Workflow state</p>
-            <strong>{shellReview.workflowState}</strong>
-          </article>
-          <article className="future-card">
-            <p className="board-card-subtitle">Evidence state</p>
-            <strong>{shellReview.evidenceReadinessState}</strong>
-          </article>
-          <article className="future-card">
-            <p className="board-card-subtitle">Recommendation</p>
-            <strong>{shellReview.recommendation}</strong>
-          </article>
-        </div>
-      ) : null;
-
+    // Overview is now rendered by the dedicated ArbOverviewPage component.
+    // This fallback is kept for non-overview default steps only.
     return (
       <ArbPlaceholderPage
         intro="Review workspace for this architecture assessment. Use the navigation above to access each step of the review workflow."
         bullets={buildBullets(activeStep, findings, scorecard)}
-        footer={footer}
+        footer={null}
       />
     );
   }
