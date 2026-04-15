@@ -924,53 +924,9 @@ export function ArbLiveReviewStep(props: {
   }
 
   function renderRequirementsContent() {
-    if (requirements.length === 0) {
-      return (
-        <ArbPlaceholderPage
-          intro="No extracted requirements are available yet. Upload required files and start extraction first."
-          bullets={buildBullets(activeStep, findings, scorecard)}
-        />
-      );
-    }
-
-    return (
-      <div className="arb-page-stack">
-        <div className="arb-summary-grid">
-          <article className="future-card">
-            <p className="board-card-subtitle">Normalized requirements</p>
-            <strong>{requirements.length}</strong>
-            <p className="section-copy">Requirements were derived from persisted text-first artifacts for this review.</p>
-          </article>
-          <article className="future-card">
-            <p className="board-card-subtitle">Source files</p>
-            <strong>{new Set(requirements.map((item) => item.sourceFileId).filter(Boolean)).size}</strong>
-            <p className="section-copy">Distinct uploaded files contributed to the normalized requirement set.</p>
-          </article>
-        </div>
-
-        <section className="surface-panel arb-summary-card">
-          <div className="board-card-head">
-            <div className="board-card-head-copy">
-              <p className="board-card-subtitle">Requirements</p>
-              <h2 className="section-title">Review the normalized requirement statements</h2>
-            </div>
-          </div>
-          <div className="arb-finding-grid">
-            {requirements.map((requirement) => (
-              <article key={requirement.requirementId} className="trace-card arb-score-card">
-                <h3>{requirement.category}</h3>
-                <p>{requirement.normalizedText}</p>
-                <p className="microcopy">
-                  {requirement.sourceFileName || "Generated from review analysis"} · {requirement.criticality} · {requirement.reviewerStatus}
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        {renderOutputArtifactsCard()}
-      </div>
-    );
+    // Requirements rendering has been extracted to the dedicated ArbRequirementsPage component
+    // at src/components/arb/requirements/arb-requirements-page.tsx
+    return <p>Requirements are now rendered by the dedicated requirements page component.</p>;
   }
 
   function renderEvidenceContent() {
