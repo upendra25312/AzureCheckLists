@@ -1,0 +1,64 @@
+# PROPRIETARY LICENSE
+
+## Azure Review Dashboard
+
+**Copyright © 2026 the project owner. All Rights Reserved.**
+
+> NOTE TO MAINTAINER: Set the copyright holder above to the correct legal
+> entity (individual, company, or alliance) before relying on this license.
+> The previous draft of this file attributed copyright to "Microsoft Azure
+> Cloud Architecture Team" which does not match the GitHub repository owner.
+
+### License Grant
+
+This proprietary software and all associated documentation, source code, and materials ("Software") are provided for authorized use only. Unauthorized copying, distribution, modification, or use of this Software is strictly prohibited.
+
+Subject to the terms and conditions of this license, authorized users are granted a limited, non-exclusive, non-transferable, revocable license to:
+
+- Use the Software for internal evaluation and deployment within your organization
+- Modify the Software for your internal use
+- Review and study the source code for the purpose of understanding how it works
+
+### Restrictions
+
+You may not:
+
+- Redistribute, sublicense, sell, lease, or transfer the Software to any third party
+- Disclose the Software or its source code to unauthorized personnel
+- Reverse engineer, decompile, or disassemble the Software (except as permitted by law)
+- Use the Software to create competing products or services
+- Use the Software for service bureau or time-sharing purposes
+- Remove or obscure any proprietary notices or licenses
+
+### Intellectual Property
+
+The Software, including all source code, documentation, and accompanying materials, is the exclusive property of the copyright holder named above. All rights not expressly granted herein are reserved.
+
+**Upstream Dependencies:** This Software consumes open-source components. See individual dependency licenses in `node_modules` and `package.json`. The upstream Azure Review Checklists catalog (`Azure/review-checklists`) is consumed at build time under its own license; review that repository for terms.
+
+### Warranty Disclaimer
+
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+### Limitation of Liability
+
+In no event shall the copyright holder or any contributors be liable for any indirect, incidental, special, exemplary, or consequential damages (including but not limited to procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this Software, even if advised of the possibility of such damage.
+
+### Termination
+
+This license is effective until terminated. Your rights under this license will terminate automatically without notice if you fail to comply with any term of this license. Upon termination, you must destroy all copies of the Software in your possession.
+
+### Governing Law
+
+This license agreement is governed by and construed in accordance with the laws of the jurisdiction in which the copyright holder operates, without regard to its conflict of law provisions.
+
+### Contact
+
+For inquiries regarding licensing, usage, or permissions:
+
+- GitHub: <https://github.com/upendra25312/AzureCheckLists>
+- Use GitHub's private vulnerability reporting for security disclosures (see SECURITY.md).
+
+---
+
+**Last Updated:** 2026-04-29
