@@ -6994,6 +6994,98 @@ button.chip:disabled:hover {
   gap: 8px;
 }
 
+/* Sign-out hero — example output preview card */
+.arb-preview-card {
+  background: var(--surf-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.arb-preview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.arb-preview-label {
+  margin: 0 0 2px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--t3, var(--t2));
+}
+
+.arb-preview-project {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--t1);
+}
+
+.arb-preview-approved {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 20px;
+  background: #d1fae5;
+  color: #065f46;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.arb-preview-domains {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.arb-preview-domain-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 36px;
+  align-items: center;
+  gap: 10px;
+}
+
+.arb-preview-domain-label {
+  font-size: 0.82rem;
+  color: var(--t2);
+}
+
+.arb-preview-bar-track {
+  height: 6px;
+  border-radius: 4px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.arb-preview-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--brand);
+}
+
+.arb-preview-score {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--t1);
+  text-align: right;
+}
+
+.arb-preview-footer {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--t2);
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
 .arb-signin-bullets li {
   font-size: 0.9rem;
   color: var(--t2);
@@ -7250,7 +7342,42 @@ button.chip:disabled:hover {
 }
 
 .arb-empty-sub {
+  margin: 0 0 24px;
+  font-size: 0.9rem;
+  color: var(--t2);
+}
+
+.arb-steps-list {
+  list-style: none;
   margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.arb-step-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.arb-step-num {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arb-step-text {
   font-size: 0.9rem;
   color: var(--t2);
 }

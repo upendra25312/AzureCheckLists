@@ -264,6 +264,33 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
           <li>Every finding scored 0–100 and linked to a Microsoft Learn source</li>
           <li>Sign in is required to save uploads, findings, exports, and final sign-off</li>
         </ul>
+        <div className="arb-preview-card" aria-label="Example review output">
+          <div className="arb-preview-header">
+            <div>
+              <p className="arb-preview-label">Example output</p>
+              <p className="arb-preview-project">Contoso Landing Zone Modernization</p>
+            </div>
+            <span className="arb-preview-approved">Approved</span>
+          </div>
+          <div className="arb-preview-domains">
+            {[
+              { label: "Security", score: 84 },
+              { label: "Reliability", score: 91 },
+              { label: "Cost", score: 72 },
+              { label: "Operations", score: 88 },
+              { label: "Architecture", score: 78 },
+            ].map(({ label, score }) => (
+              <div key={label} className="arb-preview-domain-row">
+                <span className="arb-preview-domain-label">{label}</span>
+                <div className="arb-preview-bar-track" aria-hidden="true">
+                  <div className="arb-preview-bar-fill" style={{ width: `${score}%` }} />
+                </div>
+                <span className="arb-preview-score">{score}</span>
+              </div>
+            ))}
+          </div>
+          <p className="arb-preview-footer">23 findings &nbsp;·&nbsp; 5 framework domains &nbsp;·&nbsp; Board-ready sign-off</p>
+        </div>
       </div>
     );
   }
@@ -402,10 +429,17 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
 
       {filteredReviews.length === 0 ? (
         <section className="arb-empty-state">
-          <p className="arb-empty-title">No reviews yet</p>
+          <p className="arb-empty-title">Start your first review</p>
           <p className="arb-empty-sub">
-            Create your first review above — you&apos;ll be taken straight to the upload page.
+            Enter a project name above, upload your architecture documents, and follow the five-step workflow to a board-ready pack.
           </p>
+          <ol className="arb-steps-list" aria-label="Review workflow steps">
+            <li className="arb-step-item"><span className="arb-step-num">1</span><span className="arb-step-text">Name the project and customer</span></li>
+            <li className="arb-step-item"><span className="arb-step-num">2</span><span className="arb-step-text">Upload SOW, design docs, diagrams, and workbooks</span></li>
+            <li className="arb-step-item"><span className="arb-step-num">3</span><span className="arb-step-text">Run automated framework analysis</span></li>
+            <li className="arb-step-item"><span className="arb-step-num">4</span><span className="arb-step-text">Review findings and assign owners</span></li>
+            <li className="arb-step-item"><span className="arb-step-num">5</span><span className="arb-step-text">Sign off and export the board-ready package</span></li>
+          </ol>
         </section>
       ) : (
         <section className="arb-review-table-wrap">
