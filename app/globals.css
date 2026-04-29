@@ -1556,6 +1556,19 @@ button.chip:disabled:hover {
   line-height: 1.7;
 }
 
+.site-footer-link {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--t2);
+  text-decoration: none;
+  line-height: 1.7;
+}
+
+.site-footer-link:hover {
+  color: var(--brand);
+  text-decoration: underline;
+}
+
 .trust-banner {
   margin-bottom: 20px;
   border-radius: var(--radius-lg);
@@ -6960,6 +6973,16 @@ button.chip:disabled:hover {
 
 .arb-signin-cta:hover {
   background: #006cbd;
+}
+
+.arb-signin-cta--secondary {
+  background: transparent;
+  color: var(--brand);
+  border: 2px solid var(--brand);
+}
+
+.arb-signin-cta--secondary:hover {
+  background: color-mix(in srgb, var(--brand) 8%, transparent);
 }
 
 .arb-signin-bullets {

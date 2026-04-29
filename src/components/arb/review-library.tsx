@@ -252,7 +252,7 @@ export function ArbReviewLibrary(props: { focus?: ArbReviewLibraryFocus }) {
           <a
             key={provider.id}
             href={buildLoginUrl(provider.id)}
-            className="arb-signin-cta"
+            className={index === 0 ? "arb-signin-cta" : "arb-signin-cta arb-signin-cta--secondary"}
             style={index > 0 ? { marginTop: 10 } : undefined}
           >
             Sign in with {provider.label} to start →
