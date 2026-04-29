@@ -8,7 +8,7 @@ const authenticatedPrincipal = {
   clientPrincipal: {
     identityProvider: "aad",
     userId: "user-1",
-    userDetails: "upendra25312@gmail.com",
+    userDetails: "test-user@example.com",
     userRoles: ["anonymous", "authenticated"]
   }
 };

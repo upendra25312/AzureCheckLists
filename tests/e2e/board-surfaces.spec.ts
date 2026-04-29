@@ -5,7 +5,7 @@ const signedInPrincipal = [
     clientPrincipal: {
       identityProvider: "aad",
       userId: "user-1",
-      userDetails: "upendra25312@gmail.com",
+      userDetails: "test-user@example.com",
       userRoles: ["anonymous", "authenticated"]
     }
   }
@@ -14,8 +14,8 @@ const signedInPrincipal = [
 const projectReviewLibraryPayload = {
   user: {
     userId: "user-1",
-    email: "upendra25312@gmail.com",
-    displayName: "Upendra",
+    email: "test-user@example.com",
+    displayName: "Test User",
     provider: "aad",
     activeReviewId: "review-001"
   },

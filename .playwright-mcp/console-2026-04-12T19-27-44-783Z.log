@@ -1,6 +1,0 @@
-[     282ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:blank:0
-[    1306ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://preview.ff-cdn.datadoghq.com/precompute-assignments?dd_env=production:0
-[    1308ms] [ERROR] Failed to initialize feature flags: Error: Failed to fetch flag configuration: Unknown error
-    at Object.fetchFlagsConfiguration (https://www.datadoghq.com/blog/_astro/feature-flags.DcAbLXAm.js:7:15202)
-    at async si.fetchFlagsAndMaybeClearExposureCache (https://www.datadoghq.com/blog/_astro/feature-flags.DcAbLXAm.js:7:19144)
-    at async si.initialize (https://www.datadoghq.com/blog/_astro/feature-flags.DcAbLXAm.js:7:18193) @ https://www.datadoghq.com/blog/_astro/feature-flags.DcAbLXAm.js:13

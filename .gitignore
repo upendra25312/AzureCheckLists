@@ -32,7 +32,8 @@ terraform.rc
 .azurite/
 .claude/
 .playwright-cli/
-.vscode/
+.playwright-mcp/
+
 tsconfig.tsbuildinfo
 azure-portal-snapshot.md
 

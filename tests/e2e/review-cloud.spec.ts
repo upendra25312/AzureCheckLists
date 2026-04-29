@@ -7,7 +7,7 @@ const signedInPrincipal = [
     clientPrincipal: {
       identityProvider: "aad",
       userId: "user-1",
-      userDetails: "upendra25312@gmail.com",
+      userDetails: "test-user@example.com",
       userRoles: ["anonymous", "authenticated"]
     }
   }
@@ -15,7 +15,7 @@ const signedInPrincipal = [
 
 const restoredPackage = {
   id: "pkg-1775313682696-t2knsf",
-  name: "Upendra first test",
+  name: "Fabrikam WAF baseline review",
   audience: "Cloud Architect",
   businessScope: "Azure landing zone with UAE North as primary region and UAE Central as DR Region",
   targetRegions: ["UAE Central", "UAE North"],
@@ -34,8 +34,8 @@ const restoredPackage = {
 const libraryPayload = {
   user: {
     userId: "user-1",
-    email: "upendra25312@gmail.com",
-    displayName: "Upendra",
+    email: "test-user@example.com",
+    displayName: "Test User",
     provider: "aad",
     activeReviewId: restoredPackage.id
   },
@@ -623,7 +623,7 @@ test.describe("cloud-backed project review flows", () => {
 
     await expect(page.getByRole("heading", { name: "Checking your sign-in state and saved project reviews." })).toBeHidden({ timeout: 15000 });
     await expect(page.getByRole("heading", { name: restoredPackage.name })).toBeVisible({ timeout: 15000 });
-    await page.getByPlaceholder("Search reviews by name, audience, scope, or target region").fill("Upendra");
+    await page.getByPlaceholder("Search reviews by name, audience, scope, or target region").fill("Fabrikam");
     await expect(page.getByRole("heading", { name: restoredPackage.name })).toBeVisible();
 
     await page.getByRole("button", { name: "Archive active review" }).click();
