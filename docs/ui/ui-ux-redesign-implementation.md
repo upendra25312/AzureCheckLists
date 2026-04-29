@@ -8,7 +8,7 @@
 
 ## Corrected Status Summary
 
-Validated against the current codebase and [docs/purpose](./purpose) on 2026-04-11.
+Validated against the current codebase and [docs/purpose](../purpose.md) on 2026-04-11.
 
 - Fully implemented: Phase 1 - Design System Reset, Phase 2 - Navigation Redesign, Phase 3 - Homepage Redesign
 - Partially implemented: Phase 4 - ARB Review Flow, Phase 5 - Service Explorer, Phase 6 - Validation
