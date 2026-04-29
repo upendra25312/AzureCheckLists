@@ -22,7 +22,7 @@ var functionApiVersion = '2023-11-01'
 var searchApiVersion = '2023-11-01'
 var tableStorageConnectionStringResource = '${storageAccount.id}/listKeys(2021-06-01)'
 var functionWorkerRuntime = 'node'
-var functionNodeVersion = '20'
+var functionNodeVersion = '22'
 
 // ============================================================================
 // Resources

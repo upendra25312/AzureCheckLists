@@ -110,15 +110,15 @@ test.describe("core validation requirements", () => {
     await expect(page.getByRole("link", { name: "Explore Azure Services" }).first()).toBeVisible();
   });
 
-  test("service explorer uses View Findings for anonymous users", async ({ page }) => {
+  test("service explorer uses Open service view for anonymous users", async ({ page }) => {
     await page.route("**/.auth/me", async (route) => {
       await route.fulfill({ json: anonymousPayload });
     });
 
     await page.goto("/services");
 
-    await expect(page.getByRole("heading", { name: "Service Explorer" })).toBeVisible();
-    await expect(page.getByRole("link", { name: /View findings/i }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Start with the Azure service, not the checklist filename." })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open service view" }).first()).toBeVisible();
   });
 
   test("arb decision step exposes exactly Approved, Needs Revision, and Rejected", async ({
