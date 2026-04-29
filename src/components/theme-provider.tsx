@@ -82,18 +82,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         {children}
 
         <footer className="site-footer surface-panel">
-          <div className="site-footer-grid">
-            <div className="site-footer-column">
-              <p className="site-footer-copy">
-                Azure Review Assistant &mdash; Architecture reviews grounded in Microsoft Well-Architected, Cloud Adoption, and Azure Landing Zone frameworks.
-              </p>
-            </div>
-            <nav className="site-footer-column" aria-label="Footer navigation">
-              <a className="site-footer-link" href="/services">Service directory</a>
-              <a className="site-footer-link" href="https://learn.microsoft.com/en-us/azure/well-architected/" target="_blank" rel="noopener noreferrer">Microsoft Well-Architected</a>
-              <a className="site-footer-link" href="https://github.com/upendra25312/AzureCheckLists" target="_blank" rel="noopener noreferrer">GitHub</a>
-            </nav>
-          </div>
+          <p className="site-footer-copy">
+            Azure Review Assistant &mdash; Architecture reviews grounded in Microsoft Well-Architected, Cloud Adoption, and Azure Landing Zone frameworks.
+          </p>
         </footer>
       </div>
     </AuthSessionProvider>
