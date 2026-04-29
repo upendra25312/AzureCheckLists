@@ -4,23 +4,41 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { ServiceIndex } from "@/types";
 
+// Normalize a category string for deduplication and matching.
+// Trim whitespace, collapse internal runs, then lowercase for the key.
+function normalizeCategory(cat: string): string {
+  return cat.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 export function ServicesDirectory({ index }: { index: ServiceIndex }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const normalizedSearch = search.trim().toLowerCase();
 
-  const availableCategories = useMemo(
-    () =>
-      Array.from(new Set(index.services.flatMap((s) => s.categories)))
-        .filter(Boolean)
-        .sort((a, b) => a.localeCompare(b)),
-    [index.services]
-  );
+  // Build a deduplicated list of categories using case-insensitive keys.
+  // The first occurrence wins for the display label so casing stays natural.
+  const availableCategories = useMemo(() => {
+    const seen = new Map<string, string>(); // normalized key → display label
+    for (const cat of index.services.flatMap((s) => s.categories)) {
+      if (!cat?.trim()) continue;
+      const key = normalizeCategory(cat);
+      if (!seen.has(key)) {
+        seen.set(key, cat.trim());
+      }
+    }
+    return [...seen.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, label]) => ({ key, label }));
+  }, [index.services]);
 
   const filteredServices = useMemo(
     () =>
       index.services.filter((service) => {
-        if (category !== "all" && !service.categories.includes(category)) return false;
+        if (category === "ga-baseline") {
+          if (service.gaFamilyCount <= 0) return false;
+        } else if (category !== "all") {
+          if (!service.categories.some((c) => normalizeCategory(c) === category)) return false;
+        }
         if (!normalizedSearch) return true;
         const searchable = [
           service.service,
@@ -40,14 +58,14 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
 
       {/* Page header */}
       <section className="svc-page-header">
-        <h1 className="svc-page-title">Service Explorer</h1>
+        <h1 className="svc-page-title">Start with the Azure service, not the checklist filename.</h1>
         <p className="svc-page-sub">
           Browse {index.services.length}+ Azure services, WAF findings, regional fit, and pricing
           — no sign-in required.
         </p>
       </section>
 
-      {/* Search + filters */}
+      {/* Search */}
       <section className="svc-search-bar-wrap">
         <input
           className="svc-search-bar"
@@ -66,16 +84,23 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
           className={`svc-filter-pill${category === "all" ? " svc-filter-pill--active" : ""}`}
           onClick={() => setCategory("all")}
         >
-          All
+          All services
         </button>
-        {availableCategories.map((cat) => (
+        <button
+          type="button"
+          className={`svc-filter-pill${category === "ga-baseline" ? " svc-filter-pill--active" : ""}`}
+          onClick={() => setCategory("ga-baseline")}
+        >
+          GA baseline available
+        </button>
+        {availableCategories.map(({ key, label }) => (
           <button
-            key={cat}
+            key={key}
             type="button"
-            className={`svc-filter-pill${category === cat ? " svc-filter-pill--active" : ""}`}
-            onClick={() => setCategory(cat)}
+            className={`svc-filter-pill${category === key ? " svc-filter-pill--active" : ""}`}
+            onClick={() => setCategory(key)}
           >
-            {cat}
+            {label}
           </button>
         ))}
       </div>
@@ -92,7 +117,7 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
           {filteredServices.map((service) => (
             <article key={service.slug} className="svc-card">
               <div className="svc-card-head">
-                <strong className="svc-card-name">{service.service}</strong>
+                <h3 className="svc-card-name">{service.service}</h3>
                 {service.categories[0] ? (
                   <span className="svc-card-cat">{service.categories[0]}</span>
                 ) : null}
@@ -109,7 +134,7 @@ export function ServicesDirectory({ index }: { index: ServiceIndex }) {
                 </span>
               </div>
               <Link href={`/services/${service.slug}`} className="svc-card-link">
-                View findings →
+                Open service view
               </Link>
             </article>
           ))}
