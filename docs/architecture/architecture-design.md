@@ -14,6 +14,10 @@ The product should help a user answer five questions quickly:
 
 ## 2. Product Positioning
 
+> **Canonical statement (2026-04-29):** Azure Review Assistant is a project-scoped review workspace for Azure architects. It (1) scopes a customer solution against the Azure review-checklists catalog with live regional and pricing context and (2) takes uploaded architecture documents and produces a draft ARB review that a human reviewer edits, overrides, or approves. The authoritative definition lives in [`../internal/product-definition-2026-04-29.md`](../internal/product-definition-2026-04-29.md).
+>
+> The text below is the more-detailed positioning that supports the canonical statement.
+
 This product is not a generic AI assistant and not a static checklist browser.
 
 It is a:

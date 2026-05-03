@@ -14,8 +14,9 @@ This folder is the project's lightweight internal wiki content that travels with
 
 | File | Purpose |
 |---|---|
-| [`senior-architect-review-2026-04-29.md`](./senior-architect-review-2026-04-29.md) | Senior-architect-team review of the ARB Review Agentic Solution. Architecture, agentic AI design, website, GitHub readiness, and a LinkedIn thought-leadership draft. |
-| [`cost-narrative-reconciliation-2026-04-29.md`](./cost-narrative-reconciliation-2026-04-29.md) | Resolves the USD 60 vs USD 500–700 cost contradiction by separating the **Pilot tier** and **Production tier** as two intentional reference deployments. **Authoritative.** Closes a P0 from the senior architect review. |
+| [`product-definition-2026-04-29.md`](./product-definition-2026-04-29.md) | **Authoritative.** Canonical identity statement for the **Azure Review Assistant** product, scope boundaries, naming conventions, and rejected framings. Closes a P0 from the senior architect review (story coherence). |
+| [`cost-narrative-reconciliation-2026-04-29.md`](./cost-narrative-reconciliation-2026-04-29.md) | **Authoritative.** Resolves the USD 60 vs USD 500–700 cost contradiction by separating the **Pilot tier** and **Production tier** as two intentional reference deployments. Closes a P0 from the senior architect review. |
+| [`senior-architect-review-2026-04-29.md`](./senior-architect-review-2026-04-29.md) | Senior-architect-team review of the ARB Review Agentic Solution. Architecture, agentic AI design, website, GitHub readiness, and a LinkedIn thought-leadership draft. Source of the P0 findings closed by the two memos above. |
 
 ## Public visibility
 

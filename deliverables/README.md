@@ -1,10 +1,10 @@
-# Azure Review Board (ARB) — Professional Deliverables Package
+# Stakeholder Deliverables — Azure Review Assistant
 
-> A complete, multi-disciplinary professional package for the Azure Review Board (ARB) Dashboard project — produced jointly by Microsoft Azure, AWS, and Google Cloud architecture, alliance, and pre-sales perspectives.
+> Stakeholder-facing artifacts that describe the **Azure Review Assistant** product to executives, architects, pre-sales, and engineering audiences. These artifacts are produced *for* the product; they are not themselves the product. The product is documented in the root [`README.md`](../README.md) and the [`docs/`](../docs/) tree.
 
 **Live demo:** <https://jolly-sea-014792b10.6.azurestaticapps.net/>
 **Source repository:** <https://github.com/upendra25312/AzureCheckLists>
-**Date:** April 27, 2026
+**Canonical product definition:** [`docs/internal/product-definition-2026-04-29.md`](../docs/internal/product-definition-2026-04-29.md)
 
 ---
 
