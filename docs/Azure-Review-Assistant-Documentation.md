@@ -1,3 +1,5 @@
+> **Cost note (2026-04-29):** Both pilot ($25–60/month) and production ($500–700/month) deployment tiers exist. The authoritative breakdown is [`internal/cost-narrative-reconciliation-2026-04-29.md`](./internal/cost-narrative-reconciliation-2026-04-29.md).
+
 # Azure Review Assistant — Product Documentation
 
 **Version:** 1.0  
