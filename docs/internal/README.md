@@ -2,7 +2,7 @@
 
 Working notes, reviews, retrospectives, and decisions that the team needs but that are not part of the public-facing product documentation.
 
-This folder is the project's lightweight "internal wiki" for as long as the GitHub Wiki feature stays disabled on this repository. If the Wiki is later enabled, content here can be migrated and this folder can be retired.
+This folder is the project's lightweight internal wiki content that travels with the repo. The same content is also published to the [GitHub Wiki](https://github.com/upendra25312/AzureCheckLists/wiki) for browseable in-place editing. Use whichever surface fits — the canonical content lives here.
 
 ## Conventions
 
@@ -15,3 +15,8 @@ This folder is the project's lightweight "internal wiki" for as long as the GitH
 | File | Purpose |
 |---|---|
 | [`senior-architect-review-2026-04-29.md`](./senior-architect-review-2026-04-29.md) | Senior-architect-team review of the ARB Review Agentic Solution. Architecture, agentic AI design, website, GitHub readiness, and a LinkedIn thought-leadership draft. |
+| [`cost-narrative-reconciliation-2026-04-29.md`](./cost-narrative-reconciliation-2026-04-29.md) | Resolves the USD 60 vs USD 500–700 cost contradiction by separating the **Pilot tier** and **Production tier** as two intentional reference deployments. **Authoritative.** Closes a P0 from the senior architect review. |
+
+## Public visibility
+
+This repo is **public**. Anything in this folder is publicly readable. The "internal" framing is a folder convention, not access control. If something needs true privacy, put it in a separate private repo.

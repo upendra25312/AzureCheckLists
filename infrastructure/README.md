@@ -1,3 +1,5 @@
+> **Cost claim notice (2026-04-29):** This document describes the **Production tier** ($500–700/month). The repo also documents a **Pilot tier** ($25–60/month) using a different service set. See [`docs/internal/cost-narrative-reconciliation-2026-04-29.md`](../docs/internal/cost-narrative-reconciliation-2026-04-29.md) before quoting cost figures externally.
+
 # Azure Review Assistant - Infrastructure & Deployment Index
 
 **Status**: ✅ **PRODUCTIONREADY**  
