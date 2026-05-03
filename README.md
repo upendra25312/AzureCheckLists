@@ -1,6 +1,8 @@
-# Azure Review  Dashboard
+# Azure Review Assistant
 
-Static-first Azure review dashboard built from the [Azure review-checklists](https://github.com/Azure/review-checklists) repository and designed for Azure Static Web Apps with a dedicated Azure Function App backend.
+**Project-scoped review workspace for Azure architects.** It does two things: (1) scopes a customer solution against the Azure review-checklists catalog with live regional availability and retail-pricing context, and (2) takes uploaded architecture documents (HLD, LLD, diagrams, SOW) and produces a draft Architecture Review Board review — findings, scorecard, blockers, approval recommendation — that a human reviewer edits, overrides, or approves. The aim is to compress pre-ARB review time from weeks to under an hour while keeping the human in authority of the final decision.
+
+> Built on Azure Static Web Apps with a dedicated Azure Function App backend. Static-first frontend; selective AI; deterministic scoring. See [`docs/internal/product-definition-2026-04-29.md`](./docs/internal/product-definition-2026-04-29.md) for the canonical product definition and scope boundaries; the operational shape ("Why this shape") follows below.
 
 ## Why this shape
 
