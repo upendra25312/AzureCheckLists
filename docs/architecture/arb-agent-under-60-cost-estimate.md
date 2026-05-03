@@ -20,7 +20,7 @@ Status update as of May 3, 2026:
 
 - this document remains the target low-cost design envelope
 - it is not an accurate inventory of the currently deployed Azure estate
-- the exported resource list in `docs/Azureresources azure review assistant.csv` shows Azure AI Search, Azure AI Document Intelligence, Azure AI Foundry, a Foundry project, Azure OpenAI, a dedicated Function App, Application Insights, Storage, and two Static Web App resources
+- the local exported resource list reviewed on May 3, 2026 shows Azure AI Search, Azure AI Document Intelligence, Azure AI Foundry, a Foundry project, Azure OpenAI, a dedicated Function App, Application Insights, Storage, and two Static Web App resources
 - the active production Static Web App shown in the Azure portal is `azure-review-checklists` at `https://jolly-sea-014792b10.6.azurestaticapps.net`, using the `azure-static-web-apps-jolly-sea-014792b10.yml` GitHub Actions workflow
 - the portal screenshot shows the active Static Web App SKU as `Standard`
 
