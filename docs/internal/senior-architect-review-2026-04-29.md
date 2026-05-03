@@ -78,13 +78,19 @@ Overall recommendation: **invest one to two focused weeks in coherence and credi
 
 **Observability.** Application Insights is mentioned. Commit one example KQL query per critical user journey (review created, file uploaded, agent invoked, output generated) into `docs/observability/queries.md`. Make the SLOs explicit: e.g., 95th percentile time-to-first-finding under 60 seconds.
 
+> Update 2026-05-03: addressed in `docs/observability/queries.md` with starter KQL for API failures, review creation, upload/extraction failures, AI review duration, export generation, admin access failures, and initial SLOs.
+
 **Cost governance.** The "under USD 60/month" envelope is a real differentiator if it is true. Make it operational: add a `tools/cost-check.mjs` script that reads recent Application Insights data and asserts the burn rate against the cap, and document a budget alert configured against the resource group. Right now the cap is a claim contradicted by another document inside the same repo; pick one number, defend it, and operationalise it.
 
 **Operational readiness.** No runbook in the repo. Add `docs/runbook.md` with the three or four most likely production incidents (Function App cold start failure, Document Intelligence quota exhaustion, AI Search index corruption, OpenAI rate limit) and the documented response.
 
+> Update 2026-05-03: addressed in `docs/runbook.md` with runbooks for SWA deployment failure, Function API failure, AI review failure/timeouts, extraction/search failure, and cost spikes.
+
 ## 5. Agentic AI Recommendations
 
 **Define the agent surface explicitly.** Right now "ARB Agent" exists in design docs and in a `/api/copilot` endpoint, but they are not visibly the same thing. Commit `Architecture/agent-contract.md` that names the inputs (review metadata + grounded chunks + file inventory), the structured output (findings array, scorecard, blockers, approval recommendation), the model and version pinned, and the version identifier of the prompt. That contract is what a downstream consumer or auditor will ask for first.
+
+> Update 2026-05-03: addressed in `docs/architecture/agent-contract.md` with the input/output contract, retrieval trust order, reviewer states, audit record shape, and guardrails.
 
 **Multi-persona reasoning needs to be more than a prompt.** The system prompt says "reason as a board of expert reviewers." That is a single-model framing trick, not real multi-persona orchestration. If you want to claim multi-persona, run the input through three or four explicit persona prompts in parallel (or sequentially, sharing scratchpad), then have a fifth "consolidator" pass produce the merged finding. This is more expensive but it is genuinely different from "tell GPT to pretend to be four people."
 
@@ -150,7 +156,11 @@ The running site was not directly probed; this section is inferred from the rout
 
 **Security hygiene.** Current state: `SECURITY.md` exists, `LICENSE` exists with a placeholder copyright (still needs your real attribution). Missing: a `dependabot.yml` for automated dep updates, a CodeQL workflow, and an `npm audit` job in CI. Add all three; each is a one-file PR.
 
+> Update 2026-05-03: Dependabot, CodeQL, and Security CI workflows were added. The license attribution still needs the real legal holder before external reliance.
+
 **Missing files / artifacts.** The biggest gaps are: (1) `Architecture/agent-contract.md` defining the agent input/output schema; (2) `docs/runbook.md`; (3) `docs/observability/queries.md`; (4) `docs/threat-model.md`; (5) `tests/agent-eval/` with deterministic agent tests; (6) screenshot folder; (7) a `CHANGELOG.md` once a real `v0.1.0` tag is cut.
+
+> Update 2026-05-03: `docs/architecture/agent-contract.md`, `docs/runbook.md`, `docs/observability/queries.md`, and `docs/threat-model.md` were added. Agent eval tests, screenshots, and `CHANGELOG.md` remain open.
 
 **Three local clones.** Already flagged in §3. Pick one path, delete the others, and never put a `.git` directory inside OneDrive again.
 
@@ -240,7 +250,7 @@ Keep it monochrome with one accent colour. Resist the urge to add a third. The r
 | **P0** | Consolidate to one local clone outside OneDrive (`C:\repos\AzureCheckLists` or similar). Delete the OneDrive copies after backup. | Developer | Stops silent git corruption; single source of truth for local work. |
 | **P0** | Edit the placeholder `LICENSE` copyright holder to your real legal entity. | PM | Removes legal exposure; no more "© 2026 the project owner" placeholder. |
 | **P0** | Reconcile the cost narrative: `infrastructure/README.md` says USD 500–700/month; root README and `arb-agent-under-60-cost-estimate.md` say under USD 60/month. Pick one number, document the assumption set, retire the other. | Architect / PM | Removes the single most damaging credibility gap in the docs. |
-| **P0** | Revoke the leaked GitHub PAT (`ghp_If5lNo9Q…`) at <https://github.com/settings/tokens>. | Developer | Closes a known credential leak. |
+| **P0** | Revoke the leaked GitHub PAT referenced during review at <https://github.com/settings/tokens>. Do not publish token prefixes in the public repo or wiki. | Developer | Closes a known credential leak. |
 | **P0** | Replace the marketing-style root README first paragraph with one sentence on what the product *is* + a UI screenshot. | Architect | Reviewer landing experience improves immediately. |
 | **P0** | Decide and document: is this a "static review dashboard" or an "agentic ARB workflow"? Pick one and align README, deliverables README, and architecture pack to that identity. | Senior Director / Architect | Eliminates the "three projects" perception. |
 | **P1** | Validate the existing `infrastructure/main.bicep` covers: Managed Identity bindings (Function App → Storage, Function App → Search, Function App → OpenAI), RBAC role assignments, and Key Vault secret references. Add what is missing. | Architect | IaC actually deploys a working, secure environment, not a skeleton. |

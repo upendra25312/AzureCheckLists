@@ -19,6 +19,15 @@ This folder is the project's lightweight internal wiki content that travels with
 | [`cost-reconciliation-run-2026-05-03.md`](./cost-reconciliation-run-2026-05-03.md) | PDCA record for the post-SWA-cleanup cost reconciliation attempt. Documents confirmed production state, attempted Cost Management API query, token blocker, and next authentication/action steps. |
 | [`senior-architect-review-2026-04-29.md`](./senior-architect-review-2026-04-29.md) | Senior-architect-team review of the ARB Review Agentic Solution. Architecture, agentic AI design, website, GitHub readiness, and a LinkedIn thought-leadership draft. Source of the P0 findings closed by the two memos above. |
 
+## Active Hardening References
+
+| File | Purpose |
+|---|---|
+| [`../architecture/agent-contract.md`](../architecture/agent-contract.md) | Contract for the ARB agent input, output, reviewer states, retrieval trust order, and audit fields. |
+| [`../threat-model.md`](../threat-model.md) | STRIDE threat model for the production Azure Review Assistant deployment. |
+| [`../runbook.md`](../runbook.md) | Operator runbook for SWA deployment, Function API, AI review, extraction/search, and cost-spike incidents. |
+| [`../observability/queries.md`](../observability/queries.md) | Application Insights KQL starter pack and initial SLOs. |
+
 ## Public visibility
 
 This repo is **public**. Anything in this folder is publicly readable. The "internal" framing is a folder convention, not access control. If something needs true privacy, put it in a separate private repo.

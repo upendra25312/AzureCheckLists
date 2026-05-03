@@ -41,10 +41,10 @@ Remaining deployed estate, based on Azure portal, Static Web App inventory, and 
 - Azure AI Foundry project: `azure-review-checklists-admin`
 - Shared dashboard and alerting resources
 
-Attempted actual cost query:
+Attempted actual cost query shape:
 
 ```powershell
-$scope = '/subscriptions/f609eb5b-df3e-4fab-9a1b-9a8fea2f157f/resourceGroups/Azure-Review-Checklists-RG'
+$scope = '/subscriptions/<subscription-id>/resourceGroups/Azure-Review-Checklists-RG'
 $body = @{
   type = 'ActualCost'
   timeframe = 'MonthToDate'
@@ -100,8 +100,8 @@ Recommended command:
 
 ```powershell
 Connect-AzAccount `
-  -Tenant '5f51e0e9-4a52-494f-8068-27a3527967de' `
-  -Subscription 'f609eb5b-df3e-4fab-9a1b-9a8fea2f157f'
+  -Tenant '<tenant-id>' `
+  -Subscription '<subscription-id>'
 ```
 
 After authentication succeeds, run these three reports:

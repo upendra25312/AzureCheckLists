@@ -36,6 +36,10 @@ terraform.rc
 
 tsconfig.tsbuildinfo
 azure-portal-snapshot.md
+docs/Azureresources*.csv
+docs/*resource*.csv
+docs/*Resource*.csv
+local-azure-exports/
 
 # Azure Functions local settings (may contain secrets)
 api/local.settings.json

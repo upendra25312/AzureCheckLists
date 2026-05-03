@@ -9,7 +9,8 @@
 #
 # Prerequisites: az CLI logged in, correct subscription set
 #   az login
-#   az account set --subscription f609eb5b-df3e-4fab-9a1b-9a8fea2f157f
+#   export AZURE_SUBSCRIPTION_ID="<subscription-id>"
+#   az account set --subscription "$AZURE_SUBSCRIPTION_ID"
 #
 # Usage:
 #   bash scripts/configure-arb-services.sh
@@ -19,7 +20,7 @@
 set -euo pipefail
 
 # ── Fixed values ─────────────────────────────────────────────────────────────
-SUBSCRIPTION_ID="f609eb5b-df3e-4fab-9a1b-9a8fea2f157f"
+SUBSCRIPTION_ID="${AZURE_SUBSCRIPTION_ID:-}"
 RESOURCE_GROUP="Azure-Review-Checklists-RG"
 FUNCTION_APP="azure-review-checklists-api"
 STORAGE_ACCOUNT="azreviewcheckapi01"
@@ -31,13 +32,15 @@ DI_SKU="F0"             # Free tier: 500 pages/month free — fits under $60/mon
 DRY_RUN=false
 if [[ "${1:-}" == "--dry-run" ]]; then
   DRY_RUN=true
-  echo "🔍  DRY RUN — settings will be printed but NOT applied to Azure"
+  echo "DRY RUN - settings will be printed but NOT applied to Azure"
 fi
 
 # ── Helper ───────────────────────────────────────────────────────────────────
 log()  { echo "[$(date '+%H:%M:%S')] $*"; }
 warn() { echo "[$(date '+%H:%M:%S')] ⚠  $*"; }
 die()  { echo "[$(date '+%H:%M:%S')] ✗  $*" >&2; exit 1; }
+
+[[ -n "$SUBSCRIPTION_ID" ]] || die "Set AZURE_SUBSCRIPTION_ID before running this script"
 
 # ── 1. Ensure correct subscription ───────────────────────────────────────────
 log "Setting subscription to $SUBSCRIPTION_ID"
