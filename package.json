@@ -21,18 +21,18 @@
     "test:e2e:admin-copilot": "playwright test tests/e2e/admin-copilot.spec.ts --workers=1 --reporter=line"
   },
   "dependencies": {
-    "next": "^15.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "next": "^16.2.4",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.11.1",
+    "@axe-core/playwright": "^4.11.3",
     "@playwright/test": "^1.59.1",
-    "@types/node": "^22.0.0",
+    "@types/node": "^25.6.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "axe-core": "^4.11.2",
     "serve": "^14.2.6",
-    "typescript": "^5.0.0"
+    "typescript": "^6.0.3"
   }
 }
