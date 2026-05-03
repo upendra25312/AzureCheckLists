@@ -41,7 +41,7 @@ jobs:
         run: npm install --no-save @actions/core@1.6.0 @actions/http-client
 
       - name: Get GitHub OIDC token
-        uses: actions/github-script@v6
+        uses: actions/github-script@v9
         id: idtoken
         with:
           script: |
