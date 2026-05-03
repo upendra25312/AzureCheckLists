@@ -2,12 +2,12 @@
 
 ## Azure Review Dashboard
 
-**Copyright © 2026 the project owner. All Rights Reserved.**
+**Copyright © 2026 Upendra Kumar. All Rights Reserved.**
 
-> NOTE TO MAINTAINER: Set the copyright holder above to the correct legal
-> entity (individual, company, or alliance) before relying on this license.
-> The previous draft of this file attributed copyright to "Microsoft Azure
-> Cloud Architecture Team" which does not match the GitHub repository owner.
+> NOTE TO MAINTAINER: This file uses the individual maintainer name inferred
+> from the repository's configured Git author identity. If ownership should
+> instead sit with a company, partnership, or other legal entity, replace this
+> holder before relying on the license externally.
 
 ### License Grant
 
@@ -61,4 +61,4 @@ For inquiries regarding licensing, usage, or permissions:
 
 ---
 
-**Last Updated:** 2026-04-29
+**Last Updated:** 2026-05-03
