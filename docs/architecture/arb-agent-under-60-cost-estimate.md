@@ -16,6 +16,14 @@ This estimate assumes:
 - no default OCR
 - no permanent Azure AI Search Basic tier
 
+Status update as of May 3, 2026:
+
+- this document remains the target low-cost design envelope
+- it is not an accurate inventory of the currently deployed Azure estate
+- the exported resource list in `docs/Azureresources azure review assistant.csv` shows Azure AI Search, Azure AI Document Intelligence, Azure AI Foundry, a Foundry project, Azure OpenAI, a dedicated Function App, Application Insights, Storage, and two Static Web App resources
+- the active production Static Web App shown in the Azure portal is `azure-review-checklists` at `https://jolly-sea-014792b10.6.azurestaticapps.net`, using the `azure-static-web-apps-jolly-sea-014792b10.yml` GitHub Actions workflow
+- the portal screenshot shows the active Static Web App SKU as `Standard`
+
 ## 2. Fixed-Cost Position
 
 The design intentionally keeps fixed cost low by reusing services already in the solution and avoiding new always-on AI infrastructure.
@@ -96,6 +104,15 @@ These items are excluded from the baseline design because they push the monthly 
 - always-on container orchestration for agent helpers
 - multi-agent routing
 
+This exclusion list describes the planned under-60 design, not the live deployed environment. The current resource export includes:
+
+- `arb-review-search` as an Azure AI Search service
+- `arb-document-intelligence` as an Azure AI Document Intelligence account
+- `upend-mnkmx38y-swedencentral` as a Foundry account
+- `azure-review-checklists-admin` as a Foundry project
+
+Those services must be included in any actual monthly bill reconciliation.
+
 ## 5. Practical Monthly Ranges
 
 ### Conservative pilot
@@ -165,3 +182,5 @@ Recommended target range:
 Upper controlled ceiling:
 
 - about 57 USD per month
+
+For the current deployed environment, do not use the under-60 ceiling as the bill forecast until the duplicate Static Web App is removed and the AI Search, Document Intelligence, Foundry, Azure OpenAI, Function App, Storage, and Application Insights SKUs and usage are reconciled from Azure Cost Management.

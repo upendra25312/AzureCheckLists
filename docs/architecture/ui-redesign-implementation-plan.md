@@ -44,18 +44,18 @@ The current site ([jolly-sea-014792b10.6.azurestaticapps.net](https://jolly-sea-
 
 | Service | Tier/SKU | Purpose | Est. monthly cost |
 |---|---|---|---|
-| Azure Static Web Apps | **Free** | Hosts Next.js static export, built-in auth (`/.auth/`) | **$0.00** |
+| Azure Static Web Apps | **Standard** | Hosts Next.js static export, built-in auth (`/.auth/`), production CI/CD | **~$9/month** |
 | Azure Functions | **Flex Consumption** | API: pricing, region fit, copilot, review records, ARB | **$0–$2** |
 | Azure Blob Storage | LRS Hot | Pricing cache JSON, ARB uploaded files, review exports | **~$0.50** |
 | Azure Table Storage | LRS | Review state, ARB records, telemetry | **~$0.10** |
 | Azure Application Insights | Pay-as-you-go (5 GB free) | API health, telemetry, refresh state monitoring | **~$1–$3** |
 | Azure OpenAI | GPT-4o-mini pay-per-token | Admin copilot, review copilot, ARB extraction | **~$5–$15** |
-| **Total** | | | **~$7–$21/month** |
+| **Total** | | | **~$16–$30/month before currently deployed AI Search, Document Intelligence, and Foundry usage** |
 
-**Verdict: Well within $60/month.** At 5× traffic growth the estimate stays under $35/month. The only variable is Azure OpenAI — using `gpt-4o-mini` at $0.15/1M input tokens keeps costs predictable.
+**Verdict:** The original frontend redesign remains inexpensive, but the deployed environment is no longer just the low-cost UI/API footprint. The current Azure resource export includes Azure AI Search, Azure AI Document Intelligence, Azure AI Foundry, and a Foundry project, so full environment cost reconciliation must include those services.
 
 **Cost guardrails:**
-- Keep Static Web Apps on Free tier (Standard = $9/month, not needed unless custom domain SLA required)
+- Keep Static Web Apps on Standard only if branch environments, custom domain posture, auth requirements, or production governance justify it
 - Azure Functions stays on Flex Consumption — zero idle cost
 - Set Application Insights daily cap at 1 GB in portal
 - Set blob lifecycle policy: tier ARB files to Cool after 30 days
