@@ -1,3 +1,5 @@
+> **Cost claim notice (2026-04-29):** This document describes the **Pilot tier** ($25–60/month). The repo also documents a **Production tier** ($500–700/month) deployed by `infrastructure/main.bicep`. See [`../internal/cost-narrative-reconciliation-2026-04-29.md`](../internal/cost-narrative-reconciliation-2026-04-29.md) before quoting cost figures externally.
+
 # ARB Agent Under 60 USD Architecture
 
 ## 1. Objective
